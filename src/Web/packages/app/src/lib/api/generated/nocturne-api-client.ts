@@ -19959,10 +19959,10 @@ export class ActivityClient {
     }
 
     /**
-     * Get all activities with optional filtering and pagination
-     * @param count (optional) Maximum number of activities to return (default: 10)
-     * @param skip (optional) Number of activities to skip for pagination (default: 0)
-     * @return Activities retrieved successfully
+     * Get all activities with optional filtering and pagination.
+    Returns regular activities, heart rate, and step count data merged by timestamp.
+     * @param count (optional) 
+     * @param skip (optional) 
      */
     getActivities(count?: number | undefined, skip?: number | undefined, signal?: AbortSignal): Promise<Activity[]> {
         let url_ = this.baseUrl + "/api/v1/Activity?";
@@ -20000,7 +20000,7 @@ export class ActivityClient {
             });
         } else if (status === 500) {
             return response.text().then((_responseText) => {
-            return throwException("Internal server error", status, _responseText, _headers);
+            return throwException("A server side error occurred.", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -20011,9 +20011,8 @@ export class ActivityClient {
     }
 
     /**
-     * Create one or more new activities
-     * @param activities Activity data (single object or array)
-     * @return Activities created successfully (Nightscout compatibility)
+     * Create one or more new activities.
+    Heart rate and step count data is automatically routed to dedicated tables.
      */
     createActivities(activities: any, signal?: AbortSignal): Promise<Activity[]> {
         let url_ = this.baseUrl + "/api/v1/Activity";
@@ -20049,11 +20048,11 @@ export class ActivityClient {
             return response.text().then((_responseText) => {
             let result400: any = null;
             result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("Invalid activity data", status, _responseText, _headers, result400);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
             });
         } else if (status === 500) {
             return response.text().then((_responseText) => {
-            return throwException("Internal server error", status, _responseText, _headers);
+            return throwException("A server side error occurred.", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -20064,9 +20063,7 @@ export class ActivityClient {
     }
 
     /**
-     * Get a specific activity by ID
-     * @param id Activity ID
-     * @return Activity found and returned
+     * Get a specific activity by ID (checks StateSpans, heart_rates, and step_counts)
      */
     getActivity(id: string, signal?: AbortSignal): Promise<Activity> {
         let url_ = this.baseUrl + "/api/v1/Activity/{id}";
@@ -20101,11 +20098,11 @@ export class ActivityClient {
             return response.text().then((_responseText) => {
             let result404: any = null;
             result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("Activity not found", status, _responseText, _headers, result404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
             });
         } else if (status === 500) {
             return response.text().then((_responseText) => {
-            return throwException("Internal server error", status, _responseText, _headers);
+            return throwException("A server side error occurred.", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -20117,9 +20114,6 @@ export class ActivityClient {
 
     /**
      * Update an existing activity
-     * @param id Activity ID to update
-     * @param activity Updated activity data
-     * @return Activity updated successfully
      */
     updateActivity(id: string, activity: Activity, signal?: AbortSignal): Promise<Activity> {
         let url_ = this.baseUrl + "/api/v1/Activity/{id}";
@@ -20158,17 +20152,17 @@ export class ActivityClient {
             return response.text().then((_responseText) => {
             let result400: any = null;
             result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("Invalid activity data", status, _responseText, _headers, result400);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
             });
         } else if (status === 404) {
             return response.text().then((_responseText) => {
             let result404: any = null;
             result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("Activity not found", status, _responseText, _headers, result404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
             });
         } else if (status === 500) {
             return response.text().then((_responseText) => {
-            return throwException("Internal server error", status, _responseText, _headers);
+            return throwException("A server side error occurred.", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -20179,9 +20173,7 @@ export class ActivityClient {
     }
 
     /**
-     * Delete an activity by ID
-     * @param id Activity ID to delete
-     * @return Activity deleted successfully
+     * Delete an activity by ID (also deletes any decomposed heart rate / step count records)
      */
     deleteActivity(id: string, signal?: AbortSignal): Promise<any> {
         let url_ = this.baseUrl + "/api/v1/Activity/{id}";
@@ -20216,11 +20208,11 @@ export class ActivityClient {
             return response.text().then((_responseText) => {
             let result404: any = null;
             result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("Activity not found", status, _responseText, _headers, result404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
             });
         } else if (status === 500) {
             return response.text().then((_responseText) => {
-            return throwException("Internal server error", status, _responseText, _headers);
+            return throwException("A server side error occurred.", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {

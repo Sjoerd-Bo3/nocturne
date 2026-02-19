@@ -462,10 +462,19 @@ builder.Services.AddScoped<IApsSnapshotRepository, ApsSnapshotRepository>();
 builder.Services.AddScoped<IPumpSnapshotRepository, PumpSnapshotRepository>();
 builder.Services.AddScoped<IUploaderSnapshotRepository, UploaderSnapshotRepository>();
 
+// V4 Profile Repositories
+builder.Services.AddScoped<ITherapySettingsRepository, TherapySettingsRepository>();
+builder.Services.AddScoped<IBasalScheduleRepository, BasalScheduleRepository>();
+builder.Services.AddScoped<ICarbRatioScheduleRepository, CarbRatioScheduleRepository>();
+builder.Services.AddScoped<ISensitivityScheduleRepository, SensitivityScheduleRepository>();
+builder.Services.AddScoped<ITargetRangeScheduleRepository, TargetRangeScheduleRepository>();
+
 // V4 Decomposers
 builder.Services.AddScoped<IEntryDecomposer, EntryDecomposer>();
 builder.Services.AddScoped<ITreatmentDecomposer, TreatmentDecomposer>();
 builder.Services.AddScoped<IDeviceStatusDecomposer, DeviceStatusDecomposer>();
+builder.Services.AddScoped<IActivityDecomposer, ActivityDecomposer>();
+builder.Services.AddScoped<IProfileDecomposer, ProfileDecomposer>();
 builder.Services.AddScoped<V4BackfillService>();
 
 // Note: Processing status service is registered by AddNocturneMemoryCache

@@ -199,6 +199,7 @@ msgstr "Reason for this treatment"
 #: src/lib/components/ui/danger-zone-dialog/danger-zone-dialog.svelte
 #: src/routes/clock/+page.svelte
 #: src/routes/food/FoodDeleteDialog.svelte
+#: src/routes/meals/+page.svelte
 #: src/routes/reports/treatments/+page.svelte
 #: src/routes/reports/treatments/+page.svelte
 #: src/routes/settings/admin/+page.svelte
@@ -13777,3 +13778,29 @@ msgstr "Delete the attribution entries entirely."
 #: src/routes/food/FoodDeleteDialog.svelte
 msgid "Delete Food"
 msgstr "Delete Food"
+
+#: src/routes/meals/+page.svelte
+msgid "Food unlinked"
+msgstr "Food unlinked"
+
+#: src/routes/meals/+page.svelte
+msgid "Failed to unlink food"
+msgstr "Failed to unlink food"
+
+#: src/routes/meals/+page.svelte
+#: src/routes/meals/+page.svelte
+msgid "Unlink food"
+msgstr "Unlink food"
+
+#. placeholder {0}: unlinkTarget?.food.foodName ?? unlinkTarget?.food.note ?? 'this food'
+#: src/routes/meals/+page.svelte
+msgid "Remove \"{0}\" from this meal? The food will remain in your database."
+msgstr "Remove \"{0}\" from this meal? The food will remain in your database."
+
+#: src/routes/meals/+page.svelte
+msgid "Removing..."
+msgstr "Removing..."
+
+#: src/routes/meals/+page.svelte
+msgid "Remove"
+msgstr "Remove"

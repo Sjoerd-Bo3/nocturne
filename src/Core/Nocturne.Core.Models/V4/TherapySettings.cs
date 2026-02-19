@@ -1,0 +1,147 @@
+namespace Nocturne.Core.Models.V4;
+
+/// <summary>
+/// Scalar therapy configuration for a named profile (DIA, carb absorption, units, timezone, Loop settings)
+/// </summary>
+public class TherapySettings : IV4Record
+{
+    /// <summary>
+    /// UUID v7 primary key
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
+    /// Canonical timestamp in Unix milliseconds
+    /// </summary>
+    public long Mills { get; set; }
+
+    /// <summary>
+    /// UTC offset in minutes
+    /// </summary>
+    public int? UtcOffset { get; set; }
+
+    /// <summary>
+    /// Device identifier that created this record
+    /// </summary>
+    public string? Device { get; set; }
+
+    /// <summary>
+    /// Application that uploaded this record
+    /// </summary>
+    public string? App { get; set; }
+
+    /// <summary>
+    /// Origin data source identifier
+    /// </summary>
+    public string? DataSource { get; set; }
+
+    /// <summary>
+    /// Links all V4 records decomposed from the same legacy Profile record
+    /// </summary>
+    public Guid? CorrelationId { get; set; }
+
+    /// <summary>
+    /// Composite legacy ID: "{profileId}:{storeName}" for migration traceability
+    /// </summary>
+    public string? LegacyId { get; set; }
+
+    /// <summary>
+    /// When this record was created
+    /// </summary>
+    public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// When this record was last modified
+    /// </summary>
+    public DateTime ModifiedAt { get; set; }
+
+    /// <summary>
+    /// Named profile this came from (e.g., "Default", "Weekday")
+    /// </summary>
+    public string ProfileName { get; set; } = "Default";
+
+    /// <summary>
+    /// Timezone for this profile
+    /// </summary>
+    public string? Timezone { get; set; }
+
+    /// <summary>
+    /// Blood glucose units ("mg/dL" or "mmol/L")
+    /// </summary>
+    public string? Units { get; set; }
+
+    /// <summary>
+    /// Duration of Insulin Action in hours
+    /// </summary>
+    public double Dia { get; set; } = 3.0;
+
+    /// <summary>
+    /// Carb absorption rate in grams per hour
+    /// </summary>
+    public int CarbsHr { get; set; } = 20;
+
+    /// <summary>
+    /// Carb absorption delay in minutes
+    /// </summary>
+    public int Delay { get; set; } = 20;
+
+    /// <summary>
+    /// Whether to use GI-specific carb values
+    /// </summary>
+    public bool? PerGIValues { get; set; }
+
+    /// <summary>
+    /// Carb absorption rate for high GI foods
+    /// </summary>
+    public int? CarbsHrHigh { get; set; }
+
+    /// <summary>
+    /// Carb absorption rate for medium GI foods
+    /// </summary>
+    public int? CarbsHrMedium { get; set; }
+
+    /// <summary>
+    /// Carb absorption rate for low GI foods
+    /// </summary>
+    public int? CarbsHrLow { get; set; }
+
+    /// <summary>
+    /// Delay for high GI carbs
+    /// </summary>
+    public int? DelayHigh { get; set; }
+
+    /// <summary>
+    /// Delay for medium GI carbs
+    /// </summary>
+    public int? DelayMedium { get; set; }
+
+    /// <summary>
+    /// Delay for low GI carbs
+    /// </summary>
+    public int? DelayLow { get; set; }
+
+    /// <summary>
+    /// Loop-specific profile settings (device tokens, dosing config, overrides)
+    /// </summary>
+    public LoopProfileSettings? LoopSettings { get; set; }
+
+    /// <summary>
+    /// Whether this was the default profile in the legacy store
+    /// </summary>
+    public bool IsDefault { get; set; }
+
+    /// <summary>
+    /// Who entered this profile (e.g., "Loop", "Trio")
+    /// </summary>
+    public string? EnteredBy { get; set; }
+
+    /// <summary>
+    /// Whether this profile is managed by an external service (e.g., Glooko)
+    /// </summary>
+    public bool IsExternallyManaged { get; set; }
+
+    /// <summary>
+    /// ISO format start date preserved from legacy profile
+    /// </summary>
+    public string? StartDate { get; set; }
+}

@@ -301,6 +301,33 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<UploaderSnapshotEntity> UploaderSnapshots { get; set; }
 
+    // V4 Profile Decomposition Models
+
+    /// <summary>
+    /// Gets or sets the TherapySettings table for therapy configuration records (v4 profile decomposition)
+    /// </summary>
+    public DbSet<TherapySettingsEntity> TherapySettings { get; set; }
+
+    /// <summary>
+    /// Gets or sets the BasalSchedules table for basal rate schedule records (v4 profile decomposition)
+    /// </summary>
+    public DbSet<BasalScheduleEntity> BasalSchedules { get; set; }
+
+    /// <summary>
+    /// Gets or sets the CarbRatioSchedules table for carb ratio schedule records (v4 profile decomposition)
+    /// </summary>
+    public DbSet<CarbRatioScheduleEntity> CarbRatioSchedules { get; set; }
+
+    /// <summary>
+    /// Gets or sets the SensitivitySchedules table for insulin sensitivity schedule records (v4 profile decomposition)
+    /// </summary>
+    public DbSet<SensitivityScheduleEntity> SensitivitySchedules { get; set; }
+
+    /// <summary>
+    /// Gets or sets the TargetRangeSchedules table for target range schedule records (v4 profile decomposition)
+    /// </summary>
+    public DbSet<TargetRangeScheduleEntity> TargetRangeSchedules { get; set; }
+
 
     /// <summary>
     /// Configure the database model and relationships
@@ -1391,6 +1418,128 @@ public class NocturneDbContext : DbContext
             .Entity<UploaderSnapshotEntity>()
             .HasIndex(e => e.LegacyId)
             .HasDatabaseName("ix_uploader_snapshots_legacy_id");
+
+        // V4 Profile Decomposition indexes
+
+        // TherapySettings indexes
+        modelBuilder
+            .Entity<TherapySettingsEntity>()
+            .HasIndex(e => e.Mills)
+            .HasDatabaseName("ix_therapy_settings_mills")
+            .IsDescending();
+
+        modelBuilder
+            .Entity<TherapySettingsEntity>()
+            .HasIndex(e => e.LegacyId)
+            .HasDatabaseName("ix_therapy_settings_legacy_id")
+            .IsUnique()
+            .HasFilter("legacy_id IS NOT NULL");
+
+        modelBuilder
+            .Entity<TherapySettingsEntity>()
+            .HasIndex(e => e.CorrelationId)
+            .HasDatabaseName("ix_therapy_settings_correlation_id");
+
+        modelBuilder
+            .Entity<TherapySettingsEntity>()
+            .HasIndex(e => e.ProfileName)
+            .HasDatabaseName("ix_therapy_settings_profile_name");
+
+        // BasalSchedule indexes
+        modelBuilder
+            .Entity<BasalScheduleEntity>()
+            .HasIndex(e => e.Mills)
+            .HasDatabaseName("ix_basal_schedules_mills")
+            .IsDescending();
+
+        modelBuilder
+            .Entity<BasalScheduleEntity>()
+            .HasIndex(e => e.LegacyId)
+            .HasDatabaseName("ix_basal_schedules_legacy_id")
+            .IsUnique()
+            .HasFilter("legacy_id IS NOT NULL");
+
+        modelBuilder
+            .Entity<BasalScheduleEntity>()
+            .HasIndex(e => e.CorrelationId)
+            .HasDatabaseName("ix_basal_schedules_correlation_id");
+
+        modelBuilder
+            .Entity<BasalScheduleEntity>()
+            .HasIndex(e => e.ProfileName)
+            .HasDatabaseName("ix_basal_schedules_profile_name");
+
+        // CarbRatioSchedule indexes
+        modelBuilder
+            .Entity<CarbRatioScheduleEntity>()
+            .HasIndex(e => e.Mills)
+            .HasDatabaseName("ix_carb_ratio_schedules_mills")
+            .IsDescending();
+
+        modelBuilder
+            .Entity<CarbRatioScheduleEntity>()
+            .HasIndex(e => e.LegacyId)
+            .HasDatabaseName("ix_carb_ratio_schedules_legacy_id")
+            .IsUnique()
+            .HasFilter("legacy_id IS NOT NULL");
+
+        modelBuilder
+            .Entity<CarbRatioScheduleEntity>()
+            .HasIndex(e => e.CorrelationId)
+            .HasDatabaseName("ix_carb_ratio_schedules_correlation_id");
+
+        modelBuilder
+            .Entity<CarbRatioScheduleEntity>()
+            .HasIndex(e => e.ProfileName)
+            .HasDatabaseName("ix_carb_ratio_schedules_profile_name");
+
+        // SensitivitySchedule indexes
+        modelBuilder
+            .Entity<SensitivityScheduleEntity>()
+            .HasIndex(e => e.Mills)
+            .HasDatabaseName("ix_sensitivity_schedules_mills")
+            .IsDescending();
+
+        modelBuilder
+            .Entity<SensitivityScheduleEntity>()
+            .HasIndex(e => e.LegacyId)
+            .HasDatabaseName("ix_sensitivity_schedules_legacy_id")
+            .IsUnique()
+            .HasFilter("legacy_id IS NOT NULL");
+
+        modelBuilder
+            .Entity<SensitivityScheduleEntity>()
+            .HasIndex(e => e.CorrelationId)
+            .HasDatabaseName("ix_sensitivity_schedules_correlation_id");
+
+        modelBuilder
+            .Entity<SensitivityScheduleEntity>()
+            .HasIndex(e => e.ProfileName)
+            .HasDatabaseName("ix_sensitivity_schedules_profile_name");
+
+        // TargetRangeSchedule indexes
+        modelBuilder
+            .Entity<TargetRangeScheduleEntity>()
+            .HasIndex(e => e.Mills)
+            .HasDatabaseName("ix_target_range_schedules_mills")
+            .IsDescending();
+
+        modelBuilder
+            .Entity<TargetRangeScheduleEntity>()
+            .HasIndex(e => e.LegacyId)
+            .HasDatabaseName("ix_target_range_schedules_legacy_id")
+            .IsUnique()
+            .HasFilter("legacy_id IS NOT NULL");
+
+        modelBuilder
+            .Entity<TargetRangeScheduleEntity>()
+            .HasIndex(e => e.CorrelationId)
+            .HasDatabaseName("ix_target_range_schedules_correlation_id");
+
+        modelBuilder
+            .Entity<TargetRangeScheduleEntity>()
+            .HasIndex(e => e.ProfileName)
+            .HasDatabaseName("ix_target_range_schedules_profile_name");
     }
 
     private static void ConfigureEntities(ModelBuilder modelBuilder)
@@ -1588,6 +1737,28 @@ public class NocturneDbContext : DbContext
             .HasValueGenerator<GuidV7ValueGenerator>();
         modelBuilder
             .Entity<UploaderSnapshotEntity>()
+            .Property(e => e.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+
+        // V4 Profile Decomposition UUID generators
+        modelBuilder
+            .Entity<TherapySettingsEntity>()
+            .Property(e => e.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<BasalScheduleEntity>()
+            .Property(e => e.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<CarbRatioScheduleEntity>()
+            .Property(e => e.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<SensitivityScheduleEntity>()
+            .Property(e => e.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<TargetRangeScheduleEntity>()
             .Property(e => e.Id)
             .HasValueGenerator<GuidV7ValueGenerator>();
 
@@ -2443,6 +2614,47 @@ public class NocturneDbContext : DbContext
                     uploaderSnapshotEntity.SysCreatedAt = utcNow;
                 }
                 uploaderSnapshotEntity.SysUpdatedAt = utcNow;
+            }
+            // V4 Profile Decomposition entities
+            else if (entry.Entity is TherapySettingsEntity therapySettingsEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    therapySettingsEntity.SysCreatedAt = utcNow;
+                }
+                therapySettingsEntity.SysUpdatedAt = utcNow;
+            }
+            else if (entry.Entity is BasalScheduleEntity basalScheduleEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    basalScheduleEntity.SysCreatedAt = utcNow;
+                }
+                basalScheduleEntity.SysUpdatedAt = utcNow;
+            }
+            else if (entry.Entity is CarbRatioScheduleEntity carbRatioScheduleEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    carbRatioScheduleEntity.SysCreatedAt = utcNow;
+                }
+                carbRatioScheduleEntity.SysUpdatedAt = utcNow;
+            }
+            else if (entry.Entity is SensitivityScheduleEntity sensitivityScheduleEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    sensitivityScheduleEntity.SysCreatedAt = utcNow;
+                }
+                sensitivityScheduleEntity.SysUpdatedAt = utcNow;
+            }
+            else if (entry.Entity is TargetRangeScheduleEntity targetRangeScheduleEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    targetRangeScheduleEntity.SysCreatedAt = utcNow;
+                }
+                targetRangeScheduleEntity.SysUpdatedAt = utcNow;
             }
         }
     }

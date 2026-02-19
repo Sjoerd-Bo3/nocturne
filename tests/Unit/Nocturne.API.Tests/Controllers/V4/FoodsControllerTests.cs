@@ -15,16 +15,25 @@ namespace Nocturne.API.Tests.Controllers.V4;
 public class FoodsControllerTests
 {
     private readonly Mock<IUserFoodFavoriteService> _favoriteServiceMock;
+    private readonly Mock<ITreatmentFoodService> _treatmentFoodServiceMock;
+    private readonly Mock<IFoodService> _foodServiceMock;
 
     public FoodsControllerTests()
     {
         _favoriteServiceMock = new Mock<IUserFoodFavoriteService>();
+        _treatmentFoodServiceMock = new Mock<ITreatmentFoodService>();
+        _foodServiceMock = new Mock<IFoodService>();
     }
 
     private FoodsController CreateController(AuthContext? authContext)
     {
         using var dbContext = TestDbContextFactory.CreateInMemoryContext();
-        var controller = new FoodsController(dbContext, _favoriteServiceMock.Object);
+        var controller = new FoodsController(
+            dbContext,
+            _favoriteServiceMock.Object,
+            _treatmentFoodServiceMock.Object,
+            _foodServiceMock.Object
+        );
 
         var httpContext = new DefaultHttpContext();
         if (authContext != null)

@@ -5,48 +5,32 @@ using Nocturne.Core.Models;
 namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
-/// Controller for managing Nightscout activity data
-/// Provides full CRUD operations for activity records
-/// Activities are stored as StateSpans under the hood for unified data management
+/// Controller for managing Nightscout activity data.
+/// Delegates to IActivityService which routes sensor data (heart rate, step count)
+/// to dedicated tables and regular activities to StateSpans.
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
 public class ActivityController : ControllerBase
 {
-    private readonly IStateSpanService _stateSpanService;
-    private readonly IDocumentProcessingService _documentProcessingService;
+    private readonly IActivityService _activityService;
     private readonly ILogger<ActivityController> _logger;
 
-    /// <summary>
-    /// Initializes a new instance of the ActivityController
-    /// </summary>
-    /// <param name="stateSpanService">StateSpan service for data operations (activities stored as StateSpans)</param>
-    /// <param name="documentProcessingService">Document processing service for sanitization and timestamp handling</param>
-    /// <param name="logger">Logger instance</param>
     public ActivityController(
-        IStateSpanService stateSpanService,
-        IDocumentProcessingService documentProcessingService,
+        IActivityService activityService,
         ILogger<ActivityController> logger
     )
     {
-        _stateSpanService =
-            stateSpanService ?? throw new ArgumentNullException(nameof(stateSpanService));
-        _documentProcessingService =
-            documentProcessingService
-            ?? throw new ArgumentNullException(nameof(documentProcessingService));
+        _activityService =
+            activityService ?? throw new ArgumentNullException(nameof(activityService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
-    /// Get all activities with optional filtering and pagination
+    /// Get all activities with optional filtering and pagination.
+    /// Returns regular activities, heart rate, and step count data merged by timestamp.
     /// </summary>
-    /// <param name="count">Maximum number of activities to return (default: 10)</param>
-    /// <param name="skip">Number of activities to skip for pagination (default: 0)</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of activities</returns>
-    /// <response code="200">Activities retrieved successfully</response>
-    /// <response code="500">Internal server error</response>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<Activity>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -58,15 +42,12 @@ public class ActivityController : ControllerBase
     {
         try
         {
-            _logger.LogDebug("Getting activities with count: {Count}, skip: {Skip}", count, skip);
-
-            var activities = await _stateSpanService.GetActivitiesAsync(
+            var activities = await _activityService.GetActivitiesAsync(
                 count: count,
                 skip: skip,
                 cancellationToken: cancellationToken
             );
 
-            // Set Last-Modified header if we have activities
             var activitiesList = activities.ToList();
             if (activitiesList.Count > 0)
             {
@@ -93,14 +74,8 @@ public class ActivityController : ControllerBase
     }
 
     /// <summary>
-    /// Get a specific activity by ID
+    /// Get a specific activity by ID (checks StateSpans, heart_rates, and step_counts)
     /// </summary>
-    /// <param name="id">Activity ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The activity with the specified ID</returns>
-    /// <response code="200">Activity found and returned</response>
-    /// <response code="404">Activity not found</response>
-    /// <response code="500">Internal server error</response>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(Activity), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -112,14 +87,9 @@ public class ActivityController : ControllerBase
     {
         try
         {
-            _logger.LogDebug("Getting activity with ID: {Id}", id);
-
-            var activity = await _stateSpanService.GetActivityByIdAsync(id, cancellationToken);
+            var activity = await _activityService.GetActivityByIdAsync(id, cancellationToken);
             if (activity == null)
-            {
-                _logger.LogDebug("Activity with ID {Id} not found", id);
                 return NotFound(new { error = $"Activity with ID {id} not found" });
-            }
 
             return Ok(activity);
         }
@@ -134,14 +104,9 @@ public class ActivityController : ControllerBase
     }
 
     /// <summary>
-    /// Create one or more new activities
+    /// Create one or more new activities.
+    /// Heart rate and step count data is automatically routed to dedicated tables.
     /// </summary>
-    /// <param name="activities">Activity data (single object or array)</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Created activities with assigned IDs</returns>
-    /// <response code="200">Activities created successfully (Nightscout compatibility)</response>
-    /// <response code="400">Invalid activity data</response>
-    /// <response code="500">Internal server error</response>
     [HttpPost]
     [ProducesResponseType(typeof(IEnumerable<Activity>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -153,16 +118,11 @@ public class ActivityController : ControllerBase
     {
         try
         {
-            _logger.LogDebug("Creating activities");
-
             if (activities == null)
-            {
                 return BadRequest(new { error = "Activity data is required" });
-            }
 
             List<Activity> activityList;
 
-            // Handle both single activity and array of activities
             if (activities is System.Text.Json.JsonElement jsonElement)
             {
                 if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.Array)
@@ -170,41 +130,30 @@ public class ActivityController : ControllerBase
                     activityList =
                         System.Text.Json.JsonSerializer.Deserialize<List<Activity>>(
                             jsonElement.GetRawText()
-                        ) ?? new List<Activity>();
+                        ) ?? [];
                 }
                 else
                 {
                     var singleActivity = System.Text.Json.JsonSerializer.Deserialize<Activity>(
                         jsonElement.GetRawText()
                     );
-                    activityList =
-                        singleActivity != null
-                            ? new List<Activity> { singleActivity }
-                            : new List<Activity>();
+                    activityList = singleActivity != null ? [singleActivity] : [];
                 }
             }
             else
             {
                 return BadRequest(new { error = "Invalid activity data format" });
             }
+
             if (activityList.Count == 0)
-            {
                 return BadRequest(new { error = "At least one activity is required" });
-            }
 
-            // Process activities for sanitization and timestamp conversion
-            var processedActivities = _documentProcessingService.ProcessDocuments(
-                activityList
-            );
-            var processedList = processedActivities.ToList();
-
-            var createdActivities = await _stateSpanService.CreateActivitiesAsync(
-                processedList,
+            // ActivityService handles document processing, routing, and broadcasting
+            var result = await _activityService.CreateActivitiesAsync(
+                activityList,
                 cancellationToken
             );
-            var result = createdActivities.ToList();
 
-            _logger.LogDebug("Created {Count} activities", result.Count);
             // Nightscout returns 200 OK for POST, not 201 Created
             return Ok(result);
         }
@@ -221,14 +170,6 @@ public class ActivityController : ControllerBase
     /// <summary>
     /// Update an existing activity
     /// </summary>
-    /// <param name="id">Activity ID to update</param>
-    /// <param name="activity">Updated activity data</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Updated activity</returns>
-    /// <response code="200">Activity updated successfully</response>
-    /// <response code="400">Invalid activity data</response>
-    /// <response code="404">Activity not found</response>
-    /// <response code="500">Internal server error</response>
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(Activity), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -242,23 +183,17 @@ public class ActivityController : ControllerBase
     {
         try
         {
-            _logger.LogDebug("Updating activity with ID: {Id}", id);
-
             if (activity == null)
-            {
                 return BadRequest(new { error = "Activity data is required" });
-            }
 
-            var updatedActivity = await _stateSpanService.UpdateActivityAsync(
+            var updatedActivity = await _activityService.UpdateActivityAsync(
                 id,
                 activity,
                 cancellationToken
             );
+
             if (updatedActivity == null)
-            {
-                _logger.LogDebug("Activity with ID {Id} not found for update", id);
                 return NotFound(new { error = $"Activity with ID {id} not found" });
-            }
 
             return Ok(updatedActivity);
         }
@@ -273,14 +208,8 @@ public class ActivityController : ControllerBase
     }
 
     /// <summary>
-    /// Delete an activity by ID
+    /// Delete an activity by ID (also deletes any decomposed heart rate / step count records)
     /// </summary>
-    /// <param name="id">Activity ID to delete</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Confirmation of deletion</returns>
-    /// <response code="200">Activity deleted successfully</response>
-    /// <response code="404">Activity not found</response>
-    /// <response code="500">Internal server error</response>
     [HttpDelete("{id}")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -292,14 +221,9 @@ public class ActivityController : ControllerBase
     {
         try
         {
-            _logger.LogDebug("Deleting activity with ID: {Id}", id);
-
-            var deleted = await _stateSpanService.DeleteActivityAsync(id, cancellationToken);
+            var deleted = await _activityService.DeleteActivityAsync(id, cancellationToken);
             if (!deleted)
-            {
-                _logger.LogDebug("Activity with ID {Id} not found for deletion", id);
                 return NotFound(new { error = $"Activity with ID {id} not found" });
-            }
 
             return Ok(new { message = "Activity deleted successfully" });
         }

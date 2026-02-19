@@ -1,24 +1,32 @@
-using Microsoft.Extensions.Logging;
+using Nocturne.API.Services.V4;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services;
 
 /// <summary>
 /// Domain service implementation for activity operations with WebSocket broadcasting.
-/// Activities are stored as StateSpans under the hood for unified data management.
+/// Regular activities are stored as StateSpans. Heart rate and step count sensor data
+/// is routed to dedicated tables via the ActivityDecomposer.
 /// </summary>
 public class ActivityService : IActivityService
 {
     private readonly IStateSpanService _stateSpanService;
     private readonly IDocumentProcessingService _documentProcessingService;
     private readonly ISignalRBroadcastService _signalRBroadcastService;
+    private readonly IActivityDecomposer _activityDecomposer;
+    private readonly IHeartRateService _heartRateService;
+    private readonly IStepCountService _stepCountService;
     private readonly ILogger<ActivityService> _logger;
 
     public ActivityService(
         IStateSpanService stateSpanService,
         IDocumentProcessingService documentProcessingService,
         ISignalRBroadcastService signalRBroadcastService,
+        IActivityDecomposer activityDecomposer,
+        IHeartRateService heartRateService,
+        IStepCountService stepCountService,
         ILogger<ActivityService> logger
     )
     {
@@ -30,6 +38,12 @@ public class ActivityService : IActivityService
         _signalRBroadcastService =
             signalRBroadcastService
             ?? throw new ArgumentNullException(nameof(signalRBroadcastService));
+        _activityDecomposer =
+            activityDecomposer ?? throw new ArgumentNullException(nameof(activityDecomposer));
+        _heartRateService =
+            heartRateService ?? throw new ArgumentNullException(nameof(heartRateService));
+        _stepCountService =
+            stepCountService ?? throw new ArgumentNullException(nameof(stepCountService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -43,19 +57,53 @@ public class ActivityService : IActivityService
     {
         try
         {
+            var actualCount = count ?? 10;
+            var actualSkip = skip ?? 0;
+
             _logger.LogDebug(
                 "Getting activity records with find: {Find}, count: {Count}, skip: {Skip}",
                 find,
-                count,
-                skip
+                actualCount,
+                actualSkip
             );
 
-            return await _stateSpanService.GetActivitiesAsync(
+            // Over-fetch from each source so we can merge and re-paginate
+            var fetchCount = actualCount + actualSkip;
+
+            // Source 1: Regular activities from StateSpans
+            var stateSpanActivities = await _stateSpanService.GetActivitiesAsync(
                 type: find,
-                count: count ?? 10,
-                skip: skip ?? 0,
+                count: fetchCount,
+                skip: 0,
                 cancellationToken: cancellationToken
             );
+
+            // Source 2: Heart rate records converted to Activity format
+            var heartRates = await _heartRateService.GetHeartRatesAsync(
+                count: fetchCount,
+                skip: 0,
+                cancellationToken: cancellationToken
+            );
+            var heartRateActivities = heartRates.Select(ActivityDecomposer.HeartRateToActivity);
+
+            // Source 3: Step count records converted to Activity format
+            var stepCounts = await _stepCountService.GetStepCountsAsync(
+                count: fetchCount,
+                skip: 0,
+                cancellationToken: cancellationToken
+            );
+            var stepCountActivities = stepCounts.Select(ActivityDecomposer.StepCountToActivity);
+
+            // Merge all sources, sort by Mills descending, apply pagination
+            var merged = stateSpanActivities
+                .Concat(heartRateActivities)
+                .Concat(stepCountActivities)
+                .OrderByDescending(a => a.Mills)
+                .Skip(actualSkip)
+                .Take(actualCount)
+                .ToList();
+
+            return merged;
         }
         catch (Exception ex)
         {
@@ -73,7 +121,23 @@ public class ActivityService : IActivityService
         try
         {
             _logger.LogDebug("Getting activity record by ID: {Id}", id);
-            return await _stateSpanService.GetActivityByIdAsync(id, cancellationToken);
+
+            // Try StateSpan first
+            var activity = await _stateSpanService.GetActivityByIdAsync(id, cancellationToken);
+            if (activity != null)
+                return activity;
+
+            // Try heart rate
+            var heartRate = await _heartRateService.GetHeartRateByIdAsync(id, cancellationToken);
+            if (heartRate != null)
+                return ActivityDecomposer.HeartRateToActivity(heartRate);
+
+            // Try step count
+            var stepCount = await _stepCountService.GetStepCountByIdAsync(id, cancellationToken);
+            if (stepCount != null)
+                return ActivityDecomposer.StepCountToActivity(stepCount);
+
+            return null;
         }
         catch (Exception ex)
         {
@@ -94,31 +158,67 @@ public class ActivityService : IActivityService
             _logger.LogDebug("Creating {Count} activity records", activityList.Count);
 
             // Process documents (sanitization and timestamp conversion)
-            var processedActivities = _documentProcessingService.ProcessDocuments(
-                activityList
-            );
+            var processedActivities = _documentProcessingService.ProcessDocuments(activityList);
             var processedList = processedActivities.ToList();
 
-            // Create via StateSpanService (stored as StateSpans)
-            var createdActivities = await _stateSpanService.CreateActivitiesAsync(
-                processedList,
-                cancellationToken
-            );
-            var resultList = createdActivities.ToList();
+            // Separate sensor data (heart rate, step count) from regular activities
+            var regularActivities = new List<Activity>();
+            var sensorDataActivities = new List<Activity>();
 
-            // Broadcast WebSocket event for storage create
-            await _signalRBroadcastService.BroadcastStorageCreateAsync(
-                "activity",
-                new
+            foreach (var activity in processedList)
+            {
+                if (_activityDecomposer.IsSensorData(activity))
+                    sensorDataActivities.Add(activity);
+                else
+                    regularActivities.Add(activity);
+            }
+
+            var results = new List<Activity>();
+
+            // Process sensor data through decomposer (NOT stored as StateSpans)
+            foreach (var sensorActivity in sensorDataActivities)
+            {
+                try
                 {
-                    collection = "activity",
-                    data = resultList,
-                    count = resultList.Count,
+                    await _activityDecomposer.DecomposeAsync(sensorActivity, cancellationToken);
+                    results.Add(sensorActivity);
                 }
-            );
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Failed to decompose sensor data activity {Id}",
+                        sensorActivity.Id
+                    );
+                }
+            }
 
-            _logger.LogDebug("Successfully created {Count} activity records", resultList.Count);
-            return resultList;
+            // Process regular activities through existing StateSpan path
+            if (regularActivities.Count > 0)
+            {
+                var createdActivities = await _stateSpanService.CreateActivitiesAsync(
+                    regularActivities,
+                    cancellationToken
+                );
+                results.AddRange(createdActivities);
+            }
+
+            // Broadcast WebSocket event for all created activities
+            if (results.Count > 0)
+            {
+                await _signalRBroadcastService.BroadcastStorageCreateAsync(
+                    "activity",
+                    new { collection = "activity", data = results, count = results.Count }
+                );
+            }
+
+            _logger.LogDebug(
+                "Successfully created {Count} activity records ({SensorCount} sensor, {RegularCount} regular)",
+                results.Count,
+                sensorDataActivities.Count,
+                regularActivities.Count
+            );
+            return results;
         }
         catch (Exception ex)
         {
@@ -146,15 +246,9 @@ public class ActivityService : IActivityService
 
             if (updatedActivity != null)
             {
-                // Broadcast WebSocket event for storage update
                 await _signalRBroadcastService.BroadcastStorageUpdateAsync(
                     "activity",
-                    new
-                    {
-                        collection = "activity",
-                        data = updatedActivity,
-                        id = id,
-                    }
+                    new { collection = "activity", data = updatedActivity, id = id }
                 );
 
                 _logger.LogDebug("Successfully updated activity record with ID: {Id}", id);
@@ -179,11 +273,24 @@ public class ActivityService : IActivityService
         {
             _logger.LogDebug("Deleting activity record with ID: {Id}", id);
 
+            // Attempt to delete decomposed records (heart rate / step count)
+            try
+            {
+                await _activityDecomposer.DeleteByLegacyIdAsync(id, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to delete decomposed records for legacy activity {Id}",
+                    id
+                );
+            }
+
             var deleted = await _stateSpanService.DeleteActivityAsync(id, cancellationToken);
 
             if (deleted)
             {
-                // Broadcast WebSocket event for storage delete
                 await _signalRBroadcastService.BroadcastStorageDeleteAsync(
                     "activity",
                     new { collection = "activity", id = id }

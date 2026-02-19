@@ -15839,13 +15839,12 @@
         "tags": [
           "Activity"
         ],
-        "summary": "Get all activities with optional filtering and pagination",
+        "summary": "Get all activities with optional filtering and pagination.\nReturns regular activities, heart rate, and step count data merged by timestamp.",
         "operationId": "Activity_GetActivities",
         "parameters": [
           {
             "name": "count",
             "in": "query",
-            "description": "Maximum number of activities to return (default: 10)",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -15856,7 +15855,6 @@
           {
             "name": "skip",
             "in": "query",
-            "description": "Number of activities to skip for pagination (default: 0)",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -15867,7 +15865,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Activities retrieved successfully",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -15880,7 +15878,7 @@
             }
           },
           "500": {
-            "description": "Internal server error"
+            "description": ""
           }
         }
       },
@@ -15888,11 +15886,10 @@
         "tags": [
           "Activity"
         ],
-        "summary": "Create one or more new activities",
+        "summary": "Create one or more new activities.\nHeart rate and step count data is automatically routed to dedicated tables.",
         "operationId": "Activity_CreateActivities",
         "requestBody": {
           "x-name": "activities",
-          "description": "Activity data (single object or array)",
           "content": {
             "application/json": {
               "schema": {}
@@ -15903,7 +15900,7 @@
         },
         "responses": {
           "200": {
-            "description": "Activities created successfully (Nightscout compatibility)",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -15916,7 +15913,7 @@
             }
           },
           "400": {
-            "description": "Invalid activity data",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -15926,7 +15923,7 @@
             }
           },
           "500": {
-            "description": "Internal server error"
+            "description": ""
           }
         }
       }
@@ -15936,14 +15933,13 @@
         "tags": [
           "Activity"
         ],
-        "summary": "Get a specific activity by ID",
+        "summary": "Get a specific activity by ID (checks StateSpans, heart_rates, and step_counts)",
         "operationId": "Activity_GetActivity",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Activity ID",
             "schema": {
               "type": "string"
             },
@@ -15952,7 +15948,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Activity found and returned",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -15962,7 +15958,7 @@
             }
           },
           "404": {
-            "description": "Activity not found",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -15972,7 +15968,7 @@
             }
           },
           "500": {
-            "description": "Internal server error"
+            "description": ""
           }
         }
       },
@@ -15987,7 +15983,6 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Activity ID to update",
             "schema": {
               "type": "string"
             },
@@ -15996,7 +15991,6 @@
         ],
         "requestBody": {
           "x-name": "activity",
-          "description": "Updated activity data",
           "content": {
             "application/json": {
               "schema": {
@@ -16009,7 +16003,7 @@
         },
         "responses": {
           "200": {
-            "description": "Activity updated successfully",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -16019,7 +16013,7 @@
             }
           },
           "400": {
-            "description": "Invalid activity data",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -16029,7 +16023,7 @@
             }
           },
           "404": {
-            "description": "Activity not found",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -16039,7 +16033,7 @@
             }
           },
           "500": {
-            "description": "Internal server error"
+            "description": ""
           }
         }
       },
@@ -16047,14 +16041,13 @@
         "tags": [
           "Activity"
         ],
-        "summary": "Delete an activity by ID",
+        "summary": "Delete an activity by ID (also deletes any decomposed heart rate / step count records)",
         "operationId": "Activity_DeleteActivity",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Activity ID to delete",
             "schema": {
               "type": "string"
             },
@@ -16063,7 +16056,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Activity deleted successfully",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {}
@@ -16071,7 +16064,7 @@
             }
           },
           "404": {
-            "description": "Activity not found",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -16081,7 +16074,7 @@
             }
           },
           "500": {
-            "description": "Internal server error"
+            "description": ""
           }
         }
       }
