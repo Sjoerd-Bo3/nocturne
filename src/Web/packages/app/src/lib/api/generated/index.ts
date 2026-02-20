@@ -11,6 +11,7 @@ export * from './batteries.generated.remote';
 export * from './chartDatas.generated.remote';
 export * from './clockFaces.generated.remote';
 export { getSuggestion, deleteSuggestion, acceptSuggestion, dismissSuggestion, triggerDetection } from './compressionLows.generated.remote';
+export * from './dataOverviews.generated.remote';
 export * from './deduplications.generated.remote';
 export * from './deviceStatus.generated.remote';
 export * from './foods.generated.remote';

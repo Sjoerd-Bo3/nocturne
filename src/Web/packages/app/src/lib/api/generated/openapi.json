@@ -3976,6 +3976,90 @@
         }
       }
     },
+    "/api/v4/data-overview/years": {
+      "get": {
+        "tags": [
+          "V4 Data Overview"
+        ],
+        "summary": "Get the list of years that contain data and available data sources",
+        "operationId": "DataOverview_GetAvailableYears",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataOverviewYearsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "query",
+        "x-client-property": "dataOverview"
+      }
+    },
+    "/api/v4/data-overview/daily-summary": {
+      "get": {
+        "tags": [
+          "V4 Data Overview"
+        ],
+        "summary": "Get day-level aggregated counts and average glucose for a given year",
+        "operationId": "DataOverview_GetDailySummary",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "description": "The year to aggregate",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "dataSource",
+            "in": "query",
+            "description": "Optional data source filter",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailySummaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "query",
+        "x-client-property": "dataOverview"
+      }
+    },
     "/api/v4/debug/echo/{echo}": {
       "get": {
         "tags": [
@@ -28386,6 +28470,70 @@
           "unit": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "DataOverviewYearsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "years": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "availableDataSources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "DailySummaryResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailySummaryDay"
+            }
+          }
+        }
+      },
+      "DailySummaryDay": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "averageGlucoseMgdl": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            }
           }
         }
       },

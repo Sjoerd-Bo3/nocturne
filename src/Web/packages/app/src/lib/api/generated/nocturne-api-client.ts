@@ -4876,6 +4876,113 @@ export class CorrelationClient {
     }
 }
 
+export class DataOverviewClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Get the list of years that contain data and available data sources
+     */
+    getAvailableYears(signal?: AbortSignal): Promise<DataOverviewYearsResponse> {
+        let url_ = this.baseUrl + "/api/v4/data-overview/years";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAvailableYears(_response);
+        });
+    }
+
+    protected processGetAvailableYears(response: Response): Promise<DataOverviewYearsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DataOverviewYearsResponse;
+            return result200;
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<DataOverviewYearsResponse>(null as any);
+    }
+
+    /**
+     * Get day-level aggregated counts and average glucose for a given year
+     * @param year (optional) The year to aggregate
+     * @param dataSource (optional) Optional data source filter
+     */
+    getDailySummary(year?: number | undefined, dataSource?: string | null | undefined, signal?: AbortSignal): Promise<DailySummaryResponse> {
+        let url_ = this.baseUrl + "/api/v4/data-overview/daily-summary?";
+        if (year === null)
+            throw new globalThis.Error("The parameter 'year' cannot be null.");
+        else if (year !== undefined)
+            url_ += "year=" + encodeURIComponent("" + year) + "&";
+        if (dataSource !== undefined && dataSource !== null)
+            url_ += "dataSource=" + encodeURIComponent("" + dataSource) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetDailySummary(_response);
+        });
+    }
+
+    protected processGetDailySummary(response: Response): Promise<DailySummaryResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DailySummaryResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<DailySummaryResponse>(null as any);
+    }
+}
+
 export class DebugClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -25369,6 +25476,24 @@ export interface ConnectorFoodImport {
     energy?: number;
     portion?: number;
     unit?: string | undefined;
+}
+
+export interface DataOverviewYearsResponse {
+    years?: number[];
+    availableDataSources?: string[];
+}
+
+export interface DailySummaryResponse {
+    year?: number;
+    dataSource?: string | undefined;
+    days?: DailySummaryDay[];
+}
+
+export interface DailySummaryDay {
+    date?: string;
+    averageGlucoseMgdl?: number | undefined;
+    totalCount?: number;
+    counts?: { [key: string]: number; };
 }
 
 export interface InAppNotificationDto {
