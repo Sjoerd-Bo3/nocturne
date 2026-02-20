@@ -51,19 +51,16 @@ public class SessionCookieHandler : IAuthHandler
         // Skip if neither OIDC nor LocalIdentity is enabled
         if (!_options.Enabled && !_localIdentityOptions.Enabled)
         {
-            _logger.LogInformation("[SessionCookieHandler] Both OIDC and LocalIdentity are disabled, skipping");
+            _logger.LogInformation(
+                "[SessionCookieHandler] Both OIDC and LocalIdentity are disabled, skipping"
+            );
             return AuthResult.Skip();
         }
 
         // Check for access token in session cookie
         var accessToken = context.Request.Cookies[_options.Cookie.AccessTokenName];
-        _logger.LogInformation("[SessionCookieHandler] Looking for cookie '{CookieName}': {Found}",
-            _options.Cookie.AccessTokenName,
-            !string.IsNullOrEmpty(accessToken) ? "Found (" + accessToken.Length + " chars)" : "NOT FOUND");
-
         // Log all cookies received for debugging
         var allCookies = context.Request.Cookies.Keys;
-        _logger.LogInformation("[SessionCookieHandler] All cookies received: {Cookies}", string.Join(", ", allCookies));
 
         using var scope = _scopeFactory.CreateScope();
 
@@ -76,7 +73,6 @@ public class SessionCookieHandler : IAuthHandler
 
             if (validationResult.IsValid && validationResult.Claims != null)
             {
-
                 return AuthResult.Success(
                     BuildAuthContextFromClaims(validationResult.Claims, accessToken)
                 );
@@ -93,8 +89,10 @@ public class SessionCookieHandler : IAuthHandler
 
             // Only clear cookies if we had an access token but refresh failed
             // This indicates a definitive auth failure, not just "skip to next handler"
-            _logger.LogDebug("Access token validation failed ({Error}) and refresh failed, clearing session cookies",
-                validationResult.ErrorCode);
+            _logger.LogDebug(
+                "Access token validation failed ({Error}) and refresh failed, clearing session cookies",
+                validationResult.ErrorCode
+            );
             ClearSessionCookies(context);
             return AuthResult.Skip();
         }
@@ -110,7 +108,9 @@ public class SessionCookieHandler : IAuthHandler
             }
 
             // Had refresh token but it failed - clear cookies and skip
-            _logger.LogDebug("No access token and refresh token validation failed, clearing session cookies");
+            _logger.LogDebug(
+                "No access token and refresh token validation failed, clearing session cookies"
+            );
             ClearSessionCookies(context);
         }
         // No cookies at all - just skip to next handler without clearing anything
@@ -157,7 +157,6 @@ public class SessionCookieHandler : IAuthHandler
 
             if (validationResult.IsValid && validationResult.Claims != null)
             {
-
                 return AuthResult.Success(
                     BuildAuthContextFromClaims(validationResult.Claims, newTokens.AccessToken)
                 );
@@ -273,9 +272,7 @@ public class SessionCookieHandler : IAuthHandler
     /// <summary>
     /// Map SameSite mode
     /// </summary>
-    private static Microsoft.AspNetCore.Http.SameSiteMode MapSameSiteMode(
-        SameSiteMode mode
-    )
+    private static Microsoft.AspNetCore.Http.SameSiteMode MapSameSiteMode(SameSiteMode mode)
     {
         return mode switch
         {
