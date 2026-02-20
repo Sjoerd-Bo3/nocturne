@@ -380,8 +380,8 @@ public class ConnectorExecutionService(
                     Username = config.MyLifeUsername ?? string.Empty,
                     Password = config.MyLifePassword ?? string.Empty,
                     PatientId = config.MyLifePatientId ?? string.Empty,
-                    EnableGlucoseSync = config.MyLifeEnableGlucoseSync,
-                    EnableManualBgSync = config.MyLifeEnableManualBgSync,
+                    SyncGlucose = config.MyLifeEnableGlucoseSync,
+                    SyncManualBG = config.MyLifeEnableManualBgSync,
                     EnableMealCarbConsolidation = config.MyLifeEnableMealCarbConsolidation,
                     EnableTempBasalConsolidation = config.MyLifeEnableTempBasalConsolidation,
                     TempBasalConsolidationWindowMinutes =

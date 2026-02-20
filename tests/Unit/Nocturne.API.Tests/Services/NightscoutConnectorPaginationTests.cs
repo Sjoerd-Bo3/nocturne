@@ -265,7 +265,6 @@ public class NightscoutConnectorPaginationTests
             Url = "https://nightscout.example.com",
             ApiSecret = "test-secret",
             MaxCount = MaxCount,
-            SyncTreatments = true,
         };
         var service = CreateService(handler, config, withPublisher: true);
 
@@ -273,13 +272,13 @@ public class NightscoutConnectorPaginationTests
         {
             From = BaseTime.AddHours(-2).UtcDateTime,
             To = BaseTime.UtcDateTime,
-            DataTypes = [Nocturne.Connectors.Core.Models.SyncDataType.Treatments],
+            DataTypes = [Nocturne.Connectors.Core.Models.SyncDataType.Boluses],
         };
 
         var result = await service.SyncDataAsync(request, config, CancellationToken.None);
 
         result.Success.Should().BeTrue();
-        result.ItemsSynced[Nocturne.Connectors.Core.Models.SyncDataType.Treatments].Should().Be(5);
+        result.ItemsSynced[Nocturne.Connectors.Core.Models.SyncDataType.Boluses].Should().Be(5);
     }
 
     [Fact]
@@ -303,7 +302,6 @@ public class NightscoutConnectorPaginationTests
             Url = "https://nightscout.example.com",
             ApiSecret = "test-secret",
             MaxCount = MaxCount,
-            SyncTreatments = true,
         };
         var service = CreateService(handler, config, withPublisher: true);
 
@@ -311,13 +309,13 @@ public class NightscoutConnectorPaginationTests
         {
             From = BaseTime.AddHours(-6).UtcDateTime,
             To = BaseTime.UtcDateTime,
-            DataTypes = [Nocturne.Connectors.Core.Models.SyncDataType.Treatments],
+            DataTypes = [Nocturne.Connectors.Core.Models.SyncDataType.Boluses],
         };
 
         var result = await service.SyncDataAsync(request, config, CancellationToken.None);
 
         result.Success.Should().BeTrue();
-        result.ItemsSynced[Nocturne.Connectors.Core.Models.SyncDataType.Treatments]
+        result.ItemsSynced[Nocturne.Connectors.Core.Models.SyncDataType.Boluses]
             .Should().Be(MaxCount + 4,
                 "pagination must retrieve treatments across all pages");
     }

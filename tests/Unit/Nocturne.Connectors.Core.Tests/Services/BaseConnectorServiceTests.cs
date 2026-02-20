@@ -36,6 +36,8 @@ public class BaseConnectorServiceTests
         public int MaxRetryAttempts { get; set; } = 3;
 
         public void Validate() { }
+        public bool IsDataTypeEnabled(SyncDataType type) => true;
+        public List<SyncDataType> GetEnabledDataTypes(List<SyncDataType> supportedTypes) => supportedTypes;
     }
 
     [Fact]
