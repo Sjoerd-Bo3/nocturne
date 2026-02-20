@@ -670,46 +670,72 @@ public class DataSourceService : IDataSourceService
         var metadata = ConnectorMetadataService.GetByConnectorId(connectorId);
         if (metadata == null)
         {
-            return new ConnectorDataSummary
-            {
-                ConnectorId = connectorId,
-                Entries = 0,
-                Treatments = 0,
-                DeviceStatuses = 0,
-            };
+            return new ConnectorDataSummary { ConnectorId = connectorId };
         }
 
         var deviceId = metadata.DataSourceId;
+        var counts = new Dictionary<string, long>();
 
-        // Count legacy entries + V4 sensor glucose (data may exist in either or both tables)
-        var legacyEntriesCount = await _context
-            .Entries.Where(e => e.DataSource == deviceId)
-            .LongCountAsync(cancellationToken);
+        // V4 tables mapped to SyncDataType keys
         var sensorGlucoseCount = await _context
             .SensorGlucose.Where(sg => sg.DataSource == deviceId)
             .LongCountAsync(cancellationToken);
-
-        // Count legacy treatments + V4 treatment-derived tables
-        var legacyTreatmentsCount = await _context
-            .Treatments.Where(t => t.DataSource == deviceId)
+        var legacyEntriesCount = await _context
+            .Entries.Where(e => e.DataSource == deviceId)
             .LongCountAsync(cancellationToken);
+        var glucoseTotal = sensorGlucoseCount + legacyEntriesCount;
+        if (glucoseTotal > 0) counts["Glucose"] = glucoseTotal;
+
+        var meterGlucoseCount = await _context
+            .MeterGlucose.Where(mg => mg.DataSource == deviceId)
+            .LongCountAsync(cancellationToken);
+        if (meterGlucoseCount > 0) counts["ManualBG"] = meterGlucoseCount;
+
         var bolusCount = await _context
             .Boluses.Where(b => b.DataSource == deviceId)
             .LongCountAsync(cancellationToken);
+        if (bolusCount > 0) counts["Boluses"] = bolusCount;
+
         var carbIntakeCount = await _context
             .CarbIntakes.Where(c => c.DataSource == deviceId)
             .LongCountAsync(cancellationToken);
+        if (carbIntakeCount > 0) counts["CarbIntake"] = carbIntakeCount;
+
+        var bolusCalcCount = await _context
+            .BolusCalculations.Where(bc => bc.DataSource == deviceId)
+            .LongCountAsync(cancellationToken);
+        if (bolusCalcCount > 0) counts["BolusCalculations"] = bolusCalcCount;
+
+        var notesCount = await _context
+            .Notes.Where(n => n.DataSource == deviceId)
+            .LongCountAsync(cancellationToken);
+        if (notesCount > 0) counts["Notes"] = notesCount;
+
+        var deviceEventsCount = await _context
+            .DeviceEvents.Where(de => de.DataSource == deviceId)
+            .LongCountAsync(cancellationToken);
+        if (deviceEventsCount > 0) counts["DeviceEvents"] = deviceEventsCount;
+
+        var stateSpansCount = await _context
+            .StateSpans.Where(s => s.Source == deviceId)
+            .LongCountAsync(cancellationToken);
+        if (stateSpansCount > 0) counts["StateSpans"] = stateSpansCount;
 
         var deviceStatusCount = await _context
             .DeviceStatuses.Where(ds => ds.Device == deviceId)
             .LongCountAsync(cancellationToken);
+        if (deviceStatusCount > 0) counts["DeviceStatus"] = deviceStatusCount;
+
+        // Legacy treatments that haven't been migrated to V4 tables
+        var legacyTreatmentsCount = await _context
+            .Treatments.Where(t => t.DataSource == deviceId)
+            .LongCountAsync(cancellationToken);
+        if (legacyTreatmentsCount > 0) counts["Treatments"] = legacyTreatmentsCount;
 
         return new ConnectorDataSummary
         {
             ConnectorId = connectorId,
-            Entries = legacyEntriesCount + sensorGlucoseCount,
-            Treatments = legacyTreatmentsCount + bolusCount + carbIntakeCount,
-            DeviceStatuses = deviceStatusCount,
+            RecordCounts = counts,
         };
     }
 
@@ -785,28 +811,32 @@ public class DataSourceService : IDataSourceService
                 .DeviceStatuses.Where(ds => ds.Device == deviceId)
                 .ExecuteDeleteAsync(cancellationToken);
 
-            var totalEntriesDeleted = legacyEntriesDeleted + sensorGlucoseDeleted
-                + meterGlucoseDeleted + calibrationsDeleted;
-            var totalTreatmentsDeleted = legacyTreatmentsDeleted + bolusesDeleted
-                + carbIntakesDeleted + bgChecksDeleted + notesDeleted
-                + deviceEventsDeleted + bolusCalcsDeleted;
+            // Build per-type deletion counts
+            var deletedCounts = new Dictionary<string, long>();
+            var glucoseDeleted = (long)legacyEntriesDeleted + sensorGlucoseDeleted + calibrationsDeleted;
+            if (glucoseDeleted > 0) deletedCounts["Glucose"] = glucoseDeleted;
+            if (meterGlucoseDeleted > 0) deletedCounts["ManualBG"] = meterGlucoseDeleted;
+            if (bolusesDeleted > 0) deletedCounts["Boluses"] = bolusesDeleted;
+            if (carbIntakesDeleted > 0) deletedCounts["CarbIntake"] = carbIntakesDeleted;
+            if (bolusCalcsDeleted > 0) deletedCounts["BolusCalculations"] = bolusCalcsDeleted;
+            if (bgChecksDeleted > 0) deletedCounts["ManualBG"] = deletedCounts.GetValueOrDefault("ManualBG") + bgChecksDeleted;
+            if (notesDeleted > 0) deletedCounts["Notes"] = notesDeleted;
+            if (deviceEventsDeleted > 0) deletedCounts["DeviceEvents"] = deviceEventsDeleted;
+            if (legacyTreatmentsDeleted > 0) deletedCounts["Treatments"] = legacyTreatmentsDeleted;
+            if (deviceStatusDeleted > 0) deletedCounts["DeviceStatus"] = deviceStatusDeleted;
 
             _logger.LogInformation(
-                "Deleted data for connector {ConnectorId} (device {DeviceId}): {EntriesDeleted} entries, {TreatmentsDeleted} treatments, {DeviceStatusDeleted} device status records",
+                "Deleted data for connector {ConnectorId} (device {DeviceId}): {DeletedCounts}",
                 connectorId,
                 deviceId,
-                totalEntriesDeleted,
-                totalTreatmentsDeleted,
-                deviceStatusDeleted
+                string.Join(", ", deletedCounts.Select(kv => $"{kv.Value} {kv.Key}"))
             );
 
             return new DataSourceDeleteResult
             {
                 Success = true,
                 DataSource = deviceId,
-                EntriesDeleted = totalEntriesDeleted,
-                TreatmentsDeleted = totalTreatmentsDeleted,
-                DeviceStatusDeleted = deviceStatusDeleted,
+                DeletedCounts = deletedCounts,
             };
         }
         catch (Exception ex)
@@ -876,17 +906,49 @@ public class DataSourceService : IDataSourceService
                 };
             }
 
-            // Determine the filter to use - prefer device ID for entries
+            // The deviceId is the raw Device field value from entries (e.g. "dexcom-connector",
+            // "xDrip-DexcomG6 Samsung Galaxy S21"). For connectors this also matches DataSource.
+            // For uploaders, Device is set by the client app and DataSource may differ.
+            // We match on both Device and DataSource to cover both cases.
             var deviceId = source.DeviceId;
 
-            // Delete entries by device
+            // Delete legacy entries matching Device OR DataSource
             var entriesDeleted = await _context
-                .Entries.Where(e => e.Device == deviceId)
+                .Entries.Where(e => e.Device == deviceId || e.DataSource == deviceId)
                 .ExecuteDeleteAsync(cancellationToken);
 
-            // Delete treatments by device (enteredBy field)
+            // Delete legacy treatments matching EnteredBy (uploaders) OR DataSource (connectors)
             var treatmentsDeleted = await _context
-                .Treatments.Where(t => t.EnteredBy == deviceId)
+                .Treatments.Where(t => t.EnteredBy == deviceId || t.DataSource == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            // Delete V4 tables by DataSource
+            var sensorGlucoseDeleted = await _context
+                .SensorGlucose.Where(sg => sg.DataSource == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+            var meterGlucoseDeleted = await _context
+                .MeterGlucose.Where(mg => mg.DataSource == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+            var calibrationsDeleted = await _context
+                .Calibrations.Where(c => c.DataSource == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+            var bolusesDeleted = await _context
+                .Boluses.Where(b => b.DataSource == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+            var carbIntakesDeleted = await _context
+                .CarbIntakes.Where(c => c.DataSource == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+            var bgChecksDeleted = await _context
+                .BGChecks.Where(b => b.DataSource == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+            var notesDeleted = await _context
+                .Notes.Where(n => n.DataSource == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+            var deviceEventsDeleted = await _context
+                .DeviceEvents.Where(de => de.DataSource == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+            var bolusCalcsDeleted = await _context
+                .BolusCalculations.Where(bc => bc.DataSource == deviceId)
                 .ExecuteDeleteAsync(cancellationToken);
 
             // Delete device status by device
@@ -894,21 +956,30 @@ public class DataSourceService : IDataSourceService
                 .DeviceStatuses.Where(ds => ds.Device == deviceId)
                 .ExecuteDeleteAsync(cancellationToken);
 
+            var deletedCounts = new Dictionary<string, long>();
+            var glucoseDeleted = (long)entriesDeleted + sensorGlucoseDeleted + calibrationsDeleted;
+            if (glucoseDeleted > 0) deletedCounts["Glucose"] = glucoseDeleted;
+            if (meterGlucoseDeleted > 0) deletedCounts["ManualBG"] = meterGlucoseDeleted;
+            if (treatmentsDeleted > 0) deletedCounts["Treatments"] = treatmentsDeleted;
+            if (bolusesDeleted > 0) deletedCounts["Boluses"] = bolusesDeleted;
+            if (carbIntakesDeleted > 0) deletedCounts["CarbIntake"] = carbIntakesDeleted;
+            if (bgChecksDeleted > 0) deletedCounts["ManualBG"] = deletedCounts.GetValueOrDefault("ManualBG") + bgChecksDeleted;
+            if (notesDeleted > 0) deletedCounts["Notes"] = notesDeleted;
+            if (deviceEventsDeleted > 0) deletedCounts["DeviceEvents"] = deviceEventsDeleted;
+            if (bolusCalcsDeleted > 0) deletedCounts["BolusCalculations"] = bolusCalcsDeleted;
+            if (deviceStatusDeleted > 0) deletedCounts["DeviceStatus"] = deviceStatusDeleted;
+
             _logger.LogInformation(
-                "Deleted data for {DeviceId}: {EntriesDeleted} entries, {TreatmentsDeleted} treatments, {DeviceStatusDeleted} device status records",
+                "Deleted data for {DeviceId}: {DeletedCounts}",
                 deviceId,
-                entriesDeleted,
-                treatmentsDeleted,
-                deviceStatusDeleted
+                string.Join(", ", deletedCounts.Select(kv => $"{kv.Value} {kv.Key}"))
             );
 
             return new DataSourceDeleteResult
             {
                 Success = true,
                 DataSource = deviceId,
-                EntriesDeleted = entriesDeleted,
-                TreatmentsDeleted = treatmentsDeleted,
-                DeviceStatusDeleted = deviceStatusDeleted,
+                DeletedCounts = deletedCounts,
             };
         }
         catch (Exception ex)
@@ -953,20 +1024,21 @@ public class DataSourceService : IDataSourceService
                 .DeviceStatuses.Where(ds => ds.Device == DataSources.DemoService)
                 .ExecuteDeleteAsync(cancellationToken);
 
+            var deletedCounts = new Dictionary<string, long>();
+            if (entriesDeleted > 0) deletedCounts["Entries"] = entriesDeleted;
+            if (treatmentsDeleted > 0) deletedCounts["Treatments"] = treatmentsDeleted;
+            if (deviceStatusDeleted > 0) deletedCounts["DeviceStatus"] = deviceStatusDeleted;
+
             _logger.LogInformation(
-                "Deleted demo data: {EntriesDeleted} entries, {TreatmentsDeleted} treatments, {DeviceStatusDeleted} device status records",
-                entriesDeleted,
-                treatmentsDeleted,
-                deviceStatusDeleted
+                "Deleted demo data: {DeletedCounts}",
+                string.Join(", ", deletedCounts.Select(kv => $"{kv.Value} {kv.Key}"))
             );
 
             return new DataSourceDeleteResult
             {
                 Success = true,
                 DataSource = DataSources.DemoService,
-                EntriesDeleted = entriesDeleted,
-                TreatmentsDeleted = treatmentsDeleted,
-                DeviceStatusDeleted = deviceStatusDeleted,
+                DeletedCounts = deletedCounts,
             };
         }
         catch (Exception ex)

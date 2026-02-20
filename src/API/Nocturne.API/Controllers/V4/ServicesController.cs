@@ -265,7 +265,7 @@ public class ServicesController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Result of the delete operation</returns>
     [HttpDelete("data-sources/demo")]
-    [RemoteCommand(Invalidates = ["GetServicesOverview", "GetActiveDataSources"])]
+    [RemoteCommand(Invalidates = ["GetServicesOverview", "GetActiveDataSources", "GetStatus"])]
     [ProducesResponseType(typeof(DataSourceDeleteResult), 200)]
     [ProducesResponseType(500)]
     public async Task<ActionResult<DataSourceDeleteResult>> DeleteDemoData(
@@ -298,7 +298,7 @@ public class ServicesController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Result of the delete operation</returns>
     [HttpDelete("data-sources/{id}")]
-    [RemoteCommand(Invalidates = ["GetServicesOverview", "GetActiveDataSources"])]
+    [RemoteCommand(Invalidates = ["GetServicesOverview", "GetActiveDataSources", "GetStatus"])]
     [ProducesResponseType(typeof(DataSourceDeleteResult), 200)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
@@ -370,7 +370,7 @@ public class ServicesController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Result of the delete operation</returns>
     [HttpDelete("connectors/{id}/data")]
-    [RemoteCommand(Invalidates = ["GetServicesOverview", "GetActiveDataSources"])]
+    [RemoteCommand(Invalidates = ["GetServicesOverview", "GetActiveDataSources", "GetStatus", "GetConnectorDataSummary"])]
     [ProducesResponseType(typeof(DataSourceDeleteResult), 200)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]

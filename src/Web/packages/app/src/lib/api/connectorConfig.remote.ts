@@ -234,24 +234,3 @@ export const deleteConnectorConfiguration = command(z.string(), async (connector
 	}
 });
 
-/**
- * Get data summary for a connector (counts of entries, treatments, device statuses)
- */
-export const getConnectorDataSummary = query(z.string(), async (connectorName) => {
-	const { locals } = getRequestEvent();
-	const { apiClient } = locals;
-
-	try {
-		return await apiClient.services.getConnectorDataSummary(connectorName);
-	} catch (err) {
-		console.error('Error getting connector data summary:', err);
-		// Return empty summary on error
-		return {
-			connectorId: connectorName,
-			entries: 0,
-			treatments: 0,
-			deviceStatuses: 0,
-			total: 0,
-		};
-	}
-});

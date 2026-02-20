@@ -207,6 +207,12 @@ public class GlookoV3BasalDataPoint : GlookoV3DataPointBase
     public int? Duration { get; set; }
 
     [JsonPropertyName("label")] public string? Label { get; set; }
+
+    /// <summary>
+    ///     Whether this is an interpolated graph point (not a real event)
+    /// </summary>
+    [JsonPropertyName("interpolated")]
+    public bool Interpolated { get; set; }
 }
 
 /// <summary>

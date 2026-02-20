@@ -11831,7 +11831,8 @@
         "x-remote-type": "command",
         "x-remote-invalidates": [
           "GetServicesOverview",
-          "GetActiveDataSources"
+          "GetActiveDataSources",
+          "GetStatus"
         ]
       }
     },
@@ -12020,7 +12021,8 @@
         "x-remote-type": "command",
         "x-remote-invalidates": [
           "GetServicesOverview",
-          "GetActiveDataSources"
+          "GetActiveDataSources",
+          "GetStatus"
         ]
       }
     },
@@ -12108,7 +12110,9 @@
         "x-remote-type": "command",
         "x-remote-invalidates": [
           "GetServicesOverview",
-          "GetActiveDataSources"
+          "GetActiveDataSources",
+          "GetStatus",
+          "GetConnectorDataSummary"
         ]
       }
     },
@@ -32485,15 +32489,14 @@
           "success": {
             "type": "boolean"
           },
-          "entriesDeleted": {
-            "type": "integer",
-            "format": "int64"
+          "deletedCounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            }
           },
-          "treatmentsDeleted": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "deviceStatusDeleted": {
+          "totalDeleted": {
             "type": "integer",
             "format": "int64"
           },
@@ -32513,17 +32516,12 @@
           "connectorId": {
             "type": "string"
           },
-          "entries": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "treatments": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "deviceStatuses": {
-            "type": "integer",
-            "format": "int64"
+          "recordCounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            }
           },
           "total": {
             "type": "integer",

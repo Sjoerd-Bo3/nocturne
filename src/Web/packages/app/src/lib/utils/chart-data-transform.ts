@@ -1,11 +1,11 @@
 import type { DashboardChartData } from '$lib/api/generated/nocturne-api-client';
 import { resolveChartColor, getGlucoseColor } from '$lib/utils/chart-colors';
-import { bg } from '$lib/utils/formatting';
 
 /**
  * Transform raw NSwag DashboardChartData into the shape consumed by chart components.
- * Converts mills timestamps to Date objects, resolves chart colors to CSS variables,
- * and applies unit conversion via bg().
+ * Converts mills timestamps to Date objects and resolves chart colors to CSS variables.
+ * Glucose values are kept in mg/dL — unit conversion to mmol/L is applied at the
+ * display layer (Y-axis labels, tooltips) via bg() on the client.
  *
  * This is the single source of truth for API → chart component transformation.
  * Used by both the remote function (client-side fetch) and SSR page load.
@@ -46,7 +46,7 @@ export function transformChartData(data: DashboardChartData) {
 
 		glucoseData: (data.glucoseData ?? []).map((p) => ({
 			time: new Date(p.time ?? 0),
-			sgv: Number(bg(p.sgv ?? 0)),
+			sgv: p.sgv ?? 0,
 			direction: p.direction,
 			color: getGlucoseColor(p.sgv ?? 0, {
 				low: data.thresholds?.low ?? 55,
@@ -56,11 +56,11 @@ export function transformChartData(data: DashboardChartData) {
 			}),
 		})),
 		thresholds: {
-			low: Number(bg(data.thresholds?.low ?? 55)),
-			high: Number(bg(data.thresholds?.high ?? 180)),
-			veryLow: Number(bg(data.thresholds?.veryLow ?? 54)),
-			veryHigh: Number(bg(data.thresholds?.veryHigh ?? 250)),
-			glucoseYMax: Number(bg(data.thresholds?.glucoseYMax ?? 300)),
+			low: data.thresholds?.low ?? 55,
+			high: data.thresholds?.high ?? 180,
+			veryLow: data.thresholds?.veryLow ?? 54,
+			veryHigh: data.thresholds?.veryHigh ?? 250,
+			glucoseYMax: data.thresholds?.glucoseYMax ?? 300,
 		},
 
 		bolusMarkers: (data.bolusMarkers ?? []).map((m) => ({

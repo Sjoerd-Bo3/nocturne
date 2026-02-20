@@ -11,14 +11,15 @@
     saveConnectorSecrets,
     setConnectorActive,
     deleteConnectorConfiguration,
-    getConnectorDataSummary,
     type JsonSchema,
   } from "$api/connectorConfig.remote";
-  import { deleteConnectorData } from "$api/services.remote";
   import {
     getServicesOverview,
     getConnectorCapabilities,
+    getConnectorDataSummary,
+    deleteConnectorData,
   } from "$api/generated/services.generated.remote";
+  import { getDataTypeLabel } from "$lib/utils/data-type-labels";
   import type {
     AvailableConnector,
     ConnectorConfigurationResponse,
@@ -78,10 +79,8 @@
   // Delete Data dialog state
   let showDeleteDataDialog = $state(false);
   let deleteDataResult = $state<{
-    success: boolean;
-    entriesDeleted?: number;
-    treatmentsDeleted?: number;
-    deviceStatusDeleted?: number;
+    success?: boolean;
+    deletedCounts?: { [key: string]: number };
     totalDeleted?: number;
     error?: string;
   } | null>(null);
@@ -554,14 +553,15 @@
               <p class="text-sm text-muted-foreground">
                 Permanently delete all data synced by this connector.
               </p>
-              {#if dataSummary}
-                <div class="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+              {#if dataSummary?.recordCounts && Object.keys(dataSummary.recordCounts).length > 0}
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
                   <span class="flex items-center gap-1">
                     <Database class="h-3 w-3" />
-                    {dataSummary.entries?.toLocaleString() ?? 0} entries
+                    {dataSummary.total?.toLocaleString() ?? 0} total
                   </span>
-                  <span>{dataSummary.treatments?.toLocaleString() ?? 0} treatments</span>
-                  <span>{dataSummary.deviceStatuses?.toLocaleString() ?? 0} device statuses</span>
+                  {#each Object.entries(dataSummary.recordCounts) as [type, count]}
+                    <span>{count?.toLocaleString()} {getDataTypeLabel(type)}</span>
+                  {/each}
                 </div>
               {/if}
             </div>
@@ -637,9 +637,9 @@
       <div class="mt-4 rounded-lg border bg-muted/50 p-4">
         <p class="text-sm font-medium mb-2">Data to be deleted:</p>
         <ul class="text-sm text-muted-foreground space-y-1">
-          <li>{dataSummary.entries?.toLocaleString() ?? 0} glucose entries</li>
-          <li>{dataSummary.treatments?.toLocaleString() ?? 0} treatments</li>
-          <li>{dataSummary.deviceStatuses?.toLocaleString() ?? 0} device status records</li>
+          {#each Object.entries(dataSummary.recordCounts ?? {}) as [type, count]}
+            <li>{count?.toLocaleString()} {getDataTypeLabel(type)}</li>
+          {/each}
         </ul>
         <p class="text-sm font-medium mt-2">
           Total: {dataSummary.total?.toLocaleString() ?? 0} records
@@ -659,9 +659,9 @@
             <span class="font-medium">Data deleted successfully</span>
           </div>
           <ul class="text-sm text-green-700 dark:text-green-300 mt-2 space-y-1">
-            <li>{deleteDataResult.entriesDeleted?.toLocaleString() ?? 0} entries</li>
-            <li>{deleteDataResult.treatmentsDeleted?.toLocaleString() ?? 0} treatments</li>
-            <li>{deleteDataResult.deviceStatusDeleted?.toLocaleString() ?? 0} device statuses</li>
+            {#each Object.entries(deleteDataResult.deletedCounts ?? {}) as [type, count]}
+              <li>{count?.toLocaleString()} {getDataTypeLabel(type)}</li>
+            {/each}
           </ul>
           <p class="text-sm font-medium text-green-700 dark:text-green-300 mt-2">
             Total: {deleteDataResult.totalDeleted?.toLocaleString() ?? 0} records deleted

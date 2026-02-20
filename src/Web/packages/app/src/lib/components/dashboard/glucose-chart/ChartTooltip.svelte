@@ -3,6 +3,7 @@
   import { cn } from "$lib/utils";
   import { goto } from "$app/navigation";
   import { BasalDeliveryOrigin, type BasalPoint } from "$lib/api";
+  import { bg, bgLabel } from "$lib/utils/formatting";
 
   // Local types for tooltip data shapes
   interface TimeSeriesPoint {
@@ -150,8 +151,7 @@
       {#if data?.sgv}
         <Tooltip.Item
           label="Glucose"
-          value={data.sgv}
-          format="integer"
+          value={`${bg(data.sgv)} ${bgLabel()}`}
           color="var(--glucose-in-range)"
           class="text-popover-foreground font-bold"
         />

@@ -26,6 +26,7 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
     private readonly GlookoEntryMapper _entryMapper;
     private readonly IRateLimitingStrategy _rateLimitingStrategy;
     private readonly IRetryDelayStrategy _retryDelayStrategy;
+    private readonly GlookoProfileMapper _profileMapper;
     private readonly GlookoStateSpanMapper _stateSpanMapper;
     private readonly GlookoSystemEventMapper _systemEventMapper;
     private readonly GlookoTimeMapper _timeMapper;
@@ -64,6 +65,7 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
         );
         _stateSpanMapper = new GlookoStateSpanMapper(ConnectorSource, _timeMapper, logger);
         _systemEventMapper = new GlookoSystemEventMapper(ConnectorSource, _timeMapper, logger);
+        _profileMapper = new GlookoProfileMapper(ConnectorSource, logger);
     }
 
     public override string ServiceName => "Glooko";
@@ -75,7 +77,8 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
         SyncDataType.Boluses,
         SyncDataType.CarbIntake,
         SyncDataType.StateSpans,
-        SyncDataType.DeviceEvents
+        SyncDataType.DeviceEvents,
+        SyncDataType.Profiles
     ];
 
     public override async Task<bool> AuthenticateAsync()
@@ -383,6 +386,42 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
                 }
             }
 
+            // 3. Process Profiles (from V3 devices_and_settings)
+            if (activeTypes.Contains(SyncDataType.Profiles))
+                try
+                {
+                    var deviceSettings = await FetchV3DeviceSettingsAsync();
+                    if (deviceSettings != null)
+                    {
+                        var profiles = _profileMapper.TransformDeviceSettingsToProfiles(deviceSettings);
+                        if (profiles.Any())
+                        {
+                            var profileSuccess = await PublishProfileDataAsync(
+                                profiles,
+                                config,
+                                cancellationToken
+                            );
+                            if (profileSuccess)
+                            {
+                                result.ItemsSynced[SyncDataType.Profiles] = profiles.Count;
+                                _logger.LogInformation(
+                                    "[{ConnectorSource}] Published {Count} profiles from device settings",
+                                    ConnectorSource,
+                                    profiles.Count
+                                );
+                            }
+                        }
+                    }
+                }
+                catch (Exception profileEx)
+                {
+                    _logger.LogWarning(
+                        profileEx,
+                        "[{ConnectorSource}] Failed to fetch/publish profile data",
+                        ConnectorSource
+                    );
+                }
+
             result.EndTime = DateTime.UtcNow;
             return result;
         }
@@ -624,7 +663,6 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
             request.Headers.TryAddWithoutValidation("Connection", "keep-alive");
             request.Headers.TryAddWithoutValidation("Accept-Language", "en-GB,en;q=0.9");
             request.Headers.TryAddWithoutValidation("Cookie", _tokenProvider.SessionCookie);
-            request.Headers.TryAddWithoutValidation("Host", _config.Server);
             request.Headers.TryAddWithoutValidation("Sec-Fetch-Dest", "empty");
             request.Headers.TryAddWithoutValidation("Sec-Fetch-Mode", "cors");
             request.Headers.TryAddWithoutValidation("Sec-Fetch-Site", "same-site");
@@ -887,6 +925,7 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
             "scheduledBasal",
             "temporaryBasal",
             "suspendBasal",
+            "lgsPlgs",
             "profileChange"
         };
 
@@ -900,6 +939,62 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
                + $"&endDate={endDate:yyyy-MM-ddTHH:mm:ss.fffZ}"
                + $"&{seriesParams}"
                + "&locale=en&insulinTooltips=false&filterBgReadings=false&splitByDay=false";
+    }
+
+    /// <summary>
+    ///     Fetch pump device settings from the v3 devices_and_settings API
+    /// </summary>
+    public async Task<GlookoV3DeviceSettingsResponse?> FetchV3DeviceSettingsAsync()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(_tokenProvider.SessionCookie))
+                throw new InvalidOperationException(
+                    "Not authenticated with Glooko. Call AuthenticateAsync first."
+                );
+
+            if (_tokenProvider.UserData?.UserLogin?.GlookoCode == null)
+            {
+                _logger.LogWarning("Missing Glooko user code, cannot fetch device settings");
+                return null;
+            }
+
+            var patientCode = _tokenProvider.UserData.UserLogin.GlookoCode;
+            var url = $"/api/v3/devices_and_settings?patient={patientCode}";
+
+            _logger.LogInformation(
+                "[{ConnectorSource}] Fetching device settings from v3 API",
+                ConnectorSource
+            );
+
+            var result = await FetchFromGlookoEndpointWithRetry(url);
+            if (result.HasValue)
+            {
+                var settings = JsonSerializer.Deserialize<GlookoV3DeviceSettingsResponse>(
+                    result.Value.GetRawText()
+                );
+
+                var pumpCount = settings?.DeviceSettings?.Pumps?.Count ?? 0;
+                var snapshotCount = settings?.DeviceSettings?.Pumps?.Values
+                    .Sum(p => p.Count) ?? 0;
+
+                _logger.LogInformation(
+                    "[{ConnectorSource}] Fetched device settings: {PumpCount} pumps, {SnapshotCount} settings snapshots",
+                    ConnectorSource,
+                    pumpCount,
+                    snapshotCount
+                );
+
+                return settings;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching Glooko v3 device settings");
+            return null;
+        }
     }
 
     #endregion

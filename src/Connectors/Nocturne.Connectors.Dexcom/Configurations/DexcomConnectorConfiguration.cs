@@ -35,7 +35,7 @@ public class DexcomConnectorConfiguration : BaseConnectorConfiguration
     [ConnectorProperty("Username",
         Required = true,
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "Dexcom account username")]
     public string Username { get; init; } = string.Empty;
 
@@ -53,7 +53,7 @@ public class DexcomConnectorConfiguration : BaseConnectorConfiguration
     /// </summary>
     [ConnectorProperty("Server",
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "Dexcom server (US or EU)",
         DefaultValue = "US",
         AllowedValues = ["US", "EU"])]

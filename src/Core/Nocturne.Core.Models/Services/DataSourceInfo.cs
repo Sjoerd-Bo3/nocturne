@@ -372,7 +372,7 @@ public class ApiEndpointInfo
 }
 
 /// <summary>
-/// Summary of data counts for a connector
+/// Summary of data counts for a connector, broken down by SyncDataType
 /// </summary>
 public class ConnectorDataSummary
 {
@@ -383,28 +383,16 @@ public class ConnectorDataSummary
     public string ConnectorId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Number of glucose entries
+    /// Record counts keyed by data type (e.g., "Glucose", "Boluses", "CarbIntake")
     /// </summary>
-    [JsonPropertyName("entries")]
-    public long Entries { get; set; }
-
-    /// <summary>
-    /// Number of treatments
-    /// </summary>
-    [JsonPropertyName("treatments")]
-    public long Treatments { get; set; }
-
-    /// <summary>
-    /// Number of device status records
-    /// </summary>
-    [JsonPropertyName("deviceStatuses")]
-    public long DeviceStatuses { get; set; }
+    [JsonPropertyName("recordCounts")]
+    public Dictionary<string, long> RecordCounts { get; set; } = new();
 
     /// <summary>
     /// Total count of all records
     /// </summary>
     [JsonPropertyName("total")]
-    public long Total => Entries + Treatments + DeviceStatuses;
+    public long Total => RecordCounts.Values.Sum();
 }
 
 /// <summary>
@@ -419,22 +407,16 @@ public class DataSourceDeleteResult
     public bool Success { get; set; }
 
     /// <summary>
-    /// Number of entries deleted
+    /// Counts of records deleted, keyed by data type (e.g., "Glucose", "Boluses")
     /// </summary>
-    [JsonPropertyName("entriesDeleted")]
-    public long EntriesDeleted { get; set; }
+    [JsonPropertyName("deletedCounts")]
+    public Dictionary<string, long> DeletedCounts { get; set; } = new();
 
     /// <summary>
-    /// Number of treatments deleted
+    /// Total number of records deleted
     /// </summary>
-    [JsonPropertyName("treatmentsDeleted")]
-    public long TreatmentsDeleted { get; set; }
-
-    /// <summary>
-    /// Number of device status records deleted
-    /// </summary>
-    [JsonPropertyName("deviceStatusDeleted")]
-    public long DeviceStatusDeleted { get; set; }
+    [JsonPropertyName("totalDeleted")]
+    public long TotalDeleted => DeletedCounts.Values.Sum();
 
     /// <summary>
     /// The data source that was deleted

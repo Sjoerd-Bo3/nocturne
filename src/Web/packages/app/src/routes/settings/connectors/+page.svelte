@@ -1,15 +1,14 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import {
-    deleteDemoData as deleteDemoDataRemote,
-    deleteDataSourceData as deleteDataSourceDataRemote,
-    getConnectorStatuses,
-  } from "$api/services.remote";
+  import { getConnectorStatuses } from "$api/services.remote";
   import {
     getServicesOverview,
     getUploaderSetup,
     getConnectorCapabilities,
+    deleteDemoData as deleteDemoDataRemote,
+    deleteDataSourceData as deleteDataSourceDataRemote,
   } from "$api/generated/services.generated.remote";
+  import { getDataTypeLabel } from "$lib/utils/data-type-labels";
   import {
     startDeduplicationJob,
     getJobStatus as getDeduplicationJobStatus,
@@ -91,8 +90,8 @@
   let showDemoDataDialog = $state(false);
   let isDeletingDemo = $state(false);
   let demoDeleteResult = $state<{
-    success: boolean;
-    entriesDeleted?: number;
+    success?: boolean;
+    totalDeleted?: number;
     error?: string;
   } | null>(null);
 
@@ -103,8 +102,8 @@
   let isDeletingDataSource = $state(false);
   let deleteConfirmText = $state("");
   let deleteResult = $state<{
-    success: boolean;
-    entriesDeleted?: number;
+    success?: boolean;
+    totalDeleted?: number;
     error?: string;
   } | null>(null);
 
@@ -146,7 +145,6 @@
   let selectedConnectorCapabilities = $state<ConnectorCapabilities | null>(
     null
   );
-  let isLoadingConnectorCapabilities = $state(false);
   let connectorCapabilitiesById = $state<
     Record<string, ConnectorCapabilities | null>
   >({});
@@ -212,14 +210,11 @@
       return;
     }
 
-    isLoadingConnectorCapabilities = true;
     try {
       selectedConnectorCapabilities = await getConnectorCapabilities(connectorId);
     } catch (e) {
       console.error("Failed to load connector capabilities", e);
       selectedConnectorCapabilities = null;
-    } finally {
-      isLoadingConnectorCapabilities = false;
     }
   }
 
@@ -381,7 +376,7 @@
       const result = await deleteDemoDataRemote();
       demoDeleteResult = {
         success: result.success ?? false,
-        entriesDeleted: result.entriesDeleted,
+        totalDeleted: result.totalDeleted,
         error: result.error ?? undefined,
       };
       if (result.success) {
@@ -406,7 +401,7 @@
       const result = await deleteDataSourceDataRemote(selectedDataSource.id!);
       deleteResult = {
         success: result.success ?? false,
-        entriesDeleted: result.entriesDeleted,
+        totalDeleted: result.totalDeleted,
         error: result.error ?? undefined,
       };
       if (result.success) {
@@ -1721,7 +1716,7 @@
               <span class="font-medium">Demo data cleared successfully</span>
             </div>
             <p class="text-sm text-green-700 dark:text-green-300 mt-1">
-              Deleted {demoDeleteResult.entriesDeleted?.toLocaleString() ?? 0} records
+              Deleted {demoDeleteResult.totalDeleted?.toLocaleString() ?? 0} records
             </p>
           </div>
         {:else}
@@ -1922,7 +1917,7 @@
                   <span class="font-medium">Data deleted successfully</span>
                 </div>
                 <p class="text-sm text-green-700 dark:text-green-300 mt-1">
-                  Deleted {deleteResult.entriesDeleted?.toLocaleString() ?? 0} records
+                  Deleted {deleteResult.totalDeleted?.toLocaleString() ?? 0} records
                 </p>
               </div>
             {:else}
@@ -2155,44 +2150,21 @@
           </div>
         {/if}
 
-        {#if isLoadingConnectorCapabilities}
-          <div class="text-xs text-muted-foreground">
-            Loading connector capabilities...
-          </div>
-        {:else if selectedConnectorCapabilities}
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-muted-foreground">
-                Supported data types
-              </span>
-              <div class="flex flex-wrap gap-1 justify-end">
-                {#if selectedConnectorCapabilities.supportedDataTypes &&
-                selectedConnectorCapabilities.supportedDataTypes.length > 0}
-                  {#each selectedConnectorCapabilities.supportedDataTypes as dataType}
-                    <Badge variant="outline" class="text-xs">
-                      {dataType}
-                    </Badge>
-                  {/each}
-                {:else}
-                  <span class="text-xs text-muted-foreground">Unknown</span>
-                {/if}
-              </div>
+        {#if selectedConnectorCapabilities}
+          {#if selectedConnectorCapabilities.supportsHistoricalSync === false}
+            <div
+              class="rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20 p-3 text-xs text-blue-800 dark:text-blue-200"
+            >
+              Historical sync is not supported for this connector.
+              {#if selectedConnectorCapabilities.maxHistoricalDays}
+                Recent data only (last {selectedConnectorCapabilities.maxHistoricalDays} days).
+              {/if}
             </div>
-            {#if selectedConnectorCapabilities.supportsHistoricalSync === false}
-              <div
-                class="rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20 p-3 text-xs text-blue-800 dark:text-blue-200"
-              >
-                Historical sync is not supported for this connector.
-                {#if selectedConnectorCapabilities.maxHistoricalDays}
-                  Recent data only (last {selectedConnectorCapabilities.maxHistoricalDays} days).
-                {/if}
-              </div>
-            {:else if selectedConnectorCapabilities.maxHistoricalDays}
-              <div class="text-xs text-muted-foreground">
-                Historical sync limited to the last {selectedConnectorCapabilities.maxHistoricalDays} days.
-              </div>
-            {/if}
-          </div>
+          {:else if selectedConnectorCapabilities.maxHistoricalDays}
+            <div class="text-xs text-muted-foreground">
+              Historical sync limited to the last {selectedConnectorCapabilities.maxHistoricalDays} days.
+            </div>
+          {/if}
         {/if}
 
         <!-- Notice for disabled or offline connectors -->
@@ -2254,7 +2226,7 @@
                         </div>
                         {#each Object.entries(selectedConnector.totalItemsBreakdown) as [type, count]}
                           <div class="flex justify-between gap-4 text-xs">
-                            <span>{type}</span>
+                            <span>{getDataTypeLabel(type)}</span>
                             <span class="font-mono">
                               {count?.toLocaleString()}
                             </span>
@@ -2294,7 +2266,7 @@
                         </div>
                         {#each Object.entries(selectedConnector.itemsLast24HoursBreakdown) as [type, count]}
                           <div class="flex justify-between gap-4 text-xs">
-                            <span>{type}</span>
+                            <span>{getDataTypeLabel(type)}</span>
                             <span class="font-mono">
                               {count?.toLocaleString()}
                             </span>

@@ -83,25 +83,9 @@ public class ConnectorHealthService(
             dbStats.TotalStateSpans
         );
 
-        // Build breakdown dictionaries
-        var totalBreakdown = new Dictionary<string, long>();
-        var last24HBreakdown = new Dictionary<string, int>();
-
-        if (dbStats.TotalEntries > 0)
-        {
-            totalBreakdown["Entries"] = dbStats.TotalEntries;
-            last24HBreakdown["Entries"] = dbStats.EntriesLast24Hours;
-        }
-        if (dbStats.TotalTreatments > 0)
-        {
-            totalBreakdown["Treatments"] = dbStats.TotalTreatments;
-            last24HBreakdown["Treatments"] = dbStats.TreatmentsLast24Hours;
-        }
-        if (dbStats.TotalStateSpans > 0)
-        {
-            totalBreakdown["StateSpans"] = dbStats.TotalStateSpans;
-            last24HBreakdown["StateSpans"] = dbStats.StateSpansLast24Hours;
-        }
+        // Use per-type breakdown dictionaries from database stats
+        var totalBreakdown = dbStats.TypeBreakdown;
+        var last24HBreakdown = dbStats.TypeBreakdownLast24Hours;
 
         // If explicitly disabled, return disabled status without checking health
         if (enabledConfig == false)

@@ -34,9 +34,8 @@ public class LibreLinkUpConnectorConfiguration : BaseConnectorConfiguration
     /// </summary>
     [ConnectorProperty("Username",
         Required = true,
-        Secret = true,
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "LibreLinkUp account username")]
     public string Username { get; set; } = string.Empty;
 
@@ -54,7 +53,7 @@ public class LibreLinkUpConnectorConfiguration : BaseConnectorConfiguration
     /// </summary>
     [ConnectorProperty("Region",
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "LibreLinkUp region (EU, US, etc.)",
         DefaultValue = "EU",
         AllowedValues = ["EU", "US", "AE", "AP", "AU", "CA", "DE", "FR", "JP"])]

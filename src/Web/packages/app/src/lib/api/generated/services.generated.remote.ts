@@ -196,7 +196,8 @@ export const deleteConnectorData = command(z.string(), async (id) => {
     const result = await apiClient.services.deleteConnectorData(id);
     await Promise.all([
       getServicesOverview(undefined).refresh(),
-      getActiveDataSources(undefined).refresh()
+      getActiveDataSources(undefined).refresh(),
+      getConnectorDataSummary(id).refresh()
     ]);
     return result;
   } catch (err) {

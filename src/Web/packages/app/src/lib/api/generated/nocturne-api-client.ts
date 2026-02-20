@@ -26629,18 +26629,15 @@ export interface UploaderSetupResponse {
 
 export interface DataSourceDeleteResult {
     success?: boolean;
-    entriesDeleted?: number;
-    treatmentsDeleted?: number;
-    deviceStatusDeleted?: number;
+    deletedCounts?: { [key: string]: number; };
+    totalDeleted?: number;
     dataSource?: string;
     error?: string | undefined;
 }
 
 export interface ConnectorDataSummary {
     connectorId?: string;
-    entries?: number;
-    treatments?: number;
-    deviceStatuses?: number;
+    recordCounts?: { [key: string]: number; };
     total?: number;
 }
 

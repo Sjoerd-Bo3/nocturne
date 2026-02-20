@@ -31,7 +31,7 @@ public class MyFitnessPalConnectorConfiguration : BaseConnectorConfiguration
         "Username",
         Required = true,
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "MyFitnessPal username"
     )]
     public string Username { get; set; } = string.Empty;

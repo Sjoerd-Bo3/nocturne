@@ -1391,6 +1391,102 @@ public class PostgreSqlService : IPostgreSqlService
             })
             .FirstOrDefaultAsync(cancellationToken);
 
+        // Query V4 table counts for per-type breakdown
+        var sensorGlucoseTotal = await _context
+            .SensorGlucose.Where(sg => sg.DataSource == dataSource)
+            .LongCountAsync(cancellationToken);
+        var sensorGlucose24h = sensorGlucoseTotal > 0
+            ? await _context
+                .SensorGlucose.Where(sg => sg.DataSource == dataSource && sg.Mills >= oneDayAgo)
+                .CountAsync(cancellationToken)
+            : 0;
+
+        var meterGlucoseTotal = await _context
+            .MeterGlucose.Where(mg => mg.DataSource == dataSource)
+            .LongCountAsync(cancellationToken);
+        var meterGlucose24h = meterGlucoseTotal > 0
+            ? await _context
+                .MeterGlucose.Where(mg => mg.DataSource == dataSource && mg.Mills >= oneDayAgo)
+                .CountAsync(cancellationToken)
+            : 0;
+
+        var bolusesTotal = await _context
+            .Boluses.Where(b => b.DataSource == dataSource)
+            .LongCountAsync(cancellationToken);
+        var boluses24h = bolusesTotal > 0
+            ? await _context
+                .Boluses.Where(b => b.DataSource == dataSource && b.Mills >= oneDayAgo)
+                .CountAsync(cancellationToken)
+            : 0;
+
+        var carbIntakesTotal = await _context
+            .CarbIntakes.Where(c => c.DataSource == dataSource)
+            .LongCountAsync(cancellationToken);
+        var carbIntakes24h = carbIntakesTotal > 0
+            ? await _context
+                .CarbIntakes.Where(c => c.DataSource == dataSource && c.Mills >= oneDayAgo)
+                .CountAsync(cancellationToken)
+            : 0;
+
+        var bolusCalcsTotal = await _context
+            .BolusCalculations.Where(bc => bc.DataSource == dataSource)
+            .LongCountAsync(cancellationToken);
+        var bolusCalcs24h = bolusCalcsTotal > 0
+            ? await _context
+                .BolusCalculations.Where(bc => bc.DataSource == dataSource && bc.Mills >= oneDayAgo)
+                .CountAsync(cancellationToken)
+            : 0;
+
+        var notesTotal = await _context
+            .Notes.Where(n => n.DataSource == dataSource)
+            .LongCountAsync(cancellationToken);
+        var notes24h = notesTotal > 0
+            ? await _context
+                .Notes.Where(n => n.DataSource == dataSource && n.Mills >= oneDayAgo)
+                .CountAsync(cancellationToken)
+            : 0;
+
+        var deviceEventsTotal = await _context
+            .DeviceEvents.Where(de => de.DataSource == dataSource)
+            .LongCountAsync(cancellationToken);
+        var deviceEvents24h = deviceEventsTotal > 0
+            ? await _context
+                .DeviceEvents.Where(de => de.DataSource == dataSource && de.Mills >= oneDayAgo)
+                .CountAsync(cancellationToken)
+            : 0;
+
+        var deviceStatusTotal = await _context
+            .DeviceStatuses.Where(ds => ds.Device == dataSource)
+            .LongCountAsync(cancellationToken);
+        var deviceStatus24h = deviceStatusTotal > 0
+            ? await _context
+                .DeviceStatuses.Where(ds => ds.Device == dataSource && ds.Mills >= oneDayAgo)
+                .CountAsync(cancellationToken)
+            : 0;
+
+        // Build per-type breakdown dictionaries (only include non-zero types)
+        var typeBreakdown = new Dictionary<string, long>();
+        var typeBreakdown24h = new Dictionary<string, int>();
+
+        // Combine legacy entries (sgv) + V4 sensor glucose into Glucose
+        var glucoseTotal = (entryStats?.TotalEntries ?? 0) + sensorGlucoseTotal;
+        var glucose24h = (entryStats?.EntriesLast24Hours ?? 0) + sensorGlucose24h;
+        if (glucoseTotal > 0) { typeBreakdown["Glucose"] = glucoseTotal; typeBreakdown24h["Glucose"] = glucose24h; }
+
+        if (meterGlucoseTotal > 0) { typeBreakdown["ManualBG"] = meterGlucoseTotal; typeBreakdown24h["ManualBG"] = meterGlucose24h; }
+        if (bolusesTotal > 0) { typeBreakdown["Boluses"] = bolusesTotal; typeBreakdown24h["Boluses"] = boluses24h; }
+        if (carbIntakesTotal > 0) { typeBreakdown["CarbIntake"] = carbIntakesTotal; typeBreakdown24h["CarbIntake"] = carbIntakes24h; }
+        if (bolusCalcsTotal > 0) { typeBreakdown["BolusCalculations"] = bolusCalcsTotal; typeBreakdown24h["BolusCalculations"] = bolusCalcs24h; }
+        if (notesTotal > 0) { typeBreakdown["Notes"] = notesTotal; typeBreakdown24h["Notes"] = notes24h; }
+        if (deviceEventsTotal > 0) { typeBreakdown["DeviceEvents"] = deviceEventsTotal; typeBreakdown24h["DeviceEvents"] = deviceEvents24h; }
+
+        if ((stateSpanStats?.TotalStateSpans ?? 0) > 0) { typeBreakdown["StateSpans"] = stateSpanStats!.TotalStateSpans; typeBreakdown24h["StateSpans"] = stateSpanStats.StateSpansLast24Hours; }
+
+        if (deviceStatusTotal > 0) { typeBreakdown["DeviceStatus"] = deviceStatusTotal; typeBreakdown24h["DeviceStatus"] = deviceStatus24h; }
+
+        // Legacy treatments that haven't been migrated to V4 tables
+        if ((treatmentStats?.TotalTreatments ?? 0) > 0) { typeBreakdown["Treatments"] = treatmentStats!.TotalTreatments; typeBreakdown24h["Treatments"] = treatmentStats.TreatmentsLast24Hours; }
+
         // Convert timestamps
         var lastEntryTime =
             entryStats?.LastEntryMills.HasValue == true
@@ -1447,7 +1543,9 @@ public class PostgreSqlService : IPostgreSqlService
             stateSpanStats?.TotalStateSpans ?? 0,
             stateSpanStats?.StateSpansLast24Hours ?? 0,
             lastStateSpanTime,
-            firstStateSpanTime
+            firstStateSpanTime,
+            typeBreakdown,
+            typeBreakdown24h
         );
     }
 

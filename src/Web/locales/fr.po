@@ -1170,7 +1170,6 @@ msgstr ""
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
-#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/[connector]/+page.svelte
 #: src/routes/settings/devices/+page.svelte
 #: src/routes/settings/migration/+page.svelte
@@ -8553,14 +8552,8 @@ msgstr ""
 msgid "View and manage your diabetes treatments, insulin doses, and carb entries"
 msgstr ""
 
-#. placeholder {0}: dataSummary.treatments?.toLocaleString() ?? 0
-#. placeholder {0}: dataSummary.treatments?.toLocaleString() ?? 0
-#. placeholder {0}: deleteDataResult.treatmentsDeleted?.toLocaleString() ?? 0
-#: src/routes/settings/connectors/[connector]/+page.svelte
-#: src/routes/settings/connectors/[connector]/+page.svelte
-#: src/routes/settings/connectors/[connector]/+page.svelte
-msgid "{0} treatments"
-msgstr ""
+#~ msgid "{0} treatments"
+#~ msgstr ""
 
 #: src/routes/reports/treatments/+page.svelte
 msgid "Search"
@@ -11742,8 +11735,8 @@ msgstr ""
 msgid "<0/> Run Deduplication"
 msgstr ""
 
-#. placeholder {0}: demoDeleteResult.entriesDeleted?.toLocaleString() ?? 0
-#. placeholder {0}: deleteResult.entriesDeleted?.toLocaleString() ?? 0
+#. placeholder {0}: demoDeleteResult.totalDeleted?.toLocaleString() ?? 0
+#. placeholder {0}: deleteResult.totalDeleted?.toLocaleString() ?? 0
 #. placeholder {0}: connectorDeleteResult.entriesDeleted?.toLocaleString() ?? 0
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -13919,17 +13912,11 @@ msgstr ""
 msgid "Permanently delete all data synced by this connector."
 msgstr ""
 
-#. placeholder {0}: dataSummary.entries?.toLocaleString() ?? 0
-#: src/routes/settings/connectors/[connector]/+page.svelte
-msgid "<0/> {0} entries"
-msgstr ""
+#~ msgid "<0/> {0} entries"
+#~ msgstr ""
 
-#. placeholder {0}: dataSummary.deviceStatuses?.toLocaleString() ?? 0
-#. placeholder {0}: deleteDataResult.deviceStatusDeleted?.toLocaleString() ?? 0
-#: src/routes/settings/connectors/[connector]/+page.svelte
-#: src/routes/settings/connectors/[connector]/+page.svelte
-msgid "{0} device statuses"
-msgstr ""
+#~ msgid "{0} device statuses"
+#~ msgstr ""
 
 #: src/routes/settings/connectors/[connector]/+page.svelte
 msgid "<0/> Delete Data"
@@ -13969,25 +13956,19 @@ msgstr ""
 msgid "Data to be deleted:"
 msgstr ""
 
-#. placeholder {0}: dataSummary.entries?.toLocaleString() ?? 0
-#: src/routes/settings/connectors/[connector]/+page.svelte
-msgid "{0} glucose entries"
-msgstr ""
+#~ msgid "{0} glucose entries"
+#~ msgstr ""
 
-#. placeholder {0}: dataSummary.deviceStatuses?.toLocaleString() ?? 0
-#: src/routes/settings/connectors/[connector]/+page.svelte
-msgid "{0} device status records"
-msgstr ""
+#~ msgid "{0} device status records"
+#~ msgstr ""
 
 #. placeholder {0}: dataSummary.total?.toLocaleString() ?? 0
 #: src/routes/settings/connectors/[connector]/+page.svelte
 msgid "Total: {0} records"
 msgstr ""
 
-#. placeholder {0}: deleteDataResult.entriesDeleted?.toLocaleString() ?? 0
-#: src/routes/settings/connectors/[connector]/+page.svelte
-msgid "{0} entries"
-msgstr ""
+#~ msgid "{0} entries"
+#~ msgstr ""
 
 #. placeholder {0}: deleteDataResult.totalDeleted?.toLocaleString() ?? 0
 #: src/routes/settings/connectors/[connector]/+page.svelte
@@ -14870,11 +14851,9 @@ msgstr ""
 #~ msgid "Historical sync limited to {0} days."
 #~ msgstr ""
 
-#: src/routes/settings/connectors/+page.svelte
-msgid "Loading connector capabilities..."
-msgstr ""
+#~ msgid "Loading connector capabilities..."
+#~ msgstr ""
 
-#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/[connector]/+page.svelte
 msgid "Supported data types"
 msgstr ""
@@ -15861,9 +15840,8 @@ msgstr ""
 msgid "Delay"
 msgstr ""
 
-#: src/routes/settings/profile/+page.svelte
-msgid "Externally managed"
-msgstr ""
+#~ msgid "Externally managed"
+#~ msgstr ""
 
 #. placeholder {0}: selectedProfileName
 #: src/routes/settings/profile/+page.svelte
@@ -15921,4 +15899,26 @@ msgstr ""
 
 #: src/lib/components/reports/ApsStateCard.svelte
 msgid "Auto-bolus"
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "External"
+msgstr ""
+
+#. placeholder {0}: therapy.enteredBy ?? "an external source"
+#: src/routes/settings/profile/+page.svelte
+msgid "Managed by {0}"
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "This profile is read-only because it is synced from an external device or service. Changes to therapy settings must be made on the source device."
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "<0/> Read-only"
+msgstr ""
+
+#. placeholder {0}: dataSummary.total?.toLocaleString() ?? 0
+#: src/routes/settings/connectors/[connector]/+page.svelte
+msgid "<0/> {0} total"
 msgstr ""

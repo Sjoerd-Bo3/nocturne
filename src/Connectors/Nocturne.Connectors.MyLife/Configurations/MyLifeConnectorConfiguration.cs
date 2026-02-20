@@ -36,9 +36,8 @@ public class MyLifeConnectorConfiguration : BaseConnectorConfiguration
 
     [ConnectorProperty("Username",
         Required = true,
-        Secret = true,
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "MyLife account username")]
     public string Username { get; set; } = string.Empty;
 
@@ -56,7 +55,7 @@ public class MyLifeConnectorConfiguration : BaseConnectorConfiguration
 
     [ConnectorProperty("ServiceUrl",
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "Override MyLife service url",
         Format = "uri")]
     public string ServiceUrl { get; set; } = string.Empty;

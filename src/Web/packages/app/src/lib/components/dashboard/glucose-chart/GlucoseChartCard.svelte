@@ -34,7 +34,6 @@
     glucoseChartLookback,
     GLUCOSE_CHART_FETCH_HOURS,
   } from "$lib/stores/appearance-store.svelte";
-  import { bg } from "$lib/utils/formatting";
   import PredictionSettings from "../PredictionSettings.svelte";
 
   // Sub-components
@@ -1200,7 +1199,7 @@
           effectiveShowPredictions && predictionData?.curves?.main
             ? predictionData.curves.main.map((p) => ({
                 time: new Date(p.timestamp),
-                value: Number(bg(p.value)),
+                value: p.value,
               }))
             : null}
         {@const miniSelectedDomain: [Date, Date] = brushXDomain ?? [

@@ -4,7 +4,7 @@ using Nocturne.Core.Models;
 namespace Nocturne.Infrastructure.Data.Abstractions;
 
 /// <summary>
-/// Statistics for a data source's data in the database (entries + treatments + state spans)
+/// Statistics for a data source's data in the database, with per-type breakdowns
 /// </summary>
 public record DataSourceStats(
     string DataSource,
@@ -19,7 +19,9 @@ public record DataSourceStats(
     long TotalStateSpans,
     int StateSpansLast24Hours,
     DateTime? LastStateSpanTime,
-    DateTime? FirstStateSpanTime
+    DateTime? FirstStateSpanTime,
+    Dictionary<string, long> TypeBreakdown,
+    Dictionary<string, int> TypeBreakdownLast24Hours
 )
 {
     /// <summary>

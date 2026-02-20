@@ -40,7 +40,7 @@ public class GlookoConnectorConfiguration : BaseConnectorConfiguration
     [ConnectorProperty("Email",
         Required = true,
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "Glooko account email")]
     public string Email { get; init; } = string.Empty;
 
@@ -58,7 +58,7 @@ public class GlookoConnectorConfiguration : BaseConnectorConfiguration
     /// </summary>
     [ConnectorProperty("Server",
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "Glooko server (US or EU)",
         DefaultValue = "US",
         AllowedValues = ["US", "EU"])]

@@ -19,7 +19,9 @@
     Clock,
     Settings,
     ChevronRight,
+    Lock,
   } from "lucide-svelte";
+  import * as Alert from "$lib/components/ui/alert";
   import { bgLabel } from "$lib/utils/formatting";
   import { glucoseUnits } from "$lib/stores/appearance-store.svelte";
   import { getProfileSummary } from "$api/generated/profiles.generated.remote";
@@ -207,6 +209,7 @@
                 {@const profileTherapy = getTherapyForProfile(data, profileName)}
                 {@const isSelected = selectedProfileName === profileName}
                 {@const isDefault = profileTherapy?.isDefault === true}
+                {@const isExternal = profileTherapy?.isExternallyManaged === true}
                 <a
                   href="?name={encodeURIComponent(profileName)}"
                   data-sveltekit-noscroll
@@ -220,11 +223,19 @@
                     class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
                          {isSelected ? 'bg-primary/10' : 'bg-muted'}"
                   >
-                    <User
-                      class="h-5 w-5 {isSelected
-                        ? 'text-primary'
-                        : 'text-muted-foreground'}"
-                    />
+                    {#if isExternal}
+                      <Lock
+                        class="h-5 w-5 {isSelected
+                          ? 'text-primary'
+                          : 'text-muted-foreground'}"
+                      />
+                    {:else}
+                      <User
+                        class="h-5 w-5 {isSelected
+                          ? 'text-primary'
+                          : 'text-muted-foreground'}"
+                      />
+                    {/if}
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
@@ -237,6 +248,12 @@
                           class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs"
                         >
                           Active
+                        </Badge>
+                      {/if}
+                      {#if isExternal}
+                        <Badge variant="outline" class="text-xs gap-1">
+                          <Lock class="h-3 w-3" />
+                          {profileTherapy?.enteredBy ?? "External"}
                         </Badge>
                       {/if}
                     </div>
@@ -260,6 +277,16 @@
 
       <!-- Selected Profile Details -->
       {#if selectedProfileName && therapy}
+        {#if therapy.isExternallyManaged}
+          <Alert.Root class="border-muted-foreground/25 bg-muted/50">
+            <Lock class="h-4 w-4" />
+            <Alert.Title>Managed by {therapy.enteredBy ?? "an external source"}</Alert.Title>
+            <Alert.Description>
+              This profile is read-only because it is synced from an external device or service. Changes to therapy settings must be made on the source device.
+            </Alert.Description>
+          </Alert.Root>
+        {/if}
+
         <!-- Profile Overview Card -->
         <Card>
           <CardHeader>
@@ -273,6 +300,12 @@
                       class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
                     >
                       Active
+                    </Badge>
+                  {/if}
+                  {#if therapy.isExternallyManaged}
+                    <Badge variant="outline" class="gap-1">
+                      <Lock class="h-3 w-3" />
+                      Read-only
                     </Badge>
                   {/if}
                 </CardTitle>
@@ -446,13 +479,6 @@
                 <p class="font-medium">{therapy.units ?? "-"}</p>
               </div>
             </div>
-            {#if therapy.isExternallyManaged}
-              <div class="mt-3 pt-3 border-t">
-                <Badge variant="outline" class="text-xs">
-                  Externally managed
-                </Badge>
-              </div>
-            {/if}
           </CardContent>
         </Card>
       {:else if selectedProfileName}

@@ -92,29 +92,6 @@ public class GlookoTreatmentMapper
                     treatments.Add(treatment);
                 }
 
-            if (batchData.ScheduledBasals != null)
-                foreach (var basal in batchData.ScheduledBasals)
-                {
-                    var basalDate = _timeMapper.GetRawGlookoDate(
-                        basal.Timestamp,
-                        basal.PumpTimestamp
-                    );
-                    var treatment = new Treatment
-                    {
-                        Id = GenerateTreatmentId(
-                            "Scheduled Basal",
-                            basalDate,
-                            $"rate:{basal.Rate}"
-                        ),
-                        EventType = "Scheduled Basal",
-                        CreatedAt = _timeMapper
-                            .GetCorrectedGlookoTime(basalDate)
-                            .ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-                        Rate = basal.Rate,
-                        DataSource = _connectorSource
-                    };
-                    treatments.Add(treatment);
-                }
         }
         catch (Exception ex)
         {

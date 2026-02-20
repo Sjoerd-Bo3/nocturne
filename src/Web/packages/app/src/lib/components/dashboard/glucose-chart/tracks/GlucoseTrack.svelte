@@ -5,6 +5,7 @@
   import PredictionVisualizations from "../../PredictionVisualizations.svelte";
   import type { PredictionData } from "$api/predictions.remote";
   import type { PredictionDisplayMode } from "$lib/stores/appearance-store.svelte";
+  import { bg } from "$lib/utils/formatting";
 
   interface GlucoseDataPoint {
     time: Date;
@@ -61,6 +62,7 @@
   placement="left"
   scale={glucoseAxisScale}
   ticks={5}
+  format={(v) => String(bg(v))}
   tickLabelProps={{ class: "text-xs fill-muted-foreground" }}
 />
 

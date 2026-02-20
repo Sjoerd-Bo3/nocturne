@@ -34,7 +34,7 @@ public class TidepoolConnectorConfiguration : BaseConnectorConfiguration
     [ConnectorProperty("Username",
         Required = true,
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "Tidepool account email address")]
     public string Username { get; set; } = string.Empty;
 
@@ -46,7 +46,7 @@ public class TidepoolConnectorConfiguration : BaseConnectorConfiguration
 
     [ConnectorProperty("Server",
         RuntimeConfigurable = true,
-        Category = "Connection",
+        Category = "Credentials",
         Description = "Tidepool server region",
         DefaultValue = "US",
         AllowedValues = ["US", "Development"])]

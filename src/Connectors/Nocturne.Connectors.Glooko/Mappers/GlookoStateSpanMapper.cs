@@ -204,6 +204,40 @@ public class GlookoStateSpanMapper
                 );
             }
 
+        if (series.ScheduledBasal != null)
+            foreach (var basal in series.ScheduledBasal.Where(b => !b.Interpolated))
+            {
+                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(basal.X);
+                var durationSeconds = basal.Duration ?? 0;
+                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
+                var endMills =
+                    durationSeconds > 0
+                        ? startMills + durationSeconds * 1000
+                        : (long?)null;
+
+                var rate = basal.Y ?? 0;
+                var calculatedInsulin = rate * durationSeconds / 3600.0;
+
+                stateSpans.Add(
+                    new StateSpan
+                    {
+                        OriginalId = $"glooko_scheduledbasal_{basal.X}",
+                        Category = StateSpanCategory.BasalDelivery,
+                        State = BasalDeliveryState.Active.ToString(),
+                        StartMills = startMills,
+                        EndMills = endMills,
+                        Source = _connectorSource,
+                        Metadata = new Dictionary<string, object>
+                        {
+                            { "rate", rate },
+                            { "origin", BasalDeliveryOrigin.Scheduled.ToString() },
+                            { "durationSeconds", durationSeconds },
+                            { "calculatedInsulin", calculatedInsulin }
+                        }
+                    }
+                );
+            }
+
         _logger.LogInformation(
             "[{ConnectorSource}] Transformed {Count} state spans from v3 data",
             _connectorSource,
@@ -252,6 +286,45 @@ public class GlookoStateSpanMapper
                         {
                             { "rate", rate },
                             { "origin", BasalDeliveryOrigin.Manual.ToString() },
+                            { "durationSeconds", durationSeconds },
+                            { "calculatedInsulin", calculatedInsulin }
+                        }
+                    }
+                );
+            }
+
+        if (batchData.ScheduledBasals != null)
+            foreach (var basal in batchData.ScheduledBasals)
+            {
+                var rawTimestamp = DateTime.Parse(
+                    basal.Timestamp,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind
+                );
+                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
+                var durationSeconds = basal.Duration;
+                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
+                var endMills =
+                    durationSeconds > 0
+                        ? startMills + durationSeconds * 1000
+                        : (long?)null;
+
+                var rate = basal.Rate;
+                var calculatedInsulin = rate * durationSeconds / 3600.0;
+
+                stateSpans.Add(
+                    new StateSpan
+                    {
+                        OriginalId = $"glooko_v2_scheduledbasal_{rawTimestamp.Ticks}",
+                        Category = StateSpanCategory.BasalDelivery,
+                        State = BasalDeliveryState.Active.ToString(),
+                        StartMills = startMills,
+                        EndMills = endMills,
+                        Source = _connectorSource,
+                        Metadata = new Dictionary<string, object>
+                        {
+                            { "rate", rate },
+                            { "origin", BasalDeliveryOrigin.Scheduled.ToString() },
                             { "durationSeconds", durationSeconds },
                             { "calculatedInsulin", calculatedInsulin }
                         }
@@ -313,9 +386,10 @@ public class GlookoStateSpanMapper
             }
 
         _logger.LogInformation(
-            "[{ConnectorSource}] Transformed {Count} state spans from v2 data (TempBasals={TempBasalCount}, Suspends={SuspendCount})",
+            "[{ConnectorSource}] Transformed {Count} state spans from v2 data (ScheduledBasals={ScheduledBasalCount}, TempBasals={TempBasalCount}, Suspends={SuspendCount})",
             _connectorSource,
             stateSpans.Count,
+            batchData.ScheduledBasals?.Length ?? 0,
             batchData.TempBasals?.Length ?? 0,
             batchData.SuspendBasals?.Length ?? 0
         );

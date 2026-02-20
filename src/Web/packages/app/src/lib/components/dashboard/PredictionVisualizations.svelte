@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Area, Spline, Text } from "layerchart";
   import { curveMonotoneX } from "d3";
-  import { bg } from "$lib/utils/formatting";
   import type { PredictionData } from "$api/predictions.remote";
   import type { PredictionDisplayMode } from "$lib/stores/appearance-store.svelte";
 
@@ -36,7 +35,7 @@
       .filter((p) => p.timestamp <= predictionEndTime)
       .map((p) => ({
         time: new Date(p.timestamp),
-        sgv: bg(p.value),
+        sgv: p.value,
       })) ?? []
   );
 
@@ -45,7 +44,7 @@
       .filter((p) => p.timestamp <= predictionEndTime)
       .map((p) => ({
         time: new Date(p.timestamp),
-        sgv: bg(p.value),
+        sgv: p.value,
       })) ?? []
   );
 
@@ -54,7 +53,7 @@
       .filter((p) => p.timestamp <= predictionEndTime)
       .map((p) => ({
         time: new Date(p.timestamp),
-        sgv: bg(p.value),
+        sgv: p.value,
       })) ?? []
   );
 
@@ -63,7 +62,7 @@
       .filter((p) => p.timestamp <= predictionEndTime)
       .map((p) => ({
         time: new Date(p.timestamp),
-        sgv: bg(p.value),
+        sgv: p.value,
       })) ?? []
   );
 
@@ -72,7 +71,7 @@
       .filter((p) => p.timestamp <= predictionEndTime)
       .map((p) => ({
         time: new Date(p.timestamp),
-        sgv: bg(p.value),
+        sgv: p.value,
       })) ?? []
   );
 
@@ -97,9 +96,9 @@
         const valuesAtTime = curves.map((c) => c[i]?.value ?? point.value);
         return {
           time: new Date(point.timestamp),
-          min: bg(Math.min(...valuesAtTime)),
-          max: bg(Math.max(...valuesAtTime)),
-          mid: bg((Math.min(...valuesAtTime) + Math.max(...valuesAtTime)) / 2),
+          min: Math.min(...valuesAtTime),
+          max: Math.max(...valuesAtTime),
+          mid: (Math.min(...valuesAtTime) + Math.max(...valuesAtTime)) / 2,
         };
       });
   });

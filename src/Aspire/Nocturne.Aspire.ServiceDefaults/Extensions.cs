@@ -28,8 +28,11 @@ public static class Extensions
 
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
-            // Turn on resilience by default
-            http.AddStandardResilienceHandler();
+            // Note: Standard resilience is NOT added globally here because connectors
+            // configure their own resilience with longer timeouts suited for external APIs.
+            // The default 10-second per-attempt timeout conflicts with connector HTTP calls
+            // that may take longer. Services that need standard resilience (e.g., compatibility
+            // proxy) add it explicitly via AddStandardResilienceHandler().
 
             // Turn on service discovery by default
             http.AddServiceDiscovery();
