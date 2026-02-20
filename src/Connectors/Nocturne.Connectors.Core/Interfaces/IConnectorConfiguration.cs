@@ -33,4 +33,14 @@ public interface IConnectorConfiguration
     ///     Validates the configuration and throws ArgumentException if invalid
     /// </summary>
     void Validate();
+
+    /// <summary>
+    ///     Checks whether a specific data type is enabled for syncing
+    /// </summary>
+    bool IsDataTypeEnabled(SyncDataType type);
+
+    /// <summary>
+    ///     Filters a list of supported data types to only those enabled in configuration
+    /// </summary>
+    List<SyncDataType> GetEnabledDataTypes(List<SyncDataType> supportedTypes);
 }

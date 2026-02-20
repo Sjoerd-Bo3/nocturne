@@ -72,6 +72,74 @@ public abstract class BaseConnectorConfiguration : IConnectorConfiguration
         MaxValue = 60)]
     public int SyncIntervalMinutes { get; set; } = 5;
 
+    [ConnectorProperty("SyncGlucose", RuntimeConfigurable = true, DisplayName = "Sync Glucose", Category = "Sync",
+        Description = "Sync CGM glucose data", DefaultValue = "true")]
+    public bool SyncGlucose { get; set; } = true;
+
+    [ConnectorProperty("SyncManualBG", RuntimeConfigurable = true, DisplayName = "Sync Manual BG", Category = "Sync",
+        Description = "Sync manual finger prick blood glucose checks", DefaultValue = "true")]
+    public bool SyncManualBG { get; set; } = true;
+
+    [ConnectorProperty("SyncBoluses", RuntimeConfigurable = true, DisplayName = "Sync Boluses", Category = "Sync",
+        Description = "Sync insulin bolus data", DefaultValue = "true")]
+    public bool SyncBoluses { get; set; } = true;
+
+    [ConnectorProperty("SyncCarbIntake", RuntimeConfigurable = true, DisplayName = "Sync Carb Intake", Category = "Sync",
+        Description = "Sync carbohydrate intake data", DefaultValue = "true")]
+    public bool SyncCarbIntake { get; set; } = true;
+
+    [ConnectorProperty("SyncBolusCalculations", RuntimeConfigurable = true, DisplayName = "Sync Bolus Calculations", Category = "Sync",
+        Description = "Sync bolus calculator/wizard data", DefaultValue = "true")]
+    public bool SyncBolusCalculations { get; set; } = true;
+
+    [ConnectorProperty("SyncNotes", RuntimeConfigurable = true, DisplayName = "Sync Notes", Category = "Sync",
+        Description = "Sync notes and annotations", DefaultValue = "true")]
+    public bool SyncNotes { get; set; } = true;
+
+    [ConnectorProperty("SyncDeviceEvents", RuntimeConfigurable = true, DisplayName = "Sync Device Events", Category = "Sync",
+        Description = "Sync device events (site changes, sensor starts, etc.)", DefaultValue = "true")]
+    public bool SyncDeviceEvents { get; set; } = true;
+
+    [ConnectorProperty("SyncStateSpans", RuntimeConfigurable = true, DisplayName = "Sync State Spans", Category = "Sync",
+        Description = "Sync basal delivery and pump mode state spans", DefaultValue = "true")]
+    public bool SyncStateSpans { get; set; } = true;
+
+    [ConnectorProperty("SyncProfiles", RuntimeConfigurable = true, DisplayName = "Sync Profiles", Category = "Sync",
+        Description = "Sync profile data (basal rates, ISF, carb ratio)", DefaultValue = "true")]
+    public bool SyncProfiles { get; set; } = true;
+
+    [ConnectorProperty("SyncDeviceStatus", RuntimeConfigurable = true, DisplayName = "Sync Device Status", Category = "Sync",
+        Description = "Sync device status data", DefaultValue = "true")]
+    public bool SyncDeviceStatus { get; set; } = true;
+
+    [ConnectorProperty("SyncActivity", RuntimeConfigurable = true, DisplayName = "Sync Activity", Category = "Sync",
+        Description = "Sync exercise and activity data", DefaultValue = "true")]
+    public bool SyncActivity { get; set; } = true;
+
+    [ConnectorProperty("SyncFood", RuntimeConfigurable = true, DisplayName = "Sync Food", Category = "Sync",
+        Description = "Sync food diary data", DefaultValue = "true")]
+    public bool SyncFood { get; set; } = true;
+
+    public bool IsDataTypeEnabled(SyncDataType type) => type switch
+    {
+        SyncDataType.Glucose => SyncGlucose,
+        SyncDataType.ManualBG => SyncManualBG,
+        SyncDataType.Boluses => SyncBoluses,
+        SyncDataType.CarbIntake => SyncCarbIntake,
+        SyncDataType.BolusCalculations => SyncBolusCalculations,
+        SyncDataType.Notes => SyncNotes,
+        SyncDataType.DeviceEvents => SyncDeviceEvents,
+        SyncDataType.StateSpans => SyncStateSpans,
+        SyncDataType.Profiles => SyncProfiles,
+        SyncDataType.DeviceStatus => SyncDeviceStatus,
+        SyncDataType.Activity => SyncActivity,
+        SyncDataType.Food => SyncFood,
+        _ => true
+    };
+
+    public List<SyncDataType> GetEnabledDataTypes(List<SyncDataType> supportedTypes)
+        => supportedTypes.Where(IsDataTypeEnabled).ToList();
+
     public virtual void Validate()
     {
         if (!Enum.IsDefined(typeof(ConnectSource), ConnectSource))
