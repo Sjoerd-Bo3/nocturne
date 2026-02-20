@@ -257,26 +257,6 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
                         );
                         break;
 
-                    case SyncDataType.Treatments:
-                        var treatments = await FetchTreatmentsAsync(request.From, request.To);
-                        var treatmentList = treatments.ToList();
-                        count = treatmentList.Count;
-                        if (count > 0)
-                            lastTime = treatmentList
-                                .Select(t =>
-                                    DateTime.TryParse(t.CreatedAt, out var dt)
-                                        ? dt
-                                        : (DateTime?)null
-                                )
-                                .Where(dt => dt.HasValue)
-                                .Max();
-                        publishSuccess = await PublishTreatmentDataInBatchesAsync(
-                            treatmentList,
-                            config,
-                            cancellationToken
-                        );
-                        break;
-
                     case SyncDataType.Profiles:
                         var profiles = await FetchProfilesAsync();
                         var profileList = profiles.ToList();

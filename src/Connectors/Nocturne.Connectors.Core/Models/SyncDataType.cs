@@ -6,7 +6,13 @@ namespace Nocturne.Connectors.Core.Models;
 public enum SyncDataType
 {
     Glucose,
-    Treatments,
+    ManualBG,
+    Boluses,
+    CarbIntake,
+    BolusCalculations,
+    Notes,
+    DeviceEvents,
+    StateSpans,
     Profiles,
     DeviceStatus,
     Activity,
