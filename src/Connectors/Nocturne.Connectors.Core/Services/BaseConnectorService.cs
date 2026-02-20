@@ -231,7 +231,15 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
         if (!request.DataTypes.Any())
             request.DataTypes = SupportedDataTypes;
 
-        foreach (var type in request.DataTypes.Where(type => SupportedDataTypes.Contains(type)))
+        var enabledTypes = config.GetEnabledDataTypes(SupportedDataTypes);
+        var disabledTypes = SupportedDataTypes.Except(enabledTypes).ToList();
+        if (disabledTypes.Count > 0)
+            _logger.LogInformation(
+                "Skipping disabled data types for {Connector}: {DisabledTypes}",
+                ConnectorSource,
+                string.Join(", ", disabledTypes));
+
+        foreach (var type in request.DataTypes.Where(type => enabledTypes.Contains(type)))
         {
             try
             {
