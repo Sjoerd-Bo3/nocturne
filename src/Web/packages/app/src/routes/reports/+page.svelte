@@ -59,6 +59,7 @@
     BarChart3,
     Clock,
     Calendar,
+    CalendarDays,
     FileText,
     Gauge,
     AlertTriangle,
@@ -197,6 +198,13 @@
       subtitle: "Discover what affects your glucose",
       icon: TrendingUp,
       reports: [
+        {
+          title: "Data Overview",
+          description: "Multi-year heatmap of all your data",
+          href: "/reports/data-overview",
+          icon: CalendarDays,
+          status: "available" as const,
+        },
         {
           title: "Day-by-Day View",
           description: "Review each day individually",
