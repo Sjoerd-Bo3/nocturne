@@ -188,10 +188,14 @@ function generateCommandFunction(
         // Multi-param target query - pass the first matching param
         return `${fn}(${matchingParams[0].name}).refresh()`;
       }
+
+      // Target requires path params the command can't provide — skip this refresh
+      // (passing undefined to a required-param query is both a type error and semantically wrong)
+      return null;
     }
 
     return `${fn}(undefined).refresh()`;
-  });
+  }).filter((call): call is string => call !== null);
 
   const refreshCalls = refreshCallsArr.length > 0
     ? `\n    await Promise.all([

@@ -166,8 +166,7 @@ export const createBasalSchedule = command(BasalScheduleSchema, async (request) 
   try {
     const result = await apiClient.profile.createBasalSchedule(request as BasalSchedule);
     await Promise.all([
-      getProfileSummary(undefined).refresh(),
-      getBasalSchedulesByName(undefined).refresh()
+      getProfileSummary(undefined).refresh()
     ]);
     return result;
   } catch (err) {
@@ -187,7 +186,6 @@ export const updateBasalSchedule = command(z.object({ id: z.string(), request: B
     const result = await apiClient.profile.updateBasalSchedule(id, request as BasalSchedule);
     await Promise.all([
       getProfileSummary(undefined).refresh(),
-      getBasalSchedulesByName(undefined).refresh(),
       getBasalScheduleById(id).refresh()
     ]);
     return result;
@@ -207,8 +205,7 @@ export const deleteBasalSchedule = command(z.string(), async (id) => {
   try {
     await apiClient.profile.deleteBasalSchedule(id);
     await Promise.all([
-      getProfileSummary(undefined).refresh(),
-      getBasalSchedulesByName(undefined).refresh()
+      getProfileSummary(undefined).refresh()
     ]);
     return { success: true };
   } catch (err) {
@@ -257,8 +254,7 @@ export const createCarbRatioSchedule = command(CarbRatioScheduleSchema, async (r
   try {
     const result = await apiClient.profile.createCarbRatioSchedule(request as CarbRatioSchedule);
     await Promise.all([
-      getProfileSummary(undefined).refresh(),
-      getCarbRatioSchedulesByName(undefined).refresh()
+      getProfileSummary(undefined).refresh()
     ]);
     return result;
   } catch (err) {
@@ -278,7 +274,6 @@ export const updateCarbRatioSchedule = command(z.object({ id: z.string(), reques
     const result = await apiClient.profile.updateCarbRatioSchedule(id, request as CarbRatioSchedule);
     await Promise.all([
       getProfileSummary(undefined).refresh(),
-      getCarbRatioSchedulesByName(undefined).refresh(),
       getCarbRatioScheduleById(id).refresh()
     ]);
     return result;
@@ -298,8 +293,7 @@ export const deleteCarbRatioSchedule = command(z.string(), async (id) => {
   try {
     await apiClient.profile.deleteCarbRatioSchedule(id);
     await Promise.all([
-      getProfileSummary(undefined).refresh(),
-      getCarbRatioSchedulesByName(undefined).refresh()
+      getProfileSummary(undefined).refresh()
     ]);
     return { success: true };
   } catch (err) {
@@ -348,8 +342,7 @@ export const createSensitivitySchedule = command(SensitivityScheduleSchema, asyn
   try {
     const result = await apiClient.profile.createSensitivitySchedule(request as SensitivitySchedule);
     await Promise.all([
-      getProfileSummary(undefined).refresh(),
-      getSensitivitySchedulesByName(undefined).refresh()
+      getProfileSummary(undefined).refresh()
     ]);
     return result;
   } catch (err) {
@@ -369,7 +362,6 @@ export const updateSensitivitySchedule = command(z.object({ id: z.string(), requ
     const result = await apiClient.profile.updateSensitivitySchedule(id, request as SensitivitySchedule);
     await Promise.all([
       getProfileSummary(undefined).refresh(),
-      getSensitivitySchedulesByName(undefined).refresh(),
       getSensitivityScheduleById(id).refresh()
     ]);
     return result;
@@ -389,8 +381,7 @@ export const deleteSensitivitySchedule = command(z.string(), async (id) => {
   try {
     await apiClient.profile.deleteSensitivitySchedule(id);
     await Promise.all([
-      getProfileSummary(undefined).refresh(),
-      getSensitivitySchedulesByName(undefined).refresh()
+      getProfileSummary(undefined).refresh()
     ]);
     return { success: true };
   } catch (err) {
@@ -439,8 +430,7 @@ export const createTargetRangeSchedule = command(TargetRangeScheduleSchema, asyn
   try {
     const result = await apiClient.profile.createTargetRangeSchedule(request as TargetRangeSchedule);
     await Promise.all([
-      getProfileSummary(undefined).refresh(),
-      getTargetRangeSchedulesByName(undefined).refresh()
+      getProfileSummary(undefined).refresh()
     ]);
     return result;
   } catch (err) {
@@ -460,7 +450,6 @@ export const updateTargetRangeSchedule = command(z.object({ id: z.string(), requ
     const result = await apiClient.profile.updateTargetRangeSchedule(id, request as TargetRangeSchedule);
     await Promise.all([
       getProfileSummary(undefined).refresh(),
-      getTargetRangeSchedulesByName(undefined).refresh(),
       getTargetRangeScheduleById(id).refresh()
     ]);
     return result;
@@ -480,8 +469,7 @@ export const deleteTargetRangeSchedule = command(z.string(), async (id) => {
   try {
     await apiClient.profile.deleteTargetRangeSchedule(id);
     await Promise.all([
-      getProfileSummary(undefined).refresh(),
-      getTargetRangeSchedulesByName(undefined).refresh()
+      getProfileSummary(undefined).refresh()
     ]);
     return { success: true };
   } catch (err) {

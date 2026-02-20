@@ -747,6 +747,7 @@ msgstr "Carbs:"
 #. placeholder {0}: scaledFat()
 #. placeholder {0}: foodEntry.fat
 #. placeholder {0}: (snapshot.cob ?? 0).toFixed(0)
+#. placeholder {0}: formatCarbDisplay(averages.avgCarbs)
 #. placeholder {0}: formatCarbDisplay(averages.avgProtein)
 #. placeholder {0}: formatCarbDisplay(averages.avgFat)
 #. placeholder {0}: totalCarbs
@@ -802,6 +803,9 @@ msgstr "Insulin:"
 #. placeholder {0}: totalIob.toFixed(2)
 #. placeholder {0}: snapshot.enactedBolusVolume.toFixed(2)
 #. placeholder {0}: snapshot.recommendedBolus.toFixed(2)
+#. placeholder {0}: formatInsulinDisplay(treatmentSummary?.totals?.insulin?.bolus)
+#. placeholder {0}: formatInsulinDisplay(treatmentSummary?.totals?.insulin?.basal)
+#. placeholder {0}: formatInsulinDisplay((treatmentSummary?.totals?.insulin?.bolus ?? 0) + (treatmentSummary?.totals?.insulin?.basal ?? 0))
 #. placeholder {0}: formatInsulinDisplay((entry.treatmentSummary?.totals?.insulin?.bolus ?? 0) + (entry.treatmentSummary?.totals?.insulin?.basal ?? 0))
 #. placeholder {0}: morning.toFixed(1)
 #. placeholder {0}: afternoon.toFixed(1)
