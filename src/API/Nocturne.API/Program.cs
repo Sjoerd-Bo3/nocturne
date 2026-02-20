@@ -445,6 +445,7 @@ builder.Services.AddScoped<
 >();
 builder.Services.AddScoped<IClockFaceService, ClockFaceService>();
 builder.Services.AddScoped<IChartDataService, ChartDataService>();
+builder.Services.AddScoped<IDataOverviewService, DataOverviewService>();
 
 // V4 Repositories
 builder.Services.AddScoped<ISensorGlucoseRepository, SensorGlucoseRepository>();
