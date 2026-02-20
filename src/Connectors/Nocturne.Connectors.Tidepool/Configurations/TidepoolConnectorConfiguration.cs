@@ -17,7 +17,12 @@ namespace Nocturne.Connectors.Tidepool.Configurations;
     SupportsHistoricalSync = true,
     MaxHistoricalDays = 365,
     SupportsManualSync = true,
-    SupportedDataTypes = [SyncDataType.Glucose, SyncDataType.Treatments]
+    SupportedDataTypes = [
+        SyncDataType.Glucose,
+        SyncDataType.Boluses,
+        SyncDataType.CarbIntake,
+        SyncDataType.Activity
+    ]
 )]
 public class TidepoolConnectorConfiguration : BaseConnectorConfiguration
 {

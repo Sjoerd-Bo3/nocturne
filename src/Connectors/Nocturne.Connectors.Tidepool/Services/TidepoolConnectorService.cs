@@ -44,7 +44,13 @@ public class TidepoolConnectorService : BaseConnectorService<TidepoolConnectorCo
 
     protected override string ConnectorSource => DataSources.TidepoolConnector;
     public override string ServiceName => "Tidepool";
-    public override List<SyncDataType> SupportedDataTypes => [SyncDataType.Glucose, SyncDataType.Treatments];
+    public override List<SyncDataType> SupportedDataTypes =>
+    [
+        SyncDataType.Glucose,
+        SyncDataType.Boluses,
+        SyncDataType.CarbIntake,
+        SyncDataType.Activity
+    ];
 
     public override async Task<bool> AuthenticateAsync()
     {
@@ -122,6 +128,89 @@ public class TidepoolConnectorService : BaseConnectorService<TidepoolConnectorCo
             activities?.Length ?? 0);
 
         return treatments;
+    }
+
+    protected override async Task<SyncResult> PerformSyncInternalAsync(
+        SyncRequest request,
+        TidepoolConnectorConfiguration config,
+        CancellationToken cancellationToken)
+    {
+        var result = new SyncResult { StartTime = DateTimeOffset.UtcNow, Success = true };
+
+        if (!request.DataTypes.Any())
+            request.DataTypes = SupportedDataTypes;
+
+        var enabledTypes = config.GetEnabledDataTypes(SupportedDataTypes);
+        var activeTypes = request.DataTypes.Where(t => enabledTypes.Contains(t)).ToHashSet();
+
+        // Handle Glucose (CBG + SMBG)
+        if (activeTypes.Contains(SyncDataType.Glucose))
+        {
+            try
+            {
+                var entries = await FetchGlucoseDataRangeAsync(request.From, request.To);
+                var entryList = entries.ToList();
+                result.ItemsSynced[SyncDataType.Glucose] = entryList.Count;
+                if (entryList.Count > 0)
+                {
+                    result.LastEntryTimes[SyncDataType.Glucose] = entryList.Max(e => e.Date);
+                    var publishSuccess = await PublishGlucoseDataInBatchesAsync(
+                        entryList, config, cancellationToken);
+                    if (!publishSuccess)
+                    {
+                        result.Success = false;
+                        result.Errors.Add("Glucose publish failed");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Errors.Add($"Failed to sync Glucose: {ex.Message}");
+                _logger.LogError(ex, "Failed to sync Glucose for {Connector}", ConnectorSource);
+            }
+        }
+
+        // Handle Treatments (Boluses, CarbIntake, Activity) — fetched as one batch
+        SyncDataType[] treatmentTypes = [SyncDataType.Boluses, SyncDataType.CarbIntake, SyncDataType.Activity];
+        if (activeTypes.Any(t => treatmentTypes.Contains(t)))
+        {
+            try
+            {
+                var treatments = await FetchTreatmentsAsync(request.From, request.To);
+                var treatmentList = treatments.ToList();
+                if (treatmentList.Count > 0)
+                {
+                    var lastTime = treatmentList
+                        .Select(t => DateTime.TryParse(t.CreatedAt, out var dt) ? dt : (DateTime?)null)
+                        .Where(dt => dt.HasValue)
+                        .Max();
+                    var publishSuccess = await PublishTreatmentDataInBatchesAsync(
+                        treatmentList, config, cancellationToken);
+
+                    foreach (var tt in treatmentTypes.Where(t => activeTypes.Contains(t)))
+                    {
+                        result.ItemsSynced[tt] = treatmentList.Count;
+                        result.LastEntryTimes[tt] = lastTime;
+                    }
+
+                    if (!publishSuccess)
+                    {
+                        result.Success = false;
+                        result.Errors.Add("Treatments publish failed");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Errors.Add($"Failed to sync Treatments: {ex.Message}");
+                _logger.LogError(ex, "Failed to sync Treatments for {Connector}", ConnectorSource);
+            }
+        }
+
+        result.EndTime = DateTimeOffset.UtcNow;
+        return result;
     }
 
     /// <summary>
