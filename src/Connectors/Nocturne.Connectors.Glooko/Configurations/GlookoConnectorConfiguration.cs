@@ -19,7 +19,13 @@ namespace Nocturne.Connectors.Glooko.Configurations;
     "Glooko",
     SupportsHistoricalSync = true,
     SupportsManualSync = true,
-    SupportedDataTypes = [SyncDataType.Glucose, SyncDataType.Treatments]
+    SupportedDataTypes = [
+        SyncDataType.Glucose,
+        SyncDataType.Boluses,
+        SyncDataType.CarbIntake,
+        SyncDataType.StateSpans,
+        SyncDataType.DeviceEvents
+    ]
 )]
 public class GlookoConnectorConfiguration : BaseConnectorConfiguration
 {
