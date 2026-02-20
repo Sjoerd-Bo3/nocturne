@@ -33,6 +33,23 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
         WriteIndented = false
     };
 
+    private static readonly Dictionary<string, SyncDataType> SyncPropertyToDataType =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["SyncGlucose"] = SyncDataType.Glucose,
+            ["SyncManualBG"] = SyncDataType.ManualBG,
+            ["SyncBoluses"] = SyncDataType.Boluses,
+            ["SyncCarbIntake"] = SyncDataType.CarbIntake,
+            ["SyncBolusCalculations"] = SyncDataType.BolusCalculations,
+            ["SyncNotes"] = SyncDataType.Notes,
+            ["SyncDeviceEvents"] = SyncDataType.DeviceEvents,
+            ["SyncStateSpans"] = SyncDataType.StateSpans,
+            ["SyncProfiles"] = SyncDataType.Profiles,
+            ["SyncDeviceStatus"] = SyncDataType.DeviceStatus,
+            ["SyncActivity"] = SyncDataType.Activity,
+            ["SyncFood"] = SyncDataType.Food,
+        };
+
     public ConnectorConfigurationService(
         NocturneDbContext context,
         ISecretEncryptionService encryptionService,
@@ -475,12 +492,20 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
         // Get connector registration for environment variable prefix (used by ConnectorPropertyAttribute)
         var registration = configType.GetCustomAttribute<ConnectorRegistrationAttribute>();
         var envPrefix = registration?.EnvironmentPrefix;
+        var supportedDataTypes = registration?.SupportedDataTypes ?? [SyncDataType.Glucose];
 
         foreach (var property in allProps)
         {
             var connectorPropAttr = property.GetCustomAttribute<ConnectorPropertyAttribute>();
             if (connectorPropAttr == null)
                 continue;
+
+            // Skip sync toggle properties for data types this connector doesn't support
+            if (SyncPropertyToDataType.TryGetValue(property.Name, out var requiredDataType))
+            {
+                if (!supportedDataTypes.Contains(requiredDataType))
+                    continue;
+            }
 
             var propName = ToCamelCase(property.Name);
 
@@ -577,6 +602,8 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
     {
         var result = new Dictionary<string, object?>();
         var configType = config.GetType();
+        var registration = configType.GetCustomAttribute<ConnectorRegistrationAttribute>();
+        var supportedDataTypes = registration?.SupportedDataTypes ?? [SyncDataType.Glucose];
 
         foreach (var property in configType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
@@ -586,6 +613,13 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
 
             if (connectorPropAttr.Secret)
                 continue;
+
+            // Skip sync toggle properties for data types this connector doesn't support
+            if (SyncPropertyToDataType.TryGetValue(property.Name, out var requiredDataType))
+            {
+                if (!supportedDataTypes.Contains(requiredDataType))
+                    continue;
+            }
 
             object? value = null;
             try
