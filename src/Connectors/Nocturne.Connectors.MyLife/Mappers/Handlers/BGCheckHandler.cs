@@ -17,9 +17,6 @@ internal sealed class BGCheckHandler : IMyLifeHandler
 
     public IEnumerable<IV4Record> Handle(MyLifeEvent ev, MyLifeContext context)
     {
-        if (!context.EnableManualBgSync)
-            return [];
-
         if (!MyLifeMapperHelpers.TryParseDouble(ev.Value, out var glucose))
             return [];
 

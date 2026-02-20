@@ -16,7 +16,6 @@ internal sealed class MyLifeContext
         List<long> tempBasalProgramTimes,
         Dictionary<long, double> tempBasalProgramRates,
         int tempBasalConsolidationWindowMs,
-        bool enableManualBgSync,
         bool enableMealCarbConsolidation,
         bool enableTempBasalConsolidation
     )
@@ -27,7 +26,6 @@ internal sealed class MyLifeContext
         TempBasalProgramTimes = tempBasalProgramTimes;
         TempBasalProgramRates = tempBasalProgramRates;
         TempBasalConsolidationWindowMs = tempBasalConsolidationWindowMs;
-        EnableManualBgSync = enableManualBgSync;
         EnableMealCarbConsolidation = enableMealCarbConsolidation;
         EnableTempBasalConsolidation = enableTempBasalConsolidation;
     }
@@ -38,13 +36,11 @@ internal sealed class MyLifeContext
     internal List<long> TempBasalProgramTimes { get; }
     internal Dictionary<long, double> TempBasalProgramRates { get; }
     internal int TempBasalConsolidationWindowMs { get; }
-    internal bool EnableManualBgSync { get; }
     internal bool EnableMealCarbConsolidation { get; }
     internal bool EnableTempBasalConsolidation { get; }
 
     internal static MyLifeContext Create(
         IEnumerable<MyLifeEvent> events,
-        bool enableManualBgSync,
         bool enableMealCarbConsolidation,
         bool enableTempBasalConsolidation,
         int tempBasalConsolidationWindowMinutes
@@ -118,7 +114,6 @@ internal sealed class MyLifeContext
                 tempBasalProgramTimes,
                 tempBasalProgramRates,
                 tempBasalWindowMs,
-                enableManualBgSync,
                 enableMealCarbConsolidation,
                 enableTempBasalConsolidation
             );
@@ -189,7 +184,6 @@ internal sealed class MyLifeContext
             tempBasalProgramTimes,
             tempBasalProgramRates,
             tempBasalWindowMs,
-            enableManualBgSync,
             enableMealCarbConsolidation,
             enableTempBasalConsolidation
         );

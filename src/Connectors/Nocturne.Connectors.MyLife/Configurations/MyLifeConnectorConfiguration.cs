@@ -16,7 +16,16 @@ namespace Nocturne.Connectors.MyLife.Configurations;
     "MyLife",
     SupportsHistoricalSync = true,
     SupportsManualSync = true,
-    SupportedDataTypes = [SyncDataType.Glucose, SyncDataType.Treatments]
+    SupportedDataTypes = [
+        SyncDataType.Glucose,
+        SyncDataType.ManualBG,
+        SyncDataType.Boluses,
+        SyncDataType.CarbIntake,
+        SyncDataType.BolusCalculations,
+        SyncDataType.Notes,
+        SyncDataType.DeviceEvents,
+        SyncDataType.StateSpans
+    ]
 )]
 public class MyLifeConnectorConfiguration : BaseConnectorConfiguration
 {
@@ -51,20 +60,6 @@ public class MyLifeConnectorConfiguration : BaseConnectorConfiguration
         Description = "Override MyLife service url",
         Format = "uri")]
     public string ServiceUrl { get; set; } = string.Empty;
-
-    [ConnectorProperty("EnableGlucoseSync",
-        RuntimeConfigurable = true,
-        Category = "Sync",
-        Description = "Enable CGM glucose sync",
-        DefaultValue = "true")]
-    public bool EnableGlucoseSync { get; set; } = true;
-
-    [ConnectorProperty("EnableManualBgSync",
-        RuntimeConfigurable = true,
-        Category = "Sync",
-        Description = "Enable manual BG sync",
-        DefaultValue = "true")]
-    public bool EnableManualBgSync { get; set; } = true;
 
     [ConnectorProperty("EnableMealCarbConsolidation",
         RuntimeConfigurable = true,

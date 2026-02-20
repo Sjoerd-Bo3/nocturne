@@ -35,7 +35,6 @@ internal sealed class MyLifeStateSpanMapper
         var context = MyLifeContext.Create(
             events,
             false,
-            false,
             enableTempBasalConsolidation,
             tempBasalConsolidationWindowMinutes
         );

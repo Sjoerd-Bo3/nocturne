@@ -34,7 +34,16 @@ public class MyLifeConnectorService(
     protected override string ConnectorSource => DataSources.MyLifeConnector;
 
     public override List<SyncDataType> SupportedDataTypes =>
-        [SyncDataType.Glucose, SyncDataType.Treatments];
+    [
+        SyncDataType.Glucose,
+        SyncDataType.ManualBG,
+        SyncDataType.Boluses,
+        SyncDataType.CarbIntake,
+        SyncDataType.BolusCalculations,
+        SyncDataType.Notes,
+        SyncDataType.DeviceEvents,
+        SyncDataType.StateSpans
+    ];
 
     public override bool IsHealthy =>
         FailedRequestCount < MaxFailedRequestsBeforeUnhealthy && !tokenProvider.IsTokenExpired;
@@ -76,7 +85,7 @@ public class MyLifeConnectorService(
         );
 
         var filtered = FilterEventsBySince(events, actualSince);
-        return eventProcessor.MapSensorGlucose(filtered, _config.EnableGlucoseSync);
+        return eventProcessor.MapSensorGlucose(filtered);
     }
 
     /// <summary>
@@ -95,7 +104,6 @@ public class MyLifeConnectorService(
         var filtered = FilterEventsBySince(events, actualSince);
         return eventProcessor.MapRecords(
             filtered,
-            _config.EnableManualBgSync,
             _config.EnableMealCarbConsolidation,
             _config.EnableTempBasalConsolidation,
             _config.TempBasalConsolidationWindowMinutes
@@ -137,10 +145,13 @@ public class MyLifeConnectorService(
         if (!request.DataTypes.Any())
             request.DataTypes = SupportedDataTypes;
 
+        var enabledTypes = config.GetEnabledDataTypes(SupportedDataTypes);
+        var activeTypes = request.DataTypes.Where(t => enabledTypes.Contains(t)).ToHashSet();
+
         try
         {
             // Sync glucose data as SensorGlucose
-            if (request.DataTypes.Contains(SyncDataType.Glucose))
+            if (activeTypes.Contains(SyncDataType.Glucose))
             {
                 var sensorGlucose = await FetchSensorGlucoseAsync(request.From);
                 var sgList = sensorGlucose.ToList();
@@ -153,10 +164,9 @@ public class MyLifeConnectorService(
                         cancellationToken
                     );
                     result.ItemsSynced[SyncDataType.Glucose] = sgList.Count;
-                    if (sgList.Count > 0)
-                        result.LastEntryTimes[SyncDataType.Glucose] = DateTimeOffset
-                            .FromUnixTimeMilliseconds(sgList.Max(s => s.Mills))
-                            .UtcDateTime;
+                    result.LastEntryTimes[SyncDataType.Glucose] = DateTimeOffset
+                        .FromUnixTimeMilliseconds(sgList.Max(s => s.Mills))
+                        .UtcDateTime;
 
                     if (!success)
                     {
@@ -173,15 +183,24 @@ public class MyLifeConnectorService(
                 }
             }
 
-            // Sync treatment data as granular models
-            if (request.DataTypes.Contains(SyncDataType.Treatments))
+            // Determine if any treatment sub-type is active
+            var treatmentSubTypes = new[]
+            {
+                SyncDataType.ManualBG,
+                SyncDataType.Boluses,
+                SyncDataType.CarbIntake,
+                SyncDataType.BolusCalculations,
+                SyncDataType.Notes,
+                SyncDataType.DeviceEvents
+            };
+            var needRecords = treatmentSubTypes.Any(t => activeTypes.Contains(t));
+
+            if (needRecords)
             {
                 var records = await FetchRecordsAsync(request.From, request.To);
-                var totalCount = 0;
-                var allSuccess = true;
 
                 // Publish Boluses
-                if (records.Boluses.Count > 0)
+                if (activeTypes.Contains(SyncDataType.Boluses) && records.Boluses.Count > 0)
                 {
                     var success = await PublishBolusDataAsync(
                         records.Boluses,
@@ -194,17 +213,17 @@ public class MyLifeConnectorService(
                             "Synced {Count} Bolus records",
                             records.Boluses.Count
                         );
-                        totalCount += records.Boluses.Count;
+                        result.ItemsSynced[SyncDataType.Boluses] = records.Boluses.Count;
                     }
                     else
                     {
-                        allSuccess = false;
+                        result.Success = false;
                         result.Errors.Add("Bolus publish failed");
                     }
                 }
 
                 // Publish CarbIntakes
-                if (records.CarbIntakes.Count > 0)
+                if (activeTypes.Contains(SyncDataType.CarbIntake) && records.CarbIntakes.Count > 0)
                 {
                     var success = await PublishCarbIntakeDataAsync(
                         records.CarbIntakes,
@@ -217,17 +236,17 @@ public class MyLifeConnectorService(
                             "Synced {Count} CarbIntake records",
                             records.CarbIntakes.Count
                         );
-                        totalCount += records.CarbIntakes.Count;
+                        result.ItemsSynced[SyncDataType.CarbIntake] = records.CarbIntakes.Count;
                     }
                     else
                     {
-                        allSuccess = false;
+                        result.Success = false;
                         result.Errors.Add("CarbIntake publish failed");
                     }
                 }
 
                 // Publish BGChecks
-                if (records.BGChecks.Count > 0)
+                if (activeTypes.Contains(SyncDataType.ManualBG) && records.BGChecks.Count > 0)
                 {
                     var success = await PublishBGCheckDataAsync(
                         records.BGChecks,
@@ -240,17 +259,17 @@ public class MyLifeConnectorService(
                             "Synced {Count} BGCheck records",
                             records.BGChecks.Count
                         );
-                        totalCount += records.BGChecks.Count;
+                        result.ItemsSynced[SyncDataType.ManualBG] = records.BGChecks.Count;
                     }
                     else
                     {
-                        allSuccess = false;
+                        result.Success = false;
                         result.Errors.Add("BGCheck publish failed");
                     }
                 }
 
                 // Publish BolusCalculations
-                if (records.BolusCalculations.Count > 0)
+                if (activeTypes.Contains(SyncDataType.BolusCalculations) && records.BolusCalculations.Count > 0)
                 {
                     var success = await PublishBolusCalculationDataAsync(
                         records.BolusCalculations,
@@ -263,17 +282,17 @@ public class MyLifeConnectorService(
                             "Synced {Count} BolusCalculation records",
                             records.BolusCalculations.Count
                         );
-                        totalCount += records.BolusCalculations.Count;
+                        result.ItemsSynced[SyncDataType.BolusCalculations] = records.BolusCalculations.Count;
                     }
                     else
                     {
-                        allSuccess = false;
+                        result.Success = false;
                         result.Errors.Add("BolusCalculation publish failed");
                     }
                 }
 
                 // Publish Notes
-                if (records.Notes.Count > 0)
+                if (activeTypes.Contains(SyncDataType.Notes) && records.Notes.Count > 0)
                 {
                     var success = await PublishNoteDataAsync(
                         records.Notes,
@@ -283,17 +302,17 @@ public class MyLifeConnectorService(
                     if (success)
                     {
                         _logger.LogInformation("Synced {Count} Note records", records.Notes.Count);
-                        totalCount += records.Notes.Count;
+                        result.ItemsSynced[SyncDataType.Notes] = records.Notes.Count;
                     }
                     else
                     {
-                        allSuccess = false;
+                        result.Success = false;
                         result.Errors.Add("Note publish failed");
                     }
                 }
 
                 // Publish DeviceEvents
-                if (records.DeviceEvents.Count > 0)
+                if (activeTypes.Contains(SyncDataType.DeviceEvents) && records.DeviceEvents.Count > 0)
                 {
                     var success = await PublishDeviceEventDataAsync(
                         records.DeviceEvents,
@@ -306,16 +325,19 @@ public class MyLifeConnectorService(
                             "Synced {Count} DeviceEvent records",
                             records.DeviceEvents.Count
                         );
-                        totalCount += records.DeviceEvents.Count;
+                        result.ItemsSynced[SyncDataType.DeviceEvents] = records.DeviceEvents.Count;
                     }
                     else
                     {
-                        allSuccess = false;
+                        result.Success = false;
                         result.Errors.Add("DeviceEvent publish failed");
                     }
                 }
+            }
 
-                // Publish StateSpans for basal delivery
+            // Publish StateSpans for basal delivery
+            if (activeTypes.Contains(SyncDataType.StateSpans))
+            {
                 var stateSpans = await FetchStateSpansAsync(request.From, request.To);
                 var stateSpanList = stateSpans.ToList();
 
@@ -332,16 +354,14 @@ public class MyLifeConnectorService(
                             "Synced {Count} StateSpan records",
                             stateSpanList.Count
                         );
+                        result.ItemsSynced[SyncDataType.StateSpans] = stateSpanList.Count;
                     }
                     else
                     {
-                        _logger.LogWarning("Failed to sync some StateSpan records");
+                        result.Success = false;
+                        result.Errors.Add("StateSpan publish failed");
                     }
                 }
-
-                result.ItemsSynced[SyncDataType.Treatments] = totalCount;
-                if (!allSuccess)
-                    result.Success = false;
             }
         }
         catch (Exception ex)

@@ -25,10 +25,9 @@ public class MyLifeEventProcessor
     /// Maps MyLife events to SensorGlucose records.
     /// </summary>
     public IEnumerable<SensorGlucose> MapSensorGlucose(
-        IEnumerable<MyLifeEvent> events,
-        bool enableGlucoseSync)
+        IEnumerable<MyLifeEvent> events)
     {
-        return MyLifeSensorGlucoseMapper.Map(events, enableGlucoseSync);
+        return MyLifeSensorGlucoseMapper.Map(events);
     }
 
     /// <summary>
@@ -36,7 +35,6 @@ public class MyLifeEventProcessor
     /// </summary>
     public MyLifeResult MapRecords(
         IEnumerable<MyLifeEvent> events,
-        bool enableManualBgSync,
         bool enableMealCarbConsolidation,
         bool enableTempBasalConsolidation,
         int tempBasalConsolidationWindowMinutes)
@@ -44,7 +42,6 @@ public class MyLifeEventProcessor
         var eventList = events.ToList();
         var context = MyLifeContext.Create(
             eventList,
-            enableManualBgSync,
             enableMealCarbConsolidation,
             enableTempBasalConsolidation,
             tempBasalConsolidationWindowMinutes

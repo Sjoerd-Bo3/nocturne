@@ -10,11 +10,8 @@ namespace Nocturne.Connectors.MyLife.Mappers;
 /// </summary>
 internal sealed class MyLifeSensorGlucoseMapper
 {
-    internal static IEnumerable<SensorGlucose> Map(IEnumerable<MyLifeEvent> events, bool enableGlucoseSync)
+    internal static IEnumerable<SensorGlucose> Map(IEnumerable<MyLifeEvent> events)
     {
-        if (!enableGlucoseSync)
-            return [];
-
         var list = new List<SensorGlucose>();
         foreach (var ev in events)
         {
