@@ -98,6 +98,7 @@ public class DeviceEventMarkerDto
     public long Time { get; set; }
     public DeviceEventType EventType { get; set; }
     public string? Notes { get; set; }
+    public string? TreatmentId { get; set; }
     public ChartColor Color { get; set; }
 }
 

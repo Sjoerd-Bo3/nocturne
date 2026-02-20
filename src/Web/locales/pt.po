@@ -424,7 +424,6 @@ msgstr ""
 #: src/routes/profile/+page.svelte
 #: src/routes/profile/+page.svelte
 #: src/routes/settings/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid "Profile"
 msgstr ""
 
@@ -915,7 +914,7 @@ msgstr ""
 #. placeholder {0}: foodEntry.fat
 #. placeholder {0}: scaledFat()
 #. placeholder {0}: foodEntry.fat
-#. placeholder {0}: formatCarbDisplay(averages.avgCarbs)
+#. placeholder {0}: (snapshot.cob ?? 0).toFixed(0)
 #. placeholder {0}: formatCarbDisplay(averages.avgProtein)
 #. placeholder {0}: formatCarbDisplay(averages.avgFat)
 #. placeholder {0}: totalCarbs
@@ -942,6 +941,7 @@ msgstr ""
 #: src/lib/components/meal-matching/MealMatchReviewDialog.svelte
 #: src/lib/components/meal-matching/MealMatchReviewDialog.svelte
 #: src/lib/components/meal-matching/MealMatchReviewDialog.svelte
+#: src/lib/components/reports/ApsStateCard.svelte
 #: src/lib/components/reports/PeriodAverages.svelte
 #: src/lib/components/reports/PeriodAverages.svelte
 #: src/lib/components/reports/PeriodAverages.svelte
@@ -967,9 +967,9 @@ msgstr ""
 
 #. placeholder {0}: marker.insulin.toFixed(1)
 #. placeholder {0}: insulin.toFixed(1)
-#. placeholder {0}: formatInsulinDisplay(treatmentSummary?.totals?.insulin?.bolus)
-#. placeholder {0}: formatInsulinDisplay(treatmentSummary?.totals?.insulin?.basal)
-#. placeholder {0}: formatInsulinDisplay((treatmentSummary?.totals?.insulin?.bolus ?? 0) + (treatmentSummary?.totals?.insulin?.basal ?? 0))
+#. placeholder {0}: totalIob.toFixed(2)
+#. placeholder {0}: snapshot.enactedBolusVolume.toFixed(2)
+#. placeholder {0}: snapshot.recommendedBolus.toFixed(2)
 #. placeholder {0}: formatInsulinDisplay((entry.treatmentSummary?.totals?.insulin?.bolus ?? 0) + (entry.treatmentSummary?.totals?.insulin?.basal ?? 0))
 #. placeholder {0}: morning.toFixed(1)
 #. placeholder {0}: afternoon.toFixed(1)
@@ -983,6 +983,9 @@ msgstr ""
 #. placeholder {0}: treatment.insulin.toFixed(2)
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
 #: src/lib/components/dashboard/glucose-chart/markers/BolusMarker.svelte
+#: src/lib/components/reports/ApsStateCard.svelte
+#: src/lib/components/reports/ApsStateCard.svelte
+#: src/lib/components/reports/ApsStateCard.svelte
 #: src/lib/components/reports/DailyInsulinSummary.svelte
 #: src/lib/components/reports/DailyInsulinSummary.svelte
 #: src/lib/components/reports/DailyInsulinSummary.svelte
@@ -2735,14 +2738,13 @@ msgid "Your therapy settings and insulin parameters"
 msgstr ""
 
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid "<0/> New Profile"
 msgstr ""
 
 #. placeholder {0}: data.totalProfiles
 #. placeholder {1}: data.totalProfiles !== 1 ? "s" : ""
-#. placeholder {0}: data.totalProfiles
-#. placeholder {1}: data.totalProfiles !== 1 ? "s" : ""
+#. placeholder {0}: profileNames.length
+#. placeholder {1}: profileNames.length !== 1 ? "s" : ""
 #: src/routes/profile/+page.svelte
 #: src/routes/settings/profile/+page.svelte
 msgid "<0/> {0} profile{1}"
@@ -2762,7 +2764,6 @@ msgid ""
 msgstr ""
 
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid "<0/> Create Profile"
 msgstr ""
 
@@ -2772,12 +2773,10 @@ msgid "<0/> Configure Data Sources"
 msgstr ""
 
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid "<0/> Profile History"
 msgstr ""
 
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid ""
 "Select a profile to view its settings. The most recently used\n"
 "profile is shown first."
@@ -2785,7 +2784,6 @@ msgstr ""
 
 #: src/lib/components/profile/ProfileDeleteDialog.svelte
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid "Unnamed Profile"
 msgstr ""
 
@@ -2806,21 +2804,17 @@ msgstr ""
 
 #. placeholder {0}: new Date(face.createdAt).toLocaleDateString()
 #. placeholder {0}: formatDateDetailed(selectedProfile.created_at)
-#. placeholder {0}: formatDateDetailed(selectedProfile.created_at)
 #: src/routes/clock/+page.svelte
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid "Created {0}"
 msgstr ""
 
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid "<0/> Edit Profile"
 msgstr ""
 
 #: src/lib/components/profile/ProfileDeleteDialog.svelte
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid "<0/> Delete Profile"
 msgstr ""
 
@@ -2838,7 +2832,6 @@ msgstr ""
 #: src/routes/profile/+page.svelte
 #: src/routes/profile/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 #: src/routes/settings/profile/+page.svelte
 msgid "Timezone"
 msgstr ""
@@ -2860,8 +2853,8 @@ msgstr ""
 #. placeholder {0}: store.devices.cgmConfiguration?.sensorWarmupHours ?? 2
 #. placeholder {0}: store.features.display?.focusHours ?? 3
 #. placeholder {0}: store.features.display?.focusHours ?? 3
-#. placeholder {0}: defaultStore?.dia ?? "–"
-#. placeholder {0}: store.dia ?? "–"
+#. placeholder {0}: therapy.dia ?? "-"
+#. placeholder {0}: therapy.dia ?? "-"
 #: src/routes/profile/+page.svelte
 #: src/routes/profile/+page.svelte
 #: src/routes/settings/devices/+page.svelte
@@ -2880,8 +2873,8 @@ msgstr ""
 
 #. placeholder {0}: defaultStore?.carbs_hr ?? "–"
 #. placeholder {0}: store.carbs_hr ?? "–"
-#. placeholder {0}: defaultStore?.carbs_hr ?? "–"
-#. placeholder {0}: store.carbs_hr ?? "–"
+#. placeholder {0}: therapy.carbsHr ?? "-"
+#. placeholder {0}: therapy.carbsHr ?? "-"
 #: src/routes/profile/+page.svelte
 #: src/routes/profile/+page.svelte
 #: src/routes/settings/profile/+page.svelte
@@ -2957,19 +2950,16 @@ msgid "Profile Settings"
 msgstr ""
 
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid "No data available for this profile store."
 msgstr ""
 
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid ""
 "This profile doesn't contain any therapy settings (basal, carb\n"
 "ratios, etc.)"
 msgstr ""
 
 #: src/routes/profile/+page.svelte
-#: src/routes/settings/profile/+page.svelte
 msgid "<0/> Add Settings"
 msgstr ""
 
@@ -3141,6 +3131,7 @@ msgstr ""
 #: src/lib/components/dashboard/glucose-chart/ChartTooltip.svelte
 #: src/lib/components/dashboard/glucose-chart/ChartTooltip.svelte
 #: src/lib/components/dashboard/glucose-chart/ChartTooltip.svelte
+#: src/lib/components/reports/ApsStateCard.svelte
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
 msgid "Temp Basal"
 msgstr ""
@@ -4538,8 +4529,9 @@ msgstr ""
 msgid "<0/> Try Again"
 msgstr ""
 
-#~ msgid "Target"
-#~ msgstr ""
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "Target"
+msgstr ""
 
 #~ msgid "Label:"
 #~ msgstr ""
@@ -5595,8 +5587,10 @@ msgstr ""
 
 #. placeholder {0}: m
 #. placeholder {0}: min
+#. placeholder {0}: therapy.delay ?? "-"
 #: src/lib/components/clock-builder/ElementInspector.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
+#: src/routes/settings/profile/+page.svelte
 msgid "{0} min"
 msgstr ""
 
@@ -12669,6 +12663,7 @@ msgstr ""
 msgid "Included PostgreSQL Container"
 msgstr ""
 
+#: src/lib/components/reports/ApsStateCard.svelte
 #: src/routes/setup/+page.svelte
 msgid "Recommended"
 msgstr ""
@@ -14105,6 +14100,7 @@ msgstr ""
 msgid "Toggle profiles"
 msgstr ""
 
+#: src/routes/settings/profile/+page.svelte
 #: src/routes/time-spans/+page.svelte
 msgid "<0/> Profiles"
 msgstr ""
@@ -15889,4 +15885,84 @@ msgstr ""
 
 #: src/routes/meals/+page.svelte
 msgid "Remove"
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "Select a profile to view its settings."
+msgstr ""
+
+#. placeholder {0}: therapy.enteredBy
+#: src/routes/settings/profile/+page.svelte
+msgid "· Entered by {0}"
+msgstr ""
+
+#. placeholder {0}: formatRelativeTime(therapy.createdAt)
+#: src/routes/settings/profile/+page.svelte
+msgid "Created {0} <0/>"
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "Delay"
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "Externally managed"
+msgstr ""
+
+#. placeholder {0}: selectedProfileName
+#: src/routes/settings/profile/+page.svelte
+msgid "No therapy settings found for profile \"{0}\"."
+msgstr ""
+
+#. placeholder {0}: snapshotTime
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "<0/> APS Decision at {0}"
+msgstr ""
+
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "<0/> Enacted"
+msgstr ""
+
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "Suggested"
+msgstr ""
+
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "<0/> IOB"
+msgstr ""
+
+#. placeholder {0}: basalIob.toFixed(2)
+#. placeholder {1}: bolusIob.toFixed(2)
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "{0} basal / {1} bolus"
+msgstr ""
+
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "<0/> COB"
+msgstr ""
+
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "Current BG"
+msgstr ""
+
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "<0/> Eventual BG"
+msgstr ""
+
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "Sensitivity"
+msgstr ""
+
+#. placeholder {0}: snapshot.enactedDuration
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "({0}m)"
+msgstr ""
+
+#. placeholder {0}: snapshot.enactedRate.toFixed(2)
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "{0}U/hr <0/>"
+msgstr ""
+
+#: src/lib/components/reports/ApsStateCard.svelte
+msgid "Auto-bolus"
 msgstr ""

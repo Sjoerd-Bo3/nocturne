@@ -10216,6 +10216,1315 @@
         }
       }
     },
+    "/api/v4/profile/summary": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get a consolidated summary of all profile data across all profile names",
+        "operationId": "Profile_GetProfileSummary",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSummary"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/profile/settings": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get all therapy settings with optional filtering",
+        "operationId": "Profile_GetTherapySettings",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "nullable": true
+            },
+            "x-position": 2
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            },
+            "x-position": 3
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "x-position": 4
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "mills_desc"
+            },
+            "x-position": 5
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 6
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 7
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseOfTherapySettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "post": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Create a new therapy settings record",
+        "operationId": "Profile_CreateTherapySettings",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TherapySettings"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TherapySettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetTherapySettings"
+        ]
+      }
+    },
+    "/api/v4/profile/settings/by-name/{profileName}": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get therapy settings by profile name",
+        "operationId": "Profile_GetTherapySettingsByName",
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TherapySettings"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/profile/settings/{id}": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get a therapy settings record by ID",
+        "operationId": "Profile_GetTherapySettingsById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TherapySettings"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "put": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Update an existing therapy settings record",
+        "operationId": "Profile_UpdateTherapySettings",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TherapySettings"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TherapySettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetTherapySettings",
+          "GetTherapySettingsById"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Delete a therapy settings record",
+        "operationId": "Profile_DeleteTherapySettings",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetTherapySettings"
+        ]
+      }
+    },
+    "/api/v4/profile/basal/{profileName}": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get basal schedules by profile name",
+        "operationId": "Profile_GetBasalSchedulesByName",
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BasalSchedule"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/profile/basal/by-id/{id}": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get a basal schedule by ID",
+        "operationId": "Profile_GetBasalScheduleById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasalSchedule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/profile/basal": {
+      "post": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Create a new basal schedule",
+        "operationId": "Profile_CreateBasalSchedule",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BasalSchedule"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasalSchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetBasalSchedulesByName"
+        ]
+      }
+    },
+    "/api/v4/profile/basal/{id}": {
+      "put": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Update an existing basal schedule",
+        "operationId": "Profile_UpdateBasalSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BasalSchedule"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasalSchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetBasalSchedulesByName",
+          "GetBasalScheduleById"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Delete a basal schedule",
+        "operationId": "Profile_DeleteBasalSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetBasalSchedulesByName"
+        ]
+      }
+    },
+    "/api/v4/profile/carb-ratio/{profileName}": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get carb ratio schedules by profile name",
+        "operationId": "Profile_GetCarbRatioSchedulesByName",
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CarbRatioSchedule"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/profile/carb-ratio/by-id/{id}": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get a carb ratio schedule by ID",
+        "operationId": "Profile_GetCarbRatioScheduleById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarbRatioSchedule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/profile/carb-ratio": {
+      "post": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Create a new carb ratio schedule",
+        "operationId": "Profile_CreateCarbRatioSchedule",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarbRatioSchedule"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarbRatioSchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetCarbRatioSchedulesByName"
+        ]
+      }
+    },
+    "/api/v4/profile/carb-ratio/{id}": {
+      "put": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Update an existing carb ratio schedule",
+        "operationId": "Profile_UpdateCarbRatioSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarbRatioSchedule"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarbRatioSchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetCarbRatioSchedulesByName",
+          "GetCarbRatioScheduleById"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Delete a carb ratio schedule",
+        "operationId": "Profile_DeleteCarbRatioSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetCarbRatioSchedulesByName"
+        ]
+      }
+    },
+    "/api/v4/profile/sensitivity/{profileName}": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get sensitivity schedules by profile name",
+        "operationId": "Profile_GetSensitivitySchedulesByName",
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SensitivitySchedule"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/profile/sensitivity/by-id/{id}": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get a sensitivity schedule by ID",
+        "operationId": "Profile_GetSensitivityScheduleById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensitivitySchedule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/profile/sensitivity": {
+      "post": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Create a new sensitivity schedule",
+        "operationId": "Profile_CreateSensitivitySchedule",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SensitivitySchedule"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensitivitySchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetSensitivitySchedulesByName"
+        ]
+      }
+    },
+    "/api/v4/profile/sensitivity/{id}": {
+      "put": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Update an existing sensitivity schedule",
+        "operationId": "Profile_UpdateSensitivitySchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SensitivitySchedule"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensitivitySchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetSensitivitySchedulesByName",
+          "GetSensitivityScheduleById"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Delete a sensitivity schedule",
+        "operationId": "Profile_DeleteSensitivitySchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetSensitivitySchedulesByName"
+        ]
+      }
+    },
+    "/api/v4/profile/target-range/{profileName}": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get target range schedules by profile name",
+        "operationId": "Profile_GetTargetRangeSchedulesByName",
+        "parameters": [
+          {
+            "name": "profileName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TargetRangeSchedule"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/profile/target-range/by-id/{id}": {
+      "get": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Get a target range schedule by ID",
+        "operationId": "Profile_GetTargetRangeScheduleById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetRangeSchedule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/profile/target-range": {
+      "post": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Create a new target range schedule",
+        "operationId": "Profile_CreateTargetRangeSchedule",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TargetRangeSchedule"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetRangeSchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetTargetRangeSchedulesByName"
+        ]
+      }
+    },
+    "/api/v4/profile/target-range/{id}": {
+      "put": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Update an existing target range schedule",
+        "operationId": "Profile_UpdateTargetRangeSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TargetRangeSchedule"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetRangeSchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetTargetRangeSchedulesByName",
+          "GetTargetRangeScheduleById"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "V4 Profile"
+        ],
+        "summary": "Delete a target range schedule",
+        "operationId": "Profile_DeleteTargetRangeSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetProfileSummary",
+          "GetTargetRangeSchedulesByName"
+        ]
+      }
+    },
     "/api/v4/Retrospective/at": {
       "get": {
         "tags": [
@@ -25391,6 +26700,10 @@
             "type": "string",
             "nullable": true
           },
+          "treatmentId": {
+            "type": "string",
+            "nullable": true
+          },
           "color": {
             "$ref": "#/components/schemas/ChartColor"
           }
@@ -29948,6 +31261,568 @@
           }
         }
       },
+      "ProfileSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "therapySettings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TherapySettings"
+            }
+          },
+          "basalSchedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BasalSchedule"
+            }
+          },
+          "carbRatioSchedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CarbRatioSchedule"
+            }
+          },
+          "sensitivitySchedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SensitivitySchedule"
+            }
+          },
+          "targetRangeSchedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TargetRangeSchedule"
+            }
+          }
+        }
+      },
+      "TherapySettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "mills": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "legacyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "profileName": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "nullable": true
+          },
+          "units": {
+            "type": "string",
+            "nullable": true
+          },
+          "dia": {
+            "type": "number",
+            "format": "double"
+          },
+          "carbsHr": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "delay": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "perGIValues": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "carbsHrHigh": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "carbsHrMedium": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "carbsHrLow": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "delayHigh": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "delayMedium": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "delayLow": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "loopSettings": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LoopProfileSettings"
+              }
+            ]
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "enteredBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "isExternallyManaged": {
+            "type": "boolean"
+          },
+          "startDate": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "LoopProfileSettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "deviceToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "bundleIdentifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "overridePresets": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/LoopOverridePreset"
+            }
+          },
+          "dosingEnabled": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "minimumBGGuard": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "preMealTargetRange": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LoopTargetRange"
+              }
+            ]
+          },
+          "workoutTargetRange": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LoopTargetRange"
+              }
+            ]
+          },
+          "maximumBolus": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "maximumBasalRatePerHour": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "dosingStrategy": {
+            "type": "string",
+            "nullable": true
+          },
+          "scheduleOverride": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LoopOverridePreset"
+              }
+            ]
+          }
+        }
+      },
+      "LoopOverridePreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "symbol": {
+            "type": "string",
+            "nullable": true
+          },
+          "duration": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "targetRange": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LoopTargetRange"
+              }
+            ]
+          },
+          "insulinNeedsScaleFactor": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        }
+      },
+      "LoopTargetRange": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "minValue": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "maxValue": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        }
+      },
+      "BasalSchedule": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "mills": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "legacyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "profileName": {
+            "type": "string"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleEntry"
+            }
+          }
+        }
+      },
+      "ScheduleEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "time": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          },
+          "timeAsSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
+      "CarbRatioSchedule": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "mills": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "legacyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "profileName": {
+            "type": "string"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleEntry"
+            }
+          }
+        }
+      },
+      "SensitivitySchedule": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "mills": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "legacyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "profileName": {
+            "type": "string"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleEntry"
+            }
+          }
+        }
+      },
+      "TargetRangeSchedule": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "mills": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "legacyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "profileName": {
+            "type": "string"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TargetRangeEntry"
+            }
+          }
+        }
+      },
+      "TargetRangeEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "time": {
+            "type": "string"
+          },
+          "low": {
+            "type": "number",
+            "format": "double"
+          },
+          "high": {
+            "type": "number",
+            "format": "double"
+          },
+          "timeAsSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
+      "PaginatedResponseOfTherapySettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TherapySettings"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationInfo"
+          }
+        }
+      },
       "RetrospectiveDataResponse": {
         "type": "object",
         "description": "Response for single point retrospective data",
@@ -34232,122 +36107,6 @@
           "timeAsSeconds": {
             "type": "integer",
             "format": "int32",
-            "nullable": true
-          }
-        }
-      },
-      "LoopProfileSettings": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "deviceToken": {
-            "type": "string",
-            "nullable": true
-          },
-          "bundleIdentifier": {
-            "type": "string",
-            "nullable": true
-          },
-          "overridePresets": {
-            "type": "array",
-            "nullable": true,
-            "items": {
-              "$ref": "#/components/schemas/LoopOverridePreset"
-            }
-          },
-          "dosingEnabled": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "minimumBGGuard": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "preMealTargetRange": {
-            "nullable": true,
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/LoopTargetRange"
-              }
-            ]
-          },
-          "workoutTargetRange": {
-            "nullable": true,
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/LoopTargetRange"
-              }
-            ]
-          },
-          "maximumBolus": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "maximumBasalRatePerHour": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "dosingStrategy": {
-            "type": "string",
-            "nullable": true
-          },
-          "scheduleOverride": {
-            "nullable": true,
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/LoopOverridePreset"
-              }
-            ]
-          }
-        }
-      },
-      "LoopOverridePreset": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
-          "symbol": {
-            "type": "string",
-            "nullable": true
-          },
-          "duration": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "targetRange": {
-            "nullable": true,
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/LoopTargetRange"
-              }
-            ]
-          },
-          "insulinNeedsScaleFactor": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          }
-        }
-      },
-      "LoopTargetRange": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "minValue": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "maxValue": {
-            "type": "number",
-            "format": "double",
             "nullable": true
           }
         }

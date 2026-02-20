@@ -23,6 +23,7 @@ export * from './notifications.generated.remote';
 export * from './nutritions.generated.remote';
 export * from './observations.generated.remote';
 export { getPredictions } from './predictions.generated.remote';
+export * from './profiles.generated.remote';
 export * from './retrospectives.generated.remote';
 export * from './services.generated.remote';
 export * from './statespans.generated.remote';

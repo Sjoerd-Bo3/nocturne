@@ -12330,6 +12330,1744 @@ export class ProcessingClient {
     }
 }
 
+export class ProfileClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Get a consolidated summary of all profile data across all profile names
+     */
+    getProfileSummary(signal?: AbortSignal): Promise<ProfileSummary> {
+        let url_ = this.baseUrl + "/api/v4/profile/summary";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetProfileSummary(_response);
+        });
+    }
+
+    protected processGetProfileSummary(response: Response): Promise<ProfileSummary> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProfileSummary;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ProfileSummary>(null as any);
+    }
+
+    /**
+     * Get all therapy settings with optional filtering
+     * @param from (optional) 
+     * @param to (optional) 
+     * @param limit (optional) 
+     * @param offset (optional) 
+     * @param sort (optional) 
+     * @param device (optional) 
+     * @param source (optional) 
+     */
+    getTherapySettings(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfTherapySettings> {
+        let url_ = this.baseUrl + "/api/v4/profile/settings?";
+        if (from !== undefined && from !== null)
+            url_ += "from=" + encodeURIComponent("" + from) + "&";
+        if (to !== undefined && to !== null)
+            url_ += "to=" + encodeURIComponent("" + to) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url_ += "limit=" + encodeURIComponent("" + limit) + "&";
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url_ += "offset=" + encodeURIComponent("" + offset) + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            url_ += "sort=" + encodeURIComponent("" + sort) + "&";
+        if (device !== undefined && device !== null)
+            url_ += "device=" + encodeURIComponent("" + device) + "&";
+        if (source !== undefined && source !== null)
+            url_ += "source=" + encodeURIComponent("" + source) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetTherapySettings(_response);
+        });
+    }
+
+    protected processGetTherapySettings(response: Response): Promise<PaginatedResponseOfTherapySettings> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PaginatedResponseOfTherapySettings;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PaginatedResponseOfTherapySettings>(null as any);
+    }
+
+    /**
+     * Create a new therapy settings record
+     */
+    createTherapySettings(model: TherapySettings, signal?: AbortSignal): Promise<TherapySettings> {
+        let url_ = this.baseUrl + "/api/v4/profile/settings";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(model);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateTherapySettings(_response);
+        });
+    }
+
+    protected processCreateTherapySettings(response: Response): Promise<TherapySettings> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TherapySettings;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TherapySettings>(null as any);
+    }
+
+    /**
+     * Get therapy settings by profile name
+     */
+    getTherapySettingsByName(profileName: string, signal?: AbortSignal): Promise<TherapySettings[]> {
+        let url_ = this.baseUrl + "/api/v4/profile/settings/by-name/{profileName}";
+        if (profileName === undefined || profileName === null)
+            throw new globalThis.Error("The parameter 'profileName' must be defined.");
+        url_ = url_.replace("{profileName}", encodeURIComponent("" + profileName));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetTherapySettingsByName(_response);
+        });
+    }
+
+    protected processGetTherapySettingsByName(response: Response): Promise<TherapySettings[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TherapySettings[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TherapySettings[]>(null as any);
+    }
+
+    /**
+     * Get a therapy settings record by ID
+     */
+    getTherapySettingsById(id: string, signal?: AbortSignal): Promise<TherapySettings> {
+        let url_ = this.baseUrl + "/api/v4/profile/settings/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetTherapySettingsById(_response);
+        });
+    }
+
+    protected processGetTherapySettingsById(response: Response): Promise<TherapySettings> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TherapySettings;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TherapySettings>(null as any);
+    }
+
+    /**
+     * Update an existing therapy settings record
+     */
+    updateTherapySettings(id: string, model: TherapySettings, signal?: AbortSignal): Promise<TherapySettings> {
+        let url_ = this.baseUrl + "/api/v4/profile/settings/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(model);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateTherapySettings(_response);
+        });
+    }
+
+    protected processUpdateTherapySettings(response: Response): Promise<TherapySettings> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TherapySettings;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TherapySettings>(null as any);
+    }
+
+    /**
+     * Delete a therapy settings record
+     */
+    deleteTherapySettings(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/profile/settings/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteTherapySettings(_response);
+        });
+    }
+
+    protected processDeleteTherapySettings(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Get basal schedules by profile name
+     */
+    getBasalSchedulesByName(profileName: string, signal?: AbortSignal): Promise<BasalSchedule[]> {
+        let url_ = this.baseUrl + "/api/v4/profile/basal/{profileName}";
+        if (profileName === undefined || profileName === null)
+            throw new globalThis.Error("The parameter 'profileName' must be defined.");
+        url_ = url_.replace("{profileName}", encodeURIComponent("" + profileName));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetBasalSchedulesByName(_response);
+        });
+    }
+
+    protected processGetBasalSchedulesByName(response: Response): Promise<BasalSchedule[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as BasalSchedule[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<BasalSchedule[]>(null as any);
+    }
+
+    /**
+     * Get a basal schedule by ID
+     */
+    getBasalScheduleById(id: string, signal?: AbortSignal): Promise<BasalSchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/basal/by-id/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetBasalScheduleById(_response);
+        });
+    }
+
+    protected processGetBasalScheduleById(response: Response): Promise<BasalSchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as BasalSchedule;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<BasalSchedule>(null as any);
+    }
+
+    /**
+     * Create a new basal schedule
+     */
+    createBasalSchedule(model: BasalSchedule, signal?: AbortSignal): Promise<BasalSchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/basal";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(model);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateBasalSchedule(_response);
+        });
+    }
+
+    protected processCreateBasalSchedule(response: Response): Promise<BasalSchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as BasalSchedule;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<BasalSchedule>(null as any);
+    }
+
+    /**
+     * Update an existing basal schedule
+     */
+    updateBasalSchedule(id: string, model: BasalSchedule, signal?: AbortSignal): Promise<BasalSchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/basal/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(model);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateBasalSchedule(_response);
+        });
+    }
+
+    protected processUpdateBasalSchedule(response: Response): Promise<BasalSchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as BasalSchedule;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<BasalSchedule>(null as any);
+    }
+
+    /**
+     * Delete a basal schedule
+     */
+    deleteBasalSchedule(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/profile/basal/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteBasalSchedule(_response);
+        });
+    }
+
+    protected processDeleteBasalSchedule(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Get carb ratio schedules by profile name
+     */
+    getCarbRatioSchedulesByName(profileName: string, signal?: AbortSignal): Promise<CarbRatioSchedule[]> {
+        let url_ = this.baseUrl + "/api/v4/profile/carb-ratio/{profileName}";
+        if (profileName === undefined || profileName === null)
+            throw new globalThis.Error("The parameter 'profileName' must be defined.");
+        url_ = url_.replace("{profileName}", encodeURIComponent("" + profileName));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetCarbRatioSchedulesByName(_response);
+        });
+    }
+
+    protected processGetCarbRatioSchedulesByName(response: Response): Promise<CarbRatioSchedule[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CarbRatioSchedule[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CarbRatioSchedule[]>(null as any);
+    }
+
+    /**
+     * Get a carb ratio schedule by ID
+     */
+    getCarbRatioScheduleById(id: string, signal?: AbortSignal): Promise<CarbRatioSchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/carb-ratio/by-id/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetCarbRatioScheduleById(_response);
+        });
+    }
+
+    protected processGetCarbRatioScheduleById(response: Response): Promise<CarbRatioSchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CarbRatioSchedule;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CarbRatioSchedule>(null as any);
+    }
+
+    /**
+     * Create a new carb ratio schedule
+     */
+    createCarbRatioSchedule(model: CarbRatioSchedule, signal?: AbortSignal): Promise<CarbRatioSchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/carb-ratio";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(model);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateCarbRatioSchedule(_response);
+        });
+    }
+
+    protected processCreateCarbRatioSchedule(response: Response): Promise<CarbRatioSchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CarbRatioSchedule;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CarbRatioSchedule>(null as any);
+    }
+
+    /**
+     * Update an existing carb ratio schedule
+     */
+    updateCarbRatioSchedule(id: string, model: CarbRatioSchedule, signal?: AbortSignal): Promise<CarbRatioSchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/carb-ratio/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(model);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateCarbRatioSchedule(_response);
+        });
+    }
+
+    protected processUpdateCarbRatioSchedule(response: Response): Promise<CarbRatioSchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CarbRatioSchedule;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<CarbRatioSchedule>(null as any);
+    }
+
+    /**
+     * Delete a carb ratio schedule
+     */
+    deleteCarbRatioSchedule(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/profile/carb-ratio/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteCarbRatioSchedule(_response);
+        });
+    }
+
+    protected processDeleteCarbRatioSchedule(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Get sensitivity schedules by profile name
+     */
+    getSensitivitySchedulesByName(profileName: string, signal?: AbortSignal): Promise<SensitivitySchedule[]> {
+        let url_ = this.baseUrl + "/api/v4/profile/sensitivity/{profileName}";
+        if (profileName === undefined || profileName === null)
+            throw new globalThis.Error("The parameter 'profileName' must be defined.");
+        url_ = url_.replace("{profileName}", encodeURIComponent("" + profileName));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetSensitivitySchedulesByName(_response);
+        });
+    }
+
+    protected processGetSensitivitySchedulesByName(response: Response): Promise<SensitivitySchedule[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as SensitivitySchedule[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SensitivitySchedule[]>(null as any);
+    }
+
+    /**
+     * Get a sensitivity schedule by ID
+     */
+    getSensitivityScheduleById(id: string, signal?: AbortSignal): Promise<SensitivitySchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/sensitivity/by-id/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetSensitivityScheduleById(_response);
+        });
+    }
+
+    protected processGetSensitivityScheduleById(response: Response): Promise<SensitivitySchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as SensitivitySchedule;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SensitivitySchedule>(null as any);
+    }
+
+    /**
+     * Create a new sensitivity schedule
+     */
+    createSensitivitySchedule(model: SensitivitySchedule, signal?: AbortSignal): Promise<SensitivitySchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/sensitivity";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(model);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateSensitivitySchedule(_response);
+        });
+    }
+
+    protected processCreateSensitivitySchedule(response: Response): Promise<SensitivitySchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as SensitivitySchedule;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SensitivitySchedule>(null as any);
+    }
+
+    /**
+     * Update an existing sensitivity schedule
+     */
+    updateSensitivitySchedule(id: string, model: SensitivitySchedule, signal?: AbortSignal): Promise<SensitivitySchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/sensitivity/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(model);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateSensitivitySchedule(_response);
+        });
+    }
+
+    protected processUpdateSensitivitySchedule(response: Response): Promise<SensitivitySchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as SensitivitySchedule;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SensitivitySchedule>(null as any);
+    }
+
+    /**
+     * Delete a sensitivity schedule
+     */
+    deleteSensitivitySchedule(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/profile/sensitivity/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteSensitivitySchedule(_response);
+        });
+    }
+
+    protected processDeleteSensitivitySchedule(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Get target range schedules by profile name
+     */
+    getTargetRangeSchedulesByName(profileName: string, signal?: AbortSignal): Promise<TargetRangeSchedule[]> {
+        let url_ = this.baseUrl + "/api/v4/profile/target-range/{profileName}";
+        if (profileName === undefined || profileName === null)
+            throw new globalThis.Error("The parameter 'profileName' must be defined.");
+        url_ = url_.replace("{profileName}", encodeURIComponent("" + profileName));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetTargetRangeSchedulesByName(_response);
+        });
+    }
+
+    protected processGetTargetRangeSchedulesByName(response: Response): Promise<TargetRangeSchedule[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TargetRangeSchedule[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TargetRangeSchedule[]>(null as any);
+    }
+
+    /**
+     * Get a target range schedule by ID
+     */
+    getTargetRangeScheduleById(id: string, signal?: AbortSignal): Promise<TargetRangeSchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/target-range/by-id/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetTargetRangeScheduleById(_response);
+        });
+    }
+
+    protected processGetTargetRangeScheduleById(response: Response): Promise<TargetRangeSchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TargetRangeSchedule;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TargetRangeSchedule>(null as any);
+    }
+
+    /**
+     * Create a new target range schedule
+     */
+    createTargetRangeSchedule(model: TargetRangeSchedule, signal?: AbortSignal): Promise<TargetRangeSchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/target-range";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(model);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateTargetRangeSchedule(_response);
+        });
+    }
+
+    protected processCreateTargetRangeSchedule(response: Response): Promise<TargetRangeSchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TargetRangeSchedule;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TargetRangeSchedule>(null as any);
+    }
+
+    /**
+     * Update an existing target range schedule
+     */
+    updateTargetRangeSchedule(id: string, model: TargetRangeSchedule, signal?: AbortSignal): Promise<TargetRangeSchedule> {
+        let url_ = this.baseUrl + "/api/v4/profile/target-range/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(model);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateTargetRangeSchedule(_response);
+        });
+    }
+
+    protected processUpdateTargetRangeSchedule(response: Response): Promise<TargetRangeSchedule> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TargetRangeSchedule;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TargetRangeSchedule>(null as any);
+    }
+
+    /**
+     * Delete a target range schedule
+     */
+    deleteTargetRangeSchedule(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/profile/target-range/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteTargetRangeSchedule(_response);
+        });
+    }
+
+    protected processDeleteTargetRangeSchedule(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Get profiles with V3 API features including pagination, field selection, and advanced filtering
+     * @return V3 profiles collection response
+     */
+    getProfiles(signal?: AbortSignal): Promise<V3CollectionResponseOfObject> {
+        let url_ = this.baseUrl + "/api/v3/Profile";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetProfiles(_response);
+        });
+    }
+
+    protected processGetProfiles(response: Response): Promise<V3CollectionResponseOfObject> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3CollectionResponseOfObject;
+            return result200;
+            });
+        } else if (status === 304) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<V3CollectionResponseOfObject>(null as any);
+    }
+
+    /**
+     * Create new profiles with V3 format and deduplication support
+     * @param profileData Profile data to create (single object or array)
+     * @return Created profiles
+     */
+    createProfile(profileData: any, signal?: AbortSignal): Promise<Profile[]> {
+        let url_ = this.baseUrl + "/api/v3/Profile";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(profileData);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateProfile(_response);
+        });
+    }
+
+    protected processCreateProfile(response: Response): Promise<Profile[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Profile[]>(null as any);
+    }
+
+    /**
+     * Get a specific profile by ID with V3 format
+     * @param id Profile ID
+     * @return Single profile in V3 format
+     */
+    getProfileById(id: string, signal?: AbortSignal): Promise<Profile> {
+        let url_ = this.baseUrl + "/api/v3/Profile/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetProfileById(_response);
+        });
+    }
+
+    protected processGetProfileById(response: Response): Promise<Profile> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Profile>(null as any);
+    }
+
+    /**
+     * Update a profile by ID with V3 format
+     * @param id Profile ID to update
+     * @param profile Updated profile data
+     * @return Updated profile
+     */
+    updateProfile(id: string, profile: Profile, signal?: AbortSignal): Promise<Profile> {
+        let url_ = this.baseUrl + "/api/v3/Profile/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(profile);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateProfile(_response);
+        });
+    }
+
+    protected processUpdateProfile(response: Response): Promise<Profile> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Profile>(null as any);
+    }
+
+    /**
+     * Delete a profile by ID
+     * @param id Profile ID to delete
+     * @return No content on success
+     */
+    deleteProfile(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v3/Profile/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteProfile(_response);
+        });
+    }
+
+    protected processDeleteProfile(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Get profiles with optional pagination
+     * @param count (optional) Maximum number of profiles to return (default: 10)
+     * @return List of profiles
+     */
+    getProfiles2(count?: number | undefined, signal?: AbortSignal): Promise<Profile[]> {
+        let url_ = this.baseUrl + "/api/v1/Profile?";
+        if (count === null)
+            throw new globalThis.Error("The parameter 'count' cannot be null.");
+        else if (count !== undefined)
+            url_ += "count=" + encodeURIComponent("" + count) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetProfiles2(_response);
+        });
+    }
+
+    protected processGetProfiles2(response: Response): Promise<Profile[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
+            return result200;
+            });
+        } else if (status === 304) {
+            return response.text().then((_responseText) => {
+            let result304: any = null;
+            result304 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
+            return throwException("A server side error occurred.", status, _responseText, _headers, result304);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Profile[]>(null as any);
+    }
+
+    /**
+     * Create or update a profile.
+    Nightscout accepts either a single profile object or an array of profiles.
+     * @param body Profile(s) to create or update (single object or array)
+     * @return Created profiles with assigned IDs as an array
+     */
+    createProfiles(body: any, signal?: AbortSignal): Promise<Profile[]> {
+        let url_ = this.baseUrl + "/api/v1/Profile";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateProfiles(_response);
+        });
+    }
+
+    protected processCreateProfiles(response: Response): Promise<Profile[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Profile[]>(null as any);
+    }
+
+    /**
+     * Get the current active profile
+     * @return The current active profile as a single object (Nightscout format), or empty array if no profiles exist
+     */
+    getCurrentProfile(signal?: AbortSignal): Promise<Profile[]> {
+        let url_ = this.baseUrl + "/api/v1/Profile/current";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetCurrentProfile(_response);
+        });
+    }
+
+    protected processGetCurrentProfile(response: Response): Promise<Profile[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
+            return result200;
+            });
+        } else if (status === 304) {
+            return response.text().then((_responseText) => {
+            let result304: any = null;
+            result304 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
+            return throwException("A server side error occurred.", status, _responseText, _headers, result304);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Profile[]>(null as any);
+    }
+
+    /**
+     * Get a specific profile by ID or treat the spec as a profile ID
+     * @param spec The profile ID (24-character hex string for MongoDB ObjectId)
+     * @return The profile with the specified ID, or empty array if not found
+     */
+    getProfile(spec: string, signal?: AbortSignal): Promise<Profile[]> {
+        let url_ = this.baseUrl + "/api/v1/Profile/{spec}";
+        if (spec === undefined || spec === null)
+            throw new globalThis.Error("The parameter 'spec' must be defined.");
+        url_ = url_.replace("{spec}", encodeURIComponent("" + spec));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetProfile(_response);
+        });
+    }
+
+    protected processGetProfile(response: Response): Promise<Profile[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
+            return result200;
+            });
+        } else if (status === 304) {
+            return response.text().then((_responseText) => {
+            let result304: any = null;
+            result304 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
+            return throwException("A server side error occurred.", status, _responseText, _headers, result304);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Profile[]>(null as any);
+    }
+}
+
 export class RetrospectiveClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -18667,477 +20405,6 @@ export class LastModifiedClient {
     }
 }
 
-export class ProfileClient {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * Get profiles with V3 API features including pagination, field selection, and advanced filtering
-     * @return V3 profiles collection response
-     */
-    getProfiles(signal?: AbortSignal): Promise<V3CollectionResponseOfObject> {
-        let url_ = this.baseUrl + "/api/v3/Profile";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetProfiles(_response);
-        });
-    }
-
-    protected processGetProfiles(response: Response): Promise<V3CollectionResponseOfObject> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3CollectionResponseOfObject;
-            return result200;
-            });
-        } else if (status === 304) {
-            return response.text().then((_responseText) => {
-            return throwException("A server side error occurred.", status, _responseText, _headers);
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 500) {
-            return response.text().then((_responseText) => {
-            return throwException("A server side error occurred.", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<V3CollectionResponseOfObject>(null as any);
-    }
-
-    /**
-     * Create new profiles with V3 format and deduplication support
-     * @param profileData Profile data to create (single object or array)
-     * @return Created profiles
-     */
-    createProfile(profileData: any, signal?: AbortSignal): Promise<Profile[]> {
-        let url_ = this.baseUrl + "/api/v3/Profile";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(profileData);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCreateProfile(_response);
-        });
-    }
-
-    protected processCreateProfile(response: Response): Promise<Profile[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 201) {
-            return response.text().then((_responseText) => {
-            let result201: any = null;
-            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
-            return result201;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 500) {
-            return response.text().then((_responseText) => {
-            return throwException("A server side error occurred.", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Profile[]>(null as any);
-    }
-
-    /**
-     * Get a specific profile by ID with V3 format
-     * @param id Profile ID
-     * @return Single profile in V3 format
-     */
-    getProfileById(id: string, signal?: AbortSignal): Promise<Profile> {
-        let url_ = this.baseUrl + "/api/v3/Profile/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetProfileById(_response);
-        });
-    }
-
-    protected processGetProfileById(response: Response): Promise<Profile> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile;
-            return result200;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            });
-        } else if (status === 500) {
-            return response.text().then((_responseText) => {
-            return throwException("A server side error occurred.", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Profile>(null as any);
-    }
-
-    /**
-     * Update a profile by ID with V3 format
-     * @param id Profile ID to update
-     * @param profile Updated profile data
-     * @return Updated profile
-     */
-    updateProfile(id: string, profile: Profile, signal?: AbortSignal): Promise<Profile> {
-        let url_ = this.baseUrl + "/api/v3/Profile/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(profile);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "PUT",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processUpdateProfile(_response);
-        });
-    }
-
-    protected processUpdateProfile(response: Response): Promise<Profile> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile;
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            });
-        } else if (status === 500) {
-            return response.text().then((_responseText) => {
-            return throwException("A server side error occurred.", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Profile>(null as any);
-    }
-
-    /**
-     * Delete a profile by ID
-     * @param id Profile ID to delete
-     * @return No content on success
-     */
-    deleteProfile(id: string, signal?: AbortSignal): Promise<void> {
-        let url_ = this.baseUrl + "/api/v3/Profile/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "DELETE",
-            signal,
-            headers: {
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processDeleteProfile(_response);
-        });
-    }
-
-    protected processDeleteProfile(response: Response): Promise<void> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 204) {
-            return response.text().then((_responseText) => {
-            return;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as V3ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            });
-        } else if (status === 500) {
-            return response.text().then((_responseText) => {
-            return throwException("A server side error occurred.", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<void>(null as any);
-    }
-
-    /**
-     * Get profiles with optional pagination
-     * @param count (optional) Maximum number of profiles to return (default: 10)
-     * @return List of profiles
-     */
-    getProfiles2(count?: number | undefined, signal?: AbortSignal): Promise<Profile[]> {
-        let url_ = this.baseUrl + "/api/v1/Profile?";
-        if (count === null)
-            throw new globalThis.Error("The parameter 'count' cannot be null.");
-        else if (count !== undefined)
-            url_ += "count=" + encodeURIComponent("" + count) + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetProfiles2(_response);
-        });
-    }
-
-    protected processGetProfiles2(response: Response): Promise<Profile[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
-            return result200;
-            });
-        } else if (status === 304) {
-            return response.text().then((_responseText) => {
-            let result304: any = null;
-            result304 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
-            return throwException("A server side error occurred.", status, _responseText, _headers, result304);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Profile[]>(null as any);
-    }
-
-    /**
-     * Create or update a profile.
-    Nightscout accepts either a single profile object or an array of profiles.
-     * @param body Profile(s) to create or update (single object or array)
-     * @return Created profiles with assigned IDs as an array
-     */
-    createProfiles(body: any, signal?: AbortSignal): Promise<Profile[]> {
-        let url_ = this.baseUrl + "/api/v1/Profile";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(body);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCreateProfiles(_response);
-        });
-    }
-
-    protected processCreateProfiles(response: Response): Promise<Profile[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Profile[]>(null as any);
-    }
-
-    /**
-     * Get the current active profile
-     * @return The current active profile as a single object (Nightscout format), or empty array if no profiles exist
-     */
-    getCurrentProfile(signal?: AbortSignal): Promise<Profile[]> {
-        let url_ = this.baseUrl + "/api/v1/Profile/current";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetCurrentProfile(_response);
-        });
-    }
-
-    protected processGetCurrentProfile(response: Response): Promise<Profile[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
-            return result200;
-            });
-        } else if (status === 304) {
-            return response.text().then((_responseText) => {
-            let result304: any = null;
-            result304 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
-            return throwException("A server side error occurred.", status, _responseText, _headers, result304);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Profile[]>(null as any);
-    }
-
-    /**
-     * Get a specific profile by ID or treat the spec as a profile ID
-     * @param spec The profile ID (24-character hex string for MongoDB ObjectId)
-     * @return The profile with the specified ID, or empty array if not found
-     */
-    getProfile(spec: string, signal?: AbortSignal): Promise<Profile[]> {
-        let url_ = this.baseUrl + "/api/v1/Profile/{spec}";
-        if (spec === undefined || spec === null)
-            throw new globalThis.Error("The parameter 'spec' must be defined.");
-        url_ = url_.replace("{spec}", encodeURIComponent("" + spec));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetProfile(_response);
-        });
-    }
-
-    protected processGetProfile(response: Response): Promise<Profile[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
-            return result200;
-            });
-        } else if (status === 304) {
-            return response.text().then((_responseText) => {
-            let result304: any = null;
-            result304 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Profile[];
-            return throwException("A server side error occurred.", status, _responseText, _headers, result304);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Profile[]>(null as any);
-    }
-}
-
 export class SettingsClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -23578,6 +24845,7 @@ export interface DeviceEventMarkerDto {
     time?: number;
     eventType?: DeviceEventType;
     notes?: string | undefined;
+    treatmentId?: string | undefined;
     color?: ChartColor;
 }
 
@@ -25009,6 +26277,150 @@ export function isProcessingStatusResponse(object: any): object is ProcessingSta
     return object && object[''] === 'ProcessingStatusResponse';
 }
 
+export interface ProfileSummary {
+    therapySettings?: TherapySettings[];
+    basalSchedules?: BasalSchedule[];
+    carbRatioSchedules?: CarbRatioSchedule[];
+    sensitivitySchedules?: SensitivitySchedule[];
+    targetRangeSchedules?: TargetRangeSchedule[];
+}
+
+export interface TherapySettings {
+    id?: string;
+    mills?: number;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    correlationId?: string | undefined;
+    legacyId?: string | undefined;
+    createdAt?: Date;
+    modifiedAt?: Date;
+    profileName?: string;
+    timezone?: string | undefined;
+    units?: string | undefined;
+    dia?: number;
+    carbsHr?: number;
+    delay?: number;
+    perGIValues?: boolean | undefined;
+    carbsHrHigh?: number | undefined;
+    carbsHrMedium?: number | undefined;
+    carbsHrLow?: number | undefined;
+    delayHigh?: number | undefined;
+    delayMedium?: number | undefined;
+    delayLow?: number | undefined;
+    loopSettings?: LoopProfileSettings | undefined;
+    isDefault?: boolean;
+    enteredBy?: string | undefined;
+    isExternallyManaged?: boolean;
+    startDate?: string | undefined;
+}
+
+export interface LoopProfileSettings {
+    deviceToken?: string | undefined;
+    bundleIdentifier?: string | undefined;
+    overridePresets?: LoopOverridePreset[] | undefined;
+    dosingEnabled?: boolean | undefined;
+    minimumBGGuard?: number | undefined;
+    preMealTargetRange?: LoopTargetRange | undefined;
+    workoutTargetRange?: LoopTargetRange | undefined;
+    maximumBolus?: number | undefined;
+    maximumBasalRatePerHour?: number | undefined;
+    dosingStrategy?: string | undefined;
+    scheduleOverride?: LoopOverridePreset | undefined;
+}
+
+export interface LoopOverridePreset {
+    name?: string | undefined;
+    symbol?: string | undefined;
+    duration?: number | undefined;
+    targetRange?: LoopTargetRange | undefined;
+    insulinNeedsScaleFactor?: number | undefined;
+}
+
+export interface LoopTargetRange {
+    minValue?: number | undefined;
+    maxValue?: number | undefined;
+}
+
+export interface BasalSchedule {
+    id?: string;
+    mills?: number;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    correlationId?: string | undefined;
+    legacyId?: string | undefined;
+    createdAt?: Date;
+    modifiedAt?: Date;
+    profileName?: string;
+    entries?: ScheduleEntry[];
+}
+
+export interface ScheduleEntry {
+    time?: string;
+    value?: number;
+    timeAsSeconds?: number | undefined;
+}
+
+export interface CarbRatioSchedule {
+    id?: string;
+    mills?: number;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    correlationId?: string | undefined;
+    legacyId?: string | undefined;
+    createdAt?: Date;
+    modifiedAt?: Date;
+    profileName?: string;
+    entries?: ScheduleEntry[];
+}
+
+export interface SensitivitySchedule {
+    id?: string;
+    mills?: number;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    correlationId?: string | undefined;
+    legacyId?: string | undefined;
+    createdAt?: Date;
+    modifiedAt?: Date;
+    profileName?: string;
+    entries?: ScheduleEntry[];
+}
+
+export interface TargetRangeSchedule {
+    id?: string;
+    mills?: number;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    correlationId?: string | undefined;
+    legacyId?: string | undefined;
+    createdAt?: Date;
+    modifiedAt?: Date;
+    profileName?: string;
+    entries?: TargetRangeEntry[];
+}
+
+export interface TargetRangeEntry {
+    time?: string;
+    low?: number;
+    high?: number;
+    timeAsSeconds?: number | undefined;
+}
+
+export interface PaginatedResponseOfTherapySettings {
+    data?: TherapySettings[];
+    pagination?: PaginationInfo;
+}
+
 /** Response for single point retrospective data */
 export interface RetrospectiveDataResponse {
     time?: number;
@@ -26281,33 +27693,6 @@ export interface TimeValue {
     time?: string;
     value?: number;
     timeAsSeconds?: number | undefined;
-}
-
-export interface LoopProfileSettings {
-    deviceToken?: string | undefined;
-    bundleIdentifier?: string | undefined;
-    overridePresets?: LoopOverridePreset[] | undefined;
-    dosingEnabled?: boolean | undefined;
-    minimumBGGuard?: number | undefined;
-    preMealTargetRange?: LoopTargetRange | undefined;
-    workoutTargetRange?: LoopTargetRange | undefined;
-    maximumBolus?: number | undefined;
-    maximumBasalRatePerHour?: number | undefined;
-    dosingStrategy?: string | undefined;
-    scheduleOverride?: LoopOverridePreset | undefined;
-}
-
-export interface LoopOverridePreset {
-    name?: string | undefined;
-    symbol?: string | undefined;
-    duration?: number | undefined;
-    targetRange?: LoopTargetRange | undefined;
-    insulinNeedsScaleFactor?: number | undefined;
-}
-
-export interface LoopTargetRange {
-    minValue?: number | undefined;
-    maxValue?: number | undefined;
 }
 
 export interface Settings extends ProcessableDocumentBase {

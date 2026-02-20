@@ -28,8 +28,11 @@
   import InsulinDonutChart from "$lib/components/reports/InsulinDonutChart.svelte";
   import TIRStackedChart from "$lib/components/reports/TIRStackedChart.svelte";
   import ReliabilityBadge from "$lib/components/reports/ReliabilityBadge.svelte";
+  import RetrospectiveTimeScrubber from "$lib/components/reports/RetrospectiveTimeScrubber.svelte";
+  import ApsStateCard from "$lib/components/reports/ApsStateCard.svelte";
   import { GlucoseChartCard } from "$lib/components/dashboard/glucose-chart";
   import { contextResource } from "$lib/hooks/resource-context.svelte";
+  import { apsSnapshotToPrediction } from "$lib/utils/aps-snapshot-to-prediction";
 
   // Get date from URL search params
   const dateParam = $derived(
@@ -250,6 +253,39 @@
   function clearFilter() {
     filterEventType = null;
   }
+
+  // === Historical Predictions ===
+  const apsSnapshots = $derived(dayData?.apsSnapshots ?? []);
+  const hasApsSnapshots = $derived(apsSnapshots.length > 0);
+
+  // Scrubber time state — initialized to noon
+  let scrubberTime = $state(new Date());
+
+  // Find the nearest APS snapshot to the scrubber time
+  const selectedSnapshot = $derived.by(() => {
+    if (apsSnapshots.length === 0) return null;
+    const targetMs = scrubberTime.getTime();
+    let closest = apsSnapshots[0];
+    let closestDist = Math.abs((closest.mills ?? 0) - targetMs);
+    for (let i = 1; i < apsSnapshots.length; i++) {
+      const dist = Math.abs((apsSnapshots[i].mills ?? 0) - targetMs);
+      if (dist < closestDist) {
+        closest = apsSnapshots[i];
+        closestDist = dist;
+      }
+    }
+    return closest;
+  });
+
+  // Convert selected snapshot to PredictionData for the chart
+  const selectedPredictionData = $derived.by(() => {
+    if (!selectedSnapshot) return null;
+    return apsSnapshotToPrediction(selectedSnapshot);
+  });
+
+  function handleScrubberTimeChange(time: Date) {
+    scrubberTime = time;
+  }
 </script>
 
 {#if dayDataResource.current}
@@ -391,8 +427,20 @@
           59
         ),
     }}
-    showPredictions={false}
+    showPredictions={hasApsSnapshots}
+    externalPredictionData={selectedPredictionData}
   />
+
+  <!-- Historical Prediction Scrubber + APS State -->
+  {#if hasApsSnapshots}
+    <RetrospectiveTimeScrubber
+      date={currentDate}
+      bind:currentTime={scrubberTime}
+      onTimeChange={handleScrubberTimeChange}
+      stepMinutes={5}
+    />
+    <ApsStateCard snapshot={selectedSnapshot} />
+  {/if}
 
   <!-- Treatments Timeline with Filter/Sort -->
   <Card.Root>
@@ -589,5 +637,3 @@
   </Card.Root>
 </div>
 {/if}
-
-<!-- TODO: Bolus edit dialog will be added with v4 CRUD endpoints -->

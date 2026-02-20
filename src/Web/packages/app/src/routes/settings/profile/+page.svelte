@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import {
     Card,
@@ -10,64 +9,20 @@
   } from "$lib/components/ui/card";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
-  import * as Tabs from "$lib/components/ui/tabs";
   import * as Table from "$lib/components/ui/table";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import {
-    ProfileCreateDialog,
-    ProfileDeleteDialog,
-    ProfileEditDialog,
-  } from "$lib/components/profile";
-  import type { CreateProfileData } from "$lib/components/profile/ProfileCreateDialog.svelte";
   import {
     User,
-    UserCircle,
-    Heart,
-    HeartPulse,
     Activity,
-    Syringe,
-    Pill,
     Droplet,
     Target,
-    Sun,
-    Moon,
-    Sunrise,
-    Sunset,
-    Dumbbell,
-    Bike,
-    Footprints,
-    Utensils,
-    Coffee,
-    Cake,
-    Baby,
-    Briefcase,
-    Home,
-    Plane,
-    Zap,
-    Shield,
-    Star,
-    Sparkles,
-    Clock,
-    Calendar,
     TrendingUp,
-    History,
-    ChevronRight,
+    Clock,
     Settings,
-    Plus,
-    Trash2,
-    Edit,
-    MoreVertical,
-    type Icon,
+    ChevronRight,
   } from "lucide-svelte";
-  import type { Profile, TimeValue } from "$lib/api";
-  import { formatDateDetailed, bgLabel } from "$lib/utils/formatting";
+  import { bgLabel } from "$lib/utils/formatting";
   import { glucoseUnits } from "$lib/stores/appearance-store.svelte";
-  import {
-    getProfiles,
-    createProfile,
-    updateProfile,
-    deleteProfile,
-  } from "./data.remote";
+  import { getProfileSummary } from "$api/generated/profiles.generated.remote";
 
   const MGDL_TO_MMOL = 18.01559;
 
@@ -96,104 +51,49 @@
     return value;
   }
 
-  // Get the selected profile ID from URL
-  const urlProfileId = $derived(page.url.searchParams.get("id"));
+  type Summary = Awaited<ReturnType<typeof getProfileSummary>>;
 
-  // Query for profiles data - passes selectedProfileId as argument
-  const profilesQuery = $derived(getProfiles(urlProfileId ?? undefined));
+  // Query for profile summary data
+  const summaryQuery = $derived(getProfileSummary());
 
-  // Icon component map
-  const iconComponents: Record<string, typeof Icon> = {
-    user: User,
-    "user-circle": UserCircle,
-    heart: Heart,
-    "heart-pulse": HeartPulse,
-    activity: Activity,
-    syringe: Syringe,
-    pill: Pill,
-    droplet: Droplet,
-    target: Target,
-    sun: Sun,
-    moon: Moon,
-    sunrise: Sunrise,
-    sunset: Sunset,
-    dumbbell: Dumbbell,
-    bike: Bike,
-    footprints: Footprints,
-    utensils: Utensils,
-    coffee: Coffee,
-    cake: Cake,
-    baby: Baby,
-    briefcase: Briefcase,
-    home: Home,
-    plane: Plane,
-    zap: Zap,
-    shield: Shield,
-    star: Star,
-    sparkles: Sparkles,
-    clock: Clock,
-    calendar: Calendar,
-    "trending-up": TrendingUp,
-  };
+  // Selected profile name from URL or default
+  const urlProfileName = $derived(page.url.searchParams.get("name"));
 
-  function getProfileIcon(profile: Profile): typeof Icon {
-    const iconId = (profile as any).icon ?? "user";
-    return iconComponents[iconId] ?? User;
+  // Extract unique profile names from therapy settings (the canonical source)
+  function getProfileNames(data: Summary): string[] {
+    const names = new Set<string>();
+    for (const ts of (data?.therapySettings ?? []) as any[]) {
+      names.add(String(ts.profileName ?? "Default"));
+    }
+    return [...names];
   }
 
-  // Currently selected profile ID - derived from URL or default
-  let selectedProfileId = $derived.by(() => {
-    const urlId = page.url.searchParams.get("id");
-    const currentData = profilesQuery.current;
-    return (
-      urlId ??
-      currentData?.selectedProfileId ??
-      currentData?.currentProfile?._id ??
-      null
-    );
-  });
+  // Determine the default (active) profile name
+  function getDefaultProfileName(data: Summary): string | null {
+    const settings = (data?.therapySettings ?? []) as any[];
+    const defaultSettings = settings.find((ts: any) => ts.isDefault) ?? settings[0] ?? null;
+    return defaultSettings?.profileName ?? null;
+  }
 
-  // Derived: get selected profile
-  let selectedProfile = $derived.by(() => {
-    const currentData = profilesQuery.current;
-    if (!currentData) return null;
-    return (
-      currentData.profiles.find((p: Profile) => p._id === selectedProfileId) ??
-      currentData.currentProfile
-    );
-  });
+  // Helper to extract data from the summary for a given profile name
+  function getTherapyForProfile(data: Summary, profileName: string) {
+    return ((data?.therapySettings ?? []) as any[]).find((ts: any) => ts.profileName === profileName) ?? null;
+  }
 
-  // Derived: get selected profile's store names
-  let profileStoreNames = $derived(
-    selectedProfile?.store ? Object.keys(selectedProfile.store).map(String) : []
-  );
+  function getBasalForProfile(data: Summary, profileName: string) {
+    return ((data?.basalSchedules ?? []) as any[]).find((b: any) => b.profileName === profileName) ?? null;
+  }
 
-  // Derived: get default store name and data
-  let defaultStoreName = $derived(selectedProfile?.defaultProfile ?? "");
-  let defaultStore = $derived(
-    defaultStoreName && selectedProfile?.store
-      ? selectedProfile.store[defaultStoreName]
-      : null
-  );
+  function getCarbRatioForProfile(data: Summary, profileName: string) {
+    return ((data?.carbRatioSchedules ?? []) as any[]).find((c: any) => c.profileName === profileName) ?? null;
+  }
 
-  // Dialog states
-  let showCreateDialog = $state(false);
-  let showEditDialog = $state(false);
-  let showDeleteDialog = $state(false);
-  let profileToDelete = $state<Profile | null>(null);
-  let editStoreName = $state<string | null>(null);
-  let editInitialTab = $state<"general" | "basal" | "carbratio" | "sens" | "targets">("general");
-  let isLoading = $state(false);
+  function getSensitivityForProfile(data: Summary, profileName: string) {
+    return ((data?.sensitivitySchedules ?? []) as any[]).find((s: any) => s.profileName === profileName) ?? null;
+  }
 
-  function selectProfile(profileId: string | null) {
-    // Update URL without full navigation
-    const url = new URL(window.location.href);
-    if (profileId) {
-      url.searchParams.set("id", profileId);
-    } else {
-      url.searchParams.delete("id");
-    }
-    goto(url.toString(), { replaceState: true, noScroll: true });
+  function getTargetRangeForProfile(data: Summary, profileName: string) {
+    return ((data?.targetRangeSchedules ?? []) as any[]).find((t: any) => t.profileName === profileName) ?? null;
   }
 
   function formatRelativeTime(dateString: string | undefined): string {
@@ -214,92 +114,6 @@
       return "";
     }
   }
-
-  function openEditDialog(storeName?: string) {
-    editStoreName = storeName ?? defaultStoreName;
-    editInitialTab = "general";
-    showEditDialog = true;
-  }
-
-  function openEditDialogWithTab(tab: "general" | "basal" | "carbratio" | "sens" | "targets") {
-    editStoreName = defaultStoreName;
-    editInitialTab = tab;
-    showEditDialog = true;
-  }
-
-  function openDeleteDialog(profile: Profile) {
-    profileToDelete = profile;
-    showDeleteDialog = true;
-  }
-
-  // Command handlers using remote functions
-  async function handleCreateProfile(profileData: CreateProfileData) {
-    isLoading = true;
-    try {
-      const result = await createProfile({
-        defaultProfile: profileData.defaultProfile,
-        dia: profileData.dia,
-        carbs_hr: profileData.carbs_hr,
-        timezone: profileData.timezone,
-        units: profileData.units,
-        icon: profileData.icon,
-      });
-
-      showCreateDialog = false;
-      // Navigate to the new profile
-      if (result.createdProfile?._id) {
-        selectProfile(result.createdProfile._id);
-      }
-    } catch (error) {
-      console.error("Error creating profile:", error);
-    } finally {
-      isLoading = false;
-    }
-  }
-
-  async function handleSaveProfile(profile: Profile) {
-    if (!profile._id) return;
-    isLoading = true;
-
-    try {
-      await updateProfile({
-        profileId: profile._id,
-        profileData: profile,
-      });
-
-      showEditDialog = false;
-    } catch (error) {
-      console.error("Error updating profile:", error);
-    } finally {
-      isLoading = false;
-    }
-  }
-
-  async function handleDeleteProfile() {
-    if (!profileToDelete?._id) return;
-    isLoading = true;
-
-    try {
-      const deletedId = profileToDelete._id;
-      await deleteProfile(deletedId);
-
-      showDeleteDialog = false;
-      profileToDelete = null;
-
-      // Navigate to another profile if we deleted the selected one
-      if (deletedId === selectedProfileId) {
-        const currentData = profilesQuery.current;
-        const remaining =
-          currentData?.profiles.filter((p: Profile) => p._id !== deletedId) ??
-          [];
-        selectProfile(remaining[0]?._id ?? null);
-      }
-    } catch (error) {
-      console.error("Error deleting profile:", error);
-    } finally {
-      isLoading = false;
-    }
-  }
 </script>
 
 <svelte:head>
@@ -310,13 +124,21 @@
   />
 </svelte:head>
 
-{#await profilesQuery}
+{#await summaryQuery}
   <div class="container mx-auto p-6 max-w-5xl">
     <div class="flex items-center justify-center h-64">
       <div class="animate-pulse text-muted-foreground">Loading profiles...</div>
     </div>
   </div>
 {:then data}
+  {@const profileNames = getProfileNames(data)}
+  {@const defaultProfileName = getDefaultProfileName(data)}
+  {@const selectedProfileName = urlProfileName ?? defaultProfileName ?? profileNames[0] ?? null}
+  {@const therapy = selectedProfileName ? getTherapyForProfile(data, selectedProfileName) : null}
+  {@const basal = selectedProfileName ? getBasalForProfile(data, selectedProfileName) : null}
+  {@const carbRatio = selectedProfileName ? getCarbRatioForProfile(data, selectedProfileName) : null}
+  {@const sensitivity = selectedProfileName ? getSensitivityForProfile(data, selectedProfileName) : null}
+  {@const targetRange = selectedProfileName ? getTargetRangeForProfile(data, selectedProfileName) : null}
   <div class="container mx-auto p-6 max-w-5xl space-y-6">
     <!-- Header -->
     <div class="flex items-start justify-between">
@@ -333,19 +155,13 @@
           </p>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <Button onclick={() => (showCreateDialog = true)}>
-          <Plus class="h-4 w-4 mr-2" />
-          New Profile
-        </Button>
-        <Badge variant="secondary" class="gap-1">
-          <History class="h-3 w-3" />
-          {data.totalProfiles} profile{data.totalProfiles !== 1 ? "s" : ""}
-        </Badge>
-      </div>
+      <Badge variant="secondary" class="gap-1">
+        <Clock class="h-3 w-3" />
+        {profileNames.length} profile{profileNames.length !== 1 ? "s" : ""}
+      </Badge>
     </div>
 
-    {#if !data.currentProfile}
+    {#if profileNames.length === 0}
       <!-- Empty State -->
       <Card class="border-dashed">
         <CardContent class="py-12">
@@ -364,10 +180,6 @@
               </p>
             </div>
             <div class="flex items-center justify-center gap-2">
-              <Button onclick={() => (showCreateDialog = true)}>
-                <Plus class="h-4 w-4 mr-2" />
-                Create Profile
-              </Button>
               <Button variant="outline" href="/settings/connectors">
                 <Settings class="h-4 w-4 mr-2" />
                 Configure Data Sources
@@ -377,37 +189,38 @@
         </CardContent>
       </Card>
     {:else}
-      <!-- Profile Selector (if multiple profiles) -->
-      {#if data.profiles.length > 1}
+      <!-- Profile Name Tabs (when multiple profiles exist) -->
+      {#if profileNames.length > 1}
         <Card>
           <CardHeader class="pb-3">
             <CardTitle class="text-lg flex items-center gap-2">
-              <History class="h-5 w-5" />
-              Profile History
+              <User class="h-5 w-5" />
+              Profiles
             </CardTitle>
             <CardDescription>
-              Select a profile to view its settings. The most recently used
-              profile is shown first.
+              Select a profile to view its settings.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {#each data.profiles as profile}
-                {@const ProfileIcon = getProfileIcon(profile)}
-                {@const isSelected = selectedProfileId === profile._id}
-                {@const isActive = profile._id === data.currentProfile?._id}
-                <button
+              {#each profileNames as profileName}
+                {@const profileTherapy = getTherapyForProfile(data, profileName)}
+                {@const isSelected = selectedProfileName === profileName}
+                {@const isDefault = profileTherapy?.isDefault === true}
+                <a
+                  href="?name={encodeURIComponent(profileName)}"
+                  data-sveltekit-noscroll
+                  data-sveltekit-replacestate
                   class="flex items-center gap-3 p-3 rounded-lg border text-left transition-colors
                        {isSelected
                     ? 'border-primary bg-primary/5'
                     : 'hover:bg-accent/50'}"
-                  onclick={() => selectProfile(profile._id ?? null)}
                 >
                   <div
                     class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
                          {isSelected ? 'bg-primary/10' : 'bg-muted'}"
                   >
-                    <ProfileIcon
+                    <User
                       class="h-5 w-5 {isSelected
                         ? 'text-primary'
                         : 'text-muted-foreground'}"
@@ -416,9 +229,9 @@
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                       <span class="font-medium truncate">
-                        {profile.defaultProfile ?? "Unnamed Profile"}
+                        {profileName}
                       </span>
-                      {#if isActive}
+                      {#if isDefault}
                         <Badge
                           variant="default"
                           class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs"
@@ -427,18 +240,18 @@
                         </Badge>
                       {/if}
                     </div>
-                    <p class="text-xs text-muted-foreground truncate">
-                      {formatRelativeTime(profile.created_at)} • {formatDateDetailed(
-                        profile.created_at
-                      ).split(",")[0]}
-                    </p>
+                    {#if profileTherapy?.createdAt}
+                      <p class="text-xs text-muted-foreground truncate">
+                        {formatRelativeTime(profileTherapy.createdAt)}
+                      </p>
+                    {/if}
                   </div>
                   <ChevronRight
                     class="h-4 w-4 text-muted-foreground shrink-0 {isSelected
                       ? 'text-primary'
                       : ''}"
                   />
-                </button>
+                </a>
               {/each}
             </div>
           </CardContent>
@@ -446,15 +259,15 @@
       {/if}
 
       <!-- Selected Profile Details -->
-      {#if selectedProfile}
+      {#if selectedProfileName && therapy}
         <!-- Profile Overview Card -->
         <Card>
           <CardHeader>
             <div class="flex items-start justify-between">
               <div>
                 <CardTitle class="flex items-center gap-2">
-                  {selectedProfile.defaultProfile ?? "Profile"}
-                  {#if selectedProfile._id === data.currentProfile?._id}
+                  {selectedProfileName}
+                  {#if therapy.isDefault}
                     <Badge
                       variant="default"
                       class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
@@ -463,31 +276,15 @@
                     </Badge>
                   {/if}
                 </CardTitle>
-                <CardDescription>
-                  Created {formatDateDetailed(selectedProfile.created_at)}
-                </CardDescription>
+                {#if therapy.createdAt}
+                  <CardDescription>
+                    Created {formatRelativeTime(therapy.createdAt)}
+                    {#if therapy.enteredBy}
+                      &middot; Entered by {therapy.enteredBy}
+                    {/if}
+                  </CardDescription>
+                {/if}
               </div>
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger>
-                  <Button variant="outline" size="icon">
-                    <MoreVertical class="h-4 w-4" />
-                  </Button>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content align="end">
-                  <DropdownMenu.Item onclick={() => openEditDialog()}>
-                    <Edit class="h-4 w-4 mr-2" />
-                    Edit Profile
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Separator />
-                  <DropdownMenu.Item
-                    class="text-destructive focus:text-destructive"
-                    onclick={() => openDeleteDialog(selectedProfile!)}
-                  >
-                    <Trash2 class="h-4 w-4 mr-2" />
-                    Delete Profile
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Root>
             </div>
           </CardHeader>
           <CardContent>
@@ -495,236 +292,180 @@
               <div class="space-y-1">
                 <span class="text-xs text-muted-foreground">Units</span>
                 <p class="font-medium">
-                  {selectedProfile.units ?? "mg/dL"}
+                  {therapy.units ?? "mg/dL"}
                 </p>
               </div>
               <div class="space-y-1">
                 <span class="text-xs text-muted-foreground">Timezone</span>
                 <p class="font-medium">
-                  {defaultStore?.timezone ?? "Not set"}
+                  {therapy.timezone ?? "Not set"}
                 </p>
               </div>
               <div class="space-y-1">
                 <span class="text-xs text-muted-foreground">DIA</span>
                 <p class="font-medium">
-                  {defaultStore?.dia ?? "–"} hours
+                  {therapy.dia ?? "-"} hours
                 </p>
               </div>
               <div class="space-y-1">
                 <span class="text-xs text-muted-foreground">Carbs/hr</span>
                 <p class="font-medium">
-                  {defaultStore?.carbs_hr ?? "–"} g/hr
+                  {therapy.carbsHr ?? "-"} g/hr
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <!-- Profile Stores -->
-        {#if profileStoreNames.length > 0}
-          <Tabs.Root value={defaultStoreName || profileStoreNames[0]}>
-            <Tabs.List class="justify-start">
-              {#each profileStoreNames as storeName}
-                <Tabs.Trigger value={storeName} class="gap-2">
-                  <User class="h-4 w-4" />
-                  {storeName}
-                  {#if storeName === defaultStoreName}
-                    <Badge variant="secondary" class="text-xs ml-1">
-                      Default
-                    </Badge>
-                  {/if}
-                </Tabs.Trigger>
-              {/each}
-            </Tabs.List>
+        <!-- Schedule Cards Grid -->
+        <div class="grid gap-4 md:grid-cols-2">
+          <!-- Basal Rates -->
+          {#if basal?.entries && basal.entries.length > 0}
+            {@render ScheduleEntryCard({
+              title: "Basal Rates",
+              description: "Background insulin delivery rates",
+              unit: "U/hr",
+              icon: Activity,
+              entries: basal.entries,
+              colorClass: "text-blue-600",
+            })}
+          {/if}
 
-            {#each profileStoreNames as storeName}
-              {@const store = selectedProfile.store?.[storeName]}
-              <Tabs.Content value={storeName} class="mt-4 space-y-4">
-                {#if store}
-                  <!-- Time-based Settings Grid -->
-                  <div class="grid gap-4 md:grid-cols-2">
-                    <!-- Basal Rates -->
-                    {#if store.basal && store.basal.length > 0}
-                      {@render ProfileTimeValueCard({
-                        title: "Basal Rates",
-                        description: "Background insulin delivery rates",
-                        unit: "U/hr",
-                        icon: Activity,
-                        values: store.basal,
-                        colorClass: "text-blue-600",
-                        editTab: "basal",
-                      })}
-                    {/if}
+          <!-- Carb Ratios -->
+          {#if carbRatio?.entries && carbRatio.entries.length > 0}
+            {@render ScheduleEntryCard({
+              title: "Carb Ratios (I:C)",
+              description: "Grams of carbs per unit of insulin",
+              unit: "g/U",
+              icon: Droplet,
+              entries: carbRatio.entries,
+              colorClass: "text-green-600",
+            })}
+          {/if}
 
-                    <!-- Carb Ratios -->
-                    {#if store.carbratio && store.carbratio.length > 0}
-                      {@render ProfileTimeValueCard({
-                        title: "Carb Ratios (I:C)",
-                        description: "Grams of carbs per unit of insulin",
-                        unit: "g/U",
-                        icon: Droplet,
-                        values: store.carbratio,
-                        colorClass: "text-green-600",
-                        editTab: "carbratio",
-                      })}
-                    {/if}
+          <!-- Insulin Sensitivity -->
+          {#if sensitivity?.entries && sensitivity.entries.length > 0}
+            {@render ScheduleEntryCard({
+              title: "Insulin Sensitivity (ISF)",
+              description: "BG drop per unit of insulin",
+              unit: `${bgLabel()}/U`,
+              icon: TrendingUp,
+              entries: sensitivity.entries.map((e: any) => ({
+                ...e,
+                value: convertValue(
+                  e.value,
+                  therapy.units,
+                  glucoseUnits.current
+                ),
+              })),
+              colorClass: "text-purple-600",
+            })}
+          {/if}
 
-                    <!-- Insulin Sensitivity -->
-                    {#if store.sens && store.sens.length > 0}
-                      {@render ProfileTimeValueCard({
-                        title: "Insulin Sensitivity (ISF)",
-                        description: "BG drop per unit of insulin",
-                        unit: `${bgLabel()}/U`,
-                        icon: TrendingUp,
-                        values: store.sens.map((v) => ({
-                          ...v,
-                          value: convertValue(
-                            v.value,
-                            selectedProfile.units,
+          <!-- Target Range -->
+          {#if targetRange?.entries && targetRange.entries.length > 0}
+            <Card>
+              <CardHeader class="pb-3">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10"
+                  >
+                    <Target class="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <CardTitle class="text-base">
+                      Target Range
+                    </CardTitle>
+                    <CardDescription class="text-xs">
+                      Desired blood glucose range
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table.Root>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.Head>Time</Table.Head>
+                      <Table.Head class="text-right">Low ({bgLabel()})</Table.Head>
+                      <Table.Head class="text-right">High ({bgLabel()})</Table.Head>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {#each targetRange.entries as entry}
+                      <Table.Row>
+                        <Table.Cell class="font-mono text-sm">
+                          {entry.time ?? "-"}
+                        </Table.Cell>
+                        <Table.Cell class="text-right font-mono">
+                          {convertValue(
+                            entry.low,
+                            therapy.units,
                             glucoseUnits.current
-                          ),
-                        })),
-                        colorClass: "text-purple-600",
-                        editTab: "sens",
-                      })}
-                    {/if}
+                          ) ?? "-"}
+                        </Table.Cell>
+                        <Table.Cell class="text-right font-mono">
+                          {convertValue(
+                            entry.high,
+                            therapy.units,
+                            glucoseUnits.current
+                          ) ?? "-"}
+                        </Table.Cell>
+                      </Table.Row>
+                    {/each}
+                  </Table.Body>
+                </Table.Root>
+              </CardContent>
+            </Card>
+          {/if}
+        </div>
 
-                    <!-- Target Range -->
-                    {#if (store.target_low && store.target_low.length > 0) || (store.target_high && store.target_high.length > 0)}
-                      <Card>
-                        <CardHeader class="pb-3">
-                          <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                              <div
-                                class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10"
-                              >
-                                <Target class="h-5 w-5 text-amber-600" />
-                              </div>
-                              <div>
-                                <CardTitle class="text-base">
-                                  Target Range
-                                </CardTitle>
-                                <CardDescription class="text-xs">
-                                  Desired blood glucose range
-                                </CardDescription>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              class="h-8 w-8 text-muted-foreground hover:text-foreground"
-                              onclick={() => openEditDialogWithTab("targets")}
-                            >
-                              <Edit class="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <Table.Root>
-                            <Table.Header>
-                              <Table.Row>
-                                <Table.Head>Time</Table.Head>
-                                <Table.Head class="text-right">Low ({bgLabel()})</Table.Head>
-                                <Table.Head class="text-right">High ({bgLabel()})</Table.Head>
-                              </Table.Row>
-                            </Table.Header>
-                            <Table.Body>
-                              {@const lowValues = store.target_low ?? []}
-                              {@const highValues = store.target_high ?? []}
-                              {@const maxLen = Math.max(
-                                lowValues.length,
-                                highValues.length
-                              )}
-                              {#each Array(maxLen) as _, i}
-                                <Table.Row>
-                                  <Table.Cell class="font-mono text-sm">
-                                    {lowValues[i]?.time ??
-                                      highValues[i]?.time ??
-                                      "–"}
-                                  </Table.Cell>
-                                  <Table.Cell class="text-right font-mono">
-                                    {convertValue(
-                                      lowValues[i]?.value,
-                                      selectedProfile.units,
-                                      glucoseUnits.current
-                                    ) ?? "–"}
-                                  </Table.Cell>
-                                  <Table.Cell class="text-right font-mono">
-                                    {convertValue(
-                                      highValues[i]?.value,
-                                      selectedProfile.units,
-                                      glucoseUnits.current
-                                    ) ?? "–"}
-                                  </Table.Cell>
-                                </Table.Row>
-                              {/each}
-                            </Table.Body>
-                          </Table.Root>
-                        </CardContent>
-                      </Card>
-                    {/if}
-                  </div>
-
-                  <!-- Additional Store Metadata -->
-                  <Card class="bg-muted/30">
-                    <CardHeader class="pb-3">
-                      <CardTitle class="text-sm font-medium">
-                        Profile Settings
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div
-                        class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm"
-                      >
-                        <div>
-                          <span class="text-muted-foreground">DIA</span>
-                          <p class="font-medium">{store.dia ?? "–"} hours</p>
-                        </div>
-                        <div>
-                          <span class="text-muted-foreground">Carbs/hr</span>
-                          <p class="font-medium">
-                            {store.carbs_hr ?? "–"} g/hr
-                          </p>
-                        </div>
-                        <div>
-                          <span class="text-muted-foreground">Timezone</span>
-                          <p class="font-medium">{store.timezone ?? "–"}</p>
-                        </div>
-                        <div>
-                          <span class="text-muted-foreground">Units</span>
-                          <p class="font-medium">{store.units ?? "–"}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                {:else}
-                  <div class="text-center py-8 text-muted-foreground">
-                    <p>No data available for this profile store.</p>
-                  </div>
-                {/if}
-              </Tabs.Content>
-            {/each}
-          </Tabs.Root>
-        {:else}
-          <Card class="border-dashed">
-            <CardContent class="py-8">
-              <div class="text-center text-muted-foreground">
-                <p>
-                  This profile doesn't contain any therapy settings (basal, carb
-                  ratios, etc.)
-                </p>
-                <Button
-                  variant="outline"
-                  class="mt-4"
-                  onclick={() => openEditDialog()}
-                >
-                  <Edit class="h-4 w-4 mr-2" />
-                  Add Settings
-                </Button>
+        <!-- Additional Therapy Metadata -->
+        <Card class="bg-muted/30">
+          <CardHeader class="pb-3">
+            <CardTitle class="text-sm font-medium">
+              Profile Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span class="text-muted-foreground">DIA</span>
+                <p class="font-medium">{therapy.dia ?? "-"} hours</p>
               </div>
-            </CardContent>
-          </Card>
-        {/if}
+              <div>
+                <span class="text-muted-foreground">Carbs/hr</span>
+                <p class="font-medium">{therapy.carbsHr ?? "-"} g/hr</p>
+              </div>
+              <div>
+                <span class="text-muted-foreground">Delay</span>
+                <p class="font-medium">{therapy.delay ?? "-"} min</p>
+              </div>
+              <div>
+                <span class="text-muted-foreground">Units</span>
+                <p class="font-medium">{therapy.units ?? "-"}</p>
+              </div>
+            </div>
+            {#if therapy.isExternallyManaged}
+              <div class="mt-3 pt-3 border-t">
+                <Badge variant="outline" class="text-xs">
+                  Externally managed
+                </Badge>
+              </div>
+            {/if}
+          </CardContent>
+        </Card>
+      {:else if selectedProfileName}
+        <!-- Profile selected but no therapy settings found -->
+        <Card class="border-dashed">
+          <CardContent class="py-8">
+            <div class="text-center text-muted-foreground">
+              <p>
+                No therapy settings found for profile "{selectedProfileName}".
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       {/if}
     {/if}
   </div>
@@ -746,81 +487,34 @@
   </div>
 {/await}
 
-<!-- Dialogs -->
-<ProfileCreateDialog
-  bind:open={showCreateDialog}
-  {isLoading}
-  onClose={() => (showCreateDialog = false)}
-  onSave={handleCreateProfile}
-/>
-
-<ProfileEditDialog
-  bind:open={showEditDialog}
-  profile={selectedProfile ?? null}
-  storeName={editStoreName}
-  initialTab={editInitialTab}
-  {isLoading}
-  onClose={() => {
-    showEditDialog = false;
-    editStoreName = null;
-    editInitialTab = "general";
-  }}
-  onSave={handleSaveProfile}
-/>
-
-<ProfileDeleteDialog
-  bind:open={showDeleteDialog}
-  profile={profileToDelete}
-  {isLoading}
-  onClose={() => {
-    showDeleteDialog = false;
-    profileToDelete = null;
-  }}
-  onConfirm={handleDeleteProfile}
-/>
-
-<!-- Profile Time Value Card Component -->
-{#snippet ProfileTimeValueCard({
+<!-- Schedule Entry Card Snippet -->
+{#snippet ScheduleEntryCard({
   title,
   description,
   unit,
-  icon: Icon,
-  values,
+  icon: IconComponent,
+  entries,
   colorClass,
-  editTab,
 }: {
   title: string;
   description: string;
   unit: string;
   icon: typeof Activity;
-  values: TimeValue[];
+  entries: Array<{ time?: string; value?: number }>;
   colorClass: string;
-  editTab?: "basal" | "carbratio" | "sens" | "targets";
 })}
   <Card>
     <CardHeader class="pb-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"
-          >
-            <Icon class="h-5 w-5 {colorClass}" />
-          </div>
-          <div>
-            <CardTitle class="text-base">{title}</CardTitle>
-            <CardDescription class="text-xs">{description}</CardDescription>
-          </div>
+      <div class="flex items-center gap-3">
+        <div
+          class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"
+        >
+          <IconComponent class="h-5 w-5 {colorClass}" />
         </div>
-        {#if editTab}
-          <Button
-            variant="ghost"
-            size="icon"
-            class="h-8 w-8 text-muted-foreground hover:text-foreground"
-            onclick={() => openEditDialogWithTab(editTab)}
-          >
-            <Edit class="h-4 w-4" />
-          </Button>
-        {/if}
+        <div>
+          <CardTitle class="text-base">{title}</CardTitle>
+          <CardDescription class="text-xs">{description}</CardDescription>
+        </div>
       </div>
     </CardHeader>
     <CardContent>
@@ -832,13 +526,13 @@
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {#each values as timeValue}
+          {#each entries as entry}
             <Table.Row>
               <Table.Cell class="font-mono text-sm">
-                {timeValue.time ?? "–"}
+                {entry.time ?? "-"}
               </Table.Cell>
               <Table.Cell class="text-right font-mono">
-                {timeValue.value ?? "–"}
+                {entry.value ?? "-"}
               </Table.Cell>
             </Table.Row>
           {/each}

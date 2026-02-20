@@ -17,7 +17,7 @@ namespace Nocturne.Connectors.Nightscout.Configurations;
     SupportsHistoricalSync = true,
     MaxHistoricalDays = 365,
     SupportsManualSync = true,
-    SupportedDataTypes = [SyncDataType.Glucose, SyncDataType.Treatments]
+    SupportedDataTypes = [SyncDataType.Glucose, SyncDataType.Treatments, SyncDataType.Profiles]
 )]
 public class NightscoutConnectorConfiguration : BaseConnectorConfiguration
 {
@@ -52,6 +52,15 @@ public class NightscoutConnectorConfiguration : BaseConnectorConfiguration
         DefaultValue = "true"
     )]
     public bool SyncTreatments { get; set; } = true;
+
+    [ConnectorProperty(
+        "SyncProfiles",
+        RuntimeConfigurable = true,
+        Category = "Sync",
+        Description = "Whether to sync profiles from Nightscout",
+        DefaultValue = "true"
+    )]
+    public bool SyncProfiles { get; set; } = true;
 
     [ConnectorProperty(
         "MaxCount",

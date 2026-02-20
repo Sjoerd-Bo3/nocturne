@@ -35,10 +35,18 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
     protected override string ConnectorSource => DataSources.NightscoutConnector;
     public override string ServiceName => "Nightscout";
 
-    public override List<SyncDataType> SupportedDataTypes =>
-        _config.SyncTreatments
-            ? [SyncDataType.Glucose, SyncDataType.Treatments]
-            : [SyncDataType.Glucose];
+    public override List<SyncDataType> SupportedDataTypes
+    {
+        get
+        {
+            var types = new List<SyncDataType> { SyncDataType.Glucose };
+            if (_config.SyncTreatments)
+                types.Add(SyncDataType.Treatments);
+            if (_config.SyncProfiles)
+                types.Add(SyncDataType.Profiles);
+            return types;
+        }
+    }
 
     public override async Task<bool> AuthenticateAsync()
     {
@@ -227,6 +235,28 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
             allTreatments.Count);
 
         return allTreatments;
+    }
+
+    protected override async Task<IEnumerable<Profile>> FetchProfilesAsync()
+    {
+        var profiles = await FetchDataAsync<Profile[]>(
+            "/api/v1/profile.json",
+            "FetchProfiles");
+
+        if (profiles == null || profiles.Length == 0)
+        {
+            _logger.LogInformation(
+                "[{ConnectorSource}] No profiles found on Nightscout instance",
+                ConnectorSource);
+            return [];
+        }
+
+        _logger.LogInformation(
+            "[{ConnectorSource}] Retrieved {Count} profiles from Nightscout",
+            ConnectorSource,
+            profiles.Length);
+
+        return profiles;
     }
 
     private async Task<T?> FetchDataAsync<T>(string url, string operationName) where T : class

@@ -85,6 +85,9 @@
     initialChartData?: TransformedChartData | null;
     /** Promise for streamed historical data */
     streamedHistoricalData?: Promise<TransformedChartData | null>;
+    /** External prediction data (e.g. historical predictions from APS snapshots).
+     *  When provided, bypasses the internal live prediction fetch. */
+    externalPredictionData?: PredictionData | null;
   }
 
   const realtimeStore = getRealtimeStore();
@@ -112,6 +115,7 @@
     onSelectionChange,
     initialChartData,
     streamedHistoricalData,
+    externalPredictionData,
   }: ComponentProps = $props();
 
   // Selection mode is enabled when onSelectionChange callback is provided
@@ -191,8 +195,9 @@
   const lookbackHours = $derived(
     defaultFocusHours ?? glucoseChartLookback.current
   );
+  const hasExternalPredictions = $derived(externalPredictionData !== undefined);
   const effectiveShowPredictions = $derived(
-    showPredictions && predictionServiceAvailable
+    showPredictions && (predictionServiceAvailable || hasExternalPredictions)
   );
 
   function normalizeDate(
@@ -242,9 +247,17 @@
     }
   }
 
-  // Prediction fetch
+  // Sync external prediction data when provided
+  $effect(() => {
+    if (hasExternalPredictions) {
+      predictionData = externalPredictionData ?? null;
+      predictionError = null;
+    }
+  });
+
+  // Prediction fetch (skipped when external predictions are provided)
   const predictionFetchTrigger = $derived.by(() => {
-    if (!isBrowser) return null;
+    if (!isBrowser || hasExternalPredictions) return null;
     const enabled = predictionEnabled.current;
     const latestEntryMills =
       serverChartData?.glucoseData?.[
@@ -767,6 +780,21 @@
       }
     }
 
+    for (const marker of deviceEventMarkers) {
+      if (
+        Math.abs(marker.time.getTime() - time.getTime()) <
+        TREATMENT_PROXIMITY_MS
+      ) {
+        const entry = realtimeStore.findEntryByTreatmentId(
+          marker.treatmentId ?? ""
+        );
+        if (entry && entry.data.id && !seen.has(entry.data.id)) {
+          seen.add(entry.data.id);
+          nearby.push(entry);
+        }
+      }
+    }
+
     return nearby;
   }
 
@@ -1013,6 +1041,8 @@
                 {yPos}
                 eventType={marker.eventType}
                 color={marker.color}
+                treatmentId={marker.treatmentId ?? undefined}
+                onMarkerClick={handleMarkerClick}
               />
             {/each}
           {/if}

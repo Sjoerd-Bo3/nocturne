@@ -556,6 +556,7 @@ public class ChartDataService : IChartDataService
                 Time = e.Mills,
                 EventType = e.EventType,
                 Notes = e.Notes,
+                TreatmentId = e.LegacyId ?? e.Id.ToString(),
                 Color = ChartColorMapper.FromDeviceEvent(e.EventType),
             })
             .ToList();

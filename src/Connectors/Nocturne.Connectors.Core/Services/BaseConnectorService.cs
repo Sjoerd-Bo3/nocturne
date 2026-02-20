@@ -277,6 +277,23 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
                         );
                         break;
 
+                    case SyncDataType.Profiles:
+                        var profiles = await FetchProfilesAsync();
+                        var profileList = profiles.ToList();
+                        count = profileList.Count;
+                        if (count > 0)
+                            lastTime = profileList
+                                .Where(p => p.Mills > 0)
+                                .Select(p => DateTimeOffset.FromUnixTimeMilliseconds(p.Mills).UtcDateTime)
+                                .DefaultIfEmpty()
+                                .Max();
+                        publishSuccess = await PublishProfileDataAsync(
+                            profileList,
+                            config,
+                            cancellationToken
+                        );
+                        break;
+
                     default:
                         _logger.LogDebug(
                             "Data type {DataType} not supported by this connector",
@@ -325,6 +342,11 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
     )
     {
         return Task.FromResult(Enumerable.Empty<Treatment>());
+    }
+
+    protected virtual Task<IEnumerable<Profile>> FetchProfilesAsync()
+    {
+        return Task.FromResult(Enumerable.Empty<Profile>());
     }
 
     /// <summary>

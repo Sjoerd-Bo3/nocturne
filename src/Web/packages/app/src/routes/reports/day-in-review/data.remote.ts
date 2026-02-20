@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { getRequestEvent, query } from '$app/server';
 import { error } from '@sveltejs/kit';
+import { getApsSnapshots } from '$api/generated/deviceStatus.generated.remote';
 
 /**
  * Get day-in-review data for a specific date
@@ -33,16 +34,18 @@ export const getDayInReviewData = query(
 		const dayEnd = new Date(date);
 		dayEnd.setHours(23, 59, 59, 999);
 
-		// Fetch v4 data
-		const [entriesResponse, bolusResponse, carbResponse] = await Promise.all([
+		// Fetch v4 data + APS snapshots for historical predictions
+		const [entriesResponse, bolusResponse, carbResponse, apsResponse] = await Promise.all([
 			apiClient.glucose.getSensorGlucose(dayStart.getTime(), dayEnd.getTime(), 10000),
 			apiClient.insulin.getBoluses(dayStart.getTime(), dayEnd.getTime(), 1000),
 			apiClient.nutrition.getCarbIntakes(dayStart.getTime(), dayEnd.getTime(), 1000),
+			getApsSnapshots({ from: dayStart.getTime(), to: dayEnd.getTime(), limit: 1000, sort: 'mills_asc' }),
 		]);
 
 		const entries = entriesResponse.data ?? [];
 		const boluses = bolusResponse.data ?? [];
 		const carbIntakes = carbResponse.data ?? [];
+		const apsSnapshots = apsResponse.data ?? [];
 
 		// Calculate analysis from the backend - this includes treatmentSummary
 		const analysis = entries.length > 0
@@ -69,6 +72,7 @@ export const getDayInReviewData = query(
 			carbIntakes,
 			analysis,
 			treatmentSummary,
+			apsSnapshots,
 			dateRange: {
 				from: dayStart.toISOString(),
 				to: dayEnd.toISOString(),
