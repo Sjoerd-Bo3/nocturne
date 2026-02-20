@@ -35,18 +35,17 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
     protected override string ConnectorSource => DataSources.NightscoutConnector;
     public override string ServiceName => "Nightscout";
 
-    public override List<SyncDataType> SupportedDataTypes
-    {
-        get
-        {
-            var types = new List<SyncDataType> { SyncDataType.Glucose };
-            if (_config.SyncTreatments)
-                types.Add(SyncDataType.Treatments);
-            if (_config.SyncProfiles)
-                types.Add(SyncDataType.Profiles);
-            return types;
-        }
-    }
+    public override List<SyncDataType> SupportedDataTypes =>
+    [
+        SyncDataType.Glucose,
+        SyncDataType.ManualBG,
+        SyncDataType.Boluses,
+        SyncDataType.CarbIntake,
+        SyncDataType.BolusCalculations,
+        SyncDataType.Notes,
+        SyncDataType.DeviceEvents,
+        SyncDataType.Profiles
+    ];
 
     public override async Task<bool> AuthenticateAsync()
     {
@@ -117,6 +116,126 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
         }
 
         return await base.SyncDataAsync(request, config, cancellationToken);
+    }
+
+    protected override async Task<SyncResult> PerformSyncInternalAsync(
+        SyncRequest request,
+        NightscoutConnectorConfiguration config,
+        CancellationToken cancellationToken)
+    {
+        var result = new SyncResult { StartTime = DateTimeOffset.UtcNow, Success = true };
+
+        if (!request.DataTypes.Any())
+            request.DataTypes = SupportedDataTypes;
+
+        var enabledTypes = config.GetEnabledDataTypes(SupportedDataTypes);
+        var activeTypes = request.DataTypes.Where(t => enabledTypes.Contains(t)).ToList();
+
+        // Handle Glucose
+        if (activeTypes.Contains(SyncDataType.Glucose))
+        {
+            try
+            {
+                var entries = await FetchGlucoseDataRangeAsync(request.From, request.To);
+                var entryList = entries.ToList();
+                result.ItemsSynced[SyncDataType.Glucose] = entryList.Count;
+                if (entryList.Count > 0)
+                {
+                    result.LastEntryTimes[SyncDataType.Glucose] = entryList.Max(e => e.Date);
+                    var publishSuccess = await PublishGlucoseDataInBatchesAsync(
+                        entryList, config, cancellationToken);
+                    if (!publishSuccess)
+                    {
+                        result.Success = false;
+                        result.Errors.Add("Glucose publish failed");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Errors.Add($"Failed to sync Glucose: {ex.Message}");
+                _logger.LogError(ex, "Failed to sync Glucose for {Connector}", ConnectorSource);
+            }
+        }
+
+        // Handle Treatments — Nightscout fetches all treatment types as one batch
+        SyncDataType[] treatmentTypes =
+        [
+            SyncDataType.Boluses, SyncDataType.CarbIntake, SyncDataType.ManualBG,
+            SyncDataType.BolusCalculations, SyncDataType.Notes, SyncDataType.DeviceEvents
+        ];
+        if (activeTypes.Any(t => treatmentTypes.Contains(t)))
+        {
+            try
+            {
+                var treatments = await FetchTreatmentsAsync(request.From, request.To);
+                var treatmentList = treatments.ToList();
+                if (treatmentList.Count > 0)
+                {
+                    var lastTime = treatmentList
+                        .Select(t => DateTime.TryParse(t.CreatedAt, out var dt) ? dt : (DateTime?)null)
+                        .Where(dt => dt.HasValue)
+                        .Max();
+                    var publishSuccess = await PublishTreatmentDataInBatchesAsync(
+                        treatmentList, config, cancellationToken);
+
+                    // Report count under each enabled treatment sub-type
+                    foreach (var tt in treatmentTypes.Where(t => activeTypes.Contains(t)))
+                    {
+                        result.ItemsSynced[tt] = treatmentList.Count;
+                        result.LastEntryTimes[tt] = lastTime;
+                    }
+
+                    if (!publishSuccess)
+                    {
+                        result.Success = false;
+                        result.Errors.Add("Treatments publish failed");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Errors.Add($"Failed to sync Treatments: {ex.Message}");
+                _logger.LogError(ex, "Failed to sync Treatments for {Connector}", ConnectorSource);
+            }
+        }
+
+        // Handle Profiles
+        if (activeTypes.Contains(SyncDataType.Profiles))
+        {
+            try
+            {
+                var profiles = await FetchProfilesAsync();
+                var profileList = profiles.ToList();
+                result.ItemsSynced[SyncDataType.Profiles] = profileList.Count;
+                if (profileList.Count > 0)
+                {
+                    result.LastEntryTimes[SyncDataType.Profiles] = profileList
+                        .Where(p => p.Mills > 0)
+                        .Select(p => DateTimeOffset.FromUnixTimeMilliseconds(p.Mills).UtcDateTime)
+                        .DefaultIfEmpty()
+                        .Max();
+                    var publishSuccess = await PublishProfileDataAsync(
+                        profileList, config, cancellationToken);
+                    if (!publishSuccess)
+                    {
+                        result.Success = false;
+                        result.Errors.Add("Profiles publish failed");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Errors.Add($"Failed to sync Profiles: {ex.Message}");
+                _logger.LogError(ex, "Failed to sync Profiles for {Connector}", ConnectorSource);
+            }
+        }
+
+        result.EndTime = DateTimeOffset.UtcNow;
+        return result;
     }
 
     public override async Task<IEnumerable<Entry>> FetchGlucoseDataAsync(DateTime? since = null)

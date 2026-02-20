@@ -17,7 +17,16 @@ namespace Nocturne.Connectors.Nightscout.Configurations;
     SupportsHistoricalSync = true,
     MaxHistoricalDays = 365,
     SupportsManualSync = true,
-    SupportedDataTypes = [SyncDataType.Glucose, SyncDataType.Treatments, SyncDataType.Profiles]
+    SupportedDataTypes = [
+        SyncDataType.Glucose,
+        SyncDataType.ManualBG,
+        SyncDataType.Boluses,
+        SyncDataType.CarbIntake,
+        SyncDataType.BolusCalculations,
+        SyncDataType.Notes,
+        SyncDataType.DeviceEvents,
+        SyncDataType.Profiles
+    ]
 )]
 public class NightscoutConnectorConfiguration : BaseConnectorConfiguration
 {
@@ -43,24 +52,6 @@ public class NightscoutConnectorConfiguration : BaseConnectorConfiguration
         Description = "Nightscout API_SECRET or access token"
     )]
     public string ApiSecret { get; set; } = string.Empty;
-
-    [ConnectorProperty(
-        "SyncTreatments",
-        RuntimeConfigurable = true,
-        Category = "Sync",
-        Description = "Whether to sync treatments from Nightscout",
-        DefaultValue = "true"
-    )]
-    public bool SyncTreatments { get; set; } = true;
-
-    [ConnectorProperty(
-        "SyncProfiles",
-        RuntimeConfigurable = true,
-        Category = "Sync",
-        Description = "Whether to sync profiles from Nightscout",
-        DefaultValue = "true"
-    )]
-    public bool SyncProfiles { get; set; } = true;
 
     [ConnectorProperty(
         "MaxCount",
