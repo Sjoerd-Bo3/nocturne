@@ -797,6 +797,11 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// To clear error fields, pass special values:
+    /// - Pass string.Empty for lastErrorMessage to clear the error message
+    /// - Pass DateTime.MinValue for lastErrorAt to clear the error timestamp
+    /// </remarks>
     public async Task UpdateHealthStateAsync(
         string connectorName,
         DateTime? lastSyncAttempt = null,
@@ -827,14 +832,20 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
             config.LastSuccessfulSync = lastSuccessfulSync.Value;
 
         if (lastErrorMessage != null)
-            config.LastErrorMessage = lastErrorMessage;
-        else if (lastErrorMessage == string.Empty)
-            config.LastErrorMessage = null; // Explicit clear
+        {
+            if (lastErrorMessage == string.Empty)
+                config.LastErrorMessage = null; // Explicit clear
+            else
+                config.LastErrorMessage = lastErrorMessage;
+        }
 
         if (lastErrorAt.HasValue)
-            config.LastErrorAt = lastErrorAt.Value;
-        else if (lastErrorAt == DateTime.MinValue)
-            config.LastErrorAt = null; // Explicit clear
+        {
+            if (lastErrorAt.Value == DateTime.MinValue)
+                config.LastErrorAt = null; // Explicit clear
+            else
+                config.LastErrorAt = lastErrorAt.Value;
+        }
 
         if (isHealthy.HasValue)
             config.IsHealthy = isHealthy.Value;
