@@ -811,10 +811,16 @@
                                   {day.totalCarbs.toFixed(0)}g
                                 </span>
                                 <span class="text-muted-foreground">
-                                  Insulin:
+                                  Bolus:
                                 </span>
                                 <span class="font-medium">
-                                  {day.totalInsulin.toFixed(1)}U
+                                  {day.totalBolus.toFixed(1)}U
+                                </span>
+                                <span class="text-muted-foreground">
+                                  Basal:
+                                </span>
+                                <span class="font-medium">
+                                  {day.totalBasal.toFixed(1)}U
                                 </span>
                                 <span class="text-muted-foreground">
                                   Avg Glucose:

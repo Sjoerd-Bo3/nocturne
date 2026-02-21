@@ -64,7 +64,21 @@ public class GlookoProfileMapper
         if (settings.PumpProfilesBasal == null && settings.ProfilesBolus == null)
             return null;
 
-        var syncTime = DateTime.Parse(timestamp, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+        if (string.IsNullOrWhiteSpace(timestamp))
+        {
+            _logger.LogWarning("Skipping profile with empty timestamp");
+            return null;
+        }
+
+        if (!DateTime.TryParse(
+                timestamp,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var syncTime))
+        {
+            _logger.LogWarning("Failed to parse profile timestamp: '{Timestamp}'", timestamp);
+            return null;
+        }
         var mills = new DateTimeOffset(syncTime).ToUnixTimeMilliseconds();
         var activeBasalProgram = settings.BasalSettings?.ActiveBasalProgram ?? "Default";
 

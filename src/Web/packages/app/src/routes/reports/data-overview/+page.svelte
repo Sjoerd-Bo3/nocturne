@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
-  import { Chart, Svg, Calendar, Tooltip } from "layerchart";
+  import { Chart, Calendar, Tooltip, ColorRamp, Layer } from "layerchart";
   import { scaleThreshold } from "d3-scale";
   import {
     CalendarDays,
@@ -9,59 +9,58 @@
     ArrowRight,
     Loader2,
     Filter,
+    SlidersHorizontal,
   } from "lucide-svelte";
   import * as Select from "$lib/components/ui/select";
   import { Button } from "$lib/components/ui/button";
   import { Separator } from "$lib/components/ui/separator";
+  import * as Popover from "$lib/components/ui/popover";
+  import { Checkbox } from "$lib/components/ui/checkbox";
   import {
     getAvailableYears,
     getDailySummary,
   } from "$api/generated/dataOverviews.generated.remote";
   import type { DailySummaryDay } from "$api/generated/nocturne-api-client";
   import { getDataTypeLabel } from "$lib/utils/data-type-labels";
-  import {
-    formatGlucoseValue,
-    getUnitLabel,
-  } from "$lib/utils/formatting";
+  import { formatGlucoseValue, getUnitLabel } from "$lib/utils/formatting";
   import { glucoseUnits } from "$lib/stores/appearance-store.svelte";
   import { getDateParamsContext } from "$lib/hooks/date-params.svelte";
   import { fly, fade, slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
 
-  // This report does NOT use the shared date params from layout for its primary data.
-  // It manages its own year-based lazy loading. But we get a reference to navigate
-  // to day-in-review with a specific date if the context exists.
   const reportsParams = getDateParamsContext();
 
   // =========================================================================
   // State
   // =========================================================================
 
-  /** List of available years from the API */
   let availableYears = $state<number[]>([]);
-  /** Available data sources from the API */
   let availableDataSources = $state<string[]>([]);
-  /** Currently selected data source filter */
-  let selectedDataSource = $state<string>("");
-  /** Tracks the previous data source to detect changes */
-  let prevDataSource = $state<string>("");
-  /** Map of year -> loaded daily summary data */
+  let selectedDataSources = $state<string[]>([]);
+  let prevDataSources = $state<string[]>([]);
   let yearData = $state<Map<number, DailySummaryDay[]>>(new Map());
-  /** Set of years currently being loaded */
   let loadingYears = $state<Set<number>>(new Set());
-  /** Whether the initial metadata has loaded */
   let metadataLoaded = $state(false);
-  /** Whether initial metadata is loading */
   let metadataLoading = $state(false);
-  /** The currently selected day for the detail panel */
-  let selectedDay = $state<{
-    date: string;
-    averageGlucoseMgdl: number | null | undefined;
-    totalCount: number;
-    counts: Record<string, number>;
-  } | null>(null);
-  /** Sentinel element refs keyed by year */
+  let selectedDay = $state<CalendarDatum | null>(null);
   let sentinelElements: Record<number, HTMLDivElement | undefined> = $state({});
+
+  /** All known data types that can appear in counts */
+  const ALL_DATA_TYPES = [
+    "Glucose",
+    "ManualBG",
+    "Boluses",
+    "CarbIntake",
+    "BolusCalculations",
+    "Notes",
+    "DeviceEvents",
+    "StateSpans",
+    "Activity",
+    "DeviceStatus",
+  ];
+
+  /** Data types currently hidden by the filter */
+  let hiddenDataTypes = $state<Set<string>>(new Set());
 
   // =========================================================================
   // Glucose color scale
@@ -77,7 +76,31 @@
       "var(--glucose-very-high)",
     ]);
 
-  const MUTED_COLOR = "hsl(var(--muted))";
+  const GLUCOSE_RANGE_LABELS = [
+    "Very Low",
+    "Low",
+    "In Range",
+    "High",
+    "Very High",
+  ];
+  const GLUCOSE_THRESHOLDS_MGDL = [54, 70, 180, 250].map((t) => t);
+  const RAMP_BAND_COUNT = 5;
+  const RAMP_W = 420;
+  const RAMP_BAND_W = RAMP_W / RAMP_BAND_COUNT;
+
+  /** Resolved CSS variable colors for canvas rendering (ColorRamp uses canvas) */
+  let resolvedGlucoseColors = $state<string[]>([]);
+
+  /** Discrete-band interpolator for ColorRamp */
+  const glucoseRampInterpolator = $derived.by(() => {
+    const colors = [...resolvedGlucoseColors];
+    return (t: number): string => {
+      if (colors.length === 0) return "#888";
+      return colors[
+        Math.min(Math.floor(t * RAMP_BAND_COUNT), RAMP_BAND_COUNT - 1)
+      ];
+    };
+  });
 
   // =========================================================================
   // Derived
@@ -85,17 +108,27 @@
 
   const units = $derived(glucoseUnits.current);
   const unitLabel = $derived(getUnitLabel(units));
+  const sortedYears = $derived([...availableYears].sort((a, b) => b - a));
 
-  /** Years sorted in descending order (most recent first) */
-  const sortedYears = $derived(
-    [...availableYears].sort((a, b) => b - a)
-  );
+  /** Discover data types present in loaded data */
+  const presentDataTypes = $derived.by(() => {
+    const types = new Set<string>();
+    for (const days of yearData.values()) {
+      for (const day of days) {
+        if (day.counts) {
+          for (const key of Object.keys(day.counts) as string[]) {
+            types.add(key);
+          }
+        }
+      }
+    }
+    return ALL_DATA_TYPES.filter((t) => types.has(t));
+  });
 
   // =========================================================================
   // Data Loading
   // =========================================================================
 
-  /** Load the available years and data sources */
   async function loadMetadata() {
     if (metadataLoading) return;
     metadataLoading = true;
@@ -112,7 +145,6 @@
     }
   }
 
-  /** Wait for a SvelteKit query to resolve */
   function waitForQuery<T>(query: {
     loading: boolean;
     current: T | undefined;
@@ -143,15 +175,15 @@
     });
   }
 
-  /** Load daily summary data for a specific year */
   async function loadYearData(year: number) {
     if (loadingYears.has(year) || yearData.has(year)) return;
 
     loadingYears = new Set([...loadingYears, year]);
     try {
-      const params = selectedDataSource
-        ? { year, dataSource: selectedDataSource }
-        : { year };
+      const params: { year: number; dataSources?: string[] } = { year };
+      if (selectedDataSources.length > 0) {
+        params.dataSources = selectedDataSources;
+      }
       const result = getDailySummary(params);
       await waitForQuery(result);
       const days = result.current?.days ?? [];
@@ -165,7 +197,6 @@
     }
   }
 
-  /** Clear all loaded data and reload the first year */
   function clearAndReload() {
     yearData = new Map();
     loadingYears = new Set();
@@ -182,40 +213,61 @@
     date: Date;
     value: number | null;
     totalCount: number;
+    filteredCount: number;
     averageGlucoseMgdl: number | null;
+    totalBolusUnits: number | null;
+    totalBasalUnits: number | null;
+    totalDailyDose: number | null;
+    totalCarbs: number | null;
     counts: Record<string, number>;
     dateString: string;
   };
 
-  /** Transform DailySummaryDay[] into data suitable for the Calendar chart */
   function transformYearData(days: DailySummaryDay[]): CalendarDatum[] {
     return days.map((day) => {
       const dateStr = day.date ?? "";
       const [y, m, d] = dateStr.split("-").map(Number);
-      const date = new Date(Date.UTC(y, m - 1, d));
+      const date = new Date(y, m - 1, d);
       const avg = day.averageGlucoseMgdl ?? null;
+      const counts = (day.counts as Record<string, number>) ?? {};
+
+      // Calculate filtered count excluding hidden types
+      const filteredCount = Object.entries(counts)
+        .filter(([key]) => !hiddenDataTypes.has(key))
+        .reduce((sum, [, count]) => sum + count, 0);
 
       return {
         date,
         value: avg,
         totalCount: day.totalCount ?? 0,
+        filteredCount,
         averageGlucoseMgdl: avg,
-        counts: (day.counts as Record<string, number>) ?? {},
+        totalBolusUnits: day.totalBolusUnits ?? null,
+        totalBasalUnits: day.totalBasalUnits ?? null,
+        totalDailyDose: day.totalDailyDose ?? null,
+        totalCarbs: day.totalCarbs ?? null,
+        counts,
         dateString: dateStr,
       };
     });
   }
 
-  /** Get fill color for a calendar datum */
-  function getCellColor(datum: CalendarDatum | undefined): string {
-    if (!datum) return "transparent";
-    if (datum.value != null) {
-      return glucoseColorScale(datum.value);
+  // =========================================================================
+  // Data type filter
+  // =========================================================================
+
+  function toggleDataType(dataType: string) {
+    const next = new Set(hiddenDataTypes);
+    if (next.has(dataType)) {
+      next.delete(dataType);
+    } else {
+      next.add(dataType);
     }
-    if (datum.totalCount > 0) {
-      return MUTED_COLOR;
-    }
-    return "transparent";
+    hiddenDataTypes = next;
+  }
+
+  function showAllDataTypes() {
+    hiddenDataTypes = new Set();
   }
 
   // =========================================================================
@@ -232,9 +284,7 @@
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
-            const year = Number(
-              (entry.target as HTMLElement).dataset.year
-            );
+            const year = Number((entry.target as HTMLElement).dataset.year);
             if (!isNaN(year)) {
               loadYearData(year);
             }
@@ -244,7 +294,6 @@
       { rootMargin: "200px" }
     );
 
-    // Observe all sentinel elements
     for (const year of sortedYears) {
       const el = sentinelElements[year];
       if (el) observer.observe(el);
@@ -254,16 +303,6 @@
   // =========================================================================
   // Day detail panel
   // =========================================================================
-
-  function selectDay(datum: CalendarDatum) {
-    if (datum.totalCount === 0) return;
-    selectedDay = {
-      date: datum.dateString,
-      averageGlucoseMgdl: datum.averageGlucoseMgdl,
-      totalCount: datum.totalCount,
-      counts: datum.counts,
-    };
-  }
 
   function closeDetailPanel() {
     selectedDay = null;
@@ -282,22 +321,32 @@
   // Lifecycle
   // =========================================================================
 
+  // Resolve CSS variable colors for ColorRamp (canvas can't use CSS vars)
+  $effect(() => {
+    if (!browser) return;
+    const style = getComputedStyle(document.documentElement);
+    resolvedGlucoseColors = [
+      "--glucose-very-low",
+      "--glucose-low",
+      "--glucose-in-range",
+      "--glucose-high",
+      "--glucose-very-high",
+    ].map((v) => style.getPropertyValue(v).trim() || "#888");
+  });
+
   $effect(() => {
     if (browser && !metadataLoaded && !metadataLoading) {
       loadMetadata();
     }
   });
 
-  // Load the first year once metadata arrives
   $effect(() => {
     if (metadataLoaded && sortedYears.length > 0) {
       loadYearData(sortedYears[0]);
     }
   });
 
-  // Setup observer when sentinel elements appear
   $effect(() => {
-    // Access sentinelElements to create reactive dependency (bind:this triggers updates)
     void sentinelElements;
     if (browser && metadataLoaded) {
       setupObserver();
@@ -309,8 +358,10 @@
 
   // Re-fetch when data source filter changes
   $effect(() => {
-    if (selectedDataSource !== prevDataSource && metadataLoaded) {
-      prevDataSource = selectedDataSource;
+    const currentKey = selectedDataSources.sort().join(",");
+    const prevKey = prevDataSources.sort().join(",");
+    if (currentKey !== prevKey && metadataLoaded) {
+      prevDataSources = [...selectedDataSources];
       clearAndReload();
     }
   });
@@ -321,8 +372,8 @@
 
   function getYearBounds(year: number): { start: Date; end: Date } {
     return {
-      start: new Date(Date.UTC(year, 0, 1)),
-      end: new Date(Date.UTC(year, 11, 31)),
+      start: new Date(year, 0, 1),
+      end: new Date(year, 11, 31),
     };
   }
 
@@ -336,10 +387,24 @@
       day: "numeric",
     });
   }
+
+  function formatUnits(value: number | null): string {
+    if (value == null) return "-";
+    return value.toFixed(1) + " U";
+  }
+
+  /** Get visible counts (filtered by hiddenDataTypes) */
+  function getVisibleCounts(
+    counts: Record<string, number>
+  ): [string, number][] {
+    return Object.entries(counts)
+      .filter(([key, count]) => count > 0 && !hiddenDataTypes.has(key))
+      .sort(([, a], [, b]) => b - a);
+  }
 </script>
 
 <svelte:head>
-  <title>Data Overview - Nocturne</title>
+  <title>Year Overview - Nocturne</title>
   <meta
     name="description"
     content="Multi-year heatmap overview of all your diabetes data"
@@ -348,7 +413,11 @@
 
 <div class="flex min-h-full">
   <!-- Main Content -->
-  <div class="flex-1 transition-[margin] duration-200 {selectedDay ? 'mr-80 lg:mr-96' : ''}">
+  <div
+    class="flex-1 transition-[margin] duration-200 {selectedDay
+      ? 'mr-80 lg:mr-96'
+      : ''}"
+  >
     <!-- Header -->
     <div
       class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
@@ -360,33 +429,36 @@
           <CalendarDays class="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h1 class="text-2xl font-bold tracking-tight">Data Overview</h1>
+          <h1 class="text-2xl font-bold tracking-tight">Year Overview</h1>
           <p class="text-sm text-muted-foreground">
             Multi-year heatmap of all your data
           </p>
         </div>
       </div>
 
-      <!-- Data Source Filter -->
-      {#if availableDataSources.length > 0}
+      <!-- Filters -->
+      <div class="flex items-center gap-2">
+        <!-- Data Source Filter (multi-select) -->
         <div class="flex items-center gap-2">
           <Filter class="h-4 w-4 text-muted-foreground" />
           <Select.Root
-            type="single"
-            value={selectedDataSource}
+            type="multiple"
+            value={selectedDataSources}
             onValueChange={(v) => {
-              selectedDataSource = v === "__all__" ? "" : (v ?? "");
+              selectedDataSources = v ?? [];
             }}
+            disabled={availableDataSources.length === 0}
           >
             <Select.Trigger class="w-[200px]">
               <span class="truncate">
-                {selectedDataSource
-                  ? getDataTypeLabel(selectedDataSource)
-                  : "All Data Sources"}
+                {selectedDataSources.length === 0
+                  ? "All Data Sources"
+                  : selectedDataSources.length === 1
+                    ? getDataTypeLabel(selectedDataSources[0])
+                    : `${selectedDataSources.length} sources`}
               </span>
             </Select.Trigger>
             <Select.Content>
-              <Select.Item value="__all__">All Data Sources</Select.Item>
               {#each availableDataSources as source}
                 <Select.Item value={source}>
                   {getDataTypeLabel(source)}
@@ -395,55 +467,123 @@
             </Select.Content>
           </Select.Root>
         </div>
-      {/if}
+
+        <!-- Data Type Filter -->
+        {#if presentDataTypes.length > 0}
+          <Popover.Root>
+            <Popover.Trigger>
+              {#snippet child({ props })}
+                <Button variant="outline" size="sm" class="gap-1.5" {...props}>
+                  <SlidersHorizontal class="h-3.5 w-3.5" />
+                  Types
+                  {#if hiddenDataTypes.size > 0}
+                    <span
+                      class="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium leading-none text-primary-foreground"
+                    >
+                      {presentDataTypes.length -
+                        hiddenDataTypes.size}/{presentDataTypes.length}
+                    </span>
+                  {/if}
+                </Button>
+              {/snippet}
+            </Popover.Trigger>
+            <Popover.Content class="w-56 p-3" align="end">
+              <div class="mb-2 flex items-center justify-between">
+                <span class="text-xs font-medium text-muted-foreground">
+                  Show data types
+                </span>
+                {#if hiddenDataTypes.size > 0}
+                  <button
+                    class="text-xs text-primary hover:underline"
+                    onclick={showAllDataTypes}
+                  >
+                    Show all
+                  </button>
+                {/if}
+              </div>
+              <div class="space-y-1.5">
+                {#each presentDataTypes as dataType}
+                  <label
+                    class="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-muted/50"
+                  >
+                    <Checkbox
+                      checked={!hiddenDataTypes.has(dataType)}
+                      onCheckedChange={() => toggleDataType(dataType)}
+                    />
+                    {getDataTypeLabel(dataType)}
+                  </label>
+                {/each}
+              </div>
+            </Popover.Content>
+          </Popover.Root>
+        {/if}
+      </div>
     </div>
 
     <!-- Color Legend -->
-    <div
-      class="mb-6 flex flex-wrap items-center gap-4 rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground"
-    >
-      <span class="font-medium">Avg Glucose:</span>
-      <div class="flex items-center gap-1.5">
-        <span
-          class="inline-block h-3 w-3 rounded-sm"
-          style="background: var(--glucose-very-low)"
-        ></span>
-        Very Low
-      </div>
-      <div class="flex items-center gap-1.5">
-        <span
-          class="inline-block h-3 w-3 rounded-sm"
-          style="background: var(--glucose-low)"
-        ></span>
-        Low
-      </div>
-      <div class="flex items-center gap-1.5">
-        <span
-          class="inline-block h-3 w-3 rounded-sm"
-          style="background: var(--glucose-in-range)"
-        ></span>
-        In Range
-      </div>
-      <div class="flex items-center gap-1.5">
-        <span
-          class="inline-block h-3 w-3 rounded-sm"
-          style="background: var(--glucose-high)"
-        ></span>
-        High
-      </div>
-      <div class="flex items-center gap-1.5">
-        <span
-          class="inline-block h-3 w-3 rounded-sm"
-          style="background: var(--glucose-very-high)"
-        ></span>
-        Very High
-      </div>
-      <div class="flex items-center gap-1.5">
-        <span
-          class="inline-block h-3 w-3 rounded-sm"
-          style="background: hsl(var(--muted))"
-        ></span>
-        Other Data (no glucose)
+    <div class="mb-6 rounded-lg border border-border bg-card p-3">
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div class="text-xs font-medium text-muted-foreground">
+          Avg Glucose ({unitLabel}):
+        </div>
+        <svg
+          viewBox="0 0 {RAMP_W} 48"
+          class="h-12 w-full max-w-[420px] text-muted-foreground"
+          overflow="visible"
+          role="img"
+          aria-label="Glucose color scale legend"
+        >
+          <!-- Range name labels -->
+          {#each GLUCOSE_RANGE_LABELS as label, i}
+            <text
+              x={i * RAMP_BAND_W + RAMP_BAND_W / 2}
+              y={10}
+              text-anchor="middle"
+              font-size="10"
+              fill="currentColor"
+            >
+              {label}
+            </text>
+          {/each}
+
+          <!-- Color ramp bar -->
+          <ColorRamp
+            interpolator={glucoseRampInterpolator}
+            steps={RAMP_BAND_COUNT}
+            height={14}
+            width={RAMP_W}
+            y={14}
+          />
+
+          <!-- Threshold boundaries + values -->
+          {#each GLUCOSE_THRESHOLDS_MGDL as threshold, i}
+            {@const x = (i + 1) * RAMP_BAND_W}
+            <line
+              x1={x}
+              y1={14}
+              x2={x}
+              y2={32}
+              stroke="currentColor"
+              stroke-opacity="0.3"
+            />
+            <text
+              {x}
+              y={44}
+              text-anchor="middle"
+              font-size="10"
+              fill="currentColor"
+            >
+              {formatGlucoseValue(threshold, units)}
+            </text>
+          {/each}
+        </svg>
+        <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span
+            class="inline-block h-3 w-3 rounded-sm"
+            style="background: hsl(var(--muted))"
+          ></span>
+          Other Data (no glucose)
+        </div>
       </div>
     </div>
 
@@ -455,9 +595,7 @@
       >
         <div class="flex flex-col items-center gap-3">
           <Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
-          <p class="text-sm text-muted-foreground">
-            Loading data overview...
-          </p>
+          <p class="text-sm text-muted-foreground">Loading data overview...</p>
         </div>
       </div>
     {/if}
@@ -514,14 +652,11 @@
             <div class="mb-3 flex items-center gap-3">
               <h2 class="text-xl font-bold tabular-nums">{year}</h2>
               {#if isYearLoading}
-                <Loader2
-                  class="h-4 w-4 animate-spin text-muted-foreground"
-                />
+                <Loader2 class="h-4 w-4 animate-spin text-muted-foreground" />
               {/if}
               {#if days}
                 <span class="text-sm text-muted-foreground">
-                  {days.filter((d) => (d.totalCount ?? 0) > 0).length} days with
-                  data
+                  {days.filter((d) => (d.totalCount ?? 0) > 0).length} days with data
                 </span>
               {/if}
             </div>
@@ -529,90 +664,148 @@
             <!-- Calendar Heatmap -->
             {#if chartData.length > 0}
               <div
-                class="w-full overflow-x-auto rounded-lg border border-border bg-card p-4"
+                class="w-full overflow-x-clip overflow-y-visible rounded-lg border border-border bg-card p-4"
               >
-                <div class="min-w-[750px]">
+                <div class="min-w-[900px] h-52">
                   <Chart
                     data={chartData}
                     x="date"
+                    c="value"
+                    cScale={scaleThreshold().unknown("transparent")}
+                    cDomain={GLUCOSE_THRESHOLDS_MGDL}
+                    cRange={[
+                      "var(--glucose-very-low)",
+                      "var(--glucose-low)",
+                      "var(--glucose-in-range)",
+                      "var(--glucose-high)",
+                      "var(--glucose-very-high)",
+                    ]}
                     tooltip={{ mode: "manual" }}
                   >
                     {#snippet children({ context })}
-                      <Svg>
+                      <Layer type="svg">
                         <Calendar
                           start={bounds.start}
                           end={bounds.end}
-                          cellSize={14}
+                          cellSize={32}
                           monthPath
                           monthLabel
                           tooltipContext={context.tooltip}
-                        >
-                          {#snippet children({ cells, cellSize })}
-                            {#each cells as cell}
-                              {@const datum = cell.data as CalendarDatum}
-                              {@const fill = getCellColor(
-                                datum?.dateString ? datum : undefined
-                              )}
-                              <rect
-                                x={cell.x}
-                                y={cell.y}
-                                width={cellSize[0] - 1}
-                                height={cellSize[1] - 1}
-                                rx="2"
-                                {fill}
-                                role="button"
-                                tabindex="-1"
-                                class="cursor-pointer transition-opacity hover:opacity-80"
-                                onpointermove={(e) =>
-                                  context.tooltip?.show(e, cell.data)}
-                                onpointerleave={() =>
-                                  context.tooltip?.hide()}
-                                onclick={() => {
-                                  if (datum?.dateString) selectDay(datum);
-                                }}
-                                onkeydown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    if (datum?.dateString) selectDay(datum);
-                                  }
-                                }}
-                              />
-                            {/each}
-                          {/snippet}
-                        </Calendar>
-                      </Svg>
+                        ></Calendar>
+                      </Layer>
 
                       <Tooltip.Root
-                        class="rounded-md border bg-popover p-2 text-popover-foreground shadow-md"
+                        class="rounded-md border bg-popover p-2.5 text-popover-foreground shadow-md"
                       >
                         {#snippet children({ data })}
                           {@const d = data as CalendarDatum}
                           {#if d?.dateString}
-                            <div class="text-xs">
-                              <div class="mb-1 font-medium">
-                                {new Date(
-                                  d.date.getUTCFullYear(),
-                                  d.date.getUTCMonth(),
-                                  d.date.getUTCDate()
-                                ).toLocaleDateString(undefined, {
+                            <div class="text-xs min-w-40">
+                              <!-- Date header -->
+                              <div class="mb-1.5 font-semibold">
+                                {d.date.toLocaleDateString(undefined, {
                                   weekday: "short",
                                   month: "short",
                                   day: "numeric",
                                 })}
                               </div>
+
+                              <!-- Average glucose -->
                               {#if d.averageGlucoseMgdl != null}
-                                <div>
-                                  Avg: {formatGlucoseValue(
-                                    d.averageGlucoseMgdl,
-                                    units
-                                  )}
-                                  {unitLabel}
+                                <div class="mb-2 flex items-baseline gap-1.5">
+                                  <span
+                                    class="text-sm font-bold tabular-nums"
+                                    style="color: {glucoseColorScale(
+                                      d.averageGlucoseMgdl
+                                    )}"
+                                  >
+                                    {formatGlucoseValue(
+                                      d.averageGlucoseMgdl,
+                                      units
+                                    )}
+                                  </span>
+                                  <span class="text-muted-foreground">
+                                    avg {unitLabel}
+                                  </span>
                                 </div>
                               {/if}
-                              <div>
-                                {d.totalCount}
-                                {d.totalCount === 1 ? "record" : "records"}
-                              </div>
+
+                              <!-- Insulin & Carbs summary -->
+                              {#if d.totalDailyDose != null || d.totalCarbs != null}
+                                <div
+                                  class="mb-2 space-y-0.5 border-t border-border/50 pt-1.5"
+                                >
+                                  {#if d.totalDailyDose != null}
+                                    <div
+                                      class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+                                    >
+                                      Insulin
+                                    </div>
+                                    <div class="flex justify-between gap-4">
+                                      <span class="text-muted-foreground">
+                                        Bolus
+                                      </span>
+                                      <span class="font-medium tabular-nums">
+                                        {formatUnits(d.totalBolusUnits)}
+                                      </span>
+                                    </div>
+                                    <div class="flex justify-between gap-4">
+                                      <span class="text-muted-foreground">
+                                        Basal
+                                      </span>
+                                      <span class="font-medium tabular-nums">
+                                        {formatUnits(d.totalBasalUnits)}
+                                      </span>
+                                    </div>
+                                    <div
+                                      class="flex justify-between gap-4 border-t border-border/30 pt-0.5"
+                                    >
+                                      <span class="text-muted-foreground">
+                                        TDD
+                                      </span>
+                                      <span class="font-semibold tabular-nums">
+                                        {formatUnits(d.totalDailyDose)}
+                                      </span>
+                                    </div>
+                                  {/if}
+                                  {#if d.totalCarbs != null}
+                                    <div class="flex justify-between gap-4 {d.totalDailyDose != null ? 'border-t border-border/30 pt-0.5' : ''}">
+                                      <span class="text-muted-foreground">
+                                        Carbs
+                                      </span>
+                                      <span class="font-medium tabular-nums">
+                                        {d.totalCarbs.toFixed(0)}g
+                                      </span>
+                                    </div>
+                                  {/if}
+                                </div>
+                              {/if}
+
+                              <!-- Record counts -->
+                              {#if getVisibleCounts(d.counts).length > 0}
+                                {@const visibleCounts = getVisibleCounts(
+                                  d.counts
+                                )}
+                                <div
+                                  class="space-y-0.5 border-t border-border/50 pt-1.5"
+                                >
+                                  <div
+                                    class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+                                  >
+                                    Counts
+                                  </div>
+                                  {#each visibleCounts as [key, count]}
+                                    <div class="flex justify-between gap-4">
+                                      <span class="text-muted-foreground">
+                                        {getDataTypeLabel(key)}
+                                      </span>
+                                      <span class="font-medium tabular-nums">
+                                        {count}
+                                      </span>
+                                    </div>
+                                  {/each}
+                                </div>
+                              {/if}
                             </div>
                           {/if}
                         {/snippet}
@@ -622,7 +815,6 @@
                 </div>
               </div>
             {:else if isYearLoading}
-              <!-- Loading skeleton for year -->
               <div
                 class="flex h-[120px] items-center justify-center rounded-lg border border-border bg-card"
               >
@@ -634,7 +826,6 @@
                 </div>
               </div>
             {:else}
-              <!-- Empty year placeholder -->
               <div
                 class="flex h-[120px] items-center justify-center rounded-lg border border-dashed border-border bg-card/50"
               >
@@ -670,7 +861,7 @@
         <!-- Date -->
         <div class="mb-4">
           <h4 class="text-lg font-semibold">
-            {formatSelectedDate(selectedDay.date)}
+            {formatSelectedDate(selectedDay.dateString)}
           </h4>
         </div>
 
@@ -685,11 +876,72 @@
               Average Glucose
             </div>
             <div class="mt-1 text-2xl font-bold tabular-nums">
-              {formatGlucoseValue(selectedDay.averageGlucoseMgdl, units)}
+              <span
+                style="color: {glucoseColorScale(
+                  selectedDay.averageGlucoseMgdl
+                )}"
+              >
+                {formatGlucoseValue(selectedDay.averageGlucoseMgdl, units)}
+              </span>
               <span class="text-sm font-normal text-muted-foreground">
                 {unitLabel}
               </span>
             </div>
+          </div>
+          <Separator class="mb-4" />
+        {/if}
+
+        <!-- Insulin & Carbs Summary -->
+        {#if selectedDay.totalDailyDose != null || selectedDay.totalCarbs != null}
+          <div class="mb-4">
+            {#if selectedDay.totalDailyDose != null}
+              <div
+                class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+              >
+                Insulin
+              </div>
+              <div class="space-y-2">
+                <div
+                  class="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
+                >
+                  <span>Bolus</span>
+                  <span class="font-medium tabular-nums">
+                    {formatUnits(selectedDay.totalBolusUnits)}
+                  </span>
+                </div>
+                <div
+                  class="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
+                >
+                  <span>Basal</span>
+                  <span class="font-medium tabular-nums">
+                    {formatUnits(selectedDay.totalBasalUnits)}
+                  </span>
+                </div>
+                <div
+                  class="flex items-center justify-between rounded-md bg-primary/10 px-3 py-2 text-sm font-medium"
+                >
+                  <span>Total Daily Dose</span>
+                  <span class="tabular-nums">
+                    {formatUnits(selectedDay.totalDailyDose)}
+                  </span>
+                </div>
+              </div>
+            {/if}
+            {#if selectedDay.totalCarbs != null}
+              <div
+                class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground {selectedDay.totalDailyDose != null ? 'mt-4' : ''}"
+              >
+                Carbs
+              </div>
+              <div
+                class="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
+              >
+                <span>Total Carbs</span>
+                <span class="font-medium tabular-nums">
+                  {selectedDay.totalCarbs.toFixed(0)}g
+                </span>
+              </div>
+            {/if}
           </div>
           <Separator class="mb-4" />
         {/if}
@@ -707,7 +959,8 @@
         </div>
 
         <!-- Per-data-type Counts -->
-        {#if Object.keys(selectedDay.counts).length > 0}
+        {#if getVisibleCounts(selectedDay.counts).length > 0}
+          {@const visiblePanelCounts = getVisibleCounts(selectedDay.counts)}
           <Separator class="mb-4" />
           <div class="mb-4">
             <div
@@ -716,7 +969,7 @@
               By Data Type
             </div>
             <div class="space-y-2">
-              {#each Object.entries(selectedDay.counts).sort( ([, a], [, b]) => b - a ) as [key, count]}
+              {#each visiblePanelCounts as [key, count]}
                 <div
                   class="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
                 >
@@ -733,7 +986,7 @@
           <Button
             class="w-full gap-2"
             onclick={() => {
-              if (selectedDay) navigateToDayInReview(selectedDay.date);
+              if (selectedDay) navigateToDayInReview(selectedDay.dateString);
             }}
           >
             View Day in Review

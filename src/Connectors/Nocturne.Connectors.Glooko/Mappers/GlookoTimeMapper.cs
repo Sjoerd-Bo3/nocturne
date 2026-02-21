@@ -36,10 +36,24 @@ public class GlookoTimeMapper
 
     public DateTime GetRawGlookoDate(string timestamp, string? pumpTimestamp)
     {
-        return DateTime.Parse(
-            !string.IsNullOrEmpty(pumpTimestamp) ? pumpTimestamp : timestamp,
-            CultureInfo.InvariantCulture,
-            DateTimeStyles.RoundtripKind
-        );
+        var dateString = !string.IsNullOrWhiteSpace(pumpTimestamp) ? pumpTimestamp : timestamp;
+
+        if (string.IsNullOrWhiteSpace(dateString))
+        {
+            _logger.LogWarning("Received empty timestamp and pumpTimestamp from Glooko");
+            throw new ArgumentException("Both timestamp and pumpTimestamp are empty or whitespace");
+        }
+
+        if (!DateTime.TryParse(
+                dateString,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var parsedDate))
+        {
+            _logger.LogWarning("Failed to parse Glooko date string: '{DateString}'", dateString);
+            throw new FormatException($"Unable to parse date string: {dateString}");
+        }
+
+        return parsedDate;
     }
 }

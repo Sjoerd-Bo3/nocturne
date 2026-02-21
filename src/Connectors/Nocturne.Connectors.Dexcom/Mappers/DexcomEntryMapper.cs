@@ -47,7 +47,7 @@ public class DexcomEntryMapper(ILogger logger, string connectorSource)
                     "Could not parse Dexcom timestamp: {Timestamp}",
                     dexcomEntry.Wt
                 );
-                return new Entry { Type = "sgv", Device = _connectorSource };
+                return new Entry { Type = "sgv", Device = _connectorSource, DataSource = _connectorSource };
             }
 
             var direction = TrendDirections.GetValueOrDefault(
@@ -65,13 +65,14 @@ public class DexcomEntryMapper(ILogger logger, string connectorSource)
                 Sgv = dexcomEntry.Value,
                 Direction = direction.ToString(),
                 Device = _connectorSource,
+                DataSource = _connectorSource,
                 Type = "sgv"
             };
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error converting Dexcom entry: {@Entry}", dexcomEntry);
-            return new Entry { Type = "sgv", Device = _connectorSource };
+            return new Entry { Type = "sgv", Device = _connectorSource, DataSource = _connectorSource };
         }
     }
 }

@@ -162,15 +162,10 @@ const proxyHandle: Handle = async ({ event, resolve }) => {
 
     // Debug: Log all cookies SvelteKit sees
     const allCookies = event.request.headers.get("cookie");
-    console.log(`[PROXY] Request to ${event.url.pathname}`);
-    console.log(`[PROXY] All cookies from request: ${allCookies || "(none)"}`);
 
     // Forward both access and refresh tokens for authentication and token refresh
     const accessToken = event.cookies.get(AUTH_COOKIE_NAMES.accessToken);
     const refreshToken = event.cookies.get(AUTH_COOKIE_NAMES.refreshToken);
-    console.log(`[PROXY] Access token: ${accessToken ? accessToken.substring(0, 20) + "..." : "(not found)"}`);
-    console.log(`[PROXY] Refresh token: ${refreshToken ? refreshToken.substring(0, 20) + "..." : "(not found)"}`);
-
     const cookies: string[] = [];
     if (accessToken) {
       cookies.push(`${AUTH_COOKIE_NAMES.accessToken}=${accessToken}`);
@@ -180,9 +175,6 @@ const proxyHandle: Handle = async ({ event, resolve }) => {
     }
     if (cookies.length > 0) {
       headers.set("Cookie", cookies.join("; "));
-      console.log(`[PROXY] Forwarding ${cookies.length} auth cookie(s) to backend`);
-    } else {
-      console.log(`[PROXY] No auth cookies to forward`);
     }
 
     const proxyResponse = await fetch(targetUrl.toString(), {
@@ -193,7 +185,6 @@ const proxyHandle: Handle = async ({ event, resolve }) => {
         : undefined,
     });
 
-    console.log(`[PROXY] Response status: ${proxyResponse.status}`);
 
     // Return the proxied response
     return new Response(proxyResponse.body, {

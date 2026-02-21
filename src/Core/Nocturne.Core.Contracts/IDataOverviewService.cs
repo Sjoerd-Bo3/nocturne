@@ -16,7 +16,7 @@ public interface IDataOverviewService
     /// Get day-level aggregated counts and average glucose for a given year
     /// </summary>
     /// <param name="year">The year to aggregate</param>
-    /// <param name="dataSource">Optional data source filter</param>
+    /// <param name="dataSources">Optional data source filters</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    Task<DailySummaryResponse> GetDailySummaryAsync(int year, string? dataSource = null, CancellationToken cancellationToken = default);
+    Task<DailySummaryResponse> GetDailySummaryAsync(int year, string[]? dataSources = null, CancellationToken cancellationToken = default);
 }

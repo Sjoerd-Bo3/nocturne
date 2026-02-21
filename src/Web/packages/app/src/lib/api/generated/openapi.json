@@ -4021,12 +4021,17 @@
             "x-position": 1
           },
           {
-            "name": "dataSource",
+            "name": "dataSources",
             "in": "query",
-            "description": "Optional data source filter",
+            "style": "form",
+            "explode": true,
+            "description": "Optional data source filters (multiple allowed)",
             "schema": {
-              "type": "string",
-              "nullable": true
+              "type": "array",
+              "nullable": true,
+              "items": {
+                "type": "string"
+              }
             },
             "x-position": 2
           }
@@ -28500,9 +28505,12 @@
             "type": "integer",
             "format": "int32"
           },
-          "dataSource": {
-            "type": "string",
-            "nullable": true
+          "dataSources": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
           },
           "days": {
             "type": "array",
@@ -28520,6 +28528,26 @@
             "type": "string"
           },
           "averageGlucoseMgdl": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalBolusUnits": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalBasalUnits": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalDailyDose": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalCarbs": {
             "type": "number",
             "format": "double",
             "nullable": true

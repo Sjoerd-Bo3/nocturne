@@ -102,6 +102,15 @@ function parseParameters(
       }
     }
 
+    // For array parameters, capture the item type
+    if (resolved?.type === 'array' && resolved.items) {
+      const itemSchema = resolveSchema(
+        resolved.items as OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject,
+        components
+      );
+      paramInfo.itemType = getSchemaType(itemSchema);
+    }
+
     result.push(paramInfo);
   }
 

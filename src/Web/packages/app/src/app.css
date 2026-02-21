@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@plugin "@tailwindcss/typography";
 @import "tw-animate-css";
 @source not "../locales/";
 @source '../node_modules/layerchart/dist';

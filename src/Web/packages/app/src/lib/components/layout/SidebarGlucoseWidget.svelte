@@ -134,14 +134,21 @@
   });
   const yMin = $derived(isMMOL ? 2.2 : 40);
 
-  // X domain for chart (extend 30 minutes into future when prediction is available)
+  // Round current time to nearest minute for efficient chart updates
+  // Only recalculates once per minute instead of every second
+  const currentMinute = $derived(Math.floor(now / 60000) * 60000);
+
+  // X domain for chart (always extend to current time to show data recency)
   const xDomain = $derived.by(() => {
     if (chartEntries.length === 0) return undefined;
     const minTime = chartEntries[0].date;
+    // Always extend to "now" or prediction end (whichever is later)
+    // This ensures the chart accurately shows when the last reading was
+    const currentTime = new Date(currentMinute);
     const maxTime =
       predictionData.length > 0
         ? predictionData[predictionData.length - 1].date
-        : chartEntries[chartEntries.length - 1].date;
+        : currentTime;
     return [minTime, maxTime] as [Date, Date];
   });
 

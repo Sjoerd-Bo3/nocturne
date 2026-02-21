@@ -45,6 +45,7 @@ public class LibreEntryMapper
                 Sgv = measurement.ValueInMgPerDl,
                 Direction = direction.ToString(),
                 Device = LibreLinkUpConstants.Configuration.DeviceIdentifier,
+                DataSource = LibreLinkUpConstants.Configuration.DeviceIdentifier,
                 Type = LibreLinkUpConstants.Configuration.EntryType
             };
         }
@@ -54,7 +55,8 @@ public class LibreEntryMapper
             return new Entry
             {
                 Type = LibreLinkUpConstants.Configuration.EntryType,
-                Device = LibreLinkUpConstants.Configuration.DeviceIdentifier
+                Device = LibreLinkUpConstants.Configuration.DeviceIdentifier,
+                DataSource = LibreLinkUpConstants.Configuration.DeviceIdentifier
             };
         }
     }

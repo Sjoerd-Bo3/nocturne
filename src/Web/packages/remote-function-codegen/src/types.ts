@@ -6,6 +6,8 @@ export interface ParameterInfo {
   required: boolean;
   type: string;
   enumName?: string;
+  /** For array-type parameters, the type of each item (e.g., 'string', 'number') */
+  itemType?: string;
 }
 
 /**

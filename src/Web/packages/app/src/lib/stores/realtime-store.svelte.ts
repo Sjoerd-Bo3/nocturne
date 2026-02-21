@@ -260,11 +260,11 @@ export class RealtimeStore {
         apiClient.trackers.getDefinitions().catch(() => []),
         apiClient.trackers.getActiveInstances().catch(() => []),
         apiClient.notifications.getNotifications().catch(() => []),
-        apiClient.insulin.getBoluses(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.nutrition.getCarbIntakes(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.observations.getBGChecks(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.observations.getNotes(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.observations.getDeviceEvents(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.insulin.getBoluses(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load boluses:", e); return []; }),
+        apiClient.nutrition.getCarbIntakes(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load carbIntakes:", e); return []; }),
+        apiClient.observations.getBGChecks(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load bgChecks:", e); return []; }),
+        apiClient.observations.getNotes(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load notes:", e); return []; }),
+        apiClient.observations.getDeviceEvents(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load deviceEvents:", e); return []; }),
       ]);
 
       // Defer all state updates to a microtask to completely break out of the

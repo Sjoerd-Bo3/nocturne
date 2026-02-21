@@ -23,6 +23,7 @@ import {
   ConnectorStatusClient,
   CorrelationClient,
   CountClient,
+  DataOverviewClient,
   DebugClient,
   DeduplicationClient,
   DeviceAgeClient,
@@ -97,6 +98,7 @@ export class ApiClient {
   public readonly connectorStatus: ConnectorStatusClient;
   public readonly correlation: CorrelationClient;
   public readonly count: CountClient;
+  public readonly dataOverview: DataOverviewClient;
   public readonly debug: DebugClient;
   public readonly deduplication: DeduplicationClient;
   public readonly deviceAge: DeviceAgeClient;
@@ -171,6 +173,7 @@ export class ApiClient {
     this.connectorStatus = new ConnectorStatusClient(apiBaseUrl, http);
     this.correlation = new CorrelationClient(apiBaseUrl, http);
     this.count = new CountClient(apiBaseUrl, http);
+    this.dataOverview = new DataOverviewClient(apiBaseUrl, http);
     this.debug = new DebugClient(apiBaseUrl, http);
     this.deduplication = new DeduplicationClient(apiBaseUrl, http);
     this.deviceAge = new DeviceAgeClient(apiBaseUrl, http);

@@ -31,6 +31,7 @@
     Plug,
     Sparkles,
     Calendar,
+    CalendarDays,
     BatteryFull,
     Sunrise,
     CheckCircle,
@@ -88,6 +89,26 @@
           href: "/reports/executive-summary",
           icon: FileText,
         },
+        {
+          title: "Day in Review",
+          href: "/reports/day-in-review",
+          icon: Clock,
+        },
+        {
+          title: "Week to Week",
+          href: "/reports/week-to-week",
+          icon: Sunrise,
+        },
+        {
+            title: "Month to Month",
+            href: "/calendar",
+            icon: Calendar,
+        },
+        {
+          title: "Year Overview",
+          href: "/reports/data-overview",
+          icon: CalendarDays,
+        },
         { title: "Readings", href: "/reports/readings", icon: Activity },
         { title: "Treatments", href: "/reports/treatments", icon: Syringe },
         {
@@ -104,16 +125,6 @@
           title: "Battery",
           href: "/reports/battery",
           icon: BatteryFull,
-        },
-        {
-          title: "Day in Review",
-          href: "/reports/day-in-review",
-          icon: Clock,
-        },
-        {
-          title: "Week to Week",
-          href: "/reports/week-to-week",
-          icon: Sunrise,
         },
         {
           title: "Glucose Distribution",

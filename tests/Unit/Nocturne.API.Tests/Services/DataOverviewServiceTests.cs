@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nocturne.API.Services;
@@ -49,10 +50,8 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetAvailableYearsAsync_EmptyDb_ReturnsEmptyYearsAndSources()
     {
-        // Act
         var result = await _service.GetAvailableYearsAsync();
 
-        // Assert
         result.Years.Should().BeEmpty();
         result.AvailableDataSources.Should().BeEmpty();
     }
@@ -61,7 +60,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetAvailableYearsAsync_SingleTableWithData_ReturnsCorrectYear()
     {
-        // Arrange - add a single sensor glucose reading in 2024
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -71,10 +69,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetAvailableYearsAsync();
 
-        // Assert
         result.Years.Should().ContainSingle().Which.Should().Be(2024);
         result.AvailableDataSources.Should().ContainSingle().Which.Should().Be("dexcom");
     }
@@ -83,7 +79,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetAvailableYearsAsync_MultipleTablesSpanningYears_ReturnsFullRange()
     {
-        // Arrange - data spanning 2023 to 2025
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -100,10 +95,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetAvailableYearsAsync();
 
-        // Assert - should contain 2023, 2024, 2025
         result.Years.Should().BeEquivalentTo([2023, 2024, 2025]);
     }
 
@@ -111,7 +104,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetAvailableYearsAsync_DataSourcesCollectedCorrectly()
     {
-        // Arrange - multiple data sources across different tables
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -131,7 +123,7 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon + 2000,
             Carbs = 30.0,
-            DataSource = "dexcom" // duplicate source
+            DataSource = "dexcom"
         });
         _dbContext.StateSpans.Add(new StateSpanEntity
         {
@@ -139,14 +131,12 @@ public class DataOverviewServiceTests : IDisposable
             Category = "PumpMode",
             State = "Automatic",
             StartMills = June15_2024_Noon + 3000,
-            Source = "medtronic" // StateSpans use Source not DataSource
+            Source = "medtronic"
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetAvailableYearsAsync();
 
-        // Assert - case-insensitive dedup, ordered alphabetically
         result.AvailableDataSources.Should().HaveCount(3);
         result.AvailableDataSources.Should().ContainInOrder("dexcom", "glooko", "medtronic");
     }
@@ -155,7 +145,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetAvailableYearsAsync_NullDataSourcesNotIncluded()
     {
-        // Arrange - records with null DataSource
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -170,10 +159,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetAvailableYearsAsync();
 
-        // Assert
         result.Years.Should().ContainSingle().Which.Should().Be(2024);
         result.AvailableDataSources.Should().BeEmpty();
     }
@@ -182,22 +169,19 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetAvailableYearsAsync_StateSpansUseStartMills()
     {
-        // Arrange - StateSpan with StartMills in 2023
         _dbContext.StateSpans.Add(new StateSpanEntity
         {
             Id = Guid.NewGuid(),
             Category = "PumpMode",
             State = "Automatic",
             StartMills = June15_2023_Noon,
-            EndMills = June15_2023_Noon + 3600000, // 1 hour later
+            EndMills = June15_2023_Noon + 3600000,
             Source = "glooko"
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetAvailableYearsAsync();
 
-        // Assert
         result.Years.Should().ContainSingle().Which.Should().Be(2023);
     }
 
@@ -205,7 +189,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetAvailableYearsAsync_LegacyEntriesIncluded()
     {
-        // Arrange
         _dbContext.Entries.Add(new EntryEntity
         {
             Id = Guid.NewGuid(),
@@ -216,10 +199,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetAvailableYearsAsync();
 
-        // Assert
         result.Years.Should().ContainSingle().Which.Should().Be(2023);
         result.AvailableDataSources.Should().ContainSingle().Which.Should().Be("nightscout");
     }
@@ -228,7 +209,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetAvailableYearsAsync_ActivitiesAndDeviceStatusesIncludedInYears()
     {
-        // Arrange - Activities and DeviceStatuses have Mills but no DataSource
         _dbContext.Activities.Add(new ActivityEntity
         {
             Id = Guid.NewGuid(),
@@ -242,10 +222,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetAvailableYearsAsync();
 
-        // Assert - years from both tables
         result.Years.Should().BeEquivalentTo([2023, 2024]);
         result.AvailableDataSources.Should().BeEmpty();
     }
@@ -258,12 +236,10 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_EmptyDb_ReturnsEmptyDays()
     {
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         result.Year.Should().Be(2024);
-        result.DataSource.Should().BeNull();
+        result.DataSources.Should().BeNull();
         result.Days.Should().BeEmpty();
     }
 
@@ -271,7 +247,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_SingleGlucoseReading_ReturnsCorrectCountAndAverage()
     {
-        // Arrange
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -281,14 +256,11 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
         day.Date.Should().Be("2024-06-15");
-        day.Counts.Should().ContainKey("Glucose");
         day.Counts["Glucose"].Should().Be(1);
         day.TotalCount.Should().Be(1);
         day.AverageGlucoseMgdl.Should().Be(150.0);
@@ -298,7 +270,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_MultipleDataTypesOnSameDay_ReturnsAllCountsAndCorrectTotal()
     {
-        // Arrange - multiple data types on the same day (June 15, 2024)
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -309,37 +280,35 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000, // 5 min later
+            Mills = June15_2024_Noon + 300000,
             Mgdl = 130.0,
             DataSource = "dexcom"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 600000, // 10 min later
+            Mills = June15_2024_Noon + 600000,
             Insulin = 5.0,
             DataSource = "dexcom"
         });
         _dbContext.CarbIntakes.Add(new CarbIntakeEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 900000, // 15 min later
+            Mills = June15_2024_Noon + 900000,
             Carbs = 45.0,
             DataSource = "dexcom"
         });
         _dbContext.Notes.Add(new NoteEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 1200000, // 20 min later
+            Mills = June15_2024_Noon + 1200000,
             Text = "Feeling good",
             DataSource = "dexcom"
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
         day.Date.Should().Be("2024-06-15");
@@ -348,7 +317,6 @@ public class DataOverviewServiceTests : IDisposable
         day.Counts["CarbIntake"].Should().Be(1);
         day.Counts["Notes"].Should().Be(1);
         day.TotalCount.Should().Be(5);
-        // Average of 120 and 130
         day.AverageGlucoseMgdl.Should().Be(125.0);
     }
 
@@ -356,7 +324,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_DataSourceFilter_OnlyMatchingRecords()
     {
-        // Arrange - data from two sources on the same day
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -387,25 +354,57 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act - filter to dexcom only
-        var result = await _service.GetDailySummaryAsync(2024, "dexcom");
+        var result = await _service.GetDailySummaryAsync(2024, ["dexcom"]);
 
-        // Assert
-        result.DataSource.Should().Be("dexcom");
+        result.DataSources.Should().BeEquivalentTo(["dexcom"]);
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
         day.Counts["Glucose"].Should().Be(1);
         day.Counts["Boluses"].Should().Be(1);
         day.TotalCount.Should().Be(2);
-        // Average should be 120 only (the dexcom reading)
         day.AverageGlucoseMgdl.Should().Be(120.0);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_MultipleDataSourceFilter_MatchesAll()
+    {
+        _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Mgdl = 120.0,
+            DataSource = "dexcom"
+        });
+        _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon + 300000,
+            Mgdl = 200.0,
+            DataSource = "glooko"
+        });
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon + 600000,
+            Insulin = 3.0,
+            DataSource = "medtronic"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024, ["dexcom", "glooko"]);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.Counts["Glucose"].Should().Be(2);
+        day.Counts.Should().NotContainKey("Boluses");
+        day.AverageGlucoseMgdl.Should().Be(160.0);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_StateSpansUseStartMillsAndSource()
     {
-        // Arrange - StateSpans use StartMills and Source (not Mills/DataSource)
         _dbContext.StateSpans.Add(new StateSpanEntity
         {
             Id = Guid.NewGuid(),
@@ -416,14 +415,11 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act - no filter
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
         day.Date.Should().Be("2024-06-15");
-        day.Counts.Should().ContainKey("StateSpans");
         day.Counts["StateSpans"].Should().Be(1);
         day.TotalCount.Should().Be(1);
     }
@@ -432,7 +428,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_StateSpansFilteredBySource()
     {
-        // Arrange
         _dbContext.StateSpans.Add(new StateSpanEntity
         {
             Id = Guid.NewGuid(),
@@ -451,10 +446,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act - filter by glooko
-        var result = await _service.GetDailySummaryAsync(2024, "glooko");
+        var result = await _service.GetDailySummaryAsync(2024, ["glooko"]);
 
-        // Assert - should only include glooko StateSpan
         result.Days.Should().ContainSingle();
         result.Days[0].Counts["StateSpans"].Should().Be(1);
     }
@@ -463,7 +456,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_ActivitiesExcludedWhenDataSourceFilterActive()
     {
-        // Arrange - Activities have no DataSource column
         _dbContext.Activities.Add(new ActivityEntity
         {
             Id = Guid.NewGuid(),
@@ -478,10 +470,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act - with dataSource filter, Activities should be excluded
-        var result = await _service.GetDailySummaryAsync(2024, "dexcom");
+        var result = await _service.GetDailySummaryAsync(2024, ["dexcom"]);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
         day.Counts.Should().NotContainKey("Activity");
@@ -493,7 +483,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_DeviceStatusesExcludedWhenDataSourceFilterActive()
     {
-        // Arrange - DeviceStatuses have no DataSource column
         _dbContext.DeviceStatuses.Add(new DeviceStatusEntity
         {
             Id = Guid.NewGuid(),
@@ -509,10 +498,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act - with dataSource filter, DeviceStatuses should be excluded
-        var result = await _service.GetDailySummaryAsync(2024, "dexcom");
+        var result = await _service.GetDailySummaryAsync(2024, ["dexcom"]);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
         day.Counts.Should().NotContainKey("DeviceStatus");
@@ -523,7 +510,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_ActivitiesAndDeviceStatusesIncludedWithoutFilter()
     {
-        // Arrange
         _dbContext.Activities.Add(new ActivityEntity
         {
             Id = Guid.NewGuid(),
@@ -537,14 +523,10 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act - no filter
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
-        day.Counts.Should().ContainKey("Activity");
-        day.Counts.Should().ContainKey("DeviceStatus");
         day.Counts["Activity"].Should().Be(1);
         day.Counts["DeviceStatus"].Should().Be(1);
         day.TotalCount.Should().Be(2);
@@ -554,7 +536,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_LegacyEntrySgv_CountedAsGlucose()
     {
-        // Arrange - legacy entry with type="sgv"
         _dbContext.Entries.Add(new EntryEntity
         {
             Id = Guid.NewGuid(),
@@ -565,22 +546,18 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
-        day.Counts.Should().ContainKey("Glucose");
         day.Counts["Glucose"].Should().Be(1);
         day.AverageGlucoseMgdl.Should().Be(140.0);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_LegacyEntryMbg_CountedAsManualBG()
+    public async Task GetDailySummaryAsync_LegacyEntryMbg_CountedAsManualBGAndContributesToAverage()
     {
-        // Arrange - legacy entry with type="mbg"
         _dbContext.Entries.Add(new EntryEntity
         {
             Id = Guid.NewGuid(),
@@ -591,23 +568,19 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
-        day.Counts.Should().ContainKey("ManualBG");
         day.Counts["ManualBG"].Should().Be(1);
-        // mbg entries do NOT contribute to glucose average (only sgv does)
-        day.AverageGlucoseMgdl.Should().BeNull();
+        // mbg entries contribute to glucose average
+        day.AverageGlucoseMgdl.Should().Be(160.0);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_MixedSensorAndLegacySgv_CombinedGlucoseAverage()
     {
-        // Arrange - both SensorGlucose and legacy sgv entries
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -625,14 +598,10 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         var day = result.Days[0];
-        // Glucose count: 1 from SensorGlucose + 1 from legacy sgv = 2
         day.Counts["Glucose"].Should().Be(2);
-        // Average of 100 and 200 = 150.0
         day.AverageGlucoseMgdl.Should().Be(150.0);
     }
 
@@ -640,7 +609,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_DataOutsideYearExcluded()
     {
-        // Arrange - data in 2023 and 2024, query for 2024 only
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -657,10 +625,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert - only the 2024 data
         result.Days.Should().ContainSingle();
         result.Days[0].Date.Should().Be("2024-06-15");
     }
@@ -669,7 +635,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_DataSourceFilterWithNoMatches_ReturnsEmptyDays()
     {
-        // Arrange - data with one source
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -679,10 +644,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act - filter by nonexistent source
-        var result = await _service.GetDailySummaryAsync(2024, "nonexistent-source");
+        var result = await _service.GetDailySummaryAsync(2024, ["nonexistent-source"]);
 
-        // Assert
         result.Days.Should().BeEmpty();
     }
 
@@ -690,7 +653,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_YearBoundary_Dec31ToJan1()
     {
-        // Arrange - data on Dec 31 2024 and Jan 1 2025
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -707,12 +669,9 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act - query 2024
         var result2024 = await _service.GetDailySummaryAsync(2024);
-        // Act - query 2025
         var result2025 = await _service.GetDailySummaryAsync(2025);
 
-        // Assert
         result2024.Days.Should().ContainSingle();
         result2024.Days[0].Date.Should().Be("2024-12-31");
         result2024.Days[0].AverageGlucoseMgdl.Should().Be(110.0);
@@ -726,25 +685,22 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_MultipleDays_OrderedByDate()
     {
-        // Arrange - data on multiple days, added out of order
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon, // June 15
+            Mills = June15_2024_Noon,
             Mgdl = 100.0
         });
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = Jan1_2024_Midnight, // Jan 1
+            Mills = Jan1_2024_Midnight,
             Mgdl = 200.0
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert - should be ordered by date
         result.Days.Should().HaveCount(2);
         result.Days[0].Date.Should().Be("2024-01-01");
         result.Days[1].Date.Should().Be("2024-06-15");
@@ -754,7 +710,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_GlucoseAverageRoundedToOneDecimal()
     {
-        // Arrange - values that produce a repeating decimal average
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
@@ -775,46 +730,46 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         // Average of (100 + 133 + 150) / 3 = 127.666... -> rounded to 127.7
         result.Days[0].AverageGlucoseMgdl.Should().Be(127.7);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_MeterGlucoseCountedAsManualBG()
+    public async Task GetDailySummaryAsync_MeterGlucoseContributesToGlucoseAverage()
     {
-        // Arrange
-        _dbContext.MeterGlucose.Add(new MeterGlucoseEntity
+        _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon,
-            Mgdl = 130.0,
+            Mgdl = 100.0,
+            DataSource = "dexcom"
+        });
+        _dbContext.MeterGlucose.Add(new MeterGlucoseEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon + 300000,
+            Mgdl = 200.0,
             DataSource = "dexcom"
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
-        day.Counts.Should().ContainKey("ManualBG");
+        day.Counts["Glucose"].Should().Be(1);
         day.Counts["ManualBG"].Should().Be(1);
-        day.TotalCount.Should().Be(1);
-        // MeterGlucose does NOT contribute to the glucose average
-        day.AverageGlucoseMgdl.Should().BeNull();
+        // Average includes both sensor and meter: (100 + 200) / 2 = 150
+        day.AverageGlucoseMgdl.Should().Be(150.0);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_BolusCalculationsAndDeviceEvents_CountedCorrectly()
     {
-        // Arrange
         _dbContext.BolusCalculations.Add(new BolusCalculationEntity
         {
             Id = Guid.NewGuid(),
@@ -830,15 +785,11 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
-        day.Counts.Should().ContainKey("BolusCalculations");
         day.Counts["BolusCalculations"].Should().Be(1);
-        day.Counts.Should().ContainKey("DeviceEvents");
         day.Counts["DeviceEvents"].Should().Be(1);
         day.TotalCount.Should().Be(2);
     }
@@ -847,7 +798,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_LegacyEntriesFilteredByDataSource()
     {
-        // Arrange
         _dbContext.Entries.Add(new EntryEntity
         {
             Id = Guid.NewGuid(),
@@ -866,10 +816,8 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act - filter by nightscout
-        var result = await _service.GetDailySummaryAsync(2024, "nightscout");
+        var result = await _service.GetDailySummaryAsync(2024, ["nightscout"]);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
         day.Counts["Glucose"].Should().Be(1);
@@ -880,7 +828,6 @@ public class DataOverviewServiceTests : IDisposable
     [Trait("Category", "Unit")]
     public async Task GetDailySummaryAsync_NoGlucoseData_AverageIsNull()
     {
-        // Arrange - only non-glucose data
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
@@ -890,14 +837,360 @@ public class DataOverviewServiceTests : IDisposable
         });
         await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _service.GetDailySummaryAsync(2024);
 
-        // Assert
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
         day.AverageGlucoseMgdl.Should().BeNull();
         day.Counts["Boluses"].Should().Be(1);
+    }
+
+    #endregion
+
+    #region Insulin Totals Tests
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_BolusInsulin_CalculatedCorrectly()
+    {
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Insulin = 5.5,
+            IsBasalInsulin = false,
+            DataSource = "glooko"
+        });
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon + 300000,
+            Insulin = 3.2,
+            IsBasalInsulin = false,
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBolusUnits.Should().Be(8.7);
+        day.TotalBasalUnits.Should().BeNull();
+        day.TotalDailyDose.Should().Be(8.7);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_BasalInsulin_CalculatedCorrectly()
+    {
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Insulin = 0.05,
+            IsBasalInsulin = true,
+            DataSource = "glooko"
+        });
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon + 300000,
+            Insulin = 0.05,
+            IsBasalInsulin = true,
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBolusUnits.Should().BeNull();
+        day.TotalBasalUnits.Should().Be(0.1);
+        day.TotalDailyDose.Should().Be(0.1);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_MixedBolusAndBasal_TddIsSum()
+    {
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Insulin = 5.0,
+            IsBasalInsulin = false,
+            DataSource = "glooko"
+        });
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon + 300000,
+            Insulin = 10.0,
+            IsBasalInsulin = true,
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBolusUnits.Should().Be(5.0);
+        day.TotalBasalUnits.Should().Be(10.0);
+        day.TotalDailyDose.Should().Be(15.0);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_NoInsulinData_InsulinFieldsNull()
+    {
+        _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Mgdl = 120.0,
+            DataSource = "dexcom"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBolusUnits.Should().BeNull();
+        day.TotalBasalUnits.Should().BeNull();
+        day.TotalDailyDose.Should().BeNull();
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_InsulinFilteredByDataSource()
+    {
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Insulin = 5.0,
+            IsBasalInsulin = false,
+            DataSource = "dexcom"
+        });
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon + 300000,
+            Insulin = 10.0,
+            IsBasalInsulin = false,
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024, ["dexcom"]);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBolusUnits.Should().Be(5.0);
+        day.TotalDailyDose.Should().Be(5.0);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_BasalFromStateSpans_CalculatedFromMetadata()
+    {
+        // Two basal delivery spans: 1 U/hr for 1800s (0.5U) + 0.8 U/hr for 3600s (0.8U) = 1.3U total
+        _dbContext.StateSpans.Add(new StateSpanEntity
+        {
+            Id = Guid.NewGuid(),
+            Category = "BasalDelivery",
+            State = "Active",
+            StartMills = June15_2024_Noon,
+            EndMills = June15_2024_Noon + 1800000,
+            Source = "glooko",
+            MetadataJson = JsonSerializer.Serialize(new { rate = 1.0, origin = "Scheduled", durationSeconds = 1800, calculatedInsulin = 0.5 })
+        });
+        _dbContext.StateSpans.Add(new StateSpanEntity
+        {
+            Id = Guid.NewGuid(),
+            Category = "BasalDelivery",
+            State = "Active",
+            StartMills = June15_2024_Noon + 1800000,
+            EndMills = June15_2024_Noon + 5400000,
+            Source = "glooko",
+            MetadataJson = JsonSerializer.Serialize(new { rate = 0.8, origin = "Algorithm", durationSeconds = 3600, calculatedInsulin = 0.8 })
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBasalUnits.Should().Be(1.3);
+        day.TotalDailyDose.Should().Be(1.3);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_BasalFromStateSpans_CombinedWithBolusForTdd()
+    {
+        // Bolus: 5U, Basal from StateSpan: 10U -> TDD = 15U
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Insulin = 5.0,
+            IsBasalInsulin = false,
+            DataSource = "glooko"
+        });
+        _dbContext.StateSpans.Add(new StateSpanEntity
+        {
+            Id = Guid.NewGuid(),
+            Category = "BasalDelivery",
+            State = "Active",
+            StartMills = June15_2024_Noon,
+            EndMills = June15_2024_Noon + 36000000,
+            Source = "glooko",
+            MetadataJson = JsonSerializer.Serialize(new { rate = 1.0, origin = "Scheduled", durationSeconds = 36000, calculatedInsulin = 10.0 })
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBolusUnits.Should().Be(5.0);
+        day.TotalBasalUnits.Should().Be(10.0);
+        day.TotalDailyDose.Should().Be(15.0);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_BasalStateSpans_FilteredBySource()
+    {
+        _dbContext.StateSpans.Add(new StateSpanEntity
+        {
+            Id = Guid.NewGuid(),
+            Category = "BasalDelivery",
+            State = "Active",
+            StartMills = June15_2024_Noon,
+            Source = "glooko",
+            MetadataJson = JsonSerializer.Serialize(new { rate = 1.0, calculatedInsulin = 5.0 })
+        });
+        _dbContext.StateSpans.Add(new StateSpanEntity
+        {
+            Id = Guid.NewGuid(),
+            Category = "BasalDelivery",
+            State = "Active",
+            StartMills = June15_2024_Noon + 300000,
+            Source = "medtronic",
+            MetadataJson = JsonSerializer.Serialize(new { rate = 0.8, calculatedInsulin = 3.0 })
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024, ["glooko"]);
+
+        result.Days.Should().ContainSingle();
+        result.Days[0].TotalBasalUnits.Should().Be(5.0);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_NonBasalStateSpans_NotCountedAsInsulin()
+    {
+        // PumpMode StateSpan should NOT contribute to basal insulin
+        _dbContext.StateSpans.Add(new StateSpanEntity
+        {
+            Id = Guid.NewGuid(),
+            Category = "PumpMode",
+            State = "Automatic",
+            StartMills = June15_2024_Noon,
+            Source = "glooko",
+            MetadataJson = JsonSerializer.Serialize(new { mode = "Auto" })
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBasalUnits.Should().BeNull();
+        day.TotalDailyDose.Should().BeNull();
+    }
+
+    #endregion
+
+    #region Carb Totals Tests
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_CarbTotals_CalculatedCorrectly()
+    {
+        _dbContext.CarbIntakes.Add(new CarbIntakeEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Carbs = 45.0,
+            DataSource = "mylife"
+        });
+        _dbContext.CarbIntakes.Add(new CarbIntakeEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon + 3600000, // 1 hour later, same day
+            Carbs = 30.5,
+            DataSource = "mylife"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalCarbs.Should().Be(75.5);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_NoCarbData_CarbFieldNull()
+    {
+        _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Mgdl = 120,
+            DataSource = "dexcom"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        result.Days[0].TotalCarbs.Should().BeNull();
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_CarbsFilteredByDataSource()
+    {
+        _dbContext.CarbIntakes.Add(new CarbIntakeEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Carbs = 50.0,
+            DataSource = "mylife"
+        });
+        _dbContext.CarbIntakes.Add(new CarbIntakeEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon + 300000,
+            Carbs = 25.0,
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024, ["mylife"]);
+
+        result.Days.Should().ContainSingle();
+        result.Days[0].TotalCarbs.Should().Be(50.0);
     }
 
     #endregion

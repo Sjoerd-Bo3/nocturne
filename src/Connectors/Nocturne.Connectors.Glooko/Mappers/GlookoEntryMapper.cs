@@ -62,6 +62,7 @@ public class GlookoEntryMapper
                     Sgv = (int)Math.Round(sgvMgdl),
                     Type = "sgv",
                     Device = _connectorSource,
+                    DataSource = _connectorSource,
                     Direction = Direction.Flat.ToString()
                 }
             );
@@ -80,9 +81,20 @@ public class GlookoEntryMapper
     {
         try
         {
-            if (string.IsNullOrEmpty(reading.Timestamp) || reading.Value <= 0) return null;
+            if (string.IsNullOrWhiteSpace(reading.Timestamp) || reading.Value <= 0)
+            {
+                _logger.LogDebug("Skipping invalid Glooko reading: Timestamp='{Timestamp}', Value={Value}",
+                    reading.Timestamp, reading.Value);
+                return null;
+            }
 
-            var date = DateTime.Parse(reading.Timestamp).ToUniversalTime();
+            if (!DateTime.TryParse(reading.Timestamp, out var parsedDate))
+            {
+                _logger.LogWarning("Failed to parse Glooko timestamp: '{Timestamp}'", reading.Timestamp);
+                return null;
+            }
+
+            var date = parsedDate.ToUniversalTime();
 
             if (_config.TimezoneOffset != 0) date = date.AddHours(-_config.TimezoneOffset);
 
@@ -92,6 +104,7 @@ public class GlookoEntryMapper
                 Sgv = reading.Value,
                 Type = "sgv",
                 Device = _connectorSource,
+                DataSource = _connectorSource,
                 Direction = ParseTrendToDirection(reading.Trend).ToString(),
                 Id = $"glooko_{date.Ticks}"
             };

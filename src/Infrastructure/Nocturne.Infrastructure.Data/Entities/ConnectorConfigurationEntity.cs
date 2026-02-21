@@ -85,6 +85,7 @@ public class ConnectorConfigurationEntity
     /// The error message from the most recent failure
     /// </summary>
     [Column("last_error_message")]
+    [MaxLength(1000)]
     public string? LastErrorMessage { get; set; }
 
     /// <summary>

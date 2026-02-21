@@ -22,8 +22,8 @@ public class DailySummaryResponse
     [JsonPropertyName("year")]
     public int Year { get; set; }
 
-    [JsonPropertyName("dataSource")]
-    public string? DataSource { get; set; }
+    [JsonPropertyName("dataSources")]
+    public string[]? DataSources { get; set; }
 
     [JsonPropertyName("days")]
     public DailySummaryDay[] Days { get; set; } = [];
@@ -39,6 +39,18 @@ public class DailySummaryDay
 
     [JsonPropertyName("averageGlucoseMgdl")]
     public double? AverageGlucoseMgdl { get; set; }
+
+    [JsonPropertyName("totalBolusUnits")]
+    public double? TotalBolusUnits { get; set; }
+
+    [JsonPropertyName("totalBasalUnits")]
+    public double? TotalBasalUnits { get; set; }
+
+    [JsonPropertyName("totalDailyDose")]
+    public double? TotalDailyDose { get; set; }
+
+    [JsonPropertyName("totalCarbs")]
+    public double? TotalCarbs { get; set; }
 
     [JsonPropertyName("totalCount")]
     public int TotalCount { get; set; }

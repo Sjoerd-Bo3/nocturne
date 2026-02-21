@@ -8,6 +8,7 @@ export default {
       $lib: "./src/lib",
       $api: "./src/lib/api/",
       "$api-clients": "./src/lib/api/generated/nocturne-api-client",
+      $routes: "./src/routes",
     },
     adapter: adapter({
       // Output directory for the built server

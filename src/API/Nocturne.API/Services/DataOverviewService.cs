@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Models;
 using Nocturne.Core.Models.Services;
 using Nocturne.Infrastructure.Data;
 
@@ -14,8 +16,6 @@ public class DataOverviewService : IDataOverviewService
 {
     private readonly NocturneDbContext _context;
     private readonly ILogger<DataOverviewService> _logger;
-
-    private const long MillsPerDay = 86_400_000L;
 
     public DataOverviewService(
         NocturneDbContext context,
@@ -33,73 +33,78 @@ public class DataOverviewService : IDataOverviewService
     {
         _logger.LogDebug("Getting available years for data overview");
 
-        var minMaxTasks = new List<Task<(long? Min, long? Max)>>();
-        var dataSourceTasks = new List<Task<List<string>>>();
+        // Run all queries sequentially — DbContext is not thread-safe
+        var minMaxResults = new List<(long? Min, long? Max)>();
 
         // V4 tables with Mills + DataSource
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.SensorGlucose.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.MeterGlucose.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.Boluses.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.CarbIntakes.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.BolusCalculations.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.Notes.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.DeviceEvents.Select(e => (long?)e.Mills), cancellationToken));
 
         // StateSpans uses StartMills
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.StateSpans.Select(e => (long?)e.StartMills), cancellationToken));
 
         // Tables without DataSource
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.Activities.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.DeviceStatuses.Select(e => (long?)e.Mills), cancellationToken));
 
         // Legacy tables
-        minMaxTasks.Add(GetMinMaxMills(
+        minMaxResults.Add(await GetMinMaxMills(
             _context.Entries.Select(e => (long?)e.Mills), cancellationToken));
 
         // Collect data sources from tables that have DataSource
-        dataSourceTasks.Add(GetDistinctDataSources(
-            _context.SensorGlucose.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken));
-        dataSourceTasks.Add(GetDistinctDataSources(
-            _context.MeterGlucose.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken));
-        dataSourceTasks.Add(GetDistinctDataSources(
-            _context.Boluses.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken));
-        dataSourceTasks.Add(GetDistinctDataSources(
-            _context.CarbIntakes.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken));
-        dataSourceTasks.Add(GetDistinctDataSources(
-            _context.BolusCalculations.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken));
-        dataSourceTasks.Add(GetDistinctDataSources(
-            _context.Notes.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken));
-        dataSourceTasks.Add(GetDistinctDataSources(
-            _context.DeviceEvents.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken));
-        // StateSpans uses Source (not DataSource)
-        dataSourceTasks.Add(GetDistinctDataSources(
-            _context.StateSpans.Where(e => e.Source != null).Select(e => e.Source!), cancellationToken));
-        // Legacy Entries
-        dataSourceTasks.Add(GetDistinctDataSources(
-            _context.Entries.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken));
+        var allDataSources = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        await Task.WhenAll(
-            Task.WhenAll(minMaxTasks),
-            Task.WhenAll(dataSourceTasks)
-        );
+        foreach (var ds in await GetDistinctDataSources(
+            _context.SensorGlucose.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken))
+            allDataSources.Add(ds);
+        foreach (var ds in await GetDistinctDataSources(
+            _context.MeterGlucose.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken))
+            allDataSources.Add(ds);
+        foreach (var ds in await GetDistinctDataSources(
+            _context.Boluses.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken))
+            allDataSources.Add(ds);
+        foreach (var ds in await GetDistinctDataSources(
+            _context.CarbIntakes.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken))
+            allDataSources.Add(ds);
+        foreach (var ds in await GetDistinctDataSources(
+            _context.BolusCalculations.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken))
+            allDataSources.Add(ds);
+        foreach (var ds in await GetDistinctDataSources(
+            _context.Notes.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken))
+            allDataSources.Add(ds);
+        foreach (var ds in await GetDistinctDataSources(
+            _context.DeviceEvents.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken))
+            allDataSources.Add(ds);
+        // StateSpans uses Source (not DataSource)
+        foreach (var ds in await GetDistinctDataSources(
+            _context.StateSpans.Where(e => e.Source != null).Select(e => e.Source!), cancellationToken))
+            allDataSources.Add(ds);
+        // Legacy Entries
+        foreach (var ds in await GetDistinctDataSources(
+            _context.Entries.Where(e => e.DataSource != null).Select(e => e.DataSource!), cancellationToken))
+            allDataSources.Add(ds);
 
         // Derive year range from all min/max mills
         long? globalMin = null;
         long? globalMax = null;
 
-        foreach (var task in minMaxTasks)
+        foreach (var (min, max) in minMaxResults)
         {
-            var (min, max) = task.Result;
             if (min.HasValue && (!globalMin.HasValue || min.Value < globalMin.Value))
                 globalMin = min.Value;
             if (max.HasValue && (!globalMax.HasValue || max.Value > globalMax.Value))
@@ -114,14 +119,6 @@ public class DataOverviewService : IDataOverviewService
             years = Enumerable.Range(minYear, maxYear - minYear + 1).ToArray();
         }
 
-        // Merge all data sources
-        var allDataSources = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var task in dataSourceTasks)
-        {
-            foreach (var ds in task.Result)
-                allDataSources.Add(ds);
-        }
-
         return new DataOverviewYearsResponse
         {
             Years = years,
@@ -132,145 +129,154 @@ public class DataOverviewService : IDataOverviewService
     /// <inheritdoc />
     public async Task<DailySummaryResponse> GetDailySummaryAsync(
         int year,
-        string? dataSource = null,
+        string[]? dataSources = null,
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("Getting daily summary for year {Year}, dataSource={DataSource}", year, dataSource);
+        _logger.LogDebug("Getting daily summary for year {Year}, dataSources={DataSources}",
+            year, dataSources != null ? string.Join(",", dataSources) : "(all)");
 
         var startOfYear = new DateTimeOffset(year, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var startOfNextYear = new DateTimeOffset(year + 1, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var startMills = startOfYear.ToUnixTimeMilliseconds();
         var endMills = startOfNextYear.ToUnixTimeMilliseconds();
 
-        var hasDataSourceFilter = !string.IsNullOrWhiteSpace(dataSource);
+        var hasFilter = dataSources is { Length: > 0 };
 
         // Dictionary keyed by date string "yyyy-MM-dd" -> DailySummaryDay
         var dayMap = new Dictionary<string, DailySummaryDay>();
 
-        // Collect counts from each table
-        var tasks = new List<Task>();
+        // Run all queries sequentially — DbContext is not thread-safe
 
         // V4 tables with Mills + DataSource
-        tasks.Add(CollectCountsFromMillsTable(
+        await CollectCountsFromMillsTable(
             "Glucose",
             _context.SensorGlucose
                 .Where(e => e.Mills >= startMills && e.Mills < endMills)
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => e.Mills),
-            dayMap, cancellationToken));
+            dayMap, cancellationToken);
 
-        tasks.Add(CollectCountsFromMillsTable(
+        await CollectCountsFromMillsTable(
             "ManualBG",
             _context.MeterGlucose
                 .Where(e => e.Mills >= startMills && e.Mills < endMills)
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => e.Mills),
-            dayMap, cancellationToken));
+            dayMap, cancellationToken);
 
-        tasks.Add(CollectCountsFromMillsTable(
+        await CollectCountsFromMillsTable(
             "Boluses",
             _context.Boluses
                 .Where(e => e.Mills >= startMills && e.Mills < endMills)
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => e.Mills),
-            dayMap, cancellationToken));
+            dayMap, cancellationToken);
 
-        tasks.Add(CollectCountsFromMillsTable(
+        await CollectCountsFromMillsTable(
             "CarbIntake",
             _context.CarbIntakes
                 .Where(e => e.Mills >= startMills && e.Mills < endMills)
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => e.Mills),
-            dayMap, cancellationToken));
+            dayMap, cancellationToken);
 
-        tasks.Add(CollectCountsFromMillsTable(
+        await CollectCountsFromMillsTable(
             "BolusCalculations",
             _context.BolusCalculations
                 .Where(e => e.Mills >= startMills && e.Mills < endMills)
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => e.Mills),
-            dayMap, cancellationToken));
+            dayMap, cancellationToken);
 
-        tasks.Add(CollectCountsFromMillsTable(
+        await CollectCountsFromMillsTable(
             "Notes",
             _context.Notes
                 .Where(e => e.Mills >= startMills && e.Mills < endMills)
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => e.Mills),
-            dayMap, cancellationToken));
+            dayMap, cancellationToken);
 
-        tasks.Add(CollectCountsFromMillsTable(
+        await CollectCountsFromMillsTable(
             "DeviceEvents",
             _context.DeviceEvents
                 .Where(e => e.Mills >= startMills && e.Mills < endMills)
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => e.Mills),
-            dayMap, cancellationToken));
+            dayMap, cancellationToken);
 
         // StateSpans: uses StartMills and Source (not Mills/DataSource)
-        tasks.Add(CollectCountsFromMillsTable(
+        await CollectCountsFromMillsTable(
             "StateSpans",
             _context.StateSpans
                 .Where(e => e.StartMills >= startMills && e.StartMills < endMills)
-                .Where(e => !hasDataSourceFilter || e.Source == dataSource)
+                .Where(e => !hasFilter || dataSources!.Contains(e.Source!))
                 .Select(e => e.StartMills),
-            dayMap, cancellationToken));
+            dayMap, cancellationToken);
 
         // Activities: has Mills but NO DataSource - skip when filter is active
-        if (!hasDataSourceFilter)
+        if (!hasFilter)
         {
-            tasks.Add(CollectCountsFromMillsTable(
+            await CollectCountsFromMillsTable(
                 "Activity",
                 _context.Activities
                     .Where(e => e.Mills >= startMills && e.Mills < endMills)
                     .Select(e => e.Mills),
-                dayMap, cancellationToken));
+                dayMap, cancellationToken);
         }
 
         // DeviceStatuses: has Mills but NO DataSource - skip when filter is active
-        if (!hasDataSourceFilter)
+        if (!hasFilter)
         {
-            tasks.Add(CollectCountsFromMillsTable(
+            await CollectCountsFromMillsTable(
                 "DeviceStatus",
                 _context.DeviceStatuses
                     .Where(e => e.Mills >= startMills && e.Mills < endMills)
                     .Select(e => e.Mills),
-                dayMap, cancellationToken));
+                dayMap, cancellationToken);
         }
 
         // Legacy Entries: type "sgv" -> "Glucose", type "mbg" -> "ManualBG"
-        tasks.Add(CollectCountsFromMillsTable(
+        await CollectCountsFromMillsTable(
             "Glucose",
             _context.Entries
                 .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Type == "sgv")
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => e.Mills),
-            dayMap, cancellationToken));
+            dayMap, cancellationToken);
 
-        tasks.Add(CollectCountsFromMillsTable(
+        await CollectCountsFromMillsTable(
             "ManualBG",
             _context.Entries
                 .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Type == "mbg")
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => e.Mills),
-            dayMap, cancellationToken));
+            dayMap, cancellationToken);
 
-        // Glucose averages from SensorGlucose + legacy Entries (type=sgv)
-        tasks.Add(CollectGlucoseAverages(startMills, endMills, dataSource, hasDataSourceFilter, dayMap, cancellationToken));
+        // Glucose averages (SensorGlucose + MeterGlucose + legacy Entries)
+        await CollectGlucoseAverages(startMills, endMills, dataSources, hasFilter, dayMap, cancellationToken);
 
-        await Task.WhenAll(tasks);
+        // Insulin totals (Bolus from Boluses table + Basal from Boluses & StateSpans)
+        await CollectInsulinTotals(startMills, endMills, dataSources, hasFilter, dayMap, cancellationToken);
 
-        // Compute TotalCount for each day
+        // Carb totals
+        await CollectCarbTotals(startMills, endMills, dataSources, hasFilter, dayMap, cancellationToken);
+
+        // Compute TotalCount and TotalDailyDose for each day
         foreach (var day in dayMap.Values)
         {
             day.TotalCount = day.Counts.Values.Sum();
+
+            if (day.TotalBolusUnits.HasValue || day.TotalBasalUnits.HasValue)
+            {
+                day.TotalDailyDose = (day.TotalBolusUnits ?? 0) + (day.TotalBasalUnits ?? 0);
+            }
         }
 
         return new DailySummaryResponse
         {
             Year = year,
-            DataSource = dataSource,
+            DataSources = dataSources,
             Days = dayMap.Values.OrderBy(d => d.Date).ToArray()
         };
     }
@@ -319,8 +325,7 @@ public class DataOverviewService : IDataOverviewService
     }
 
     /// <summary>
-    /// Materializes mills values from a table, groups by date in-memory, and merges counts
-    /// into the shared dayMap. Thread-safe via lock since multiple tasks write concurrently.
+    /// Materializes mills values from a table, groups by date in-memory, and merges counts into the dayMap.
     /// </summary>
     private async Task CollectCountsFromMillsTable(
         string dataType,
@@ -336,19 +341,16 @@ public class DataOverviewService : IDataOverviewService
                 .GroupBy(m => MillsToDateString(m))
                 .Select(g => new { Date = g.Key, Count = g.Count() });
 
-            lock (dayMap)
+            foreach (var group in grouped)
             {
-                foreach (var group in grouped)
+                if (!dayMap.TryGetValue(group.Date, out var day))
                 {
-                    if (!dayMap.TryGetValue(group.Date, out var day))
-                    {
-                        day = new DailySummaryDay { Date = group.Date };
-                        dayMap[group.Date] = day;
-                    }
-
-                    day.Counts.TryGetValue(dataType, out var existing);
-                    day.Counts[dataType] = existing + group.Count;
+                    day = new DailySummaryDay { Date = group.Date };
+                    dayMap[group.Date] = day;
                 }
+
+                day.Counts.TryGetValue(dataType, out var existing);
+                day.Counts[dataType] = existing + group.Count;
             }
         }
         catch (Exception ex)
@@ -358,42 +360,140 @@ public class DataOverviewService : IDataOverviewService
     }
 
     /// <summary>
-    /// Collects glucose averages from SensorGlucose and legacy Entries (type=sgv),
-    /// computes per-day average Mgdl, and merges into dayMap.
+    /// Collects glucose averages from SensorGlucose, MeterGlucose, and legacy Entries (type=sgv/mbg).
+    /// Each source is queried independently so one failure doesn't prevent the others.
     /// </summary>
     private async Task CollectGlucoseAverages(
         long startMills,
         long endMills,
-        string? dataSource,
-        bool hasDataSourceFilter,
+        string[]? dataSources,
+        bool hasFilter,
         Dictionary<string, DailySummaryDay> dayMap,
         CancellationToken cancellationToken)
     {
+        // Collect readings from multiple sources independently
+        var allReadings = new List<(long Mills, double Mgdl)>();
+
+        // SensorGlucose (CGM)
         try
         {
-            // Materialize (mills, mgdl) pairs from SensorGlucose
             var sensorReadings = await _context.SensorGlucose
-                .Where(e => e.Mills >= startMills && e.Mills < endMills)
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Mgdl > 0)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => new { e.Mills, e.Mgdl })
                 .ToListAsync(cancellationToken);
 
-            // Materialize (mills, mgdl) pairs from legacy Entries where type=sgv
-            var legacyReadings = await _context.Entries
-                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Type == "sgv")
-                .Where(e => !hasDataSourceFilter || e.DataSource == dataSource)
+            allReadings.AddRange(sensorReadings.Select(r => (r.Mills, r.Mgdl)));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to collect glucose averages from SensorGlucose");
+        }
+
+        // MeterGlucose (finger sticks)
+        try
+        {
+            var meterReadings = await _context.MeterGlucose
+                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Mgdl > 0)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => new { e.Mills, e.Mgdl })
                 .ToListAsync(cancellationToken);
 
-            // Combine and group by date, compute average
-            var allReadings = sensorReadings
-                .Concat(legacyReadings)
-                .GroupBy(r => MillsToDateString(r.Mills))
-                .Select(g => new { Date = g.Key, AvgMgdl = g.Average(r => r.Mgdl) });
+            allReadings.AddRange(meterReadings.Select(r => (r.Mills, r.Mgdl)));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to collect glucose averages from MeterGlucose");
+        }
 
-            lock (dayMap)
+        // Legacy Entries (type=sgv)
+        try
+        {
+            var legacySgv = await _context.Entries
+                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Type == "sgv" && e.Mgdl > 0)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
+                .Select(e => new { e.Mills, e.Mgdl })
+                .ToListAsync(cancellationToken);
+
+            allReadings.AddRange(legacySgv.Select(r => (r.Mills, r.Mgdl)));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to collect glucose averages from Entries (sgv)");
+        }
+
+        // Legacy Entries (type=mbg)
+        try
+        {
+            var legacyMbg = await _context.Entries
+                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Type == "mbg" && e.Mgdl > 0)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
+                .Select(e => new { e.Mills, e.Mgdl })
+                .ToListAsync(cancellationToken);
+
+            allReadings.AddRange(legacyMbg.Select(r => (r.Mills, r.Mgdl)));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to collect glucose averages from Entries (mbg)");
+        }
+
+        if (allReadings.Count == 0)
+        {
+            _logger.LogDebug("No glucose readings found for year range {StartMills}-{EndMills}", startMills, endMills);
+            return;
+        }
+
+        // Group by date and compute daily averages
+        var grouped = allReadings
+            .GroupBy(r => MillsToDateString(r.Mills))
+            .Select(g => new { Date = g.Key, AvgMgdl = g.Average(r => r.Mgdl) });
+
+        foreach (var group in grouped)
+        {
+            if (!dayMap.TryGetValue(group.Date, out var day))
             {
-                foreach (var group in allReadings)
+                day = new DailySummaryDay { Date = group.Date };
+                dayMap[group.Date] = day;
+            }
+
+            day.AverageGlucoseMgdl = Math.Round(group.AvgMgdl, 1);
+        }
+    }
+
+    /// <summary>
+    /// Collects insulin totals from the Boluses table (bolus + APS micro-bolus basal)
+    /// and from BasalDelivery StateSpans (pump basal delivery with pre-calculated insulin).
+    /// </summary>
+    private async Task CollectInsulinTotals(
+        long startMills,
+        long endMills,
+        string[]? dataSources,
+        bool hasFilter,
+        Dictionary<string, DailySummaryDay> dayMap,
+        CancellationToken cancellationToken)
+    {
+        // Bolus records (regular boluses + APS micro-boluses marked as basal)
+        try
+        {
+            var bolusRecords = await _context.Boluses
+                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Insulin > 0)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
+                .Select(e => new { e.Mills, e.Insulin, e.IsBasalInsulin })
+                .ToListAsync(cancellationToken);
+
+            if (bolusRecords.Count > 0)
+            {
+                var grouped = bolusRecords
+                    .GroupBy(r => MillsToDateString(r.Mills))
+                    .Select(g => new
+                    {
+                        Date = g.Key,
+                        BolusUnits = g.Where(r => !r.IsBasalInsulin).Sum(r => r.Insulin),
+                        BasalUnits = g.Where(r => r.IsBasalInsulin).Sum(r => r.Insulin)
+                    });
+
+                foreach (var group in grouped)
                 {
                     if (!dayMap.TryGetValue(group.Date, out var day))
                     {
@@ -401,14 +501,120 @@ public class DataOverviewService : IDataOverviewService
                         dayMap[group.Date] = day;
                     }
 
-                    // Round to 1 decimal place for cleaner output
-                    day.AverageGlucoseMgdl = Math.Round(group.AvgMgdl, 1);
+                    if (group.BolusUnits > 0)
+                        day.TotalBolusUnits = Math.Round(group.BolusUnits, 2);
+                    if (group.BasalUnits > 0)
+                        day.TotalBasalUnits = Math.Round(group.BasalUnits, 2);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to collect glucose averages");
+            _logger.LogWarning(ex, "Failed to collect bolus insulin totals");
+        }
+
+        // Basal delivery from StateSpans (pump-confirmed basal rates with calculatedInsulin metadata)
+        try
+        {
+            var basalCategory = nameof(StateSpanCategory.BasalDelivery);
+            var basalSpans = await _context.StateSpans
+                .Where(e => e.Category == basalCategory
+                    && e.StartMills >= startMills && e.StartMills < endMills
+                    && e.MetadataJson != null)
+                .Where(e => !hasFilter || dataSources!.Contains(e.Source!))
+                .Select(e => new { e.StartMills, e.MetadataJson })
+                .ToListAsync(cancellationToken);
+
+            if (basalSpans.Count == 0) return;
+
+            var basalByDate = basalSpans
+                .Select(s =>
+                {
+                    var insulin = ExtractCalculatedInsulin(s.MetadataJson!);
+                    return new { Date = MillsToDateString(s.StartMills), Insulin = insulin };
+                })
+                .Where(s => s.Insulin > 0)
+                .GroupBy(s => s.Date)
+                .Select(g => new { Date = g.Key, TotalBasal = g.Sum(s => s.Insulin) });
+
+            foreach (var group in basalByDate)
+            {
+                if (!dayMap.TryGetValue(group.Date, out var day))
+                {
+                    day = new DailySummaryDay { Date = group.Date };
+                    dayMap[group.Date] = day;
+                }
+
+                // Add to any existing basal from Boluses (APS micro-boluses)
+                day.TotalBasalUnits = Math.Round((day.TotalBasalUnits ?? 0) + group.TotalBasal, 2);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to collect basal delivery from StateSpans");
+        }
+    }
+
+    /// <summary>
+    /// Extracts the calculatedInsulin value from a StateSpan's metadata JSON.
+    /// </summary>
+    private static double ExtractCalculatedInsulin(string metadataJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(metadataJson);
+            if (doc.RootElement.TryGetProperty("calculatedInsulin", out var prop))
+            {
+                return prop.GetDouble();
+            }
+        }
+        catch
+        {
+            // Malformed JSON or missing property — skip
+        }
+
+        return 0;
+    }
+
+    /// <summary>
+    /// Collects total carbs consumed per day from the CarbIntakes table.
+    /// </summary>
+    private async Task CollectCarbTotals(
+        long startMills,
+        long endMills,
+        string[]? dataSources,
+        bool hasFilter,
+        Dictionary<string, DailySummaryDay> dayMap,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var carbRecords = await _context.CarbIntakes
+                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Carbs > 0)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
+                .Select(e => new { e.Mills, e.Carbs })
+                .ToListAsync(cancellationToken);
+
+            if (carbRecords.Count == 0) return;
+
+            var grouped = carbRecords
+                .GroupBy(r => MillsToDateString(r.Mills))
+                .Select(g => new { Date = g.Key, TotalCarbs = g.Sum(r => r.Carbs) });
+
+            foreach (var group in grouped)
+            {
+                if (!dayMap.TryGetValue(group.Date, out var day))
+                {
+                    day = new DailySummaryDay { Date = group.Date };
+                    dayMap[group.Date] = day;
+                }
+
+                day.TotalCarbs = Math.Round(group.TotalCarbs, 1);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to collect carb totals");
         }
     }
 

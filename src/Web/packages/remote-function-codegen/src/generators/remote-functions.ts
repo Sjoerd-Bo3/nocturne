@@ -1,5 +1,5 @@
 // src/Web/packages/remote-function-codegen/src/generators/remote-functions.ts
-import type { OperationInfo, ParsedSpec } from '../types.js';
+import type { OperationInfo, ParameterInfo, ParsedSpec } from '../types.js';
 import {
   operationIdToFunctionName,
   tagToFileName,
@@ -367,7 +367,7 @@ function buildParameterMapping(op: OperationInfo): {
   // Query params only (e.g., GET /trackers?category=X)
   if (queryParams.length > 0 && !hasBody) {
     const fields = queryParams.map(p => {
-      const zodType = p.enumName ? `z.enum(${p.enumName})` : getZodType(p.type);
+      const zodType = p.enumName ? `z.enum(${p.enumName})` : getZodTypeForParam(p);
       return `${p.name}: ${zodType}${p.required ? '' : '.optional()'}`;
     });
 
@@ -394,6 +394,17 @@ function getZodType(type: string): string {
     case 'Date': return 'z.coerce.date()';
     default: return 'z.string()';
   }
+}
+
+/**
+ * Get Zod type for a parameter, handling array types by wrapping the item type.
+ */
+function getZodTypeForParam(param: ParameterInfo): string {
+  if (param.type === 'array') {
+    const itemZod = getZodType(param.itemType ?? 'string');
+    return `z.array(${itemZod})`;
+  }
+  return getZodType(param.type);
 }
 
 /**

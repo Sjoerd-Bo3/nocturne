@@ -22,11 +22,11 @@ export const getAvailableYears = query(async () => {
 });
 
 /** Get day-level aggregated counts and average glucose for a given year */
-export const getDailySummary = query(z.object({ year: z.number().optional(), dataSource: z.string().optional() }).optional(), async (params) => {
+export const getDailySummary = query(z.object({ year: z.number().optional(), dataSources: z.array(z.string()).optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    return await apiClient.dataOverview.getDailySummary(params?.year, params?.dataSource);
+    return await apiClient.dataOverview.getDailySummary(params?.year, params?.dataSources);
   } catch (err) {
     const status = (err as any)?.status;
     if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }

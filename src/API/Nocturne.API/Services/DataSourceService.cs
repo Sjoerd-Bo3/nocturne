@@ -811,6 +811,10 @@ public class DataSourceService : IDataSourceService
                 .DeviceStatuses.Where(ds => ds.Device == deviceId)
                 .ExecuteDeleteAsync(cancellationToken);
 
+            var stateSpansDeleted = await _context
+                .StateSpans.Where(s => s.Source == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+
             // Build per-type deletion counts
             var deletedCounts = new Dictionary<string, long>();
             var glucoseDeleted = (long)legacyEntriesDeleted + sensorGlucoseDeleted + calibrationsDeleted;
@@ -824,6 +828,7 @@ public class DataSourceService : IDataSourceService
             if (deviceEventsDeleted > 0) deletedCounts["DeviceEvents"] = deviceEventsDeleted;
             if (legacyTreatmentsDeleted > 0) deletedCounts["Treatments"] = legacyTreatmentsDeleted;
             if (deviceStatusDeleted > 0) deletedCounts["DeviceStatus"] = deviceStatusDeleted;
+            if (stateSpansDeleted > 0) deletedCounts["StateSpans"] = stateSpansDeleted;
 
             _logger.LogInformation(
                 "Deleted data for connector {ConnectorId} (device {DeviceId}): {DeletedCounts}",
@@ -956,6 +961,10 @@ public class DataSourceService : IDataSourceService
                 .DeviceStatuses.Where(ds => ds.Device == deviceId)
                 .ExecuteDeleteAsync(cancellationToken);
 
+            var stateSpansDeleted = await _context
+                .StateSpans.Where(s => s.Source == deviceId)
+                .ExecuteDeleteAsync(cancellationToken);
+
             var deletedCounts = new Dictionary<string, long>();
             var glucoseDeleted = (long)entriesDeleted + sensorGlucoseDeleted + calibrationsDeleted;
             if (glucoseDeleted > 0) deletedCounts["Glucose"] = glucoseDeleted;
@@ -968,6 +977,7 @@ public class DataSourceService : IDataSourceService
             if (deviceEventsDeleted > 0) deletedCounts["DeviceEvents"] = deviceEventsDeleted;
             if (bolusCalcsDeleted > 0) deletedCounts["BolusCalculations"] = bolusCalcsDeleted;
             if (deviceStatusDeleted > 0) deletedCounts["DeviceStatus"] = deviceStatusDeleted;
+            if (stateSpansDeleted > 0) deletedCounts["StateSpans"] = stateSpansDeleted;
 
             _logger.LogInformation(
                 "Deleted data for {DeviceId}: {DeletedCounts}",

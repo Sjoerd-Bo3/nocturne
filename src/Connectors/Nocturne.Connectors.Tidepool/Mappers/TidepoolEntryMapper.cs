@@ -37,13 +37,14 @@ public class TidepoolEntryMapper(ILogger logger, string connectorSource)
                 Sgv = (int)Math.Round(mgdlValue),
                 Direction = Direction.NONE.ToString(),
                 Device = _connectorSource,
+                DataSource = _connectorSource,
                 Type = "sgv"
             };
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error converting Tidepool BG value: {Id}", bgValue.Id);
-            return new Entry { Type = "sgv", Device = _connectorSource };
+            return new Entry { Type = "sgv", Device = _connectorSource, DataSource = _connectorSource };
         }
     }
 

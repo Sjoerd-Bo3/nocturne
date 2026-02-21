@@ -4930,16 +4930,16 @@ export class DataOverviewClient {
     /**
      * Get day-level aggregated counts and average glucose for a given year
      * @param year (optional) The year to aggregate
-     * @param dataSource (optional) Optional data source filter
+     * @param dataSources (optional) Optional data source filters (multiple allowed)
      */
-    getDailySummary(year?: number | undefined, dataSource?: string | null | undefined, signal?: AbortSignal): Promise<DailySummaryResponse> {
+    getDailySummary(year?: number | undefined, dataSources?: string[] | null | undefined, signal?: AbortSignal): Promise<DailySummaryResponse> {
         let url_ = this.baseUrl + "/api/v4/data-overview/daily-summary?";
         if (year === null)
             throw new globalThis.Error("The parameter 'year' cannot be null.");
         else if (year !== undefined)
             url_ += "year=" + encodeURIComponent("" + year) + "&";
-        if (dataSource !== undefined && dataSource !== null)
-            url_ += "dataSource=" + encodeURIComponent("" + dataSource) + "&";
+        if (dataSources !== undefined && dataSources !== null)
+            dataSources && dataSources.forEach(item => { url_ += "dataSources=" + encodeURIComponent("" + item) + "&"; });
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -25485,13 +25485,17 @@ export interface DataOverviewYearsResponse {
 
 export interface DailySummaryResponse {
     year?: number;
-    dataSource?: string | undefined;
+    dataSources?: string[] | undefined;
     days?: DailySummaryDay[];
 }
 
 export interface DailySummaryDay {
     date?: string;
     averageGlucoseMgdl?: number | undefined;
+    totalBolusUnits?: number | undefined;
+    totalBasalUnits?: number | undefined;
+    totalDailyDose?: number | undefined;
+    totalCarbs?: number | undefined;
     totalCount?: number;
     counts?: { [key: string]: number; };
 }

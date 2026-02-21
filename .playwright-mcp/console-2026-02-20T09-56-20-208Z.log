@@ -1,0 +1,296 @@
+[   25183ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[   25237ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771495005288&to=1771581405288&limit=500:0
+[   25254ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771495005288&to=1771581405288&limit=500:0
+[   25276ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771495005288&to=1771581405288&limit=500:0
+[   25300ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771495005288&to=1771581405288&limit=500:0
+[   25307ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771495005288&to=1771581405288&limit=500:0
+[   25429ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[  214989ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[  218338ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[  220391ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[  222442ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[  225776ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[  229130ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[  231198ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[  233271ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[  236635ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[  261280ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://localhost:1612/_app/remote/kdmqya/getPredictions?payload=W3t9XQ:0
+[  261280ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[  287979ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[  287993ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771495268113&to=1771581668113&limit=500:0
+[  287999ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771495268113&to=1771581668113&limit=500:0
+[  288000ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771495268113&to=1771581668113&limit=500:0
+[  288004ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771495268113&to=1771581668113&limit=500:0
+[  288008ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771495268113&to=1771581668113&limit=500:0
+[  288063ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[  843526ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 1091994ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ https://localhost:1612/src/lib/api/generated/dataOverviews.generated.remote.ts?t=1771582469415:0
+[ 1091995ms] [ERROR] [vite] Failed to reload /src/lib/api/generated/dataOverviews.generated.remote.ts. This could be due to syntax errors or importing non-existent modules. (see errors above) @ https://localhost:1612/@vite/client:881
+[ 1092931ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ https://localhost:1612/@fs/C:/Users/rhysg/Documents/Github/nocturne/src/Web/packages/app/src/lib/api/generated/foods.generated.remote.ts?t=1771582469416:0
+[ 1092931ms] [ERROR] [vite] Failed to reload /@fs/C:\Users\rhysg\Documents\Github\nocturne\src\Web\packages\app\src\lib\api\generated\foods.generated.remote.ts. This could be due to syntax errors or importing non-existent modules. (see errors above) @ https://localhost:1612/@vite/client:881
+[ 1093298ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ https://localhost:1612/reports/data-overview?isDefault=true:0
+[ 1093970ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ https://localhost:1612/src/lib/api/generated/dataOverviews.generated.remote.ts?t=1771582470521:0
+[ 1093971ms] [WARNING] The next HMR update will cause the page to reload @ https://localhost:1612/@fs/C:/Users/rhysg/Documents/Github/nocturne/src/Web/node_modules/.pnpm/@sveltejs+kit@2.50.2_@svelt_9ca1ac863d9752338b5bf3c510356d48/node_modules/@sveltejs/kit/src/runtime/client/client.js?v=cb1747a5:3208
+[ 1093971ms] [ERROR] TypeError: Failed to fetch dynamically imported module: https://localhost:1612/.svelte-kit/generated/client/nodes/0.js?t=1771582470528 @ https://localhost:1612/@fs/C:/Users/rhysg/Documents/Github/nocturne/src/Web/packages/app/.svelte-kit/generated/client/app.js:114
+[ 1093977ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ https://localhost:1612/src/lib/api/generated/foods.generated.remote.ts?t=1771582470522:0
+[ 1094010ms] Failed to fetch dynamically imported module: https://localhost:1612/.svelte-kit/generated/client/nodes/0.js?t=1771582470528
+[ 1094090ms] Failed to fetch dynamically imported module: https://localhost:1612/.svelte-kit/generated/client/nodes/0.js?t=1771582470528
+[ 1102779ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 1102822ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771496082891&to=1771582482891&limit=500:0
+[ 1102824ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771496082891&to=1771582482891&limit=500:0
+[ 1102840ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771496082891&to=1771582482891&limit=500:0
+[ 1102842ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771496082891&to=1771582482891&limit=500:0
+[ 1102843ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771496082891&to=1771582482891&limit=500:0
+[ 1102924ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771582474859:97
+[ 1309590ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1312969ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1315029ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 1317100ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1320460ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1323842ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1325899ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 1327965ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1331333ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1334694ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1338074ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1340107ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 1342159ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1345886ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1349694ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 1452379ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://localhost:1612/_app/remote/kdmqya/getPredictions?payload=W3t9XQ:0
+[ 1452379ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771582474859:97
+[ 1542952ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 1542961ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771496523137&to=1771582923137&limit=500:0
+[ 1542969ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771496523137&to=1771582923137&limit=500:0
+[ 1542974ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771496523137&to=1771582923137&limit=500:0
+[ 1542981ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771496523137&to=1771582923137&limit=500:0
+[ 1542987ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771496523137&to=1771582923137&limit=500:0
+[ 1543093ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 1795650ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 2484211ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ https://localhost:1612/reports/data-overview?isDefault=true:0
+[ 2484923ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ https://localhost:1612/reports/data-overview?isDefault=true:0
+[ 2485330ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 2485341ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771497465513&to=1771583865513&limit=500:0
+[ 2485356ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771497465513&to=1771583865513&limit=500:0
+[ 2485358ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771497465513&to=1771583865513&limit=500:0
+[ 2485379ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771497465513&to=1771583865513&limit=500:0
+[ 2485380ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771497465513&to=1771583865513&limit=500:0
+[ 2485440ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771583861298:97
+[ 2695493ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771583861298:97
+[ 2748747ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 2752075ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 2754242ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 2756282ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 2759648ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 2763012ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 2765069ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 2788625ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://localhost:1612/_app/remote/kdmqya/getPredictions?payload=W3t9XQ:0
+[ 2788625ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771583861298:97
+[ 2815434ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 2815447ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771497795612&to=1771584195612&limit=500:0
+[ 2815453ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771497795612&to=1771584195612&limit=500:0
+[ 2815461ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771497795612&to=1771584195612&limit=500:0
+[ 2815470ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771497795612&to=1771584195612&limit=500:0
+[ 2815478ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771497795612&to=1771584195612&limit=500:0
+[ 2815597ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 3072304ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 3345608ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771498325766&to=1771584725766&limit=500:0
+[ 3345609ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 3345609ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771498325766&to=1771584725766&limit=500:0
+[ 3345673ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771498325766&to=1771584725766&limit=500:0
+[ 3345674ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771498325766&to=1771584725766&limit=500:0
+[ 3345692ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771498325766&to=1771584725766&limit=500:0
+[ 3345827ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771584720230:97
+[ 3372307ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771584720230:97
+[ 3672307ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771584720230:97
+[ 3868897ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 3868897ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771498849028&to=1771585249028&limit=500:0
+[ 3868897ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771498849028&to=1771585249028&limit=500:0
+[ 3868955ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771498849028&to=1771585249028&limit=500:0
+[ 3868963ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771498849028&to=1771585249028&limit=500:0
+[ 3868988ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771498849028&to=1771585249028&limit=500:0
+[ 3869097ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771585244330:97
+[ 3972223ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771585244330:97
+[ 4572245ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771585244330:97
+[ 5173991ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771585244330:97
+[ 5177223ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 5177228ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771500157279&to=1771586557279&limit=500:0
+[ 5177255ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771500157279&to=1771586557279&limit=500:0
+[ 5177281ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771500157279&to=1771586557279&limit=500:0
+[ 5177297ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771500157279&to=1771586557279&limit=500:0
+[ 5177297ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771500157279&to=1771586557279&limit=500:0
+[ 5177872ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771586553594:97
+[ 5179917ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771500160096&to=1771586560096&limit=500:0
+[ 5179917ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 5179917ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771500160096&to=1771586560096&limit=500:0
+[ 5179917ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771500160096&to=1771586560096&limit=500:0
+[ 5179929ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771500160096&to=1771586560096&limit=500:0
+[ 5179934ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771500160096&to=1771586560096&limit=500:0
+[ 5179983ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771586553594:97
+[ 5186157ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5189489ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5192845ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5194893ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5196943ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5200279ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5203634ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5205680ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5207718ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5211043ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5298452ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771586553594:97
+[ 5396037ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 5396057ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771500376180&to=1771586776180&limit=500:0
+[ 5396061ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771500376180&to=1771586776180&limit=500:0
+[ 5396115ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771500376180&to=1771586776180&limit=500:0
+[ 5396125ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771500376180&to=1771586776180&limit=500:0
+[ 5396125ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771500376180&to=1771586776180&limit=500:0
+[ 5396186ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 5491930ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 5491946ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771500472106&to=1771586872106&limit=500:0
+[ 5491958ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771500472106&to=1771586872106&limit=500:0
+[ 5491960ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771500472106&to=1771586872106&limit=500:0
+[ 5491960ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771500472106&to=1771586872106&limit=500:0
+[ 5491965ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771500472106&to=1771586872106&limit=500:0
+[ 5492025ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771586868498:97
+[ 5524416ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771586868498:97
+[ 5567115ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5570465ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5573107ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5575149ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5578478ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5581826ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5585183ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5588546ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5590596ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5592655ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5596006ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5599369ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5602719ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5606053ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5608111ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5610144ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5613517ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5616847ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5620202ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5623533ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5626874ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5630252ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5633615ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5636972ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5639018ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5641078ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5644459ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5647825ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5651237ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5654605ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5657996ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5665579ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5670778ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5672809ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5678180ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5685258ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5692863ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5698273ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5703137ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5708857ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5710910ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5713976ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5718998ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5725503ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5731786ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5739923ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5746586ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5748625ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5755514ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5762866ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5770040ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5774791ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5780007ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5783104ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5785879ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5793403ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5799558ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5806036ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5811661ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5816895ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 5819370ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5824554ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5831031ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5838330ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5846488ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 5859290ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771586904812&to=1771587239424&limit=500:0
+[ 5859290ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771586904812&to=1771587239424&limit=500:0
+[ 5859291ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771586904812&to=1771587239424&limit=500:0
+[ 5859295ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771586904812&to=1771587239424&limit=500:0
+[ 5859364ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771586904812&to=1771587239424&limit=500:0
+[ 5909638ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte?t=1771586868498:97
+[ 5948644ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 5948659ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771500928775&to=1771587328775&limit=500:0
+[ 5948675ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771500928775&to=1771587328775&limit=500:0
+[ 5948687ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771500928775&to=1771587328775&limit=500:0
+[ 5948703ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771500928775&to=1771587328775&limit=500:0
+[ 5948708ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771500928775&to=1771587328775&limit=500:0
+[ 5948753ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 6108218ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6111575ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6113635ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 6115684ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6119029ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6121747ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 6123791ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6127154ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6171914ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://localhost:1612/_app/remote/kdmqya/getPredictions?payload=W3t9XQ:0
+[ 6171915ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 6209069ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 6209079ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771501189251&to=1771587589251&limit=500:0
+[ 6209091ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771501189251&to=1771587589251&limit=500:0
+[ 6209098ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771501189251&to=1771587589251&limit=500:0
+[ 6209108ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771501189251&to=1771587589251&limit=500:0
+[ 6209118ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771501189251&to=1771587589251&limit=500:0
+[ 6209201ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 6439018ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6441393ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 6443586ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6447156ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6450815ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6454193ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6456241ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 6458364ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6461905ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6466288ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6469735ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6473184ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6476664ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6480257ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 6582099ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 6582100ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771501562274&to=1771587962274&limit=500:0
+[ 6582109ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771501562274&to=1771587962274&limit=500:0
+[ 6582110ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771501562274&to=1771587962274&limit=500:0
+[ 6582115ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771501562274&to=1771587962274&limit=500:0
+[ 6582115ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771501562274&to=1771587962274&limit=500:0
+[ 6582198ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 7394082ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 7535470ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7538799ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7540857ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 7542885ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7546237ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7549608ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7551665ms] [ERROR] WebSocket connection to 'wss://localhost:1612/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/node_modules/.vite/deps/socket__io-client.js?v=cb1747a5:1523
+[ 7553734ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7557072ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7560579ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7564062ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7567562ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7570976ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7574611ms] [ERROR] WebSocket connection to 'wss://localhost:1612/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ https://localhost:1612/@vite/client:1034
+[ 7652469ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://localhost:1612/_app/remote/kdmqya/getPredictions?payload=W3t9XQ:0
+[ 7652470ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 7691726ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/notifications:0
+[ 7691734ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/insulin/boluses?from=1771502671885&to=1771589071885&limit=500:0
+[ 7691743ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/nutrition/carbs?from=1771502671885&to=1771589071885&limit=500:0
+[ 7691758ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/bg-checks?from=1771502671885&to=1771589071885&limit=500:0
+[ 7691775ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/notes?from=1771502671885&to=1771589071885&limit=500:0
+[ 7691785ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://localhost:1612/api/v4/observations/device-events?from=1771502671885&to=1771589071885&limit=500:0
+[ 7691872ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97
+[ 7885023ms] [ERROR] Failed to fetch predictions for sidebar: HttpError @ https://localhost:1612/src/lib/components/layout/SidebarGlucoseWidget.svelte:97

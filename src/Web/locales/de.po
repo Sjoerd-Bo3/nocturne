@@ -166,6 +166,7 @@ msgstr ""
 #: src/lib/components/status-pills/IOBPill.svelte
 #: src/lib/components/status-pills/SAGEPill.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 msgid "Notes"
 msgstr ""
@@ -259,7 +260,6 @@ msgstr ""
 #: src/lib/components/status-pills/LoopPill.svelte
 #: src/routes/+layout.svelte
 #: src/routes/auth/forgot-password/+page.svelte
-#: src/routes/auth/login/+page.svelte
 #: src/routes/auth/register/+page.svelte
 #: src/routes/compatibility/+page.svelte
 #: src/routes/compatibility/[id]/+page.svelte
@@ -381,6 +381,8 @@ msgstr ""
 
 #: src/lib/components/TreatmentsTable.svelte
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
+#: src/routes/reports/data-overview/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 msgid "Insulin"
 msgstr ""
@@ -788,6 +790,7 @@ msgstr ""
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/reports/TIRStackedChart.svelte
 #: src/routes/calendar/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
@@ -805,6 +808,7 @@ msgstr ""
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/profile/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
@@ -824,6 +828,7 @@ msgstr ""
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/profile/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
@@ -929,6 +934,8 @@ msgstr ""
 #. placeholder {0}: formatMacro(scaledCarbs)
 #. placeholder {0}: dayTotalCarbs
 #. placeholder {0}: totalCarbs
+#. placeholder {0}: d.totalCarbs.toFixed(0)
+#. placeholder {0}: selectedDay.totalCarbs.toFixed(0)
 #. placeholder {0}: treatmentStats.totalCarbs.toFixed(0)
 #. placeholder {0}: treatment.carbs
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
@@ -957,14 +964,15 @@ msgstr ""
 #: src/routes/food/QuickPickItem.svelte
 #: src/routes/meals/+page.svelte
 #: src/routes/meals/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 msgid "{0}g"
 msgstr ""
 
-#: src/routes/calendar/+page.svelte
-msgid "Insulin:"
-msgstr ""
+#~ msgid "Insulin:"
+#~ msgstr ""
 
 #. placeholder {0}: marker.insulin.toFixed(1)
 #. placeholder {0}: insulin.toFixed(1)
@@ -980,7 +988,8 @@ msgstr ""
 #. placeholder {0}: evening.toFixed(1)
 #. placeholder {0}: formatInsulinDisplay(averages.avgTotalDaily)
 #. placeholder {0}: totalInsulin.toFixed(1)
-#. placeholder {0}: day.totalInsulin.toFixed(1)
+#. placeholder {0}: day.totalBolus.toFixed(1)
+#. placeholder {0}: day.totalBasal.toFixed(1)
 #. placeholder {0}: monthSummary.tdd.toFixed(1)
 #. placeholder {0}: dayTotalInsulin.toFixed(1)
 #. placeholder {0}: meal.correlatedBolus.insulin.toFixed(1)
@@ -999,6 +1008,7 @@ msgstr ""
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
 #: src/lib/components/reports/PeriodAverages.svelte
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
+#: src/routes/calendar/+page.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/meals/+page.svelte
@@ -1034,6 +1044,7 @@ msgstr ""
 
 #: src/lib/components/entries/FoodBreakdown.svelte
 #: src/lib/components/treatments/TreatmentFoodBreakdown.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 msgid "Total Carbs"
 msgstr ""
@@ -1068,7 +1079,6 @@ msgstr ""
 
 #: src/routes/auth/change-password/+page.svelte
 #: src/routes/auth/forgot-password/+page.svelte
-#: src/routes/auth/login/+page.svelte
 #: src/routes/auth/register/+page.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/dashboard/+page.svelte
@@ -1518,6 +1528,7 @@ msgstr ""
 msgid "None"
 msgstr ""
 
+#: src/routes/(legal)/terms/+page.svelte
 #: src/routes/compatibility/+page.svelte
 #: src/routes/compatibility/[id]/+page.svelte
 #: src/routes/compatibility/[id]/+page.svelte
@@ -1536,6 +1547,7 @@ msgstr ""
 #: src/lib/components/SiteHeader.svelte
 #: src/lib/components/dashboard/CurrentBGDisplay.svelte
 #: src/lib/components/layout/AppSidebar.svelte
+#: src/routes/(legal)/+layout.svelte
 #: src/routes/compatibility/+page.svelte
 #: src/routes/compatibility/[id]/+page.svelte
 #: src/routes/compatibility/[id]/+page.svelte
@@ -1733,6 +1745,8 @@ msgstr ""
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
 #: src/routes/food/FoodList.svelte
 #: src/routes/food/QuickPickItem.svelte
+#: src/routes/reports/data-overview/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 msgid "Carbs"
@@ -3403,6 +3417,8 @@ msgstr ""
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
 #: src/lib/components/reports/InsulinDonutChart.svelte
 #: src/lib/components/treatments/TreatmentsDataTable.svelte
+#: src/routes/reports/data-overview/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 #: src/routes/reports/treatments/+page.svelte
@@ -3516,6 +3532,7 @@ msgstr ""
 #: src/lib/components/dashboard/glucose-chart/ChartTooltip.svelte
 #: src/lib/components/entries/BGCheckSection.svelte
 #: src/lib/components/reports/RetrospectiveStats.svelte
+#: src/routes/reports/data-overview/+page.svelte
 msgid "Glucose"
 msgstr ""
 
@@ -3530,6 +3547,8 @@ msgstr ""
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
 #: src/lib/components/reports/InsulinDonutChart.svelte
 #: src/lib/components/reports/RetrospectiveStats.svelte
+#: src/routes/reports/data-overview/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 msgid "Basal"
 msgstr ""
@@ -3542,12 +3561,14 @@ msgstr ""
 
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/reports/TIRStackedChart.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 msgid "Very High"
 msgstr ""
 
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/reports/TIRStackedChart.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 msgid "Very Low"
@@ -3881,8 +3902,8 @@ msgstr ""
 msgid "Log out"
 msgstr ""
 
+#: src/lib/components/auth/LoginForm.svelte
 #: src/lib/components/layout/UserMenu.svelte
-#: src/routes/auth/login/+page.svelte
 msgid "Sign in"
 msgstr ""
 
@@ -5158,6 +5179,7 @@ msgstr ""
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/status-pills/IOBPill.svelte
+#: src/routes/reports/data-overview/+page.svelte
 msgid "Activity"
 msgstr ""
 
@@ -6595,50 +6617,50 @@ msgstr ""
 msgid "Sign in to access your glucose data and settings"
 msgstr ""
 
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 msgid "Registration successful! Please sign in."
 msgstr ""
 
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 msgid "Password reset successful! Please sign in with your new password."
 msgstr ""
 
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 #: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
 msgid "Email"
 msgstr ""
 
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 msgid "Password"
 msgstr ""
 
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 msgid "Forgot password?"
 msgstr ""
 
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 msgid "<0/> Signing in..."
 msgstr ""
 
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 msgid "Don't have an account? <0>Sign up</0>"
 msgstr ""
 
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 msgid "Or continue with"
 msgstr ""
 
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 msgid "<0/> Redirecting..."
 msgstr ""
 
 #. placeholder {0}: provider.name
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 msgid "<0/> Sign in with {0}"
 msgstr ""
 
-#: src/routes/auth/login/+page.svelte
+#: src/lib/components/auth/LoginForm.svelte
 msgid ""
 "No authentication providers are configured. Please contact your\n"
 "administrator to set up authentication."
@@ -6806,6 +6828,7 @@ msgid ""
 "administrator."
 msgstr ""
 
+#: src/routes/(legal)/+layout.svelte
 #: src/routes/auth/forgot-password/+page.svelte
 #: src/routes/auth/forgot-password/+page.svelte
 #: src/routes/auth/register/+page.svelte
@@ -7527,6 +7550,7 @@ msgstr ""
 msgid "Selected Target"
 msgstr ""
 
+#: src/routes/(legal)/privacy/+page.svelte
 #: src/routes/compatibility/[id]/+page.svelte
 #: src/routes/dashboard/analyses/[id]/+page.svelte
 msgid "Summary"
@@ -11993,6 +12017,7 @@ msgid "Glucose pattern over 24 hours"
 msgstr ""
 
 #: src/routes/reports/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
 msgid "No Data Available"
 msgstr ""
 
@@ -12193,6 +12218,7 @@ msgid "Records (24h)"
 msgstr ""
 
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
+#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/services/+page.svelte
 msgid "Total Records"
@@ -12260,6 +12286,7 @@ msgstr ""
 
 #: src/lib/components/SiteFooter.svelte
 #: src/lib/components/SiteHeader.svelte
+#: src/routes/(legal)/+layout.svelte
 msgid "N"
 msgstr ""
 
@@ -13026,6 +13053,7 @@ msgstr ""
 msgid "<0/> Data Integrations"
 msgstr ""
 
+#: src/routes/(legal)/terms/+page.svelte
 #: src/routes/features/+page.svelte
 msgid "Dexcom"
 msgstr ""
@@ -13046,6 +13074,7 @@ msgid ""
 "with LibreLinkUp."
 msgstr ""
 
+#: src/routes/(legal)/terms/+page.svelte
 #: src/routes/features/+page.svelte
 msgid "Glooko"
 msgstr ""
@@ -13758,6 +13787,7 @@ msgid "<0/> vs 90d"
 msgstr ""
 
 #: src/lib/components/dashboard/widgets/TddWidget.svelte
+#: src/routes/reports/data-overview/+page.svelte
 msgid "Total Daily Dose"
 msgstr ""
 
@@ -15969,4 +15999,777 @@ msgstr ""
 #. placeholder {0}: dataSummary.total?.toLocaleString() ?? 0
 #: src/routes/settings/connectors/[connector]/+page.svelte
 msgid "<0/> {0} total"
+msgstr ""
+
+#: src/routes/reports/+page.svelte
+msgid "Data Overview"
+msgstr ""
+
+#: src/routes/reports/+page.svelte
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Multi-year heatmap of all your data"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Query timed out"
+msgstr ""
+
+#~ msgid "Data Overview - Nocturne"
+#~ msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Multi-year heatmap overview of all your diabetes data"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "All Data Sources"
+msgstr ""
+
+#~ msgid "<0/> Very Low"
+#~ msgstr ""
+
+#~ msgid "<0/> Low"
+#~ msgstr ""
+
+#~ msgid "<0/> In Range"
+#~ msgstr ""
+
+#~ msgid "<0/> High"
+#~ msgstr ""
+
+#~ msgid "<0/> Very High"
+#~ msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "<0/> Other Data (no glucose)"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Loading data overview..."
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid ""
+"There is no data to display yet. Connect a data source in your\n"
+"settings to get started."
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Configure Data Sources"
+msgstr ""
+
+#~ msgid ""
+#~ "{0} days\n"
+#~ "with data"
+#~ msgstr ""
+
+#~ msgid "Avg: {0} {1}"
+#~ msgstr ""
+
+#. placeholder {0}: year
+#: src/routes/reports/data-overview/+page.svelte
+msgid "<0/> Loading {0} data..."
+msgstr ""
+
+#. placeholder {0}: year
+#: src/routes/reports/data-overview/+page.svelte
+msgid "No data for {0}"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Day Details"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Average Glucose"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "By Data Type"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "View Day in Review <0/>"
+msgstr ""
+
+#~ msgid ""
+#~ "{0} days with\n"
+#~ "data"
+#~ msgstr ""
+
+#. placeholder {0}: days.filter((d) => (d.totalCount ?? 0) > 0).length
+#: src/routes/reports/data-overview/+page.svelte
+msgid "{0} days with data"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "ManualBG"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Boluses"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "CarbIntake"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "BolusCalculations"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "DeviceEvents"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "StateSpans"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "DeviceStatus"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "<0/> Types <1/>"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Show data types"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Show all"
+msgstr ""
+
+#. placeholder {0}: unitLabel
+#: src/routes/reports/data-overview/+page.svelte
+msgid "avg {0}"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "TDD"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Counts"
+msgstr ""
+
+#. placeholder {0}: unitLabel
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Avg Glucose ({0}):"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Glucose color scale legend"
+msgstr ""
+
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Year Overview - Nocturne"
+msgstr ""
+
+#: src/lib/components/layout/AppSidebar.svelte
+#: src/routes/reports/data-overview/+page.svelte
+msgid "Year Overview"
+msgstr ""
+
+#: src/lib/components/layout/AppSidebar.svelte
+msgid "Month to Month"
+msgstr ""
+
+#: src/lib/components/auth/login-dialog.svelte
+msgid "Sign In Required"
+msgstr ""
+
+#: src/lib/components/auth/login-dialog.svelte
+msgid "Please sign in to continue"
+msgstr ""
+
+#~ msgid "Need an account? <0>Sign up</0>"
+#~ msgstr ""
+
+#: src/routes/calendar/+page.svelte
+msgid "Bolus:"
+msgstr ""
+
+#: src/routes/calendar/+page.svelte
+msgid "Basal:"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Terms of Service - Nocturne"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Terms of Service"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Welcome to Nocturne. These terms explain your rights and responsibilities when using this open-source diabetes data management platform."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+#: src/routes/(legal)/terms/+page.svelte
+msgid "1. Introduction"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne is an open-source, self-hosted platform for managing your diabetes data with full Nightscout API compatibility. It's built by the diabetes community, for the diabetes community."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Because Nocturne is self-hosted, you have full control over your installation, your data, and how you use the software. These terms apply to the Nocturne software itself, not to any specific hosted instance."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "2. No Warranty - Provided \"AS IS\""
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne is provided <0>\"AS IS\"</0> without any warranties or guarantees of any kind, either express or implied. This means:"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>No medical advice:</0> Nocturne is not a medical device and does not provide medical advice. Always consult with healthcare professionals for medical decisions."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>No reliability guarantee:</0> We don't guarantee the software will work perfectly, be error-free, or be available at all times."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>No fitness guarantee:</0> We don't warrant that Nocturne is suitable for any particular purpose or meets your specific needs."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>Use at your own risk:</0> You assume all risk when using Nocturne. We are not liable for any harm, data loss, or issues that may arise."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "This is standard for open-source software. You're free to inspect the code, modify it, and use it as you see fit, but we can't guarantee outcomes."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "3. Third-Party Data Connectors"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne integrates with various third-party diabetes data services, including:"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "FreeStyle Libre"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Tidepool"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "And others"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Important disclaimers about third-party connectors:"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>We don't control these services:</0> Third-party services have their own terms of service, privacy policies, and data practices. You are responsible for reviewing and agreeing to their terms."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>Data accuracy:</0> The accuracy of your data in Nocturne depends on the accuracy of data provided by these third-party sources. We cannot guarantee the accuracy of third-party data."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>Service availability:</0> Third-party services may change their APIs, terms, or shut down at any time. We are not responsible for service interruptions or changes to third-party integrations."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>Your agreements:</0> By connecting a third-party service to Nocturne, you agree that you have the right to access that data and are in compliance with that service's terms."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>No liability:</0> We are not liable for any issues, data loss, or problems arising from third-party services or connectors."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "4. Your Data and Privacy"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne is designed with privacy as a core principle:"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>Self-hosted:</0> Your data lives in your own database on your own server. We don't have access to it."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>No data collection:</0> The Nocturne software does not send data to us without your explicit consent."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>You're in control:</0> You decide where to host Nocturne, who has access, and how your data is used."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "For more details, see our <0>Privacy Policy</0>."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "5. Acceptable Use"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "When using Nocturne, you agree to:"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Use the software for lawful purposes only"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Not use it to harm others or violate their rights"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Not abuse the software or use it in ways that could damage the project or community"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Comply with all applicable laws and regulations"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "If you're hosting Nocturne for others (family, friends, community), you're responsible for ensuring acceptable use by those users."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "6. Changes to These Terms"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "We may update these terms from time to time to reflect changes in the software, legal requirements, or best practices. When we do:"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "The updated terms will be posted at this URL"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "The \"Last updated\" date at the bottom of the page will change"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Continued use of Nocturne after changes constitutes acceptance of the new terms"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "For significant changes, we'll announce them in the project's GitHub repository."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "7. Open Source License"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne is released under the MIT License. This means you're free to:"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Use the software for any purpose"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Modify the source code"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Distribute copies"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Sublicense or sell copies"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "The MIT License provides the software \"as is\" without warranty. See the LICENSE file in the project repository for full details."
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "8. Contact"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne is an open-source project. For questions, issues, or contributions:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+#: src/routes/(legal)/terms/+page.svelte
+msgid "GitHub: <0>github.com/nightscout/nocturne</0>"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Issues: Use GitHub Issues for bug reports and feature requests"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Community: Join discussions in GitHub Discussions"
+msgstr ""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "These terms are effective as of February 21, 2026."
+msgstr ""
+
+#: src/routes/(legal)/+layout.svelte
+msgid "Last updated: February 21, 2026"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Privacy Policy - Nocturne"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Privacy Policy"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Your privacy matters. This policy explains how Nocturne handles your data and protects your privacy."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Nocturne is a self-hosted, open-source diabetes data management platform. This means <0>you control where your data lives</0>. Unlike cloud-based services, Nocturne runs on your own server or hosting provider, and your data stays in your own database."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "This privacy policy explains what data Nocturne collects (spoiler: very little), how it's stored, and your rights."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "2. Data We DON'T Collect"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Because Nocturne is self-hosted, we (the Nocturne project developers) do not have access to your data. Specifically:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>No analytics:</0> Nocturne does not send usage analytics or telemetry to us by default."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>No tracking:</0> We don't track your usage, browsing, or behavior."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>No data collection:</0> Your glucose readings, treatments, meals, and health data never leave your server unless you choose to share them."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>No selling data:</0> We don't sell your data because we don't have access to it in the first place."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>No cloud storage:</0> Nocturne doesn't store your data in our cloud or servers. It's all on your infrastructure."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "3. Data Storage"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "All your Nocturne data is stored in your own database on your own server or hosting provider. This includes:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Glucose readings (blood sugar, CGM data)"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Treatments (insulin, medications)"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Meals and nutrition data"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Activity and exercise logs"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "User account information"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Settings and preferences"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Where your data lives:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Your database:</0> All persistent data is stored in a PostgreSQL database that you control."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Your hosting provider:</0> Your hosting provider's privacy policy and security practices apply to your data. Choose a provider you trust."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Browser local storage:</0> Some temporary data (like UI preferences) may be stored in your browser's local storage. This never leaves your device."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "4. Third-Party Services and Connectors"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Nocturne can connect to third-party diabetes data services to import your glucose and treatment data. When you use these integrations:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Third-party privacy policies apply:</0> Services like Dexcom, FreeStyle Libre, Glooko, and Tidepool have their own privacy policies. Review them before connecting."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>We don't control third parties:</0> We cannot control what data these services collect about you or how they use it."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Credentials storage:</0> Your API keys and login credentials for third-party services are stored <1>encrypted</1> in your database. Only your Nocturne instance can decrypt them."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Data transfer:</0> When you connect to a third-party service, data flows between that service and your Nocturne instance. We (the Nocturne developers) do not see or have access to this data."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Third-party services you might connect:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Dexcom (CGM data)"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "FreeStyle Libre (CGM data)"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Glooko (multi-source data aggregation)"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Tidepool (open diabetes data platform)"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Nightscout (diabetes data platform)"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Others via community plugins"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "5. Optional Analytics and Error Reporting"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "In the future, Nocturne may offer optional, opt-in features for:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Error reporting:</0> Send crash reports and error logs to help us improve Nocturne"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Anonymous usage analytics:</0> Aggregated, anonymized usage statistics"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "If we add these features:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "They will be <0>opt-in only</0> - disabled by default"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "You'll have clear control to enable or disable them"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "We'll clearly explain what data would be collected"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Data will be anonymized and aggregated when possible"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "No health data or personally identifiable information will be included"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Current status:</0> As of this writing, Nocturne does not include any analytics or error reporting features."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "6. Your Rights and Data Control"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Because you self-host Nocturne, you have complete control over your data:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>You own your data:</0> All data belongs to you. We make no claims to it."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Export anytime:</0> You can export your data at any time. It's just a PostgreSQL database - you have full access."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Delete anytime:</0> You can delete any or all of your data whenever you want."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Control access:</0> You decide who can access your Nocturne instance and what they can see."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Move your data:</0> You can migrate your database to a different server or hosting provider at any time."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Backup your data:</0> You're responsible for backing up your database. We recommend regular backups."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "7. Security"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Nocturne is designed with security best practices:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Encryption:</0> API keys and sensitive credentials are stored encrypted in the database."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>HTTPS recommended:</0> We strongly recommend running Nocturne behind HTTPS to encrypt data in transit."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Authentication:</0> User accounts are protected with password hashing (bcrypt)."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Open source:</0> The code is open for security review by the community."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "<0>Your responsibility:</0> As a self-hosted application, you're responsible for:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Keeping your server and dependencies updated"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Using strong passwords"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Securing your hosting environment"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Configuring HTTPS/SSL certificates"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Regular backups"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "8. Children's Privacy"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Nocturne is often used to manage diabetes data for children. Because the software is self-hosted:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Parents/guardians control all data for their children"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "No data is sent to us (the developers)"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "All data stays within the family's or caregiver's control"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "If you're hosting Nocturne for your child, you have full control and responsibility for their data privacy and security."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "9. Changes to This Privacy Policy"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "We may update this privacy policy from time to time. When we do:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "The updated policy will be posted at this URL"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "The \"Last updated\" date will change"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Major changes will be announced in the GitHub repository"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Because Nocturne is self-hosted, privacy policy changes don't affect data you've already collected - it stays under your control regardless."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "10. Contact"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "For questions about this privacy policy or Nocturne's privacy practices:"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "Open an issue or discussion on GitHub"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "For questions about your specific Nocturne instance's privacy and data handling, contact your instance administrator (which might be you if you're self-hosting)."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "The key point: <0>Nocturne is self-hosted, which means you control your data</0>. We (the developers) don't collect it, don't have access to it, and can't sell it or share it. Your privacy is protected by design."
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "See also: <0>Terms of Service</0>"
+msgstr ""
+
+#: src/routes/(legal)/privacy/+page.svelte
+msgid "This privacy policy is effective as of February 21, 2026."
 msgstr ""

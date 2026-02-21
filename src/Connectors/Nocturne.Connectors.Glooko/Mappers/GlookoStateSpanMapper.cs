@@ -257,11 +257,21 @@ public class GlookoStateSpanMapper
         if (batchData.TempBasals != null)
             foreach (var tempBasal in batchData.TempBasals)
             {
-                var rawTimestamp = DateTime.Parse(
-                    tempBasal.Timestamp,
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.RoundtripKind
-                );
+                if (string.IsNullOrWhiteSpace(tempBasal.Timestamp))
+                {
+                    _logger.LogWarning("Skipping TempBasal with empty timestamp");
+                    continue;
+                }
+
+                if (!DateTime.TryParse(
+                        tempBasal.Timestamp,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind,
+                        out var rawTimestamp))
+                {
+                    _logger.LogWarning("Failed to parse TempBasal timestamp: '{Timestamp}'", tempBasal.Timestamp);
+                    continue;
+                }
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
                 var durationSeconds = tempBasal.Duration;
                 var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
@@ -296,11 +306,21 @@ public class GlookoStateSpanMapper
         if (batchData.ScheduledBasals != null)
             foreach (var basal in batchData.ScheduledBasals)
             {
-                var rawTimestamp = DateTime.Parse(
-                    basal.Timestamp,
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.RoundtripKind
-                );
+                if (string.IsNullOrWhiteSpace(basal.Timestamp))
+                {
+                    _logger.LogWarning("Skipping ScheduledBasal with empty timestamp");
+                    continue;
+                }
+
+                if (!DateTime.TryParse(
+                        basal.Timestamp,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind,
+                        out var rawTimestamp))
+                {
+                    _logger.LogWarning("Failed to parse ScheduledBasal timestamp: '{Timestamp}'", basal.Timestamp);
+                    continue;
+                }
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
                 var durationSeconds = basal.Duration;
                 var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
@@ -335,11 +355,21 @@ public class GlookoStateSpanMapper
         if (batchData.SuspendBasals != null)
             foreach (var suspend in batchData.SuspendBasals)
             {
-                var rawTimestamp = DateTime.Parse(
-                    suspend.Timestamp,
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.RoundtripKind
-                );
+                if (string.IsNullOrWhiteSpace(suspend.Timestamp))
+                {
+                    _logger.LogWarning("Skipping SuspendBasal with empty timestamp");
+                    continue;
+                }
+
+                if (!DateTime.TryParse(
+                        suspend.Timestamp,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind,
+                        out var rawTimestamp))
+                {
+                    _logger.LogWarning("Failed to parse SuspendBasal timestamp: '{Timestamp}'", suspend.Timestamp);
+                    continue;
+                }
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
                 var durationSeconds = suspend.Duration;
                 var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();

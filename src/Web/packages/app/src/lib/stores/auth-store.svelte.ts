@@ -68,11 +68,15 @@ export class AuthStore {
   private _error = $state<string | null>(null);
   private _providers = $state<OidcProvider[]>([]);
 
+  // Login dialog state
+  private _loginDialogOpen = $state(false);
+
   // Derived state
   state = $derived(this._state);
   user = $derived(this._user);
   error = $derived(this._error);
   providers = $derived(this._providers);
+  loginDialogOpen = $derived(this._loginDialogOpen);
 
   isAuthenticated = $derived(this._state === "authenticated" && this._user !== null);
   isLoading = $derived(this._state === "loading");
@@ -373,10 +377,61 @@ export class AuthStore {
   }
 
   /**
+   * Request login from the user via the login dialog
+   * Returns a promise that resolves when login completes (true) or is cancelled (false)
+   */
+  requestLogin(): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      // Store the resolver to be called when the dialog closes
+      this._loginResolver = resolve;
+
+      // Open the login dialog
+      this._loginDialogOpen = true;
+    });
+  }
+
+  /**
+   * Login resolver for the promise returned by requestLogin()
+   */
+  private _loginResolver: ((success: boolean) => void) | null = null;
+
+  /**
+   * Handle login dialog close
+   * @param success - Whether login was successful
+   */
+  handleLoginDialogClose(success: boolean): void {
+    this._loginDialogOpen = false;
+
+    if (this._loginResolver) {
+      this._loginResolver(success);
+      this._loginResolver = null;
+    }
+  }
+
+  /**
+   * Open the login dialog manually
+   */
+  openLoginDialog(): void {
+    this._loginDialogOpen = true;
+  }
+
+  /**
+   * Close the login dialog manually
+   */
+  closeLoginDialog(): void {
+    this._loginDialogOpen = false;
+    if (this._loginResolver) {
+      this._loginResolver(false);
+      this._loginResolver = null;
+    }
+  }
+
+  /**
    * Cleanup when the store is destroyed
    */
   destroy(): void {
     this.stopExpiryCheck();
+    this.closeLoginDialog();
   }
 }
 
