@@ -67,6 +67,12 @@ public class ConnectorHealthService(
             cancellationToken
         );
 
+        // Get health state for the connector
+        var healthState = await connectorConfigService.GetHealthStateAsync(
+            connector.Id,
+            cancellationToken
+        );
+
         // Always get database stats for historical data (entries + treatments + state spans)
         var dbStats = await postgreSqlService.GetEntryStatsBySourceAsync(
             connector.DataSourceId,
@@ -102,6 +108,10 @@ public class ConnectorHealthService(
                 EntriesLast24Hours = dbStats.ItemsLast24Hours,
                 State = "Disabled",
                 IsHealthy = false,
+                StateMessage = healthState?.LastErrorMessage,
+                LastSyncAttempt = healthState?.LastSyncAttempt,
+                LastSuccessfulSync = healthState?.LastSuccessfulSync,
+                LastErrorAt = healthState?.LastErrorAt,
                 TotalItemsBreakdown = totalBreakdown.Count > 0 ? totalBreakdown : null,
                 ItemsLast24HoursBreakdown = last24HBreakdown.Count > 0 ? last24HBreakdown : null,
             };
@@ -112,8 +122,12 @@ public class ConnectorHealthService(
             Id = connector.Id,
             Name = connector.Id,
             Status = enabledConfig == true ? "Running" : "Not Configured",
-            IsHealthy = enabledConfig == true,
+            IsHealthy = healthState?.IsHealthy ?? (enabledConfig == true),
             State = enabledConfig == true ? "Running" : "Not Configured",
+            StateMessage = healthState?.LastErrorMessage,
+            LastSyncAttempt = healthState?.LastSyncAttempt,
+            LastSuccessfulSync = healthState?.LastSuccessfulSync,
+            LastErrorAt = healthState?.LastErrorAt,
             // ALWAYS use database stats for entry counts - sidecar stats may be stale/cached
             // DB is the single source of truth for how much data exists
             TotalEntries = dbStats.TotalItems,
