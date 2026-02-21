@@ -255,7 +255,7 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
                     // Record exception in health state
                     await UpdateHealthStateAsync(
                         isHealthy: false,
-                        lastErrorMessage: ex.Message,
+                        lastErrorMessage: ex.Message.Length > 1000 ? ex.Message[..1000] : ex.Message,
                         lastErrorAt: DateTime.UtcNow,
                         stoppingToken
                     );
