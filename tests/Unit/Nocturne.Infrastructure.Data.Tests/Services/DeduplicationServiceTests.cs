@@ -2,6 +2,7 @@ using System.Data.Common;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Mappers;
 using Nocturne.Infrastructure.Data.Services;
 
@@ -528,6 +529,125 @@ public class DeduplicationServiceTests : IDisposable
             "Both treatments should share the same canonical ID since they have the same rate and are in the same time window");
     }
 
+    #region StateSpan Deduplication Tests
+
+    [Fact]
+    public async Task DeduplicateAllAsync_ShouldDeduplicateStateSpansAcrossBucketBoundaries()
+    {
+        // Arrange
+        await using var context = new NocturneDbContext(_contextOptions);
+        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        var logger = new Mock<ILogger<DeduplicationService>>();
+        var service = new DeduplicationService(context, scopeFactory, logger.Object);
+
+        // Create timestamps that straddle a 30-second bucket boundary
+        // Bucket size is 30,000ms, so bucket boundaries are at multiples of 30,000
+        var bucketBoundary = 30000L * 1000; // Timestamp at bucket boundary
+        var glookoTimestamp = bucketBoundary - 5000; // 5 seconds before boundary (bucket 999)
+        var mylifeTimestamp = bucketBoundary + 5000; // 5 seconds after boundary (bucket 1000)
+
+        // These are only 10 seconds apart but in different buckets!
+        // They should still be deduplicated because they're within the 30-second window
+
+        var glookoStateSpan = CreateTestStateSpan(
+            category: StateSpanCategory.BasalDelivery,
+            state: "Active",
+            startMills: glookoTimestamp,
+            source: "glooko-connector"
+        );
+
+        var mylifeStateSpan = CreateTestStateSpan(
+            category: StateSpanCategory.BasalDelivery,
+            state: "Active",
+            startMills: mylifeTimestamp,
+            source: "mylife-connector"
+        );
+
+        context.StateSpans.AddRange(
+            StateSpanMapper.ToEntity(glookoStateSpan),
+            StateSpanMapper.ToEntity(mylifeStateSpan)
+        );
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.DeduplicateAllAsync();
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.StateSpansProcessed.Should().Be(2);
+
+        // Both should be grouped together despite being in different buckets
+        var linkedRecords = await context.LinkedRecords
+            .Where(lr => lr.RecordType == "statespan")
+            .OrderBy(lr => lr.SourceTimestamp)
+            .ToListAsync();
+
+        linkedRecords.Should().HaveCount(2, "both state spans should be linked");
+        linkedRecords.Select(lr => lr.CanonicalId).Distinct().Should().HaveCount(1,
+            "both state spans should share the same canonical ID because they are within 30 seconds and have the same category/state");
+
+        // Verify the sources are different
+        linkedRecords.Select(lr => lr.DataSource).Should().BeEquivalentTo(
+            new[] { "glooko-connector", "mylife-connector" },
+            "the two linked records should be from different sources");
+
+        // Verify we can get a unified state span
+        var canonicalId = linkedRecords.First().CanonicalId;
+        var unified = await service.GetUnifiedStateSpanAsync(canonicalId);
+        unified.Should().NotBeNull();
+        unified!.Sources.Should().BeEquivalentTo(new[] { "glooko-connector", "mylife-connector" });
+    }
+
+    [Fact]
+    public async Task DeduplicateAllAsync_ShouldNotDeduplicateStateSpansWithDifferentStates()
+    {
+        // Arrange
+        await using var context = new NocturneDbContext(_contextOptions);
+        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        var logger = new Mock<ILogger<DeduplicationService>>();
+        var service = new DeduplicationService(context, scopeFactory, logger.Object);
+
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        var stateSpan1 = CreateTestStateSpan(
+            category: StateSpanCategory.BasalDelivery,
+            state: "Active",
+            startMills: timestamp,
+            source: "glooko-connector"
+        );
+
+        var stateSpan2 = CreateTestStateSpan(
+            category: StateSpanCategory.BasalDelivery,
+            state: "Suspended",  // Different state
+            startMills: timestamp + 1000,
+            source: "mylife-connector"
+        );
+
+        context.StateSpans.AddRange(
+            StateSpanMapper.ToEntity(stateSpan1),
+            StateSpanMapper.ToEntity(stateSpan2)
+        );
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.DeduplicateAllAsync();
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.StateSpansProcessed.Should().Be(2);
+
+        // They should NOT be grouped because they have different states
+        var linkedRecords = await context.LinkedRecords
+            .Where(lr => lr.RecordType == "statespan")
+            .ToListAsync();
+
+        linkedRecords.Should().HaveCount(2);
+        linkedRecords.Select(lr => lr.CanonicalId).Distinct().Should().HaveCount(2,
+            "state spans with different states should not be grouped together");
+    }
+
+    #endregion
+
     #region Test Helper Methods
 
     private static Treatment CreateTestTreatment(
@@ -553,6 +673,31 @@ public class DeduplicationServiceTests : IDisposable
             Insulin = insulin,
             EnteredBy = "test",
             DataSource = "test-source"
+        };
+    }
+
+    private static StateSpan CreateTestStateSpan(
+        StateSpanCategory category,
+        string state,
+        long startMills,
+        string source,
+        long? endMills = null
+    )
+    {
+        return new StateSpan
+        {
+            Id = Guid.NewGuid().ToString(),
+            Category = category,
+            State = state,
+            StartMills = startMills,
+            EndMills = endMills,
+            Source = source,
+            OriginalId = $"{source}_{startMills}",
+            Metadata = new Dictionary<string, object>
+            {
+                { "rate", 1.0 },
+                { "origin", "Manual" }
+            }
         };
     }
 

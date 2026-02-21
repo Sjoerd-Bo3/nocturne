@@ -819,73 +819,75 @@ public class DeduplicationService : IDeduplicationService
             .Select(s => new { s.Id, s.StartMills, s.Category, s.State, s.Source })
             .ToListAsync(cancellationToken);
 
-        var groupedByTime = new Dictionary<long, List<(Guid Id, string? Category, string? State, string? Source)>>();
+        // Track which spans have been processed to avoid duplicates
+        var processedSpans = new HashSet<Guid>();
 
+        // Process spans in order, looking for matches within the time window
         foreach (var span in stateSpans)
         {
-            var windowKey = span.StartMills / MatchingWindowMillis;
+            if (processedSpans.Contains(span.Id))
+                continue;
 
-            if (!groupedByTime.ContainsKey(windowKey))
-                groupedByTime[windowKey] = new();
-
-            groupedByTime[windowKey].Add((span.Id, span.Category, span.State, span.Source));
-        }
-
-        foreach (var (windowKey, windowSpans) in groupedByTime)
-        {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Group by category and state within the window
-            var categoryStateGroups = windowSpans
-                .GroupBy(s => (s.Category ?? "unknown", s.State ?? "unknown"));
+            // Find all spans within the matching window that have the same category and state
+            var windowStart = span.StartMills - MatchingWindowMillis;
+            var windowEnd = span.StartMills + MatchingWindowMillis;
 
-            foreach (var group in categoryStateGroups)
+            var matches = stateSpans
+                .Where(s => !processedSpans.Contains(s.Id))
+                .Where(s => s.StartMills >= windowStart && s.StartMills <= windowEnd)
+                .Where(s => string.Equals(s.Category, span.Category, StringComparison.OrdinalIgnoreCase))
+                .Where(s => string.Equals(s.State, span.State, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (matches.Count == 0)
+                continue;
+
+            if (matches.Count > 1)
             {
-                var groupSpans = group.ToList();
+                duplicateGroups++;
+            }
 
-                if (groupSpans.Count > 1)
+            var canonicalId = Guid.CreateVersion7();
+            groupsCreated++;
+
+            foreach (var match in matches)
+            {
+                processedSpans.Add(match.Id);
+
+                var existing = await _context.LinkedRecords
+                    .AnyAsync(lr => lr.RecordType == "statespan" && lr.RecordId == match.Id, cancellationToken);
+
+                if (!existing)
                 {
-                    duplicateGroups++;
-                }
-
-                var canonicalId = Guid.CreateVersion7();
-                groupsCreated++;
-
-                foreach (var span in groupSpans)
-                {
-                    var existing = await _context.LinkedRecords
-                        .AnyAsync(lr => lr.RecordType == "statespan" && lr.RecordId == span.Id, cancellationToken);
-
-                    if (!existing)
+                    var linkedRecord = new LinkedRecordEntity
                     {
-                        var linkedRecord = new LinkedRecordEntity
-                        {
-                            CanonicalId = canonicalId,
-                            RecordType = "statespan",
-                            RecordId = span.Id,
-                            SourceTimestamp = windowKey * MatchingWindowMillis,
-                            DataSource = span.Source ?? "unknown",
-                            IsPrimary = span == groupSpans.First()
-                        };
-                        _context.LinkedRecords.Add(linkedRecord);
-                        recordsLinked++;
-                    }
-
-                    processed++;
+                        CanonicalId = canonicalId,
+                        RecordType = "statespan",
+                        RecordId = match.Id,
+                        SourceTimestamp = match.StartMills,
+                        DataSource = match.Source ?? "unknown",
+                        IsPrimary = match == matches.First()
+                    };
+                    _context.LinkedRecords.Add(linkedRecord);
+                    recordsLinked++;
                 }
 
-                if (processed % batchSize == 0)
+                processed++;
+            }
+
+            if (processed % batchSize == 0)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+                progress?.Report(new DeduplicationProgress
                 {
-                    await _context.SaveChangesAsync(cancellationToken);
-                    progress?.Report(new DeduplicationProgress
-                    {
-                        TotalRecords = totalRecords,
-                        ProcessedRecords = startOffset + processed,
-                        GroupsFound = groupsCreated,
-                        RecordsLinked = recordsLinked,
-                        CurrentPhase = "StateSpans"
-                    });
-                }
+                    TotalRecords = totalRecords,
+                    ProcessedRecords = startOffset + processed,
+                    GroupsFound = groupsCreated,
+                    RecordsLinked = recordsLinked,
+                    CurrentPhase = "StateSpans"
+                });
             }
         }
 
