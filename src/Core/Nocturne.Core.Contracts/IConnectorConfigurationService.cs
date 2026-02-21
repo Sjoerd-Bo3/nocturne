@@ -167,7 +167,7 @@ public interface IConnectorConfigurationService
     /// </summary>
     Task<ConnectorHealthStateDto?> GetHealthStateAsync(
         string connectorName,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     );
 
     /// <summary>
@@ -180,7 +180,7 @@ public interface IConnectorConfigurationService
         string? lastErrorMessage = null,
         DateTime? lastErrorAt = null,
         bool? isHealthy = null,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     );
 }
 
