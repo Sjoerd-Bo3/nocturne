@@ -771,6 +771,24 @@
     }
   }
 
+  function formatRelativeTime(date: string | Date | undefined | null): string {
+    if (!date) return "Never";
+
+    const d = typeof date === "string" ? new Date(date) : date;
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
+
+    return d.toLocaleDateString();
+  }
+
   function formatLastSeen(date?: Date): string {
     if (!date) return "Never";
     const d = new Date(date);
@@ -1215,7 +1233,7 @@
               <!-- Connected connector - clickable button with dialog -->
               <div class="relative">
                 <button
-                  class="flex w-full items-center gap-4 p-4 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-colors text-left group border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20"
+                  class="flex w-full items-center gap-4 p-4 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-colors text-left group {connectorStatus.isHealthy ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20' : 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20'}"
                   onclick={async () => {
                     selectedConnector = connectorStatus;
                     // Initialize granular sync dates in local time
@@ -1239,9 +1257,9 @@
                   }}
                 >
                   <div
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg {connectorStatus.isHealthy ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}"
                   >
-                    <Icon class="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <Icon class="h-5 w-5 {connectorStatus.isHealthy ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}" />
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
@@ -1278,6 +1296,22 @@
                     <p class="text-sm text-muted-foreground">
                       {connectorStatus.entriesLast24Hours?.toLocaleString() ?? 0} records in the last 24 hours
                     </p>
+                    {#if !connectorStatus.isHealthy && connectorStatus.stateMessage}
+                      <div class="mt-2 rounded-md bg-red-50 dark:bg-red-950/30 p-2 border border-red-200 dark:border-red-800">
+                        <div class="flex items-start gap-2">
+                          <AlertCircle class="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                          <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-red-800 dark:text-red-200">Error</p>
+                            <p class="text-xs text-red-700 dark:text-red-300 mt-1">{connectorStatus.stateMessage}</p>
+                            {#if connectorStatus.lastErrorAt}
+                              <p class="text-xs text-red-600 dark:text-red-400 mt-1">
+                                {formatRelativeTime(connectorStatus.lastErrorAt)}
+                              </p>
+                            {/if}
+                          </div>
+                        </div>
+                      </div>
+                    {/if}
                   </div>
                   {#if !canQuickSync}
                     <ChevronRight
