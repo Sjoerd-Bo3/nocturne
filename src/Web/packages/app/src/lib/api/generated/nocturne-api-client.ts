@@ -28262,6 +28262,11 @@ export interface ConnectorConfigurationResponse {
     isActive?: boolean;
     lastModified?: Date;
     modifiedBy?: string | undefined;
+    lastSyncAttempt?: Date | undefined;
+    lastSuccessfulSync?: Date | undefined;
+    lastErrorMessage?: string | undefined;
+    lastErrorAt?: Date | undefined;
+    isHealthy?: boolean;
 }
 
 export interface JsonDocument {

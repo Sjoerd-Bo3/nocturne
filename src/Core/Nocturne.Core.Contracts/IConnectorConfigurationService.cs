@@ -41,6 +41,31 @@ public class ConnectorConfigurationResponse
     /// Who last modified the configuration.
     /// </summary>
     public string? ModifiedBy { get; set; }
+
+    /// <summary>
+    /// When the connector last attempted to sync.
+    /// </summary>
+    public DateTime? LastSyncAttempt { get; set; }
+
+    /// <summary>
+    /// When the connector last successfully completed a sync.
+    /// </summary>
+    public DateTime? LastSuccessfulSync { get; set; }
+
+    /// <summary>
+    /// The error message from the most recent failure.
+    /// </summary>
+    public string? LastErrorMessage { get; set; }
+
+    /// <summary>
+    /// When the error occurred.
+    /// </summary>
+    public DateTime? LastErrorAt { get; set; }
+
+    /// <summary>
+    /// Current health status.
+    /// </summary>
+    public bool IsHealthy { get; set; } = true;
 }
 
 /// <summary>

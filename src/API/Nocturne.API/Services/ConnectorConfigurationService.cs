@@ -92,7 +92,12 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
             SchemaVersion = entity.SchemaVersion,
             IsActive = isActive,
             LastModified = entity.LastModified,
-            ModifiedBy = entity.ModifiedBy
+            ModifiedBy = entity.ModifiedBy,
+            LastSyncAttempt = entity.LastSyncAttempt,
+            LastSuccessfulSync = entity.LastSuccessfulSync,
+            LastErrorMessage = entity.LastErrorMessage,
+            LastErrorAt = entity.LastErrorAt,
+            IsHealthy = entity.IsHealthy
         };
 
         return response;

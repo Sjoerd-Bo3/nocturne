@@ -1,6 +1,7 @@
 using Nocturne.API.Models;
 using Nocturne.Connectors.Core.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Models.Configuration;
 using Nocturne.Infrastructure.Data.Abstractions;
 
 namespace Nocturne.API.Services;
@@ -61,17 +62,31 @@ public class ConnectorHealthService(
         CancellationToken cancellationToken
     )
     {
-        var enabledConfig = await GetConnectorEnabledConfigAsync(
+        // Query configuration once for both enabled state and health state
+        var dbConfig = await connectorConfigService.GetConfigurationAsync(
             connector.Id,
-            connector.ConfigKey,
             cancellationToken
         );
 
-        // Get health state for the connector
-        var healthState = await connectorConfigService.GetHealthStateAsync(
-            connector.Id,
-            cancellationToken
+        // Determine enabled state (check environment config first)
+        var envEnabled = configuration.GetValue<bool?>(
+            $"Parameters:Connectors:{connector.ConfigKey}:Enabled"
         );
+        var enabledConfig = envEnabled == false ? false : (dbConfig?.IsActive ?? envEnabled);
+
+        // Extract health state from the same config
+        ConnectorHealthStateDto? healthState = null;
+        if (dbConfig != null)
+        {
+            healthState = new ConnectorHealthStateDto
+            {
+                LastSyncAttempt = dbConfig.LastSyncAttempt,
+                LastSuccessfulSync = dbConfig.LastSuccessfulSync,
+                LastErrorMessage = dbConfig.LastErrorMessage,
+                LastErrorAt = dbConfig.LastErrorAt,
+                IsHealthy = dbConfig.IsHealthy
+            };
+        }
 
         // Always get database stats for historical data (entries + treatments + state spans)
         var dbStats = await postgreSqlService.GetEntryStatsBySourceAsync(
@@ -138,40 +153,5 @@ public class ConnectorHealthService(
         };
 
         return liveStatus;
-    }
-
-    /// <summary>
-    /// Gets the connector enabled configuration.
-    /// Checks both environment configuration and database-stored runtime configuration.
-    /// Environment config (appsettings) is checked first as the source of truth for whether a connector
-    /// should be running at all. Database config can only enable a connector that is available in the environment.
-    /// Returns true if explicitly enabled, false if explicitly disabled, null if not configured.
-    /// </summary>
-    private async Task<bool?> GetConnectorEnabledConfigAsync(
-        string connectorId,
-        string configKey,
-        CancellationToken cancellationToken
-    )
-    {
-        // First check environment configuration: Parameters:Connectors:{ConfigKey}:Enabled
-        // This determines if the connector is even available/running in Aspire
-        var envEnabled = configuration.GetValue<bool?>(
-            $"Parameters:Connectors:{configKey}:Enabled"
-        );
-
-        // If environment config explicitly disables the connector, it's not running in Aspire
-        // so we shouldn't try to reach it regardless of DB config
-        if (envEnabled == false)
-        {
-            return false;
-        }
-
-        // Now check database-stored runtime configuration
-        // This is where the UI stores the enabled state
-        var dbConfig = await connectorConfigService.GetConfigurationAsync(
-            connectorId,
-            cancellationToken
-        );
-        return dbConfig?.IsActive ?? envEnabled;
     }
 }

@@ -37766,6 +37766,28 @@
           "modifiedBy": {
             "type": "string",
             "nullable": true
+          },
+          "lastSyncAttempt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastSuccessfulSync": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastErrorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastErrorAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isHealthy": {
+            "type": "boolean"
           }
         }
       },
