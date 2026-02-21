@@ -1303,11 +1303,15 @@
                           <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-red-800 dark:text-red-200">Error</p>
                             <p class="text-xs text-red-700 dark:text-red-300 mt-1">{connectorStatus.stateMessage}</p>
-                            {#if connectorStatus.lastErrorAt}
-                              <p class="text-xs text-red-600 dark:text-red-400 mt-1">
-                                {formatRelativeTime(connectorStatus.lastErrorAt)}
-                              </p>
-                            {/if}
+                            <p class="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
+                              {#if connectorStatus.lastSyncAttempt}
+                                Last attempted: {formatRelativeTime(connectorStatus.lastSyncAttempt)}
+                              {/if}
+                              {#if connectorStatus.lastSuccessfulSync}
+                                {#if connectorStatus.lastSyncAttempt}•{/if}
+                                Last successful: {formatRelativeTime(connectorStatus.lastSuccessfulSync)}
+                              {/if}
+                            </p>
                           </div>
                         </div>
                       </div>

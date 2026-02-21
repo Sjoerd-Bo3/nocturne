@@ -294,6 +294,7 @@ msgstr "Using cached data"
 #: src/routes/food/food-state.svelte.ts
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
+#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/[connector]/+page.svelte
 #: src/routes/settings/migration/+page.svelte
 msgid "Error"
@@ -309,6 +310,7 @@ msgstr "Connection failed"
 #: src/lib/components/dashboard/widgets/ConnectionStatusWidget.svelte
 #: src/lib/stores/settings-store.svelte.ts
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 msgid "Never"
 msgstr "Never"
@@ -491,6 +493,7 @@ msgid "Failed to save alarm configuration"
 msgstr "Failed to save alarm configuration"
 
 #: src/lib/stores/settings-store.svelte.ts
+#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 msgid "Just now"
 msgstr "Just now"
