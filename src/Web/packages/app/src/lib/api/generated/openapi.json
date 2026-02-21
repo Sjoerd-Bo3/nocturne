@@ -21353,6 +21353,24 @@
           "isHealthy": {
             "type": "boolean"
           },
+          "lastSyncAttempt": {
+            "type": "string",
+            "description": "When the connector last attempted to sync",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastSuccessfulSync": {
+            "type": "string",
+            "description": "When the connector last successfully completed a sync",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastErrorAt": {
+            "type": "string",
+            "description": "When the last error occurred",
+            "format": "date-time",
+            "nullable": true
+          },
           "totalItemsBreakdown": {
             "type": "object",
             "description": "Breakdown of total items processed by data type\nKeys are data type names (e.g., \"Glucose\", \"Treatments\", \"Food\")",

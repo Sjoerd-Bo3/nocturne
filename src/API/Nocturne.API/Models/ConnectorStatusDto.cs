@@ -15,6 +15,21 @@ public class ConnectorStatusDto
     public bool IsHealthy { get; set; }
 
     /// <summary>
+    /// When the connector last attempted to sync
+    /// </summary>
+    public DateTime? LastSyncAttempt { get; set; }
+
+    /// <summary>
+    /// When the connector last successfully completed a sync
+    /// </summary>
+    public DateTime? LastSuccessfulSync { get; set; }
+
+    /// <summary>
+    /// When the last error occurred
+    /// </summary>
+    public DateTime? LastErrorAt { get; set; }
+
+    /// <summary>
     /// Breakdown of total items processed by data type
     /// Keys are data type names (e.g., "Glucose", "Treatments", "Food")
     /// </summary>

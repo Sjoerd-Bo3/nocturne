@@ -23187,6 +23187,12 @@ export interface ConnectorStatusDto {
     state?: string;
     stateMessage?: string | undefined;
     isHealthy?: boolean;
+    /** When the connector last attempted to sync */
+    lastSyncAttempt?: Date | undefined;
+    /** When the connector last successfully completed a sync */
+    lastSuccessfulSync?: Date | undefined;
+    /** When the last error occurred */
+    lastErrorAt?: Date | undefined;
     /** Breakdown of total items processed by data type
 Keys are data type names (e.g., "Glucose", "Treatments", "Food") */
     totalItemsBreakdown?: { [key: string]: number; } | undefined;
