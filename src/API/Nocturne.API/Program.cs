@@ -150,6 +150,9 @@ Console.WriteLine(
 
 // Add services
 
+// Add response caching for GET endpoints
+builder.Services.AddResponseCaching();
+
 // Add native API services for strangler pattern
 // Note: NightscoutJsonFilter is added globally to apply null-omission and
 // NocturneOnly field exclusion to v1-v3 API responses only
@@ -551,6 +554,7 @@ builder.Services.AddHostedService<NotificationResolutionService>();
 var app = builder.Build();
 
 // Configure middleware pipeline
+app.UseResponseCaching();
 app.UseCors();
 
 // Add JSON extension middleware to handle .json suffixes for legacy compatibility
