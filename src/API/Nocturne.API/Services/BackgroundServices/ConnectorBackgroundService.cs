@@ -133,6 +133,43 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
         }
     }
 
+    /// <summary>
+    /// Updates the health state for this connector in the database
+    /// </summary>
+    protected async Task UpdateHealthStateAsync(
+        DateTime? lastSyncAttempt = null,
+        DateTime? lastSuccessfulSync = null,
+        string? lastErrorMessage = null,
+        DateTime? lastErrorAt = null,
+        bool? isHealthy = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var configService = scope.ServiceProvider.GetRequiredService<IConnectorConfigurationService>();
+
+            await configService.UpdateHealthStateAsync(
+                ConnectorName,
+                lastSyncAttempt,
+                lastSuccessfulSync,
+                lastErrorMessage,
+                lastErrorAt,
+                isHealthy,
+                cancellationToken
+            );
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(
+                ex,
+                "Failed to update health state for {ConnectorName}",
+                ConnectorName
+            );
+        }
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Load configuration and secrets from DB before checking enabled state
@@ -174,6 +211,12 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
                 {
                     Logger.LogDebug("Starting {ConnectorName} data sync cycle", ConnectorName);
 
+                    // Record sync attempt
+                    await UpdateHealthStateAsync(
+                        lastSyncAttempt: DateTime.UtcNow,
+                        stoppingToken
+                    );
+
                     var success = await PerformSyncAsync(stoppingToken);
 
                     if (success)
@@ -182,15 +225,40 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
                             "{ConnectorName} data sync completed successfully",
                             ConnectorName
                         );
+
+                        // Clear error state, mark as healthy
+                        await UpdateHealthStateAsync(
+                            lastSuccessfulSync: DateTime.UtcNow,
+                            isHealthy: true,
+                            lastErrorMessage: string.Empty, // Explicit clear
+                            lastErrorAt: DateTime.MinValue, // Explicit clear
+                            stoppingToken
+                        );
                     }
                     else
                     {
                         Logger.LogWarning("{ConnectorName} data sync failed", ConnectorName);
+
+                        // Mark as unhealthy with generic error
+                        await UpdateHealthStateAsync(
+                            isHealthy: false,
+                            lastErrorMessage: "Sync failed after retries",
+                            lastErrorAt: DateTime.UtcNow,
+                            stoppingToken
+                        );
                     }
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "Error during {ConnectorName} data sync cycle", ConnectorName);
+
+                    // Record exception in health state
+                    await UpdateHealthStateAsync(
+                        isHealthy: false,
+                        lastErrorMessage: ex.Message,
+                        lastErrorAt: DateTime.UtcNow,
+                        stoppingToken
+                    );
                 }
             } while (await timer.WaitForNextTickAsync(stoppingToken));
         }
