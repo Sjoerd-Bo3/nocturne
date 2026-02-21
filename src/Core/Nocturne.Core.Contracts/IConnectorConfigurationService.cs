@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Nocturne.Core.Models.Configuration;
 
 namespace Nocturne.Core.Contracts;
 
@@ -160,6 +161,27 @@ public interface IConnectorConfigurationService
     /// <param name="ct">Cancellation token</param>
     /// <returns>Dictionary of property names to effective values, or null if connector is not reachable</returns>
     Task<Dictionary<string, object?>?> GetEffectiveConfigurationAsync(string connectorName, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the health state for a connector
+    /// </summary>
+    Task<ConnectorHealthStateDto?> GetHealthStateAsync(
+        string connectorName,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Updates the health state for a connector
+    /// </summary>
+    Task UpdateHealthStateAsync(
+        string connectorName,
+        DateTime? lastSyncAttempt = null,
+        DateTime? lastSuccessfulSync = null,
+        string? lastErrorMessage = null,
+        DateTime? lastErrorAt = null,
+        bool? isHealthy = null,
+        CancellationToken cancellationToken = default
+    );
 }
 
 /// <summary>
