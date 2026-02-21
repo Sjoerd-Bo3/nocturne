@@ -165,6 +165,9 @@ public interface IConnectorConfigurationService
     /// <summary>
     /// Gets the health state for a connector
     /// </summary>
+    /// <param name="connectorName">The name of the connector</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>The health state, or null if the connector is not found</returns>
     Task<ConnectorHealthStateDto?> GetHealthStateAsync(
         string connectorName,
         CancellationToken ct = default
@@ -173,6 +176,14 @@ public interface IConnectorConfigurationService
     /// <summary>
     /// Updates the health state for a connector
     /// </summary>
+    /// <param name="connectorName">The name of the connector</param>
+    /// <param name="lastSyncAttempt">When the connector last attempted to sync</param>
+    /// <param name="lastSuccessfulSync">When the connector last successfully completed a sync</param>
+    /// <param name="lastErrorMessage">The error message from the most recent failure</param>
+    /// <param name="lastErrorAt">When the error occurred</param>
+    /// <param name="isHealthy">Current health status</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>A task representing the async operation</returns>
     Task UpdateHealthStateAsync(
         string connectorName,
         DateTime? lastSyncAttempt = null,
