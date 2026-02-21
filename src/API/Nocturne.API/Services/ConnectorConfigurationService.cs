@@ -10,6 +10,7 @@ using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Connectors.Core.Models;
 using Nocturne.Connectors.Core.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Models.Configuration;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
 
@@ -770,5 +771,82 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
             return name;
 
         return char.ToLowerInvariant(name[0]) + name.Substring(1);
+    }
+
+    /// <inheritdoc />
+    public async Task<ConnectorHealthStateDto?> GetHealthStateAsync(
+        string connectorName,
+        CancellationToken ct = default
+    )
+    {
+        var config = await _context.ConnectorConfigurations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.ConnectorName == connectorName, ct);
+
+        if (config == null)
+            return null;
+
+        return new ConnectorHealthStateDto
+        {
+            LastSyncAttempt = config.LastSyncAttempt,
+            LastSuccessfulSync = config.LastSuccessfulSync,
+            LastErrorMessage = config.LastErrorMessage,
+            LastErrorAt = config.LastErrorAt,
+            IsHealthy = config.IsHealthy
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateHealthStateAsync(
+        string connectorName,
+        DateTime? lastSyncAttempt = null,
+        DateTime? lastSuccessfulSync = null,
+        string? lastErrorMessage = null,
+        DateTime? lastErrorAt = null,
+        bool? isHealthy = null,
+        CancellationToken ct = default
+    )
+    {
+        var config = await _context.ConnectorConfigurations
+            .FirstOrDefaultAsync(c => c.ConnectorName == connectorName, ct);
+
+        if (config == null)
+        {
+            _logger.LogWarning(
+                "Cannot update health state for connector {ConnectorName}: configuration not found",
+                connectorName
+            );
+            return;
+        }
+
+        // Only update fields that were provided
+        if (lastSyncAttempt.HasValue)
+            config.LastSyncAttempt = lastSyncAttempt.Value;
+
+        if (lastSuccessfulSync.HasValue)
+            config.LastSuccessfulSync = lastSuccessfulSync.Value;
+
+        if (lastErrorMessage != null)
+            config.LastErrorMessage = lastErrorMessage;
+        else if (lastErrorMessage == string.Empty)
+            config.LastErrorMessage = null; // Explicit clear
+
+        if (lastErrorAt.HasValue)
+            config.LastErrorAt = lastErrorAt.Value;
+        else if (lastErrorAt == DateTime.MinValue)
+            config.LastErrorAt = null; // Explicit clear
+
+        if (isHealthy.HasValue)
+            config.IsHealthy = isHealthy.Value;
+
+        config.SysUpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+
+        _logger.LogDebug(
+            "Updated health state for connector {ConnectorName}: IsHealthy={IsHealthy}",
+            connectorName,
+            config.IsHealthy
+        );
     }
 }
