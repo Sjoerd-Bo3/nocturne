@@ -49,6 +49,7 @@ public class EntriesController : ControllerBase
     /// <returns>The most recent glucose entry, or empty array if no entries exist</returns>
     [HttpGet("current")]
     [NightscoutEndpoint("/api/v1/entries/current")]
+    [ResponseCache(Duration = 60, VaryByHeader = "If-Modified-Since")]
     [ProducesResponseType(typeof(Entry[]), 200)]
     [ProducesResponseType(typeof(Entry[]), 304)] // Not Modified response
     public async Task<ActionResult<Entry[]>> GetCurrentEntry(
@@ -280,6 +281,7 @@ public class EntriesController : ControllerBase
     /// <returns>Array of entries matching the criteria</returns>
     [HttpGet]
     [NightscoutEndpoint("/api/v1/entries")]
+    [ResponseCache(Duration = 60, VaryByQueryKeys = new[] { "*" }, VaryByHeader = "If-Modified-Since")]
     [ProducesResponseType(typeof(Entry[]), 200)]
     [ProducesResponseType(typeof(Entry[]), 304)] // Not Modified response
     public async Task<ActionResult> GetEntries(

@@ -32,6 +32,7 @@ public class InsulinController : ControllerBase
     /// </summary>
     [HttpGet("boluses")]
     [RemoteQuery]
+    [ResponseCache(Duration = 90, VaryByQueryKeys = new[] { "*" })]
     [ProducesResponseType(typeof(PaginatedResponse<Bolus>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<Bolus>>> GetBoluses(

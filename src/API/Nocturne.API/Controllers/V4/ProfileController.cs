@@ -28,7 +28,8 @@ public class ProfileController : ControllerBase
         IBasalScheduleRepository basalRepo,
         ICarbRatioScheduleRepository carbRatioRepo,
         ISensitivityScheduleRepository sensitivityRepo,
-        ITargetRangeScheduleRepository targetRangeRepo)
+        ITargetRangeScheduleRepository targetRangeRepo
+    )
     {
         _therapyRepo = therapyRepo;
         _basalRepo = basalRepo;
@@ -44,26 +45,64 @@ public class ProfileController : ControllerBase
     /// </summary>
     [HttpGet("summary")]
     [RemoteQuery]
+    [ResponseCache(Duration = 300, VaryByQueryKeys = new[] { "*" })]
     [ProducesResponseType(typeof(ProfileSummary), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ProfileSummary>> GetProfileSummary(CancellationToken ct = default)
+    public async Task<ActionResult<ProfileSummary>> GetProfileSummary(
+        CancellationToken ct = default
+    )
     {
-        // Fetch all data in parallel — use large limit to get everything
-        var therapyTask = _therapyRepo.GetAsync(null, null, null, null, 1000, 0, true, ct);
-        var basalTask = _basalRepo.GetAsync(null, null, null, null, 1000, 0, true, ct);
-        var carbRatioTask = _carbRatioRepo.GetAsync(null, null, null, null, 1000, 0, true, ct);
-        var sensitivityTask = _sensitivityRepo.GetAsync(null, null, null, null, 1000, 0, true, ct);
-        var targetRangeTask = _targetRangeRepo.GetAsync(null, null, null, null, 1000, 0, true, ct);
+        var therapySettings = await _therapyRepo.GetAsync(
+            null,
+            null,
+            null,
+            null,
+            1000,
+            0,
+            true,
+            ct
+        );
+        var basalSchedules = await _basalRepo.GetAsync(null, null, null, null, 1000, 0, true, ct);
+        var carbRatioSchedules = await _carbRatioRepo.GetAsync(
+            null,
+            null,
+            null,
+            null,
+            1000,
+            0,
+            true,
+            ct
+        );
+        var sensitivitySchedules = await _sensitivityRepo.GetAsync(
+            null,
+            null,
+            null,
+            null,
+            1000,
+            0,
+            true,
+            ct
+        );
+        var targetRangeSchedules = await _targetRangeRepo.GetAsync(
+            null,
+            null,
+            null,
+            null,
+            1000,
+            0,
+            true,
+            ct
+        );
 
-        await Task.WhenAll(therapyTask, basalTask, carbRatioTask, sensitivityTask, targetRangeTask);
-
-        return Ok(new ProfileSummary
-        {
-            TherapySettings = await therapyTask,
-            BasalSchedules = await basalTask,
-            CarbRatioSchedules = await carbRatioTask,
-            SensitivitySchedules = await sensitivityTask,
-            TargetRangeSchedules = await targetRangeTask,
-        });
+        return Ok(
+            new ProfileSummary
+            {
+                TherapySettings = therapySettings,
+                BasalSchedules = basalSchedules,
+                CarbRatioSchedules = carbRatioSchedules,
+                SensitivitySchedules = sensitivitySchedules,
+                TargetRangeSchedules = targetRangeSchedules,
+            }
+        );
     }
 
     #endregion
@@ -78,18 +117,39 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<TherapySettings>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<TherapySettings>>> GetTherapySettings(
-        [FromQuery] long? from, [FromQuery] long? to,
-        [FromQuery] int limit = 100, [FromQuery] int offset = 0,
+        [FromQuery] long? from,
+        [FromQuery] long? to,
+        [FromQuery] int limit = 100,
+        [FromQuery] int offset = 0,
         [FromQuery] string sort = "mills_desc",
-        [FromQuery] string? device = null, [FromQuery] string? source = null,
-        CancellationToken ct = default)
+        [FromQuery] string? device = null,
+        [FromQuery] string? source = null,
+        CancellationToken ct = default
+    )
     {
         if (sort is not "mills_desc" and not "mills_asc")
-            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
+            return BadRequest(
+                new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." }
+            );
         var descending = sort == "mills_desc";
-        var data = await _therapyRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
+        var data = await _therapyRepo.GetAsync(
+            from,
+            to,
+            device,
+            source,
+            limit,
+            offset,
+            descending,
+            ct
+        );
         var total = await _therapyRepo.CountAsync(from, to, ct);
-        return Ok(new PaginatedResponse<TherapySettings> { Data = data, Pagination = new(limit, offset, total) });
+        return Ok(
+            new PaginatedResponse<TherapySettings>
+            {
+                Data = data,
+                Pagination = new(limit, offset, total),
+            }
+        );
     }
 
     /// <summary>
@@ -99,7 +159,9 @@ public class ProfileController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(IEnumerable<TherapySettings>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<TherapySettings>>> GetTherapySettingsByName(
-        string profileName, CancellationToken ct = default)
+        string profileName,
+        CancellationToken ct = default
+    )
     {
         var data = await _therapyRepo.GetByProfileNameAsync(profileName, ct);
         return Ok(data);
@@ -112,7 +174,10 @@ public class ProfileController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(TherapySettings), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TherapySettings>> GetTherapySettingsById(Guid id, CancellationToken ct = default)
+    public async Task<ActionResult<TherapySettings>> GetTherapySettingsById(
+        Guid id,
+        CancellationToken ct = default
+    )
     {
         var result = await _therapyRepo.GetByIdAsync(id, ct);
         return result is null ? NotFound() : Ok(result);
@@ -126,7 +191,9 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(TherapySettings), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TherapySettings>> CreateTherapySettings(
-        [FromBody] TherapySettings model, CancellationToken ct = default)
+        [FromBody] TherapySettings model,
+        CancellationToken ct = default
+    )
     {
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
@@ -138,12 +205,17 @@ public class ProfileController : ControllerBase
     /// Update an existing therapy settings record
     /// </summary>
     [HttpPut("settings/{id:guid}")]
-    [RemoteCommand(Invalidates = ["GetProfileSummary", "GetTherapySettings", "GetTherapySettingsById"])]
+    [RemoteCommand(
+        Invalidates = ["GetProfileSummary", "GetTherapySettings", "GetTherapySettingsById"]
+    )]
     [ProducesResponseType(typeof(TherapySettings), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TherapySettings>> UpdateTherapySettings(
-        Guid id, [FromBody] TherapySettings model, CancellationToken ct = default)
+        Guid id,
+        [FromBody] TherapySettings model,
+        CancellationToken ct = default
+    )
     {
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
@@ -189,7 +261,9 @@ public class ProfileController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(IEnumerable<BasalSchedule>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<BasalSchedule>>> GetBasalSchedulesByName(
-        string profileName, CancellationToken ct = default)
+        string profileName,
+        CancellationToken ct = default
+    )
     {
         var data = await _basalRepo.GetByProfileNameAsync(profileName, ct);
         return Ok(data);
@@ -202,7 +276,10 @@ public class ProfileController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(BasalSchedule), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BasalSchedule>> GetBasalScheduleById(Guid id, CancellationToken ct = default)
+    public async Task<ActionResult<BasalSchedule>> GetBasalScheduleById(
+        Guid id,
+        CancellationToken ct = default
+    )
     {
         var result = await _basalRepo.GetByIdAsync(id, ct);
         return result is null ? NotFound() : Ok(result);
@@ -216,7 +293,9 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(BasalSchedule), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<BasalSchedule>> CreateBasalSchedule(
-        [FromBody] BasalSchedule model, CancellationToken ct = default)
+        [FromBody] BasalSchedule model,
+        CancellationToken ct = default
+    )
     {
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
@@ -228,12 +307,17 @@ public class ProfileController : ControllerBase
     /// Update an existing basal schedule
     /// </summary>
     [HttpPut("basal/{id:guid}")]
-    [RemoteCommand(Invalidates = ["GetProfileSummary", "GetBasalSchedulesByName", "GetBasalScheduleById"])]
+    [RemoteCommand(
+        Invalidates = ["GetProfileSummary", "GetBasalSchedulesByName", "GetBasalScheduleById"]
+    )]
     [ProducesResponseType(typeof(BasalSchedule), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BasalSchedule>> UpdateBasalSchedule(
-        Guid id, [FromBody] BasalSchedule model, CancellationToken ct = default)
+        Guid id,
+        [FromBody] BasalSchedule model,
+        CancellationToken ct = default
+    )
     {
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
@@ -279,7 +363,9 @@ public class ProfileController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(IEnumerable<CarbRatioSchedule>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<CarbRatioSchedule>>> GetCarbRatioSchedulesByName(
-        string profileName, CancellationToken ct = default)
+        string profileName,
+        CancellationToken ct = default
+    )
     {
         var data = await _carbRatioRepo.GetByProfileNameAsync(profileName, ct);
         return Ok(data);
@@ -292,7 +378,10 @@ public class ProfileController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(CarbRatioSchedule), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CarbRatioSchedule>> GetCarbRatioScheduleById(Guid id, CancellationToken ct = default)
+    public async Task<ActionResult<CarbRatioSchedule>> GetCarbRatioScheduleById(
+        Guid id,
+        CancellationToken ct = default
+    )
     {
         var result = await _carbRatioRepo.GetByIdAsync(id, ct);
         return result is null ? NotFound() : Ok(result);
@@ -306,7 +395,9 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(CarbRatioSchedule), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CarbRatioSchedule>> CreateCarbRatioSchedule(
-        [FromBody] CarbRatioSchedule model, CancellationToken ct = default)
+        [FromBody] CarbRatioSchedule model,
+        CancellationToken ct = default
+    )
     {
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
@@ -318,12 +409,21 @@ public class ProfileController : ControllerBase
     /// Update an existing carb ratio schedule
     /// </summary>
     [HttpPut("carb-ratio/{id:guid}")]
-    [RemoteCommand(Invalidates = ["GetProfileSummary", "GetCarbRatioSchedulesByName", "GetCarbRatioScheduleById"])]
+    [RemoteCommand(
+        Invalidates = [
+            "GetProfileSummary",
+            "GetCarbRatioSchedulesByName",
+            "GetCarbRatioScheduleById",
+        ]
+    )]
     [ProducesResponseType(typeof(CarbRatioSchedule), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CarbRatioSchedule>> UpdateCarbRatioSchedule(
-        Guid id, [FromBody] CarbRatioSchedule model, CancellationToken ct = default)
+        Guid id,
+        [FromBody] CarbRatioSchedule model,
+        CancellationToken ct = default
+    )
     {
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
@@ -369,7 +469,9 @@ public class ProfileController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(IEnumerable<SensitivitySchedule>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<SensitivitySchedule>>> GetSensitivitySchedulesByName(
-        string profileName, CancellationToken ct = default)
+        string profileName,
+        CancellationToken ct = default
+    )
     {
         var data = await _sensitivityRepo.GetByProfileNameAsync(profileName, ct);
         return Ok(data);
@@ -382,7 +484,10 @@ public class ProfileController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(SensitivitySchedule), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<SensitivitySchedule>> GetSensitivityScheduleById(Guid id, CancellationToken ct = default)
+    public async Task<ActionResult<SensitivitySchedule>> GetSensitivityScheduleById(
+        Guid id,
+        CancellationToken ct = default
+    )
     {
         var result = await _sensitivityRepo.GetByIdAsync(id, ct);
         return result is null ? NotFound() : Ok(result);
@@ -396,24 +501,39 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(SensitivitySchedule), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<SensitivitySchedule>> CreateSensitivitySchedule(
-        [FromBody] SensitivitySchedule model, CancellationToken ct = default)
+        [FromBody] SensitivitySchedule model,
+        CancellationToken ct = default
+    )
     {
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
         var created = await _sensitivityRepo.CreateAsync(model, ct);
-        return CreatedAtAction(nameof(GetSensitivityScheduleById), new { id = created.Id }, created);
+        return CreatedAtAction(
+            nameof(GetSensitivityScheduleById),
+            new { id = created.Id },
+            created
+        );
     }
 
     /// <summary>
     /// Update an existing sensitivity schedule
     /// </summary>
     [HttpPut("sensitivity/{id:guid}")]
-    [RemoteCommand(Invalidates = ["GetProfileSummary", "GetSensitivitySchedulesByName", "GetSensitivityScheduleById"])]
+    [RemoteCommand(
+        Invalidates = [
+            "GetProfileSummary",
+            "GetSensitivitySchedulesByName",
+            "GetSensitivityScheduleById",
+        ]
+    )]
     [ProducesResponseType(typeof(SensitivitySchedule), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SensitivitySchedule>> UpdateSensitivitySchedule(
-        Guid id, [FromBody] SensitivitySchedule model, CancellationToken ct = default)
+        Guid id,
+        [FromBody] SensitivitySchedule model,
+        CancellationToken ct = default
+    )
     {
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
@@ -435,7 +555,10 @@ public class ProfileController : ControllerBase
     [RemoteCommand(Invalidates = ["GetProfileSummary", "GetSensitivitySchedulesByName"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> DeleteSensitivitySchedule(Guid id, CancellationToken ct = default)
+    public async Task<ActionResult> DeleteSensitivitySchedule(
+        Guid id,
+        CancellationToken ct = default
+    )
     {
         try
         {
@@ -459,7 +582,9 @@ public class ProfileController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(IEnumerable<TargetRangeSchedule>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<TargetRangeSchedule>>> GetTargetRangeSchedulesByName(
-        string profileName, CancellationToken ct = default)
+        string profileName,
+        CancellationToken ct = default
+    )
     {
         var data = await _targetRangeRepo.GetByProfileNameAsync(profileName, ct);
         return Ok(data);
@@ -472,7 +597,10 @@ public class ProfileController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(TargetRangeSchedule), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TargetRangeSchedule>> GetTargetRangeScheduleById(Guid id, CancellationToken ct = default)
+    public async Task<ActionResult<TargetRangeSchedule>> GetTargetRangeScheduleById(
+        Guid id,
+        CancellationToken ct = default
+    )
     {
         var result = await _targetRangeRepo.GetByIdAsync(id, ct);
         return result is null ? NotFound() : Ok(result);
@@ -486,24 +614,39 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(TargetRangeSchedule), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TargetRangeSchedule>> CreateTargetRangeSchedule(
-        [FromBody] TargetRangeSchedule model, CancellationToken ct = default)
+        [FromBody] TargetRangeSchedule model,
+        CancellationToken ct = default
+    )
     {
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
         var created = await _targetRangeRepo.CreateAsync(model, ct);
-        return CreatedAtAction(nameof(GetTargetRangeScheduleById), new { id = created.Id }, created);
+        return CreatedAtAction(
+            nameof(GetTargetRangeScheduleById),
+            new { id = created.Id },
+            created
+        );
     }
 
     /// <summary>
     /// Update an existing target range schedule
     /// </summary>
     [HttpPut("target-range/{id:guid}")]
-    [RemoteCommand(Invalidates = ["GetProfileSummary", "GetTargetRangeSchedulesByName", "GetTargetRangeScheduleById"])]
+    [RemoteCommand(
+        Invalidates = [
+            "GetProfileSummary",
+            "GetTargetRangeSchedulesByName",
+            "GetTargetRangeScheduleById",
+        ]
+    )]
     [ProducesResponseType(typeof(TargetRangeSchedule), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TargetRangeSchedule>> UpdateTargetRangeSchedule(
-        Guid id, [FromBody] TargetRangeSchedule model, CancellationToken ct = default)
+        Guid id,
+        [FromBody] TargetRangeSchedule model,
+        CancellationToken ct = default
+    )
     {
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
@@ -525,7 +668,10 @@ public class ProfileController : ControllerBase
     [RemoteCommand(Invalidates = ["GetProfileSummary", "GetTargetRangeSchedulesByName"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> DeleteTargetRangeSchedule(Guid id, CancellationToken ct = default)
+    public async Task<ActionResult> DeleteTargetRangeSchedule(
+        Guid id,
+        CancellationToken ct = default
+    )
     {
         try
         {

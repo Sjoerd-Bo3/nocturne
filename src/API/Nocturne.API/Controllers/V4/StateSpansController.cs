@@ -26,6 +26,7 @@ public class StateSpansController : ControllerBase
     /// </summary>
     [HttpGet]
     [RemoteQuery]
+    [ResponseCache(Duration = 120, VaryByQueryKeys = new[] { "*" })]
     [ProducesResponseType(typeof(IEnumerable<StateSpan>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetStateSpans(
         [FromQuery] StateSpanCategory? category = null,

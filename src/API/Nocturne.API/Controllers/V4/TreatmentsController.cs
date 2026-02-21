@@ -61,6 +61,7 @@ public class TreatmentsController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     [RemoteQuery]
+    [ResponseCache(Duration = 90, VaryByQueryKeys = new[] { "*" })]
     [ProducesResponseType(typeof(Treatment[]), StatusCodes.Status200OK)]
     public async Task<ActionResult<Treatment[]>> GetTreatments(
         [FromQuery] string? eventType = null,

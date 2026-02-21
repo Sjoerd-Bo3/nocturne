@@ -37,6 +37,7 @@ public class GlucoseController : ControllerBase
     /// </summary>
     [HttpGet("sensor")]
     [RemoteQuery]
+    [ResponseCache(Duration = 90, VaryByQueryKeys = new[] { "*" })]
     [ProducesResponseType(typeof(PaginatedResponse<SensorGlucose>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<SensorGlucose>>> GetSensorGlucose(
@@ -134,6 +135,7 @@ public class GlucoseController : ControllerBase
     /// </summary>
     [HttpGet("meter")]
     [RemoteQuery]
+    [ResponseCache(Duration = 120, VaryByQueryKeys = new[] { "*" })]
     [ProducesResponseType(typeof(PaginatedResponse<MeterGlucose>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<MeterGlucose>>> GetMeterGlucose(
@@ -231,6 +233,7 @@ public class GlucoseController : ControllerBase
     /// </summary>
     [HttpGet("calibrations")]
     [RemoteQuery]
+    [ResponseCache(Duration = 120, VaryByQueryKeys = new[] { "*" })]
     [ProducesResponseType(typeof(PaginatedResponse<Calibration>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<Calibration>>> GetCalibrations(

@@ -33,6 +33,7 @@ public class DataOverviewController : ControllerBase
     /// </summary>
     [HttpGet("years")]
     [RemoteQuery]
+    [ResponseCache(Duration = 300)]
     [ProducesResponseType(typeof(DataOverviewYearsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<DataOverviewYearsResponse>> GetAvailableYears(
@@ -55,16 +56,17 @@ public class DataOverviewController : ControllerBase
     /// Get day-level aggregated counts and average glucose for a given year
     /// </summary>
     /// <param name="year">The year to aggregate</param>
-    /// <param name="dataSource">Optional data source filter</param>
+    /// <param name="dataSources">Optional data source filters (multiple allowed)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("daily-summary")]
     [RemoteQuery]
+    [ResponseCache(Duration = 180, VaryByQueryKeys = new[] { "*" })]
     [ProducesResponseType(typeof(DailySummaryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<DailySummaryResponse>> GetDailySummary(
         [FromQuery] int year,
-        [FromQuery] string? dataSource = null,
+        [FromQuery] string[]? dataSources = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -73,8 +75,13 @@ public class DataOverviewController : ControllerBase
             if (year < 1970 || year > 2100)
                 return BadRequest(new { error = "Year must be between 1970 and 2100" });
 
+            // Filter out empty strings
+            var cleanSources = dataSources?.Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
+            if (cleanSources is { Length: 0 })
+                cleanSources = null;
+
             var result = await _dataOverviewService.GetDailySummaryAsync(
-                year, dataSource, cancellationToken);
+                year, cleanSources, cancellationToken);
             return Ok(result);
         }
         catch (Exception ex)
