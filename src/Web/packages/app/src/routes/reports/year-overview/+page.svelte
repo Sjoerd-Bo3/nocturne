@@ -1,8 +1,9 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
-  import { Chart, Calendar, Tooltip, ColorRamp, Layer } from "layerchart";
-  import { scaleThreshold } from "d3-scale";
+  import { Chart, Calendar, Tooltip, ColorRamp, Layer, Rect } from "layerchart";
+  import { scaleLinear, scaleThreshold } from "d3-scale";
+  import { timeWeek, timeMonths } from "d3-time";
   import {
     CalendarDays,
     X,
@@ -101,6 +102,35 @@
       ];
     };
   });
+
+  /** Continuous glucose color scale for smooth heatmap gradients */
+  const continuousGlucoseScale = $derived.by(() => {
+    if (resolvedGlucoseColors.length < 5) return null;
+    return scaleLinear<string>()
+      .domain([40, 54, 70, 125, 180, 250, 350])
+      .range([
+        resolvedGlucoseColors[0], // very low extreme
+        resolvedGlucoseColors[0], // very low boundary
+        resolvedGlucoseColors[1], // low boundary
+        resolvedGlucoseColors[2], // in range center
+        resolvedGlucoseColors[3], // high boundary
+        resolvedGlucoseColors[4], // very high boundary
+        resolvedGlucoseColors[4], // very high extreme
+      ])
+      .clamp(true);
+  });
+
+  /** Compute cell fill using continuous scale, with fallbacks for non-glucose data */
+  function getCellFill(data: CalendarDatum | undefined): string {
+    if (!data) return "rgb(0 0 0 / 5%)";
+    if (data.value != null && continuousGlucoseScale) {
+      return continuousGlucoseScale(data.value);
+    }
+    if (data.filteredCount > 0) {
+      return "hsl(var(--muted))";
+    }
+    return "rgb(0 0 0 / 5%)";
+  }
 
   // =========================================================================
   // Derived
@@ -401,6 +431,57 @@
       .filter(([key, count]) => count > 0 && !hiddenDataTypes.has(key))
       .sort(([, a], [, b]) => b - a);
   }
+
+  /** Get ISO week number for a date */
+  function getISOWeekNumber(date: Date): number {
+    const d = new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+    );
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  }
+
+  /** Get the Monday and Sunday of the ISO week containing the given date */
+  function getWeekBounds(date: Date): { from: string; to: string } {
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const day = d.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const fmt = (dt: Date) =>
+      `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    return { from: fmt(monday), to: fmt(sunday) };
+  }
+
+  type WeekColumn = {
+    x: number;
+    weekNumber: number;
+    from: string;
+    to: string;
+  };
+
+  /** Extract unique week columns from calendar cells */
+  function getWeekColumns(
+    cells: Array<{ x: number; data?: { date?: Date } }>
+  ): WeekColumn[] {
+    const seen = new Map<number, { date: Date }>();
+    for (const cell of cells) {
+      const date = cell.data?.date;
+      if (date && !seen.has(cell.x)) {
+        seen.set(cell.x, { date });
+      }
+    }
+    return [...seen.entries()]
+      .map(([x, { date }]) => ({
+        x,
+        weekNumber: getISOWeekNumber(date),
+        ...getWeekBounds(date),
+      }))
+      .sort((a, b) => a.x - b.x);
+  }
 </script>
 
 <svelte:head>
@@ -666,7 +747,7 @@
               <div
                 class="w-full overflow-x-clip overflow-y-visible rounded-lg border border-border bg-card p-4"
               >
-                <div class="min-w-[900px] h-52">
+                <div class="min-w-[900px] h-60">
                   <Chart
                     data={chartData}
                     x="date"
@@ -687,11 +768,74 @@
                         <Calendar
                           start={bounds.start}
                           end={bounds.end}
-                          cellSize={32}
+                          cellSize={24}
                           monthPath
-                          monthLabel
+                          monthLabel={false}
                           tooltipContext={context.tooltip}
-                        ></Calendar>
+                        >
+                          {#snippet children({ cells, cellSize })}
+                            <!-- Month labels (clickable → calendar) -->
+                            {#each timeMonths(bounds.start, bounds.end) as monthDate}
+                              {@const monthX =
+                                timeWeek.count(
+                                  bounds.start,
+                                  timeWeek.ceil(monthDate)
+                                ) * cellSize[0]}
+                              <a
+                                href="/calendar?year={monthDate.getFullYear()}&month={monthDate.getMonth() +
+                                  1}"
+                              >
+                                <text
+                                  x={monthX}
+                                  y={-5}
+                                  font-size="12"
+                                  class="fill-muted-foreground hover:fill-primary cursor-pointer"
+                                >
+                                  {monthDate.toLocaleString(undefined, {
+                                    month: "short",
+                                  })}
+                                </text>
+                              </a>
+                            {/each}
+                            {#each cells as cell}
+                              {@const padding = 1}
+                              {@const cellDate = cell.data?.dateString}
+                              <Rect
+                                x={cell.x + padding}
+                                y={cell.y + padding}
+                                width={cellSize[0] - padding * 2}
+                                height={cellSize[1] - padding * 2}
+                                rx={4}
+                                fill={getCellFill(cell.data)}
+                                onpointermove={(e) =>
+                                  context.tooltip?.show(e, cell.data)}
+                                onpointerleave={(e) => context.tooltip?.hide()}
+                                onclick={() => {
+                                  if (cellDate) {
+                                    navigateToDayInReview(cellDate);
+                                  }
+                                }}
+                              />
+                            {/each}
+                            <!-- Week number labels -->
+                            {@const weekCols = getWeekColumns(cells)}
+                            {#each weekCols as wk}
+                              <a
+                                href="/reports/week-to-week?from={wk.from}&to={wk.to}&isDefault=false"
+                              >
+                                <text
+                                  x={wk.x + cellSize[0] / 2}
+                                  y={7 * cellSize[1] + 14}
+                                  text-anchor="middle"
+                                  font-size="9"
+                                  class="fill-muted-foreground hover:fill-primary cursor-pointer"
+                                >
+                                  {wk.weekNumber}
+                                </text>
+                              </a>
+                            {/each}
+                          {/snippet}
+                        </Calendar>
                       </Layer>
 
                       <Tooltip.Root
@@ -769,7 +913,12 @@
                                     </div>
                                   {/if}
                                   {#if d.totalCarbs != null}
-                                    <div class="flex justify-between gap-4 {d.totalDailyDose != null ? 'border-t border-border/30 pt-0.5' : ''}">
+                                    <div
+                                      class="flex justify-between gap-4 {d.totalDailyDose !=
+                                      null
+                                        ? 'border-t border-border/30 pt-0.5'
+                                        : ''}"
+                                    >
                                       <span class="text-muted-foreground">
                                         Carbs
                                       </span>
@@ -929,7 +1078,10 @@
             {/if}
             {#if selectedDay.totalCarbs != null}
               <div
-                class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground {selectedDay.totalDailyDose != null ? 'mt-4' : ''}"
+                class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground {selectedDay.totalDailyDose !=
+                null
+                  ? 'mt-4'
+                  : ''}"
               >
                 Carbs
               </div>

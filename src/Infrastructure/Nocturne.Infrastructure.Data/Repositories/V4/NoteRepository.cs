@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
+using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Mappers.V4;
 
@@ -9,11 +11,16 @@ namespace Nocturne.Infrastructure.Data.Repositories.V4;
 public class NoteRepository : INoteRepository
 {
     private readonly NocturneDbContext _context;
+    private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<NoteRepository> _logger;
 
-    public NoteRepository(NocturneDbContext context, ILogger<NoteRepository> logger)
+    public NoteRepository(
+        NocturneDbContext context,
+        IDeduplicationService deduplicationService,
+        ILogger<NoteRepository> logger)
     {
         _context = context;
+        _deduplicationService = deduplicationService;
         _logger = logger;
     }
 
@@ -152,6 +159,33 @@ public class NoteRepository : INoteRepository
             _context.Notes.AddRange(batch);
             await _context.SaveChangesAsync(ct);
             _context.ChangeTracker.Clear();
+        }
+
+        // Insert-time deduplication: link saved records to canonical groups
+        foreach (var entity in entities)
+        {
+            try
+            {
+                var criteria = new MatchCriteria();
+
+                var canonicalId = await _deduplicationService.GetOrCreateCanonicalIdAsync(
+                    RecordType.Note,
+                    entity.Mills,
+                    criteria,
+                    ct);
+
+                await _deduplicationService.LinkRecordAsync(
+                    canonicalId,
+                    RecordType.Note,
+                    entity.Id,
+                    entity.Mills,
+                    entity.DataSource ?? "unknown",
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to deduplicate Note {Id}", entity.Id);
+            }
         }
 
         return entities.Select(NoteMapper.ToDomainModel);

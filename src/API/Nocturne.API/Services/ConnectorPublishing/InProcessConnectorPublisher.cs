@@ -1,5 +1,6 @@
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
@@ -27,6 +28,7 @@ public class InProcessConnectorPublisher : IConnectorPublisher
     private readonly IBolusCalculationRepository _bolusCalculationRepository;
     private readonly INoteRepository _noteRepository;
     private readonly IDeviceEventRepository _deviceEventRepository;
+    private readonly IAlertOrchestrator _alertOrchestrator;
     private readonly ILogger<InProcessConnectorPublisher> _logger;
 
     public InProcessConnectorPublisher(
@@ -46,6 +48,7 @@ public class InProcessConnectorPublisher : IConnectorPublisher
         IBolusCalculationRepository bolusCalculationRepository,
         INoteRepository noteRepository,
         IDeviceEventRepository deviceEventRepository,
+        IAlertOrchestrator alertOrchestrator,
         ILogger<InProcessConnectorPublisher> logger
     )
     {
@@ -81,6 +84,8 @@ public class InProcessConnectorPublisher : IConnectorPublisher
         _noteRepository = noteRepository ?? throw new ArgumentNullException(nameof(noteRepository));
         _deviceEventRepository =
             deviceEventRepository ?? throw new ArgumentNullException(nameof(deviceEventRepository));
+        _alertOrchestrator =
+            alertOrchestrator ?? throw new ArgumentNullException(nameof(alertOrchestrator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -94,7 +99,27 @@ public class InProcessConnectorPublisher : IConnectorPublisher
     {
         try
         {
-            await _entryService.CreateEntriesAsync(entries, cancellationToken);
+            var entryList = entries.ToList();
+            await _entryService.CreateEntriesAsync(entryList, cancellationToken);
+
+            // Evaluate alert rules against newly published entries
+            try
+            {
+                await _alertOrchestrator.EvaluateAndProcessEntriesAsync(
+                    entryList,
+                    null,
+                    cancellationToken
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to evaluate alerts for connector entries from {Source}",
+                    source
+                );
+            }
+
             return true;
         }
         catch (OperationCanceledException)
@@ -349,6 +374,29 @@ public class InProcessConnectorPublisher : IConnectorPublisher
                 recordList.Count,
                 source
             );
+
+            // Evaluate alert rules against the most recent glucose reading
+            try
+            {
+                var latest = recordList.MaxBy(r => r.Mills);
+                if (latest != null)
+                {
+                    await _alertOrchestrator.EvaluateAndProcessSensorGlucoseAsync(
+                        [latest],
+                        null,
+                        cancellationToken
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to evaluate alerts for SensorGlucose records from {Source}",
+                    source
+                );
+            }
+
             return true;
         }
         catch (OperationCanceledException)

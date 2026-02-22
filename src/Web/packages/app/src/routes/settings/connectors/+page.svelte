@@ -73,6 +73,8 @@
     Wrench,
   } from "lucide-svelte";
   import SettingsPageSkeleton from "$lib/components/settings/SettingsPageSkeleton.svelte";
+  import DataSourceRow from "$lib/components/settings/DataSourceRow.svelte";
+  import type { DataSourceStatus } from "$lib/components/settings/DataSourceRow.svelte";
   import Apple from "lucide-svelte/icons/apple";
   import TabletSmartphone from "lucide-svelte/icons/tablet-smartphone";
   import { getApiClient } from "$lib/api";
@@ -771,24 +773,6 @@
     }
   }
 
-  function formatRelativeTime(date: string | Date | undefined | null): string {
-    if (!date) return "Never";
-
-    const d = typeof date === "string" ? new Date(date) : date;
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
-
-    return d.toLocaleDateString();
-  }
-
   function formatLastSeen(date?: Date): string {
     if (!date) return "Never";
     const d = new Date(date);
@@ -831,6 +815,30 @@
       default:
         return Smartphone;
     }
+  }
+
+  function mapDataSourceStatus(source: DataSourceInfo): DataSourceStatus {
+    if (isDemoDataSource(source)) return "demo";
+    switch (source.status) {
+      case "active":
+        return "active";
+      case "stale":
+        return "stale";
+      default:
+        return "inactive";
+    }
+  }
+
+  function mapConnectorStatus(
+    connectorStatus: ConnectorStatusDto
+  ): DataSourceStatus {
+    if (connectorStatus.state === "Syncing") return "syncing";
+    if (connectorStatus.state === "BackingOff") return "backing-off";
+    if (connectorStatus.state === "Error" || !connectorStatus.isHealthy)
+      return "error";
+    if (connectorStatus.state === "Disabled") return "disabled";
+    if (connectorStatus.state === "Offline") return "offline";
+    return "active";
   }
 
   async function copyToClipboard(text: string, field: string) {
@@ -902,87 +910,34 @@
         {:else}
           <div class="space-y-3">
             {#each servicesOverview.activeDataSources as source}
-              {@const Icon = getCategoryIcon(source.category)}
               {@const matchingUploader = getMatchingUploader(source)}
               {@const isDemo = isDemoDataSource(source)}
-              <button
-                class="w-full flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors text-left {isDemo
-                  ? 'border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/20'
-                  : ''}"
+              <DataSourceRow
+                name={source.name ?? "Unknown"}
+                icon={getCategoryIcon(source.category)}
+                status={mapDataSourceStatus(source)}
+                totalEntries={source.totalEntries}
+                entriesLast24h={source.entriesLast24h}
+                lastSeen={source.lastSeen}
                 onclick={() => openDataSourceDialog(source)}
               >
-                <div class="flex items-center gap-4">
-                  <div
-                    class="flex h-10 w-10 items-center justify-center rounded-lg {isDemo
-                      ? 'bg-purple-100 dark:bg-purple-900/30'
-                      : source.status === 'active'
-                        ? 'bg-green-100 dark:bg-green-900/30'
-                        : source.status === 'stale'
-                          ? 'bg-yellow-100 dark:bg-yellow-900/30'
-                          : 'bg-muted'}"
-                  >
-                    <Icon
-                      class="h-5 w-5 {isDemo
-                        ? 'text-purple-600 dark:text-purple-400'
-                        : source.status === 'active'
-                          ? 'text-green-600 dark:text-green-400'
-                          : source.status === 'stale'
-                            ? 'text-yellow-600 dark:text-yellow-400'
-                            : 'text-muted-foreground'}"
-                    />
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2 flex-wrap">
-                      <span class="font-medium">
-                        {source.name ?? "Unknown"}
-                      </span>
-                      {#if isDemo}
-                        <Badge
-                          variant="secondary"
-                          class="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100"
-                        >
-                          <Sparkles class="h-3 w-3 mr-1" />
-                          Demo
-                        </Badge>
-                      {:else}
-                        <Badge
-                          variant={getStatusBadge(source.status).variant}
-                          class={getStatusBadge(source.status).class}
-                        >
-                          {#if source.status === "active"}
-                            <CheckCircle class="h-3 w-3 mr-1" />
-                          {:else if source.status === "stale"}
-                            <Clock class="h-3 w-3 mr-1" />
-                          {:else}
-                            <AlertCircle class="h-3 w-3 mr-1" />
-                          {/if}
-                          {getStatusBadge(source.status).text}
-                        </Badge>
-                      {/if}
-                      {#if matchingUploader}
-                        <Badge variant="outline" class="text-xs">
-                          {matchingUploader.name}
-                        </Badge>
-                      {/if}
-                    </div>
-                    <p class="text-sm text-muted-foreground">
-                      {source.description ?? source.deviceId}
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-center gap-4">
-                  <div class="text-right text-sm">
-                    <div class="flex items-center gap-1 text-muted-foreground">
-                      <Clock class="h-3 w-3" />
-                      {formatLastSeen(source.lastSeen)}
-                    </div>
-                    <div class="text-xs text-muted-foreground mt-1">
-                      {source.entriesLast24h ?? 0} records (24h)
-                    </div>
-                  </div>
-                  <ChevronRight class="h-4 w-4 text-muted-foreground" />
-                </div>
-              </button>
+                {#snippet badges()}
+                  {#if isDemo}
+                    <Badge
+                      variant="secondary"
+                      class="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100 text-xs"
+                    >
+                      <Sparkles class="h-3 w-3 mr-1" />
+                      Demo
+                    </Badge>
+                  {/if}
+                  {#if matchingUploader}
+                    <Badge variant="outline" class="text-xs">
+                      {matchingUploader.name}
+                    </Badge>
+                  {/if}
+                {/snippet}
+              </DataSourceRow>
             {/each}
           </div>
         {/if}
@@ -1211,7 +1166,6 @@
       <CardContent>
         <div class="grid gap-3 sm:grid-cols-2">
           {#each servicesOverview.availableConnectors ?? [] as connector}
-            {@const Icon = getCategoryIcon(connector.category)}
             {@const connectorStatus = connectorStatuses.find(
               (cs) => cs.id === connector.id
             )}
@@ -1230,133 +1184,81 @@
               (connectorCapabilities?.supportsManualSync ?? true)}
 
             {#if isConnected && connectorStatus}
-              <!-- Connected connector - clickable button with dialog -->
-              <div class="relative">
-                <button
-                  class="flex w-full items-center gap-4 p-4 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-colors text-left group {connectorStatus.isHealthy ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-950/20' : 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20'}"
-                  onclick={async () => {
-                    selectedConnector = connectorStatus;
-                    // Initialize granular sync dates in local time
-                    const now = new Date();
-                    const thirtyDaysAgo = new Date(
-                      now.getTime() - 30 * 24 * 60 * 60 * 1000
-                    );
-                    // format for datetime-local: YYYY-MM-DDThh:mm (local time)
-                    const formatLocal = (d: Date) => {
-                      const offset = d.getTimezoneOffset() * 60000;
-                      return new Date(d.getTime() - offset)
-                        .toISOString()
-                        .slice(0, 16);
-                    };
-                    granularSyncTo = formatLocal(now);
-                    granularSyncFrom = formatLocal(thirtyDaysAgo);
-                    granularSyncResult = null;
+              <!-- Connected connector -->
+              <DataSourceRow
+                name={connector.name ?? connector.id ?? "Unknown"}
+                icon={getCategoryIcon(connector.category)}
+                status={mapConnectorStatus(connectorStatus)}
+                statusMessage={!connectorStatus.isHealthy ? connectorStatus.stateMessage ?? undefined : undefined}
+                totalEntries={connectorStatus.totalEntries}
+                entriesLast24h={connectorStatus.entriesLast24Hours}
+                lastSeen={connectorStatus.lastEntryTime}
+                lastSyncAttempt={connectorStatus.lastSyncAttempt}
+                lastSuccessfulSync={connectorStatus.lastSuccessfulSync}
+                totalBreakdown={connectorStatus.totalItemsBreakdown ?? undefined}
+                last24hBreakdown={connectorStatus.itemsLast24HoursBreakdown ?? undefined}
+                onclick={async () => {
+                  selectedConnector = connectorStatus;
+                  const now = new Date();
+                  const thirtyDaysAgo = new Date(
+                    now.getTime() - 30 * 24 * 60 * 60 * 1000
+                  );
+                  const formatLocal = (d: Date) => {
+                    const offset = d.getTimezoneOffset() * 60000;
+                    return new Date(d.getTime() - offset)
+                      .toISOString()
+                      .slice(0, 16);
+                  };
+                  granularSyncTo = formatLocal(now);
+                  granularSyncFrom = formatLocal(thirtyDaysAgo);
+                  granularSyncResult = null;
 
-                    await loadConnectorCapabilitiesFor(connector.id);
-                    showConnectorDialog = true;
-                  }}
-                >
-                  <div
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg {connectorStatus.isHealthy ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}"
-                  >
-                    <Icon class="h-5 w-5 {connectorStatus.isHealthy ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                      <span class="font-medium">{connector.name}</span>
-                      {#if connectorStatus.state === "Syncing"}
-                        <Badge
-                          class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 text-xs"
-                        >
-                          <Loader2 class="h-3 w-3 mr-1 animate-spin" />
-                          Syncing
-                        </Badge>
-                      {:else if connectorStatus.state === "BackingOff"}
-                        <Badge
-                          variant="secondary"
-                          class="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100 text-xs"
-                        >
-                          <Clock class="h-3 w-3 mr-1" />
-                          Backing Off
-                        </Badge>
-                      {:else if connectorStatus.state === "Error"}
-                        <Badge variant="destructive" class="text-xs">
-                          <AlertCircle class="h-3 w-3 mr-1" />
-                          Error
-                        </Badge>
+                  await loadConnectorCapabilitiesFor(connector.id);
+                  showConnectorDialog = true;
+                }}
+              >
+                {#snippet actions()}
+                  {#if connector.id && canQuickSync}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      class="absolute right-3 top-1/2 -translate-y-1/2"
+                      disabled={quickSyncingById[connector.id] === true}
+                      onclick={(event) => {
+                        event.stopPropagation();
+                        triggerQuickSync(connector.id!);
+                      }}
+                    >
+                      {#if quickSyncingById[connector.id] === true}
+                        <Loader2 class="h-4 w-4 animate-spin" />
                       {:else}
-                        <Badge
-                          class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs"
-                        >
-                          <CheckCircle class="h-3 w-3 mr-1" />
-                          Active
-                        </Badge>
+                        <RefreshCw class="h-4 w-4" />
                       {/if}
-                    </div>
-                    <p class="text-sm text-muted-foreground">
-                      {connectorStatus.entriesLast24Hours?.toLocaleString() ?? 0} records in the last 24 hours
-                    </p>
-                    {#if !connectorStatus.isHealthy && connectorStatus.stateMessage}
-                      <div class="mt-2 rounded-md bg-red-50 dark:bg-red-950/30 p-2 border border-red-200 dark:border-red-800">
-                        <div class="flex items-start gap-2">
-                          <AlertCircle class="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-                          <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-red-800 dark:text-red-200">Error</p>
-                            <p class="text-xs text-red-700 dark:text-red-300 mt-1">{connectorStatus.stateMessage}</p>
-                            <p class="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
-                              {#if connectorStatus.lastSyncAttempt}
-                                Last attempted: {formatRelativeTime(connectorStatus.lastSyncAttempt)}
-                              {/if}
-                              {#if connectorStatus.lastSuccessfulSync}
-                                {#if connectorStatus.lastSyncAttempt}•{/if}
-                                Last successful: {formatRelativeTime(connectorStatus.lastSuccessfulSync)}
-                              {/if}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    {/if}
-                  </div>
-                  {#if !canQuickSync}
-                    <ChevronRight
-                      class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors"
-                    />
+                    </Button>
                   {/if}
-                </button>
-                {#if connector.id && canQuickSync}
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    class="absolute right-3 top-1/2 -translate-y-1/2"
-                    disabled={quickSyncingById[connector.id] === true}
-                    onclick={(event) => {
-                      event.stopPropagation();
-                      triggerQuickSync(connector.id!);
-                    }}
-                  >
-                    {#if quickSyncingById[connector.id] === true}
-                      <Loader2 class="h-4 w-4 animate-spin" />
-                    {:else}
-                      <RefreshCw class="h-4 w-4" />
-                    {/if}
-                  </Button>
-                {/if}
-              </div>
+                {/snippet}
+              </DataSourceRow>
             {:else if hasData}
-              <!-- Has data but not connected/disabled - clickable to view data and delete -->
+              <!-- Has data but not connected/disabled -->
               {@const entryCount = isDisabledWithData
                 ? (connectorStatus?.totalEntries ?? 0)
                 : (connectorDataSource?.totalEntries ?? 0)}
               {@const entries24h = isDisabledWithData
                 ? (connectorStatus?.entriesLast24Hours ?? 0)
                 : (connectorDataSource?.entriesLast24h ?? 0)}
-              {@const lastSeen = isDisabledWithData
+              {@const lastSeenDate = isDisabledWithData
                 ? connectorStatus?.lastEntryTime
                 : connectorDataSource?.lastSeen}
-              <button
-                class="flex items-center gap-4 p-4 rounded-lg border hover:border-primary/50 hover:bg-accent/50 transition-colors text-left group border-gray-300 dark:border-gray-700"
+              <DataSourceRow
+                name={connector.name ?? connector.id ?? "Unknown"}
+                icon={getCategoryIcon(connector.category)}
+                status={isDisabledWithData ? "disabled" : "offline"}
+                totalEntries={entryCount}
+                entriesLast24h={entries24h}
+                lastSeen={lastSeenDate}
+                totalBreakdown={isDisabledWithData ? connectorStatus?.totalItemsBreakdown ?? undefined : undefined}
+                last24hBreakdown={isDisabledWithData ? connectorStatus?.itemsLast24HoursBreakdown ?? undefined : undefined}
                 onclick={async () => {
-                  // Use connectorStatus if available (disabled connector), otherwise create synthetic
                   if (isDisabledWithData && connectorStatus) {
                     selectedConnector = connectorStatus;
                   } else {
@@ -1378,50 +1280,19 @@
                   showConnectorDialog = true;
                 }}
               >
-                <div
-                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-900/30"
-                >
-                  <Icon class="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="font-medium">{connector.name}</span>
-                    {#if isDisabledWithData}
-                      <Badge
-                        variant="secondary"
-                        class="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100 text-xs"
-                      >
-                        <WifiOff class="h-3 w-3 mr-1" />
-                        Disabled
-                      </Badge>
-                    {:else}
-                      <Badge variant="outline" class="text-xs">
-                        <WifiOff class="h-3 w-3 mr-1" />
-                        Offline
-                      </Badge>
-                    {/if}
-                    <Badge
-                      variant="secondary"
-                      class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 text-xs"
-                    >
-                      <Database class="h-3 w-3 mr-1" />
-                      Has Data
-                    </Badge>
-                  </div>
-                  <p class="text-sm text-muted-foreground">
-                    {entryCount?.toLocaleString() ?? 0} records
-                    {#if entries24h > 0}
-                      ({entries24h.toLocaleString()} in last 24 hours)
-                    {/if}
-                    • Last seen {formatLastSeen(lastSeen)}
-                  </p>
-                </div>
-                <ChevronRight
-                  class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors"
-                />
-              </button>
+                {#snippet badges()}
+                  <Badge
+                    variant="secondary"
+                    class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 text-xs"
+                  >
+                    <Database class="h-3 w-3 mr-1" />
+                    Has Data
+                  </Badge>
+                {/snippet}
+              </DataSourceRow>
             {:else}
               <!-- Not connected and no data - show with configure button -->
+              {@const Icon = getCategoryIcon(connector.category)}
               <a
                 href="/settings/connectors/{connector.id?.toLowerCase()}"
                 class="flex items-center gap-4 p-4 rounded-lg border bg-muted/30 hover:border-primary/50 hover:bg-accent/50 transition-colors group"

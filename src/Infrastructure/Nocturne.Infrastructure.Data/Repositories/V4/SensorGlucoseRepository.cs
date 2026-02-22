@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
+using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Mappers.V4;
 
@@ -9,14 +11,17 @@ namespace Nocturne.Infrastructure.Data.Repositories.V4;
 public class SensorGlucoseRepository : ISensorGlucoseRepository
 {
     private readonly NocturneDbContext _context;
+    private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<SensorGlucoseRepository> _logger;
 
     public SensorGlucoseRepository(
         NocturneDbContext context,
+        IDeduplicationService deduplicationService,
         ILogger<SensorGlucoseRepository> logger
     )
     {
         _context = context;
+        _deduplicationService = deduplicationService;
         _logger = logger;
     }
 
@@ -170,6 +175,37 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
             _context.SensorGlucose.AddRange(batch);
             await _context.SaveChangesAsync(ct);
             _context.ChangeTracker.Clear();
+        }
+
+        // Insert-time deduplication: link saved records to canonical groups
+        foreach (var entity in entities)
+        {
+            try
+            {
+                var criteria = new MatchCriteria
+                {
+                    GlucoseValue = entity.Mgdl,
+                    GlucoseTolerance = 1.0
+                };
+
+                var canonicalId = await _deduplicationService.GetOrCreateCanonicalIdAsync(
+                    RecordType.SensorGlucose,
+                    entity.Mills,
+                    criteria,
+                    ct);
+
+                await _deduplicationService.LinkRecordAsync(
+                    canonicalId,
+                    RecordType.SensorGlucose,
+                    entity.Id,
+                    entity.Mills,
+                    entity.DataSource ?? "unknown",
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to deduplicate SensorGlucose {Id}", entity.Id);
+            }
         }
 
         return entities.Select(SensorGlucoseMapper.ToDomainModel);

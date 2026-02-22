@@ -2,13 +2,15 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Nocturne.API.Controllers.V4;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Repositories;
 
 namespace Nocturne.API.Services;
 
 /// <summary>
-/// Alert rules engine implementation that evaluates glucose thresholds and generates alerts
+/// Alert rules engine implementation that evaluates glucose thresholds and generates alerts.
+/// Operates natively on V4 SensorGlucose records.
 /// </summary>
 public class AlertRulesEngine : IAlertRulesEngine
 {
@@ -38,7 +40,7 @@ public class AlertRulesEngine : IAlertRulesEngine
 
     /// <inheritdoc />
     public async Task<List<AlertEvent>> EvaluateGlucoseData(
-        Entry glucoseReading,
+        SensorGlucose glucoseReading,
         string userId,
         CancellationToken cancellationToken
     )
@@ -47,7 +49,6 @@ public class AlertRulesEngine : IAlertRulesEngine
 
         try
         {
-            // Get active rules for the user
             var activeRules = await GetActiveRulesForUser(userId, cancellationToken);
 
             if (activeRules.Length == 0)
@@ -56,10 +57,12 @@ public class AlertRulesEngine : IAlertRulesEngine
                 return alertEvents;
             }
 
+            var readingTime = DateTimeOffset.FromUnixTimeMilliseconds(glucoseReading.Mills).UtcDateTime;
+
             // Check if user is in quiet hours
             var isInQuietHours = await IsUserInQuietHours(
                 userId,
-                glucoseReading.Date,
+                readingTime,
                 cancellationToken
             );
             if (isInQuietHours)
@@ -117,8 +120,7 @@ public class AlertRulesEngine : IAlertRulesEngine
             {
                 try
                 {
-                    // Check time-based conditions
-                    if (!EvaluateTimeBasedConditions(rule, glucoseReading.Date ?? DateTime.UtcNow))
+                    if (!EvaluateTimeBasedConditions(rule, readingTime))
                     {
                         _logger.LogDebug(
                             "Time-based conditions not met for rule {RuleId} for user {UserId}",
@@ -128,7 +130,6 @@ public class AlertRulesEngine : IAlertRulesEngine
                         continue;
                     }
 
-                    // Check alert conditions
                     if (
                         await IsAlertConditionMetInternal(
                             glucoseReading,
@@ -186,7 +187,7 @@ public class AlertRulesEngine : IAlertRulesEngine
 
     /// <inheritdoc />
     public async Task<bool> IsAlertConditionMet(
-        Entry glucoseReading,
+        SensorGlucose glucoseReading,
         AlertRuleEntity rule,
         CancellationToken cancellationToken
     )
@@ -195,16 +196,14 @@ public class AlertRulesEngine : IAlertRulesEngine
     }
 
     private async Task<bool> IsAlertConditionMetInternal(
-        Entry glucoseReading,
+        SensorGlucose glucoseReading,
         AlertRuleEntity rule,
         CancellationToken cancellationToken,
         GlucosePredictionResponse? predictions
     )
     {
-        var glucoseValue = (decimal)(glucoseReading.Sgv ?? glucoseReading.Mgdl);
+        var glucoseValue = (decimal)glucoseReading.Mgdl;
 
-        // Check each threshold type
-        // Tuple: (AlertType, Threshold, IsForecast)
         var alertTypes = new List<(AlertType Type, decimal? Threshold, bool IsForecast)>
         {
             (AlertType.UrgentLow, rule.UrgentLowThreshold, false),
@@ -237,9 +236,6 @@ public class AlertRulesEngine : IAlertRulesEngine
                     && rule.ForecastLeadTimeMinutes.HasValue
                 )
                 {
-                    // Calculate index for lead time (5 min intervals)
-                    // Index 0 = NOW (T+0), index 1 = T+5min, index 2 = T+10min, etc.
-                    // So 30 minutes = index 6 (30/5 = 6)
                     var targetIndex = rule.ForecastLeadTimeMinutes.Value / 5;
 
                     if (targetIndex < predictions.Predictions.Default.Count)
@@ -261,7 +257,6 @@ public class AlertRulesEngine : IAlertRulesEngine
 
             if (isConditionMet)
             {
-                // Check for existing active alert to prevent spam
                 var existingAlert = await _alertHistoryRepository.GetActiveAlertForRuleAndTypeAsync(
                     rule.UserId,
                     rule.Id,
@@ -271,7 +266,6 @@ public class AlertRulesEngine : IAlertRulesEngine
 
                 if (existingAlert != null)
                 {
-                    // Check if enough time has passed for re-alerting (cooldown)
                     var timeSinceLastAlert = DateTime.UtcNow - existingAlert.TriggerTime;
                     if (timeSinceLastAlert.TotalMinutes < _options.AlertCooldownMinutes)
                     {
@@ -340,7 +334,6 @@ public class AlertRulesEngine : IAlertRulesEngine
     {
         try
         {
-            // Check active hours
             if (!string.IsNullOrEmpty(rule.ActiveHours))
             {
                 var activeHours = JsonSerializer.Deserialize<ActiveHoursConfig>(rule.ActiveHours);
@@ -350,7 +343,6 @@ public class AlertRulesEngine : IAlertRulesEngine
                 }
             }
 
-            // Check days of week
             if (!string.IsNullOrEmpty(rule.DaysOfWeek))
             {
                 var daysOfWeek = JsonSerializer.Deserialize<int[]>(rule.DaysOfWeek);
@@ -369,20 +361,19 @@ public class AlertRulesEngine : IAlertRulesEngine
                 "Error evaluating time-based conditions for rule {RuleId}, allowing alert",
                 rule.Id
             );
-            return true; // Fail safe - allow alert if we can't parse conditions
+            return true;
         }
     }
 
     private async Task<AlertEvent?> CreateAlertEvent(
-        Entry glucoseReading,
+        SensorGlucose glucoseReading,
         AlertRuleEntity rule,
         CancellationToken cancellationToken,
         GlucosePredictionResponse? predictions
     )
     {
-        var glucoseValue = (decimal)(glucoseReading.Sgv ?? glucoseReading.Mgdl);
+        var glucoseValue = (decimal)glucoseReading.Mgdl;
 
-        // Determine alert type and threshold
         var (alertType, threshold) = DetermineAlertTypeAndThreshold(
             glucoseValue,
             rule,
@@ -391,7 +382,6 @@ public class AlertRulesEngine : IAlertRulesEngine
         if (!threshold.HasValue)
             return null;
 
-        // Check for duplicate active alert
         var existingAlert = await _alertHistoryRepository.GetActiveAlertForRuleAndTypeAsync(
             rule.UserId,
             rule.Id,
@@ -404,9 +394,11 @@ public class AlertRulesEngine : IAlertRulesEngine
             var timeSinceLastAlert = DateTime.UtcNow - existingAlert.TriggerTime;
             if (timeSinceLastAlert.TotalMinutes < _options.AlertCooldownMinutes)
             {
-                return null; // Skip due to cooldown
+                return null;
             }
         }
+
+        var readingTime = DateTimeOffset.FromUnixTimeMilliseconds(glucoseReading.Mills).UtcDateTime;
 
         return new AlertEvent
         {
@@ -415,13 +407,14 @@ public class AlertRulesEngine : IAlertRulesEngine
             AlertType = alertType,
             GlucoseValue = glucoseValue,
             Threshold = threshold.Value,
-            TriggerTime = glucoseReading.Date ?? DateTime.UtcNow,
+            TriggerTime = readingTime,
             Rule = rule,
             Context = new Dictionary<string, object>
             {
-                { "EntryId", glucoseReading.Id ?? string.Empty },
-                { "Direction", glucoseReading.Direction ?? string.Empty },
-                { "Delta", glucoseReading.Delta ?? 0 },
+                { "SensorGlucoseId", glucoseReading.Id },
+                { "Direction", glucoseReading.Direction?.ToString() ?? string.Empty },
+                { "TrendRate", glucoseReading.TrendRate ?? 0d },
+                { "DataSource", glucoseReading.DataSource ?? string.Empty },
                 { "IsForecast", alertType == AlertType.ForecastLow },
             },
         };
@@ -433,7 +426,6 @@ public class AlertRulesEngine : IAlertRulesEngine
         GlucosePredictionResponse? predictions
     )
     {
-        // Check urgent thresholds first (highest priority)
         if (rule.UrgentLowThreshold.HasValue && glucoseValue <= rule.UrgentLowThreshold.Value)
         {
             return (AlertType.UrgentLow, rule.UrgentLowThreshold.Value);
@@ -444,7 +436,6 @@ public class AlertRulesEngine : IAlertRulesEngine
             return (AlertType.UrgentHigh, rule.UrgentHighThreshold.Value);
         }
 
-        // Check standard thresholds
         if (rule.LowThreshold.HasValue && glucoseValue <= rule.LowThreshold.Value)
         {
             return (AlertType.Low, rule.LowThreshold.Value);
@@ -455,7 +446,6 @@ public class AlertRulesEngine : IAlertRulesEngine
             return (AlertType.High, rule.HighThreshold.Value);
         }
 
-        // Check Forecast Low
         if (
             rule.ForecastLeadTimeMinutes.HasValue
             && rule.ForecastLeadTimeMinutes > 0
@@ -474,7 +464,7 @@ public class AlertRulesEngine : IAlertRulesEngine
             }
         }
 
-        return (AlertType.Low, null); // No threshold met
+        return (AlertType.Low, null);
     }
 
     private bool ShouldApplyHysteresis(decimal currentValue, decimal threshold, AlertType alertType)
@@ -499,7 +489,6 @@ public class AlertRulesEngine : IAlertRulesEngine
             .FromHours(activeHours.EndHour)
             .Add(TimeSpan.FromMinutes(activeHours.EndMinute));
 
-        // Handle active hours that span midnight
         if (start <= end)
         {
             return currentTime >= start && currentTime <= end;
@@ -510,9 +499,6 @@ public class AlertRulesEngine : IAlertRulesEngine
         }
     }
 
-    /// <summary>
-    /// Configuration for active hours
-    /// </summary>
     private class ActiveHoursConfig
     {
         public int StartHour { get; set; }

@@ -189,6 +189,48 @@ public record DeduplicationResult
     public int StateSpansProcessed { get; init; }
 
     /// <summary>
+    /// Number of sensor glucose records processed
+    /// </summary>
+    [JsonPropertyName("sensorGlucoseProcessed")]
+    public int SensorGlucoseProcessed { get; init; }
+
+    /// <summary>
+    /// Number of bolus records processed
+    /// </summary>
+    [JsonPropertyName("bolusesProcessed")]
+    public int BolusesProcessed { get; init; }
+
+    /// <summary>
+    /// Number of carb intake records processed
+    /// </summary>
+    [JsonPropertyName("carbIntakesProcessed")]
+    public int CarbIntakesProcessed { get; init; }
+
+    /// <summary>
+    /// Number of BG check records processed
+    /// </summary>
+    [JsonPropertyName("bgChecksProcessed")]
+    public int BGChecksProcessed { get; init; }
+
+    /// <summary>
+    /// Number of device event records processed
+    /// </summary>
+    [JsonPropertyName("deviceEventsProcessed")]
+    public int DeviceEventsProcessed { get; init; }
+
+    /// <summary>
+    /// Number of note records processed
+    /// </summary>
+    [JsonPropertyName("notesProcessed")]
+    public int NotesProcessed { get; init; }
+
+    /// <summary>
+    /// Number of bolus calculation records processed
+    /// </summary>
+    [JsonPropertyName("bolusCalculationsProcessed")]
+    public int BolusCalculationsProcessed { get; init; }
+
+    /// <summary>
     /// Whether the job completed successfully
     /// </summary>
     [JsonPropertyName("success")]

@@ -201,7 +201,7 @@
         {
           title: "Data Overview",
           description: "Multi-year heatmap of all your data",
-          href: "/reports/data-overview",
+          href: "/reports/year-overview",
           icon: CalendarDays,
           status: "available" as const,
         },

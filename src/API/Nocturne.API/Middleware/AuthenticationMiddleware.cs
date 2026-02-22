@@ -14,6 +14,7 @@ public class AuthenticationMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<AuthenticationMiddleware> _logger;
     private readonly IAuthHandler[] _handlers;
+    private readonly bool _isDevelopment;
 
     /// <summary>
     /// Creates a new instance of AuthenticationMiddleware
@@ -21,11 +22,13 @@ public class AuthenticationMiddleware
     public AuthenticationMiddleware(
         RequestDelegate next,
         ILogger<AuthenticationMiddleware> logger,
-        IEnumerable<IAuthHandler> handlers
+        IEnumerable<IAuthHandler> handlers,
+        IHostEnvironment environment
     )
     {
         _next = next;
         _logger = logger;
+        _isDevelopment = environment.IsDevelopment();
 
         // Sort handlers by priority (lowest first)
         _handlers = handlers.OrderBy(h => h.Priority).ToArray();
@@ -129,6 +132,20 @@ public class AuthenticationMiddleware
                 _logger.LogWarning(ex, "Handler {Handler} threw an exception", handler.Name);
                 // Continue to next handler
             }
+        }
+
+        // In development mode, auto-authenticate as admin when no credentials are provided
+        if (_isDevelopment)
+        {
+            _logger.LogDebug("Development mode: auto-authenticating as admin");
+            return new AuthContext
+            {
+                IsAuthenticated = true,
+                AuthType = AuthType.ApiSecret,
+                SubjectName = "dev-admin",
+                Permissions = ["*"],
+                Roles = ["admin"],
+            };
         }
 
         return AuthContext.Unauthenticated();

@@ -100,13 +100,13 @@
           icon: Sunrise,
         },
         {
-            title: "Month to Month",
-            href: "/calendar",
-            icon: Calendar,
+          title: "Month to Month",
+          href: "/calendar",
+          icon: Calendar,
         },
         {
           title: "Year Overview",
-          href: "/reports/data-overview",
+          href: "/reports/year-overview",
           icon: CalendarDays,
         },
         { title: "Readings", href: "/reports/readings", icon: Activity },
@@ -172,7 +172,7 @@
           title: "Test Endpoint Compatibility",
           href: "/compatibility/test",
           icon: TestTube,
-        }
+        },
       ],
     },
     {
@@ -183,7 +183,11 @@
         { title: "Appearance", href: "/settings/appearance", icon: Palette },
         { title: "Therapy", href: "/settings/profile", icon: Syringe },
         { title: "Features", href: "/settings/features", icon: Sparkles },
-        { title: "Data Quality", href: "/settings/data-quality", icon: ShieldCheck },
+        {
+          title: "Data Quality",
+          href: "/settings/data-quality",
+          icon: ShieldCheck,
+        },
         { title: "Alarms", href: "/settings/alarms", icon: Bell },
         {
           title: "Notifications & Trackers",
@@ -223,11 +227,11 @@
     }
 
     if (item.href) {
-      return page.url.pathname.startsWith(item.href)
+      return page.url.pathname.startsWith(item.href);
     }
 
     if (item.children) {
-      return item.children.some(child => isActive(child));
+      return item.children.some((child) => isActive(child));
     }
 
     return false;
@@ -345,7 +349,8 @@
         <Sidebar.MenuItem class="group-data-[collapsible=icon]:hidden">
           <LanguageSelector
             onLanguageChange={user
-              ? (locale: string) => updateLanguagePreference({ preferredLanguage: locale })
+              ? (locale: string) =>
+                  updateLanguagePreference({ preferredLanguage: locale })
               : undefined}
           />
         </Sidebar.MenuItem>

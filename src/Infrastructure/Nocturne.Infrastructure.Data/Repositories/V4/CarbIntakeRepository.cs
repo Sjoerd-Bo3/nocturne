@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
+using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Mappers.V4;
 
@@ -9,11 +11,16 @@ namespace Nocturne.Infrastructure.Data.Repositories.V4;
 public class CarbIntakeRepository : ICarbIntakeRepository
 {
     private readonly NocturneDbContext _context;
+    private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<CarbIntakeRepository> _logger;
 
-    public CarbIntakeRepository(NocturneDbContext context, ILogger<CarbIntakeRepository> logger)
+    public CarbIntakeRepository(
+        NocturneDbContext context,
+        IDeduplicationService deduplicationService,
+        ILogger<CarbIntakeRepository> logger)
     {
         _context = context;
+        _deduplicationService = deduplicationService;
         _logger = logger;
     }
 
@@ -162,6 +169,37 @@ public class CarbIntakeRepository : ICarbIntakeRepository
             _context.CarbIntakes.AddRange(batch);
             await _context.SaveChangesAsync(ct);
             _context.ChangeTracker.Clear();
+        }
+
+        // Insert-time deduplication: link saved records to canonical groups
+        foreach (var entity in entities)
+        {
+            try
+            {
+                var criteria = new MatchCriteria
+                {
+                    Carbs = entity.Carbs,
+                    CarbsTolerance = 1.0
+                };
+
+                var canonicalId = await _deduplicationService.GetOrCreateCanonicalIdAsync(
+                    RecordType.CarbIntake,
+                    entity.Mills,
+                    criteria,
+                    ct);
+
+                await _deduplicationService.LinkRecordAsync(
+                    canonicalId,
+                    RecordType.CarbIntake,
+                    entity.Id,
+                    entity.Mills,
+                    entity.DataSource ?? "unknown",
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to deduplicate CarbIntake {Id}", entity.Id);
+            }
         }
 
         return entities.Select(CarbIntakeMapper.ToDomainModel);

@@ -4890,7 +4890,7 @@ export class DataOverviewClient {
      * Get the list of years that contain data and available data sources
      */
     getAvailableYears(signal?: AbortSignal): Promise<DataOverviewYearsResponse> {
-        let url_ = this.baseUrl + "/api/v4/data-overview/years";
+        let url_ = this.baseUrl + "/api/v4/year-overview/years";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -4933,7 +4933,7 @@ export class DataOverviewClient {
      * @param dataSources (optional) Optional data source filters (multiple allowed)
      */
     getDailySummary(year?: number | undefined, dataSources?: string[] | null | undefined, signal?: AbortSignal): Promise<DailySummaryResponse> {
-        let url_ = this.baseUrl + "/api/v4/data-overview/daily-summary?";
+        let url_ = this.baseUrl + "/api/v4/year-overview/daily-summary?";
         if (year === null)
             throw new globalThis.Error("The parameter 'year' cannot be null.");
         else if (year !== undefined)
@@ -25641,6 +25641,13 @@ export enum RecordType {
     Entry = "Entry",
     Treatment = "Treatment",
     StateSpan = "StateSpan",
+    SensorGlucose = "SensorGlucose",
+    Bolus = "Bolus",
+    CarbIntake = "CarbIntake",
+    BGCheck = "BGCheck",
+    DeviceEvent = "DeviceEvent",
+    Note = "Note",
+    BolusCalculation = "BolusCalculation",
 }
 
 export interface LinkedRecord {

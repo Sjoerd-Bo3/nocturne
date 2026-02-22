@@ -3976,7 +3976,7 @@
         }
       }
     },
-    "/api/v4/data-overview/years": {
+    "/api/v4/year-overview/years": {
       "get": {
         "tags": [
           "V4 Data Overview"
@@ -4002,7 +4002,7 @@
         "x-client-property": "dataOverview"
       }
     },
-    "/api/v4/data-overview/daily-summary": {
+    "/api/v4/year-overview/daily-summary": {
       "get": {
         "tags": [
           "V4 Data Overview"
@@ -28984,12 +28984,26 @@
         "x-enumNames": [
           "Entry",
           "Treatment",
-          "StateSpan"
+          "StateSpan",
+          "SensorGlucose",
+          "Bolus",
+          "CarbIntake",
+          "BGCheck",
+          "DeviceEvent",
+          "Note",
+          "BolusCalculation"
         ],
         "enum": [
           "Entry",
           "Treatment",
-          "StateSpan"
+          "StateSpan",
+          "SensorGlucose",
+          "Bolus",
+          "CarbIntake",
+          "BGCheck",
+          "DeviceEvent",
+          "Note",
+          "BolusCalculation"
         ]
       },
       "LinkedRecord": {

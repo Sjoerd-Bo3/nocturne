@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models.Services;
 
 /// <summary>
-/// Response for GET /api/v4/data-overview/years
+/// Response for GET /api/v4/year-overview/years
 /// </summary>
 public class DataOverviewYearsResponse
 {
@@ -15,7 +15,7 @@ public class DataOverviewYearsResponse
 }
 
 /// <summary>
-/// Response for GET /api/v4/data-overview/daily-summary
+/// Response for GET /api/v4/year-overview/daily-summary
 /// </summary>
 public class DailySummaryResponse
 {

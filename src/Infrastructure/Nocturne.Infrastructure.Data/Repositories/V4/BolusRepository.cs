@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
+using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Mappers.V4;
 
@@ -9,11 +11,16 @@ namespace Nocturne.Infrastructure.Data.Repositories.V4;
 public class BolusRepository : IBolusRepository
 {
     private readonly NocturneDbContext _context;
+    private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<BolusRepository> _logger;
 
-    public BolusRepository(NocturneDbContext context, ILogger<BolusRepository> logger)
+    public BolusRepository(
+        NocturneDbContext context,
+        IDeduplicationService deduplicationService,
+        ILogger<BolusRepository> logger)
     {
         _context = context;
+        _deduplicationService = deduplicationService;
         _logger = logger;
     }
 
@@ -152,6 +159,37 @@ public class BolusRepository : IBolusRepository
             _context.Boluses.AddRange(batch);
             await _context.SaveChangesAsync(ct);
             _context.ChangeTracker.Clear();
+        }
+
+        // Insert-time deduplication: link saved records to canonical groups
+        foreach (var entity in entities)
+        {
+            try
+            {
+                var criteria = new MatchCriteria
+                {
+                    Insulin = entity.Insulin,
+                    InsulinTolerance = 0.05
+                };
+
+                var canonicalId = await _deduplicationService.GetOrCreateCanonicalIdAsync(
+                    RecordType.Bolus,
+                    entity.Mills,
+                    criteria,
+                    ct);
+
+                await _deduplicationService.LinkRecordAsync(
+                    canonicalId,
+                    RecordType.Bolus,
+                    entity.Id,
+                    entity.Mills,
+                    entity.DataSource ?? "unknown",
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to deduplicate Bolus {Id}", entity.Id);
+            }
         }
 
         return entities.Select(BolusMapper.ToDomainModel);

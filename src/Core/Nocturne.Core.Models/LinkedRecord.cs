@@ -75,5 +75,40 @@ public enum RecordType
     /// <summary>
     /// State span (pump mode, connectivity, override, profile)
     /// </summary>
-    StateSpan
+    StateSpan,
+
+    /// <summary>
+    /// V4 sensor glucose reading
+    /// </summary>
+    SensorGlucose,
+
+    /// <summary>
+    /// V4 bolus (insulin delivery)
+    /// </summary>
+    Bolus,
+
+    /// <summary>
+    /// V4 carb intake
+    /// </summary>
+    CarbIntake,
+
+    /// <summary>
+    /// V4 blood glucose check
+    /// </summary>
+    BGCheck,
+
+    /// <summary>
+    /// V4 device event (site change, sensor start, etc.)
+    /// </summary>
+    DeviceEvent,
+
+    /// <summary>
+    /// V4 note
+    /// </summary>
+    Note,
+
+    /// <summary>
+    /// V4 bolus calculation
+    /// </summary>
+    BolusCalculation
 }

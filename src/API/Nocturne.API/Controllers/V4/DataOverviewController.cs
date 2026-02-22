@@ -10,7 +10,7 @@ namespace Nocturne.API.Controllers.V4;
 /// Provides year-level availability and day-level record counts.
 /// </summary>
 [ApiController]
-[Route("api/v4/data-overview")]
+[Route("api/v4/year-overview")]
 [Produces("application/json")]
 [Tags("V4 Data Overview")]
 [ClientPropertyName("dataOverview")]
@@ -81,7 +81,10 @@ public class DataOverviewController : ControllerBase
                 cleanSources = null;
 
             var result = await _dataOverviewService.GetDailySummaryAsync(
-                year, cleanSources, cancellationToken);
+                year,
+                cleanSources,
+                cancellationToken
+            );
             return Ok(result);
         }
         catch (Exception ex)

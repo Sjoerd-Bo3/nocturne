@@ -336,6 +336,39 @@ public class ChartDataService : IChartDataService
 
     #region Internal Helpers
 
+    /// <summary>
+    /// Deduplicates a time-sorted list by removing items within a time window that match a value predicate.
+    /// Keeps the first occurrence in each window. Input must be sorted by time ascending.
+    /// </summary>
+    private static List<T> DeduplicateByWindow<T>(
+        List<T> items,
+        Func<T, long> getTime,
+        Func<T, T, bool> valuesMatch,
+        long windowMillis = 30_000)
+    {
+        if (items.Count <= 1)
+            return items;
+
+        var result = new List<T>(items.Count);
+        foreach (var item in items)
+        {
+            var isDuplicate = false;
+            for (var i = result.Count - 1; i >= 0; i--)
+            {
+                if (getTime(item) - getTime(result[i]) > windowMillis)
+                    break;
+                if (valuesMatch(item, result[i]))
+                {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+            if (!isDuplicate)
+                result.Add(item);
+        }
+        return result;
+    }
+
     internal ChartThresholdsDto GetProfileThresholds(long time)
     {
         if (!_profileService.HasData())
@@ -502,15 +535,20 @@ public class ChartDataService : IChartDataService
 
     internal static (List<GlucosePointDto> data, double yMax) BuildGlucoseData(List<SensorGlucose> readings)
     {
-        var glucoseData = readings
+        var sorted = readings.OrderBy(r => r.Mills).ToList();
+        var deduped = DeduplicateByWindow(
+            sorted,
+            r => r.Mills,
+            (a, b) => Math.Abs(a.Mgdl - b.Mgdl) <= 1.0);
+
+        var glucoseData = deduped
             .Select(r => new GlucosePointDto
             {
                 Time = r.Mills,
                 Sgv = r.Mgdl,
                 Direction = r.Direction?.ToString(),
             })
-            .OrderBy(g => g.Time)
-            .ToList();
+            .ToList(); // Already sorted
 
         var maxSgv = glucoseData.Any() ? glucoseData.Max(g => g.Sgv) : 280;
         var glucoseYMax = Math.Min(400, Math.Max(280, maxSgv) + 20);
@@ -520,8 +558,17 @@ public class ChartDataService : IChartDataService
 
     internal static List<BolusMarkerDto> BuildBolusMarkers(List<Bolus> boluses)
     {
-        return boluses
+        var sorted = boluses
             .Where(b => b.Insulin > 0)
+            .OrderBy(b => b.Mills)
+            .ToList();
+
+        var deduped = DeduplicateByWindow(
+            sorted,
+            b => b.Mills,
+            (a, b) => Math.Abs(a.Insulin - b.Insulin) <= 0.05);
+
+        return deduped
             .Select(b => new BolusMarkerDto
             {
                 Time = b.Mills,
@@ -535,8 +582,17 @@ public class ChartDataService : IChartDataService
 
     internal static List<CarbMarkerDto> BuildCarbMarkers(List<CarbIntake> carbIntakes, string? timezone)
     {
-        return carbIntakes
+        var sorted = carbIntakes
             .Where(c => c.Carbs > 0)
+            .OrderBy(c => c.Mills)
+            .ToList();
+
+        var deduped = DeduplicateByWindow(
+            sorted,
+            c => c.Mills,
+            (a, b) => Math.Abs(a.Carbs - b.Carbs) <= 1.0);
+
+        return deduped
             .Select(c => new CarbMarkerDto
             {
                 Time = c.Mills,
@@ -550,7 +606,16 @@ public class ChartDataService : IChartDataService
 
     internal static List<DeviceEventMarkerDto> BuildDeviceEventMarkers(List<DeviceEvent> deviceEvents)
     {
-        return deviceEvents
+        var sorted = deviceEvents
+            .OrderBy(e => e.Mills)
+            .ToList();
+
+        var deduped = DeduplicateByWindow(
+            sorted,
+            e => e.Mills,
+            (a, b) => a.EventType == b.EventType);
+
+        return deduped
             .Select(e => new DeviceEventMarkerDto
             {
                 Time = e.Mills,
@@ -564,8 +629,17 @@ public class ChartDataService : IChartDataService
 
     internal static List<BgCheckMarkerDto> BuildBgCheckMarkers(List<BGCheck> bgChecks)
     {
-        return bgChecks
+        var sorted = bgChecks
             .Where(b => b.Mgdl > 0)
+            .OrderBy(b => b.Mills)
+            .ToList();
+
+        var deduped = DeduplicateByWindow(
+            sorted,
+            b => b.Mills,
+            (a, b) => Math.Abs(a.Mgdl - b.Mgdl) <= 1.0);
+
+        return deduped
             .Select(b => new BgCheckMarkerDto
             {
                 Time = b.Mills,

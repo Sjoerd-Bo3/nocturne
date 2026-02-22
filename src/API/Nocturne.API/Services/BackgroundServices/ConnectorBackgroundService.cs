@@ -214,7 +214,7 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
                     // Record sync attempt
                     await UpdateHealthStateAsync(
                         lastSyncAttempt: DateTime.UtcNow,
-                        stoppingToken
+                        cancellationToken: stoppingToken
                     );
 
                     var success = await PerformSyncAsync(stoppingToken);
@@ -232,7 +232,7 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
                             isHealthy: true,
                             lastErrorMessage: string.Empty, // Explicit clear
                             lastErrorAt: DateTime.MinValue, // Explicit clear
-                            stoppingToken
+                            cancellationToken: stoppingToken
                         );
                     }
                     else
@@ -244,7 +244,7 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
                             isHealthy: false,
                             lastErrorMessage: "Sync failed after retries",
                             lastErrorAt: DateTime.UtcNow,
-                            stoppingToken
+                            cancellationToken: stoppingToken
                         );
                     }
                 }
@@ -257,7 +257,7 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
                         isHealthy: false,
                         lastErrorMessage: ex.Message.Length > 1000 ? ex.Message[..1000] : ex.Message,
                         lastErrorAt: DateTime.UtcNow,
-                        stoppingToken
+                        cancellationToken: stoppingToken
                     );
                 }
             } while (await timer.WaitForNextTickAsync(stoppingToken));

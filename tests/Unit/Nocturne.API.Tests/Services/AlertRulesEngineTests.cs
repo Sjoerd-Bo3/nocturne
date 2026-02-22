@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Repositories;
@@ -67,7 +68,7 @@ public class AlertRulesEngineTests
     {
         // Arrange
         var userId = "test-user";
-        var glucoseReading = CreateGlucoseEntry(100, DateTime.UtcNow);
+        var glucoseReading = CreateSensorGlucose(100, DateTime.UtcNow);
         _mockAlertRuleRepository
             .Setup(x => x.GetActiveRulesForUserAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<AlertRuleEntity>());
@@ -89,7 +90,7 @@ public class AlertRulesEngineTests
     {
         // Arrange
         var userId = "test-user";
-        var glucoseReading = CreateGlucoseEntry(100, DateTime.UtcNow);
+        var glucoseReading = CreateSensorGlucose(100, DateTime.UtcNow);
         var activeRules = new[] { CreateAlertRule(userId) };
 
         _mockAlertRuleRepository
@@ -123,7 +124,7 @@ public class AlertRulesEngineTests
     {
         // Arrange
         var userId = "test-user";
-        var glucoseReading = CreateGlucoseEntry(100, DateTime.UtcNow);
+        var glucoseReading = CreateSensorGlucose(100, DateTime.UtcNow);
         var activeRules = new[] { CreateAlertRule(userId) };
 
         _mockAlertRuleRepository
@@ -160,7 +161,7 @@ public class AlertRulesEngineTests
     public async Task IsAlertConditionMet_WithLowGlucose_ReturnsTrue()
     {
         // Arrange
-        var glucoseReading = CreateGlucoseEntry(60, DateTime.UtcNow); // Below low threshold
+        var glucoseReading = CreateSensorGlucose(60, DateTime.UtcNow);
         var rule = CreateAlertRule("test-user", lowThreshold: 70);
 
         _mockAlertHistoryRepository
@@ -190,7 +191,7 @@ public class AlertRulesEngineTests
     public async Task IsAlertConditionMet_WithHighGlucose_ReturnsTrue()
     {
         // Arrange
-        var glucoseReading = CreateGlucoseEntry(200, DateTime.UtcNow); // Above high threshold
+        var glucoseReading = CreateSensorGlucose(200, DateTime.UtcNow);
         var rule = CreateAlertRule("test-user", highThreshold: 180);
 
         _mockAlertHistoryRepository
@@ -220,7 +221,7 @@ public class AlertRulesEngineTests
     public async Task IsAlertConditionMet_WithUrgentLowGlucose_ReturnsTrue()
     {
         // Arrange
-        var glucoseReading = CreateGlucoseEntry(45, DateTime.UtcNow); // Below urgent low threshold
+        var glucoseReading = CreateSensorGlucose(45, DateTime.UtcNow);
         var rule = CreateAlertRule("test-user", urgentLowThreshold: 55);
 
         _mockAlertHistoryRepository
@@ -250,7 +251,7 @@ public class AlertRulesEngineTests
     public async Task IsAlertConditionMet_WithNormalGlucose_ReturnsFalse()
     {
         // Arrange
-        var glucoseReading = CreateGlucoseEntry(100, DateTime.UtcNow); // Normal glucose
+        var glucoseReading = CreateSensorGlucose(100, DateTime.UtcNow);
         var rule = CreateAlertRule("test-user", lowThreshold: 70, highThreshold: 180);
 
         // Act
@@ -269,7 +270,7 @@ public class AlertRulesEngineTests
     public async Task IsAlertConditionMet_WithActiveCooldown_ReturnsFalse()
     {
         // Arrange
-        var glucoseReading = CreateGlucoseEntry(60, DateTime.UtcNow); // Below low threshold
+        var glucoseReading = CreateSensorGlucose(60, DateTime.UtcNow);
         var rule = CreateAlertRule("test-user", lowThreshold: 70);
         var existingAlert = new AlertHistoryEntity
         {
@@ -370,16 +371,14 @@ public class AlertRulesEngineTests
         result.Should().Be(expected);
     }
 
-    private static Entry CreateGlucoseEntry(double glucoseValue, DateTime timestamp)
+    private static SensorGlucose CreateSensorGlucose(double glucoseValue, DateTime timestamp)
     {
-        return new Entry
+        return new SensorGlucose
         {
-            Id = Guid.NewGuid().ToString(),
-            Sgv = glucoseValue,
+            Id = Guid.CreateVersion7(),
             Mgdl = glucoseValue,
-            Date = timestamp,
-            Type = "sgv",
-            Direction = "Flat",
+            Mills = new DateTimeOffset(timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
+            Direction = GlucoseDirection.Flat,
         };
     }
 
