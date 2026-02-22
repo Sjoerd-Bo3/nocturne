@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4;
@@ -21,6 +22,7 @@ public class EntryService : IEntryService
     private readonly CacheConfiguration _cacheConfig;
     private readonly IDemoModeService _demoModeService;
     private readonly IEntryDecomposer _entryDecomposer;
+    private readonly IV4ToLegacyProjectionService _projectionService;
     private readonly ILogger<EntryService> _logger;
     private const string CollectionName = "entries";
     private const string DefaultTenantId = "default"; // TODO: Replace with actual tenant context
@@ -32,6 +34,7 @@ public class EntryService : IEntryService
         IOptions<CacheConfiguration> cacheConfig,
         IDemoModeService demoModeService,
         IEntryDecomposer entryDecomposer,
+        IV4ToLegacyProjectionService projectionService,
         ILogger<EntryService> logger
     )
     {
@@ -41,6 +44,7 @@ public class EntryService : IEntryService
         _cacheConfig = cacheConfig.Value;
         _demoModeService = demoModeService;
         _entryDecomposer = entryDecomposer;
+        _projectionService = projectionService;
         _logger = logger;
     }
 
@@ -58,6 +62,9 @@ public class EntryService : IEntryService
         // Build query with demo mode filter at database level
         var findQuery = BuildDemoModeFilterQuery(find);
 
+        // Parse time range from find query for V4 projection
+        var (fromMills, toMills) = ParseTimeRangeFromFind(find);
+
         // Cache recent entries for common queries (skip = 0 and common counts)
         // Include demo mode in cache key to avoid mixing demo/non-demo data
         if (actualSkip == 0 && IsCommonEntryCount(actualCount))
@@ -70,7 +77,7 @@ public class EntryService : IEntryService
                 CacheConstants.Defaults.RecentEntriesExpirationSeconds
             );
 
-            return await _cacheService.GetOrSetAsync(
+            var legacyEntries = await _cacheService.GetOrSetAsync(
                 cacheKey,
                 async () =>
                 {
@@ -93,17 +100,40 @@ public class EntryService : IEntryService
                 cacheTtl,
                 cancellationToken
             );
+
+            // Add V4-only projected entries (not cached – projection is a live query)
+            var projectedEntries = await _projectionService.GetProjectedEntriesAsync(
+                fromMills,
+                toMills,
+                actualCount,
+                0,
+                descending: true,
+                cancellationToken
+            );
+
+            return MergeAndDeduplicateEntries(legacyEntries, projectedEntries, actualCount, actualSkip);
         }
 
-        // Non-cached path for non-standard queries
-        var allEntries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+        // Non-cached path for non-standard queries — fetch from skip=0 so the merge can
+        // correctly interleave legacy and projected entries before applying the final skip.
+        var allLegacyEntries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
             type: "sgv", // Default to SGV entries
-            count: actualCount,
-            skip: actualSkip,
+            count: actualCount + actualSkip,
+            skip: 0,
             findQuery: findQuery,
             cancellationToken: cancellationToken
         );
-        return allEntries;
+
+        var allProjectedEntries = await _projectionService.GetProjectedEntriesAsync(
+            fromMills,
+            toMills,
+            actualCount + actualSkip,
+            0,
+            descending: true,
+            cancellationToken
+        );
+
+        return MergeAndDeduplicateEntries(allLegacyEntries, allProjectedEntries, actualCount, actualSkip);
     }
 
     /// <inheritdoc />
@@ -117,6 +147,9 @@ public class EntryService : IEntryService
         // Build query with demo mode filter at database level
         var findQuery = BuildDemoModeFilterQuery(null);
 
+        // Only project SGV entries – SensorGlucose maps to type "sgv"
+        var shouldProject = string.IsNullOrEmpty(type) || type == "sgv";
+
         // Cache recent entries for common queries (skip = 0 and common counts)
         // Include demo mode in cache key to avoid mixing demo/non-demo data
         if (skip == 0 && IsCommonEntryCount(count))
@@ -128,7 +161,7 @@ public class EntryService : IEntryService
                 CacheConstants.Defaults.RecentEntriesExpirationSeconds
             );
 
-            return await _cacheService.GetOrSetAsync(
+            var legacyEntries = await _cacheService.GetOrSetAsync(
                 cacheKey,
                 async () =>
                 {
@@ -151,17 +184,45 @@ public class EntryService : IEntryService
                 cacheTtl,
                 cancellationToken
             );
+
+            if (!shouldProject)
+                return legacyEntries;
+
+            var projectedEntries = await _projectionService.GetProjectedEntriesAsync(
+                fromMills: null,
+                toMills: null,
+                limit: count,
+                offset: 0,
+                descending: true,
+                cancellationToken
+            );
+
+            return MergeAndDeduplicateEntries(legacyEntries, projectedEntries, count, skip);
         }
 
-        // Non-cached path for non-standard queries
-        var allEntries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+        // Non-cached path for non-standard queries — fetch from skip=0 so the merge can
+        // correctly interleave legacy and projected entries before applying the final skip.
+        var allLegacyEntries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
             type,
-            count,
-            skip,
+            count + skip,
+            0,
             findQuery,
             cancellationToken: cancellationToken
         );
-        return allEntries;
+
+        if (!shouldProject)
+            return allLegacyEntries.Skip(skip).Take(count);
+
+        var allProjectedEntries = await _projectionService.GetProjectedEntriesAsync(
+            fromMills: null,
+            toMills: null,
+            limit: count + skip,
+            offset: 0,
+            descending: true,
+            cancellationToken
+        );
+
+        return MergeAndDeduplicateEntries(allLegacyEntries, allProjectedEntries, count, skip);
     }
 
     /// <summary>
@@ -172,6 +233,80 @@ public class EntryService : IEntryService
     private static bool IsCommonEntryCount(int count)
     {
         return count is 10 or 50 or 100;
+    }
+
+    /// <summary>
+    /// Parse a time range from a MongoDB-style find query JSON string.
+    /// Walks the document looking for numeric $gte / $lte values on any field.
+    /// Returns (null, null) if the query is absent or contains no time constraints.
+    /// </summary>
+    private static (long? from, long? to) ParseTimeRangeFromFind(string? find)
+    {
+        if (string.IsNullOrEmpty(find))
+            return (null, null);
+
+        long? from = null;
+        long? to = null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(find);
+            foreach (var field in doc.RootElement.EnumerateObject())
+            {
+                if (field.Value.ValueKind != JsonValueKind.Object)
+                    continue;
+
+                foreach (var op in field.Value.EnumerateObject())
+                {
+                    if (op.Value.ValueKind != JsonValueKind.Number)
+                        continue;
+
+                    if (op.Name == "$gte" && op.Value.TryGetInt64(out var gte))
+                        from = gte;
+                    else if (op.Name == "$lte" && op.Value.TryGetInt64(out var lte))
+                        to = lte;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Malformed query — projection will run without time bounds, which is safe.
+        }
+
+        return (from, to);
+    }
+
+    /// <summary>
+    /// Merges legacy entries with V4-projected entries.
+    /// Deduplication rule: if a legacy entry has an Id that matches a V4 record's LegacyId
+    /// the V4 projection is discarded (the legacy entry is canonical).
+    /// Since <see cref="V4ToLegacyProjectionService"/> only returns records with LegacyId == null,
+    /// any Id from a V4-only record will not collide with legacy Ids.  This method therefore
+    /// deduplicates by Mills to avoid timestamp duplicates from concurrent writes.
+    /// </summary>
+    private static IEnumerable<Entry> MergeAndDeduplicateEntries(
+        IEnumerable<Entry> legacyEntries,
+        IEnumerable<Entry> projectedEntries,
+        int count,
+        int skip
+    )
+    {
+        // Build set of legacy entry IDs so we can skip V4 records that already have a legacy row.
+        var legacyList = legacyEntries.ToList();
+        var legacyIds = legacyList.Select(e => e.Id).Where(id => id != null).ToHashSet();
+
+        // Build set of Mills from legacy entries for coarse dedup on timestamp.
+        var legacyMillsSet = legacyList.Select(e => e.Mills).ToHashSet();
+
+        var filteredProjected = projectedEntries
+            .Where(p => !legacyIds.Contains(p.Id) && !legacyMillsSet.Contains(p.Mills));
+
+        return legacyList
+            .Concat(filteredProjected)
+            .OrderByDescending(e => e.Mills)
+            .Skip(skip)
+            .Take(count)
+            .ToList();
     }
 
     /// <summary>
@@ -602,17 +737,40 @@ public class EntryService : IEntryService
             _demoModeService.IsEnabled
         );
 
-        // Use database-level filtering by demo mode
+        // Fetch from legacy entries table and V4 projection in parallel.
         var findQuery = BuildDemoModeFilterQuery(null);
-        var entries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+        var legacyTask = _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
             type: "sgv",
             count: 1,
             skip: 0,
             findQuery: findQuery,
             cancellationToken: cancellationToken
         );
+        var projectedTask = _projectionService.GetLatestProjectedEntryAsync(cancellationToken);
 
-        var entry = entries.FirstOrDefault();
+        await Task.WhenAll(legacyTask, projectedTask);
+
+        var legacyEntry = (await legacyTask).FirstOrDefault();
+        var projectedEntry = await projectedTask;
+
+        // Return whichever has the higher Mills timestamp.
+        Entry? entry;
+        if (legacyEntry == null && projectedEntry == null)
+        {
+            entry = null;
+        }
+        else if (legacyEntry == null)
+        {
+            entry = projectedEntry;
+        }
+        else if (projectedEntry == null)
+        {
+            entry = legacyEntry;
+        }
+        else
+        {
+            entry = projectedEntry.Mills > legacyEntry.Mills ? projectedEntry : legacyEntry;
+        }
 
         if (entry != null)
         {

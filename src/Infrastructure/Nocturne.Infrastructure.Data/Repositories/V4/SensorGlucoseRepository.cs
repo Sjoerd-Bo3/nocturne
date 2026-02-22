@@ -33,6 +33,7 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
         int limit = 100,
         int offset = 0,
         bool descending = true,
+        bool nativeOnly = false,
         CancellationToken ct = default
     )
     {
@@ -45,6 +46,8 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
             query = query.Where(e => e.Device == device);
         if (source != null)
             query = query.Where(e => e.DataSource == source);
+        if (nativeOnly)
+            query = query.Where(e => e.LegacyId == null);
         query = descending ? query.OrderByDescending(e => e.Mills) : query.OrderBy(e => e.Mills);
         var entities = await query.Skip(offset).Take(limit).ToListAsync(ct);
         return entities.Select(SensorGlucoseMapper.ToDomainModel);

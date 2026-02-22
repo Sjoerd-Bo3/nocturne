@@ -12,6 +12,7 @@ public interface INoteRepository
         int limit = 100,
         int offset = 0,
         bool descending = true,
+        bool nativeOnly = false,
         CancellationToken ct = default
     );
     Task<Note?> GetByIdAsync(Guid id, CancellationToken ct = default);

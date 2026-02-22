@@ -428,6 +428,9 @@ builder.Services.AddSingleton<IDemoModeService, DemoModeService>();
 // Register UI settings service for frontend configuration persistence
 builder.Services.AddScoped<IUISettingsService, UISettingsService>();
 
+// Register V4 → legacy projection service (must be registered before EntryService/TreatmentService)
+builder.Services.AddScoped<IV4ToLegacyProjectionService, V4ToLegacyProjectionService>();
+
 // Register domain services for WebSocket broadcasting
 builder.Services.AddScoped<ITreatmentService, TreatmentService>();
 builder.Services.AddScoped<IEntryService, EntryService>();

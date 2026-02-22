@@ -8,16 +8,17 @@ using Nocturne.Connectors.Dexcom.Mappers;
 using Nocturne.Connectors.Dexcom.Models;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Connectors.Dexcom.Services;
 
 /// <summary>
-///     Connector service for Dexcom Share data source
-///     Enhanced implementation based on the original nightscout-connect Dexcom Share implementation
+///     Connector service for Dexcom Share data source.
+///     Writes SensorGlucose records directly instead of legacy Entry objects.
 /// </summary>
 public class DexcomConnectorService : BaseConnectorService<DexcomConnectorConfiguration>
 {
-    private readonly DexcomEntryMapper _entryMapper;
+    private readonly DexcomSensorGlucoseMapper _sensorGlucoseMapper;
     private readonly IRateLimitingStrategy _rateLimitingStrategy;
     private readonly IRetryDelayStrategy _retryDelayStrategy;
     private readonly DexcomAuthTokenProvider _tokenProvider;
@@ -39,7 +40,7 @@ public class DexcomConnectorService : BaseConnectorService<DexcomConnectorConfig
             ?? throw new ArgumentNullException(nameof(rateLimitingStrategy));
         _tokenProvider =
             tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
-        _entryMapper = new DexcomEntryMapper(logger, ConnectorSource);
+        _sensorGlucoseMapper = new DexcomSensorGlucoseMapper(logger);
     }
 
     protected override string ConnectorSource => DataSources.DexcomConnector;
@@ -59,24 +60,78 @@ public class DexcomConnectorService : BaseConnectorService<DexcomConnectorConfig
         return true;
     }
 
-    public override async Task<IEnumerable<Entry>> FetchGlucoseDataAsync(DateTime? since = null)
+    /// <summary>
+    ///     Fetches SensorGlucose records from the Dexcom Share API.
+    /// </summary>
+    private async Task<IEnumerable<SensorGlucose>> FetchSensorGlucoseAsync(DateTime? since = null)
     {
         var batchData = await FetchBatchDataAsync(since);
-        var fetchGlucoseDataAsync = batchData == null
-            ? []
-            : _entryMapper.TransformBatchDataToEntries(batchData).ToList();
-        _logger.LogInformation(
-            "[{ConnectorSource}] Retrieved {Count} glucose entries from Dexcom",
-            ConnectorSource,
-            fetchGlucoseDataAsync.Count()
-        );
+        if (batchData == null) return [];
 
-        return fetchGlucoseDataAsync;
+        var records = _sensorGlucoseMapper.MapBatchData(batchData).ToList();
+        _logger.LogInformation(
+            "[{ConnectorSource}] Retrieved {Count} SensorGlucose records from Dexcom",
+            ConnectorSource,
+            records.Count
+        );
+        return records;
+    }
+
+    /// <summary>
+    ///     Performs sync, publishing SensorGlucose records directly to the V4 data store.
+    /// </summary>
+    protected override async Task<SyncResult> PerformSyncInternalAsync(
+        SyncRequest request,
+        DexcomConnectorConfiguration config,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = new SyncResult { StartTime = DateTimeOffset.UtcNow, Success = true };
+
+        var enabledTypes = config.GetEnabledDataTypes(SupportedDataTypes);
+        if (!enabledTypes.Contains(SyncDataType.Glucose))
+        {
+            result.EndTime = DateTimeOffset.UtcNow;
+            return result;
+        }
+
+        try
+        {
+            var sensorGlucose = await FetchSensorGlucoseAsync(request.From);
+            var sgList = sensorGlucose.ToList();
+
+            if (sgList.Count > 0)
+            {
+                var success = await PublishSensorGlucoseDataAsync(sgList, config, cancellationToken);
+                result.ItemsSynced[SyncDataType.Glucose] = sgList.Count;
+                result.LastEntryTimes[SyncDataType.Glucose] = DateTimeOffset
+                    .FromUnixTimeMilliseconds(sgList.Max(s => s.Mills))
+                    .UtcDateTime;
+
+                if (!success)
+                {
+                    result.Success = false;
+                    result.Errors.Add("SensorGlucose publish failed");
+                }
+                else
+                {
+                    _logger.LogInformation("Synced {Count} SensorGlucose records from Dexcom", sgList.Count);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during Dexcom sync");
+            result.Success = false;
+            result.Errors.Add($"Sync error: {ex.Message}");
+        }
+
+        result.EndTime = DateTimeOffset.UtcNow;
+        return result;
     }
 
     private async Task<DexcomEntry[]?> FetchBatchDataAsync(DateTime? since = null)
     {
-        // Get valid session token from provider
         var sessionId = await _tokenProvider.GetValidTokenAsync();
         if (string.IsNullOrEmpty(sessionId))
         {
@@ -88,7 +143,6 @@ public class DexcomConnectorService : BaseConnectorService<DexcomConnectorConfig
             return null;
         }
 
-        // Apply rate limiting
         await _rateLimitingStrategy.ApplyDelayAsync(0);
 
         var result = await ExecuteWithRetryAsync(
@@ -105,7 +159,6 @@ public class DexcomConnectorService : BaseConnectorService<DexcomConnectorConfig
             operationName: "FetchDexcomData"
         );
 
-        // Log batch data summary
         if (result == null) return result;
         var validEntries = result.Where(e => e.Value > 0).ToArray();
         var minDate = validEntries.Length > 0 ? validEntries.Min(e => e.Wt) : "N/A";
@@ -123,22 +176,15 @@ public class DexcomConnectorService : BaseConnectorService<DexcomConnectorConfig
         return result;
     }
 
-    /// <summary>
-    ///     Core data fetch logic without retry handling (called by ExecuteWithRetryAsync)
-    /// </summary>
-    private async Task<DexcomEntry[]?> FetchRawDataCoreAsync(
-        string sessionId,
-        DateTime? since = null
-    )
+    private async Task<DexcomEntry[]?> FetchRawDataCoreAsync(string sessionId, DateTime? since = null)
     {
-        // Calculate time range
         var twoDaysAgo = DateTime.UtcNow.AddDays(-2);
         var startTime = since.HasValue
             ? since.Value > twoDaysAgo ? since.Value : twoDaysAgo
             : twoDaysAgo;
 
         var timeDiff = DateTime.UtcNow - startTime;
-        var maxCount = Math.Ceiling(timeDiff.TotalMinutes / 5); // 5-minute intervals
+        var maxCount = Math.Ceiling(timeDiff.TotalMinutes / 5);
         var minutes = (int)(maxCount * 5);
 
         var url =

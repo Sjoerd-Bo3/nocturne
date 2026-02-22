@@ -50,7 +50,7 @@ public class GlucoseController : ControllerBase
         if (sort is not "mills_desc" and not "mills_asc")
             return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
         var descending = sort == "mills_desc";
-        var data = await _sensorRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
+        var data = await _sensorRepo.GetAsync(from, to, device, source, limit, offset, descending, ct: ct);
         var total = await _sensorRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<SensorGlucose> { Data = data, Pagination = new(limit, offset, total) });
     }

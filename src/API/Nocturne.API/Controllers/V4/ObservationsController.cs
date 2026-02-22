@@ -49,7 +49,7 @@ public class ObservationsController : ControllerBase
         if (sort is not "mills_desc" and not "mills_asc")
             return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
         var descending = sort == "mills_desc";
-        var data = await _bgCheckRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
+        var data = await _bgCheckRepo.GetAsync(from, to, device, source, limit, offset, descending, ct: ct);
         var total = await _bgCheckRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<BGCheck> { Data = data, Pagination = new(limit, offset, total) });
     }
@@ -146,7 +146,7 @@ public class ObservationsController : ControllerBase
         if (sort is not "mills_desc" and not "mills_asc")
             return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
         var descending = sort == "mills_desc";
-        var data = await _noteRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
+        var data = await _noteRepo.GetAsync(from, to, device, source, limit, offset, descending, ct: ct);
         var total = await _noteRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<Note> { Data = data, Pagination = new(limit, offset, total) });
     }
@@ -243,7 +243,7 @@ public class ObservationsController : ControllerBase
         if (sort is not "mills_desc" and not "mills_asc")
             return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
         var descending = sort == "mills_desc";
-        var data = await _deviceEventRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
+        var data = await _deviceEventRepo.GetAsync(from, to, device, source, limit, offset, descending, ct: ct);
         var total = await _deviceEventRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<DeviceEvent> { Data = data, Pagination = new(limit, offset, total) });
     }

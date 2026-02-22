@@ -75,8 +75,7 @@ public class ConnectorTestService
                 _loggerFactory.CreateLogger<GlookoConnectorService>(),
                 new ProductionRetryDelayStrategy(),
                 new ProductionRateLimitingStrategy(_loggerFactory.CreateLogger<ProductionRateLimitingStrategy>()),
-                tokenProvider,
-                new TreatmentClassificationService()
+                tokenProvider
             );
 
             _logger.LogInformation(

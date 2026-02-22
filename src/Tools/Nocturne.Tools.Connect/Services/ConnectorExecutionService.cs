@@ -454,7 +454,6 @@ public class ConnectorExecutionService(
                 _loggerFactory.CreateLogger<ProductionRateLimitingStrategy>()
             ),
             tokenProvider,
-            new TreatmentClassificationService(),
             null // IConnectorPublisher
         );
         return new ConnectorServiceWrapper<GlookoConnectorConfiguration>(service);

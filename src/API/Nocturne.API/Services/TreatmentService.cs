@@ -25,6 +25,7 @@ public class TreatmentService : ITreatmentService
     private readonly IDemoModeService _demoModeService;
     private readonly IStateSpanService _stateSpanService;
     private readonly ITreatmentDecomposer _treatmentDecomposer;
+    private readonly IV4ToLegacyProjectionService _projectionService;
     private readonly ILogger<TreatmentService> _logger;
     private const string CollectionName = "treatments";
     private const string DefaultTenantId = "default"; // TODO: Replace with actual tenant context
@@ -37,6 +38,7 @@ public class TreatmentService : ITreatmentService
         IDemoModeService demoModeService,
         IStateSpanService stateSpanService,
         ITreatmentDecomposer treatmentDecomposer,
+        IV4ToLegacyProjectionService projectionService,
         ILogger<TreatmentService> logger
     )
     {
@@ -47,6 +49,7 @@ public class TreatmentService : ITreatmentService
         _demoModeService = demoModeService;
         _stateSpanService = stateSpanService;
         _treatmentDecomposer = treatmentDecomposer;
+        _projectionService = projectionService;
         _logger = logger;
     }
 
@@ -254,7 +257,9 @@ public class TreatmentService : ITreatmentService
     }
 
     /// <summary>
-    /// Parse time range from MongoDB-style find query
+    /// Parse a time range from a MongoDB-style find query JSON string.
+    /// Walks the document looking for numeric $gte / $lte values on any field.
+    /// Returns (null, null) if the query is absent or contains no time constraints.
     /// </summary>
     private static (long? from, long? to) ParseTimeRangeFromFind(string? find)
     {
@@ -264,22 +269,37 @@ public class TreatmentService : ITreatmentService
         long? from = null;
         long? to = null;
 
-        // Look for $gte (greater than or equal - "from")
-        var gteMatch = System.Text.RegularExpressions.Regex.Match(find, @"\$gte[=\]]+(\d+)");
-        if (gteMatch.Success && long.TryParse(gteMatch.Groups[1].Value, out var gteVal))
-            from = gteVal;
+        try
+        {
+            using var doc = JsonDocument.Parse(find);
+            foreach (var field in doc.RootElement.EnumerateObject())
+            {
+                if (field.Value.ValueKind != JsonValueKind.Object)
+                    continue;
 
-        // Look for $lte (less than or equal - "to")
-        var lteMatch = System.Text.RegularExpressions.Regex.Match(find, @"\$lte[=\]]+(\d+)");
-        if (lteMatch.Success && long.TryParse(lteMatch.Groups[1].Value, out var lteVal))
-            to = lteVal;
+                foreach (var op in field.Value.EnumerateObject())
+                {
+                    if (op.Value.ValueKind != JsonValueKind.Number)
+                        continue;
+
+                    if (op.Name == "$gte" && op.Value.TryGetInt64(out var gte))
+                        from = gte;
+                    else if (op.Name == "$lte" && op.Value.TryGetInt64(out var lte))
+                        to = lte;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Malformed query — projection will run without time bounds, which is safe.
+        }
 
         return (from, to);
     }
 
     /// <summary>
-    /// Merges regular treatments with temp basals and basal deliveries from StateSpans
-    /// for V1-V3 API backwards compatibility
+    /// Merges regular treatments with temp basals from StateSpans and V4-projected treatments
+    /// for V1-V3 API backwards compatibility.
     /// </summary>
     private async Task<IEnumerable<Treatment>> MergeWithTempBasalsAsync(
         IEnumerable<Treatment> treatments,
@@ -292,7 +312,7 @@ public class TreatmentService : ITreatmentService
         var (fromMills, toMills) = ParseTimeRangeFromFind(findQuery);
 
         // Get BasalDelivery StateSpans as Treatments (for V1-V3 compatibility)
-        var basalDeliveryTreatments = await _stateSpanService.GetBasalDeliveriesAsTreatmentsAsync(
+        var basalDeliveryTask = _stateSpanService.GetBasalDeliveriesAsTreatmentsAsync(
             from: fromMills,
             to: toMills,
             count: count,
@@ -300,9 +320,33 @@ public class TreatmentService : ITreatmentService
             cancellationToken: cancellationToken
         );
 
+        // Get V4-projected treatments (native V4 connector writes)
+        var projectedTask = _projectionService.GetProjectedTreatmentsAsync(
+            fromMills,
+            toMills,
+            count,
+            cancellationToken
+        );
+
+        await Task.WhenAll(basalDeliveryTask, projectedTask);
+
+        var basalDeliveryTreatments = await basalDeliveryTask;
+        var projectedTreatments = await projectedTask;
+
+        // Build a set of legacy treatment IDs for dedup; V4 projection only returns records
+        // with LegacyId == null, so there will be no Id overlap with legacy treatments.
+        // Dedup by Mills to guard against timestamp collisions.
+        var legacyList = treatments.ToList();
+        var legacyMillsSet = legacyList.Select(t => t.Mills).ToHashSet();
+        var basalMillsSet = basalDeliveryTreatments.Select(t => t.Mills).ToHashSet();
+
+        var filteredProjected = projectedTreatments
+            .Where(p => !legacyMillsSet.Contains(p.Mills) && !basalMillsSet.Contains(p.Mills));
+
         // Merge all sources and sort
-        var allTreatments = treatments
+        var allTreatments = legacyList
             .Concat(basalDeliveryTreatments)
+            .Concat(filteredProjected)
             .OrderByDescending(t => t.Mills)
             .Skip(skip)
             .Take(count)

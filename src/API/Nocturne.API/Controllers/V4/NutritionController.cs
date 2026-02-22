@@ -61,7 +61,7 @@ public class NutritionController : ControllerBase
         if (sort is not "mills_desc" and not "mills_asc")
             return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
         var descending = sort == "mills_desc";
-        var data = await _carbIntakeRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
+        var data = await _carbIntakeRepo.GetAsync(from, to, device, source, limit, offset, descending, ct: ct);
         var total = await _carbIntakeRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<CarbIntake> { Data = data, Pagination = new(limit, offset, total) });
     }

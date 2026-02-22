@@ -10,12 +10,13 @@ using Nocturne.Connectors.FreeStyle.Mappers;
 using Nocturne.Connectors.FreeStyle.Models;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Connectors.FreeStyle.Services;
 
 /// <summary>
-///     Connector service for LibreLinkUp data source
-///     Enhanced implementation based on the original nightscout-connect LibreLinkUp implementation
+///     Connector service for LibreLinkUp data source.
+///     Writes SensorGlucose records directly instead of legacy Entry objects.
 /// </summary>
 public class LibreConnectorService(
     HttpClient httpClient,
@@ -35,7 +36,7 @@ public class LibreConnectorService(
     private readonly LibreLinkUpConnectorConfiguration _config =
         config?.Value ?? throw new ArgumentNullException(nameof(config));
 
-    private readonly LibreEntryMapper _entryMapper = new(logger);
+    private readonly LibreSensorGlucoseMapper _sensorGlucoseMapper = new(logger);
 
     private readonly IRateLimitingStrategy _rateLimitingStrategy =
         rateLimitingStrategy ?? throw new ArgumentNullException(nameof(rateLimitingStrategy));
@@ -49,26 +50,15 @@ public class LibreConnectorService(
     private string _accountIdHash = string.Empty;
     private LibreUserConnection? _selectedConnection;
 
-    /// <summary>
-    ///     Custom headers to include in API requests (Account-Id for LibreLinkUp)
-    /// </summary>
     private Dictionary<string, string>? RequestHeaders =>
         string.IsNullOrWhiteSpace(_accountIdHash)
             ? null
             : new Dictionary<string, string> { { "Account-Id", _accountIdHash } };
 
     public override string ServiceName => "LibreLinkUp";
-
-    /// <summary>
-    ///     Gets the source identifier for this connector
-    /// </summary>
     protected override string ConnectorSource => DataSources.LibreConnector;
-
     public override List<SyncDataType> SupportedDataTypes => [SyncDataType.Glucose];
 
-    /// <summary>
-    ///     Override health check to also consider token expiry
-    /// </summary>
     public override bool IsHealthy => base.IsHealthy && !_tokenProvider.IsTokenExpired;
 
     public override async Task<bool> AuthenticateAsync()
@@ -100,38 +90,122 @@ public class LibreConnectorService(
             _logger.LogWarning("LibreLinkUp token is not a valid JWT");
         }
 
-        // Set up authorization header for subsequent requests
         _httpClient.DefaultRequestHeaders.Remove("Authorization");
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
-        // Get connections to find the patient data
         await LoadConnectionsAsync();
 
         TrackSuccessfulRequest();
         return true;
     }
 
+    /// <summary>
+    ///     Fetches SensorGlucose records from the LibreLinkUp API.
+    /// </summary>
+    private async Task<IEnumerable<SensorGlucose>> FetchSensorGlucoseAsync(DateTime? since = null)
+    {
+        if (_tokenProvider.IsTokenExpired || _selectedConnection == null)
+        {
+            _logger.LogInformation("Token expired or missing connection, attempting to re-authenticate");
+            if (!await AuthenticateAsync())
+            {
+                _logger.LogError("Failed to authenticate with LibreLinkUp");
+                return [];
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(_selectedConnection?.PatientId))
+        {
+            _logger.LogError("Invalid LibreLinkUp patient id");
+            TrackFailedRequest("Invalid patient id");
+            return [];
+        }
+
+        var url = string.Format(LibreLinkUpConstants.ApiPaths.GraphData, _selectedConnection.PatientId);
+
+        await _rateLimitingStrategy.ApplyDelayAsync(0);
+
+        var result = await ExecuteWithRetryAsync(
+            async () => await FetchSensorGlucoseCoreAsync(url, since),
+            _retryDelayStrategy,
+            async () =>
+            {
+                _tokenProvider.InvalidateToken();
+                _selectedConnection = null;
+                return await AuthenticateAsync();
+            },
+            operationName: "FetchSensorGlucoseData"
+        );
+
+        return result ?? [];
+    }
+
+    /// <summary>
+    ///     Performs sync, publishing SensorGlucose records directly to the V4 data store.
+    /// </summary>
+    protected override async Task<SyncResult> PerformSyncInternalAsync(
+        SyncRequest request,
+        LibreLinkUpConnectorConfiguration config,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = new SyncResult { StartTime = DateTimeOffset.UtcNow, Success = true };
+
+        var enabledTypes = config.GetEnabledDataTypes(SupportedDataTypes);
+        if (!enabledTypes.Contains(SyncDataType.Glucose))
+        {
+            result.EndTime = DateTimeOffset.UtcNow;
+            return result;
+        }
+
+        try
+        {
+            var sensorGlucose = await FetchSensorGlucoseAsync(request.From);
+            var sgList = sensorGlucose.ToList();
+
+            if (sgList.Count > 0)
+            {
+                var success = await PublishSensorGlucoseDataAsync(sgList, config, cancellationToken);
+                result.ItemsSynced[SyncDataType.Glucose] = sgList.Count;
+                result.LastEntryTimes[SyncDataType.Glucose] = DateTimeOffset
+                    .FromUnixTimeMilliseconds(sgList.Max(s => s.Mills))
+                    .UtcDateTime;
+
+                if (!success)
+                {
+                    result.Success = false;
+                    result.Errors.Add("SensorGlucose publish failed");
+                }
+                else
+                {
+                    _logger.LogInformation("Synced {Count} SensorGlucose records from LibreLinkUp", sgList.Count);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during LibreLinkUp sync");
+            result.Success = false;
+            result.Errors.Add($"Sync error: {ex.Message}");
+        }
+
+        result.EndTime = DateTimeOffset.UtcNow;
+        return result;
+    }
+
     private async Task LoadConnectionsAsync()
     {
         try
         {
-            var response = await GetWithHeadersAsync(
-                LibreLinkUpConstants.ApiPaths.Connections,
-                RequestHeaders
-            );
+            var response = await GetWithHeadersAsync(LibreLinkUpConstants.ApiPaths.Connections, RequestHeaders);
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning(
-                    "Failed to load LibreLinkUp connections: {StatusCode}",
-                    response.StatusCode
-                );
+                _logger.LogWarning("Failed to load LibreLinkUp connections: {StatusCode}", response.StatusCode);
                 return;
             }
 
-            var connectionsResponse = await DeserializeResponseAsync<LibreConnectionsResponse>(
-                response
-            );
+            var connectionsResponse = await DeserializeResponseAsync<LibreConnectionsResponse>(response);
 
             if (connectionsResponse?.Data == null || connectionsResponse.Data.Length == 0)
             {
@@ -139,7 +213,6 @@ public class LibreConnectorService(
                 return;
             }
 
-            // Select the specified patient or the first available connection
             if (!string.IsNullOrEmpty(_config.PatientId))
                 _selectedConnection = connectionsResponse.Data.FirstOrDefault(c =>
                     c.PatientId == _config.PatientId
@@ -161,55 +234,7 @@ public class LibreConnectorService(
         }
     }
 
-    public override async Task<IEnumerable<Entry>> FetchGlucoseDataAsync(DateTime? since = null)
-    {
-        // Check if we need to authenticate or re-authenticate
-        if (_tokenProvider.IsTokenExpired || _selectedConnection == null)
-        {
-            _logger.LogInformation(
-                "Token expired or missing connection, attempting to re-authenticate"
-            );
-            if (!await AuthenticateAsync())
-            {
-                _logger.LogError("Failed to authenticate with LibreLinkUp");
-                return [];
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(_selectedConnection?.PatientId))
-        {
-            _logger.LogError("Invalid LibreLinkUp patient id");
-            TrackFailedRequest("Invalid patient id");
-            return [];
-        }
-
-        var url = string.Format(
-            LibreLinkUpConstants.ApiPaths.GraphData,
-            _selectedConnection.PatientId
-        );
-
-        // Apply rate limiting before first attempt
-        await _rateLimitingStrategy.ApplyDelayAsync(0);
-
-        var result = await ExecuteWithRetryAsync(
-            async () => await FetchGlucoseDataCoreAsync(url, since),
-            _retryDelayStrategy,
-            async () =>
-            {
-                _tokenProvider.InvalidateToken();
-                _selectedConnection = null;
-                return await AuthenticateAsync();
-            },
-            operationName: "FetchGlucoseData"
-        );
-
-        return result ?? Enumerable.Empty<Entry>();
-    }
-
-    /// <summary>
-    ///     Core glucose data fetch logic without retry handling (called by ExecuteWithRetryAsync)
-    /// </summary>
-    private async Task<List<Entry>?> FetchGlucoseDataCoreAsync(string url, DateTime? since)
+    private async Task<List<SensorGlucose>?> FetchSensorGlucoseCoreAsync(string url, DateTime? since)
     {
         var response = await GetWithHeadersAsync(url, RequestHeaders);
 
@@ -234,7 +259,6 @@ public class LibreConnectorService(
         var measurements = graphResponse.Data.GraphData.ToList();
         var latestMeasurement = graphResponse.Data.Connection.GlucoseMeasurement;
 
-        // Only add latest measurement if not already in GraphData (avoid duplicates)
         var latestTimestamp = latestMeasurement.FactoryTimestamp;
         if (!measurements.Any(m => m.FactoryTimestamp == latestTimestamp))
         {
@@ -242,43 +266,27 @@ public class LibreConnectorService(
         }
         else
         {
-            // Update existing entry with trend arrow from latest measurement
             var existing = measurements.First(m => m.FactoryTimestamp == latestTimestamp);
             if (existing.TrendArrow == 0 && latestMeasurement.TrendArrow != 0)
-            {
                 existing.TrendArrow = latestMeasurement.TrendArrow;
-            }
         }
 
-        var glucoseEntries = measurements
-            .Where(measurement => measurement.ValueInMgPerDl > 0)
-            .Select(_entryMapper.ConvertLibreEntry)
-            .Where(entry => !since.HasValue || entry.Date > since.Value)
-            .OrderBy(entry => entry.Date)
+        var glucoseRecords = measurements
+            .Where(m => m.ValueInMgPerDl > 0)
+            .Select(_sensorGlucoseMapper.ConvertMeasurement)
+            .Where(sg => sg != null)
+            .Cast<SensorGlucose>()
+            .Where(sg => !since.HasValue || DateTimeOffset.FromUnixTimeMilliseconds(sg.Mills).UtcDateTime > since.Value)
+            .OrderBy(sg => sg.Mills)
             .ToList();
 
         _logger.LogInformation(
-            "[{ConnectorSource}] Successfully fetched {Count} glucose entries from LibreLinkUp",
+            "[{ConnectorSource}] Successfully fetched {Count} SensorGlucose records from LibreLinkUp",
             ConnectorSource,
-            glucoseEntries.Count
+            glucoseRecords.Count
         );
 
-        return glucoseEntries;
-    }
-
-    private class LibreLoginResponse
-    {
-        public required LibreLoginData Data { get; set; }
-    }
-
-    private class LibreLoginData
-    {
-        public required LibreAuthTicket AuthTicket { get; set; }
-    }
-
-    private class LibreAuthTicket
-    {
-        public required string Token { get; set; }
+        return glucoseRecords;
     }
 
     private class LibreConnectionsResponse

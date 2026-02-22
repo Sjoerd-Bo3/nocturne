@@ -12,15 +12,15 @@ namespace Nocturne.Connectors.Tidepool.Services;
 
 /// <summary>
 ///     Connector service for Tidepool data source.
-///     Fetches glucose readings, boluses, food entries, and exercise data.
+///     Fetches glucose readings and bolus/food entries, writing V4 models directly.
 /// </summary>
 public class TidepoolConnectorService : BaseConnectorService<TidepoolConnectorConfiguration>
 {
-    private readonly TidepoolEntryMapper _entryMapper;
     private readonly IRateLimitingStrategy _rateLimitingStrategy;
     private readonly IRetryDelayStrategy _retryDelayStrategy;
+    private readonly TidepoolSensorGlucoseMapper _sensorGlucoseMapper;
     private readonly TidepoolAuthTokenProvider _tokenProvider;
-    private readonly TidepoolTreatmentMapper _treatmentMapper;
+    private readonly TidepoolV4TreatmentMapper _v4TreatmentMapper;
 
     public TidepoolConnectorService(
         HttpClient httpClient,
@@ -38,8 +38,8 @@ public class TidepoolConnectorService : BaseConnectorService<TidepoolConnectorCo
             rateLimitingStrategy ?? throw new ArgumentNullException(nameof(rateLimitingStrategy));
         _tokenProvider =
             tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
-        _entryMapper = new TidepoolEntryMapper(logger, ConnectorSource);
-        _treatmentMapper = new TidepoolTreatmentMapper(logger, ConnectorSource);
+        _sensorGlucoseMapper = new TidepoolSensorGlucoseMapper(logger, ConnectorSource);
+        _v4TreatmentMapper = new TidepoolV4TreatmentMapper(logger, ConnectorSource);
     }
 
     protected override string ConnectorSource => DataSources.TidepoolConnector;
@@ -48,8 +48,7 @@ public class TidepoolConnectorService : BaseConnectorService<TidepoolConnectorCo
     [
         SyncDataType.Glucose,
         SyncDataType.Boluses,
-        SyncDataType.CarbIntake,
-        SyncDataType.Activity
+        SyncDataType.CarbIntake
     ];
 
     public override async Task<bool> AuthenticateAsync()
@@ -71,65 +70,6 @@ public class TidepoolConnectorService : BaseConnectorService<TidepoolConnectorCo
         return true;
     }
 
-    public override async Task<IEnumerable<Entry>> FetchGlucoseDataAsync(DateTime? since = null)
-    {
-        var bgValues = await FetchDataAsync<TidepoolBgValue[]>(
-            $"{TidepoolConstants.DataTypes.Cbg},{TidepoolConstants.DataTypes.Smbg}",
-            since);
-
-        if (bgValues == null) return [];
-
-        var entries = _entryMapper.MapBgValues(bgValues).ToList();
-        _logger.LogInformation(
-            "[{ConnectorSource}] Retrieved {Count} glucose entries from Tidepool",
-            ConnectorSource,
-            entries.Count);
-
-        return entries;
-    }
-
-    protected override async Task<IEnumerable<Entry>> FetchGlucoseDataRangeAsync(
-        DateTime? from, DateTime? to)
-    {
-        var bgValues = await FetchDataAsync<TidepoolBgValue[]>(
-            $"{TidepoolConstants.DataTypes.Cbg},{TidepoolConstants.DataTypes.Smbg}",
-            from, to);
-
-        if (bgValues == null) return [];
-
-        return _entryMapper.MapBgValues(bgValues);
-    }
-
-    protected override async Task<IEnumerable<Treatment>> FetchTreatmentsAsync(
-        DateTime? from, DateTime? to)
-    {
-        // Fetch boluses, food, and activities in parallel
-        var bolusTask = FetchDataAsync<TidepoolBolus[]>(
-            TidepoolConstants.DataTypes.Bolus, from, to);
-        var foodTask = FetchDataAsync<TidepoolFood[]>(
-            TidepoolConstants.DataTypes.Food, from, to);
-        var activityTask = FetchDataAsync<TidepoolPhysicalActivity[]>(
-            TidepoolConstants.DataTypes.PhysicalActivity, from, to);
-
-        await Task.WhenAll(bolusTask, foodTask, activityTask);
-
-        var boluses = await bolusTask;
-        var foods = await foodTask;
-        var activities = await activityTask;
-
-        var treatments = _treatmentMapper.MapTreatments(boluses, foods, activities).ToList();
-
-        _logger.LogInformation(
-            "[{ConnectorSource}] Retrieved {Count} treatments from Tidepool (boluses: {Boluses}, food: {Food}, activities: {Activities})",
-            ConnectorSource,
-            treatments.Count,
-            boluses?.Length ?? 0,
-            foods?.Length ?? 0,
-            activities?.Length ?? 0);
-
-        return treatments;
-    }
-
     protected override async Task<SyncResult> PerformSyncInternalAsync(
         SyncRequest request,
         TidepoolConnectorConfiguration config,
@@ -143,23 +83,35 @@ public class TidepoolConnectorService : BaseConnectorService<TidepoolConnectorCo
         var enabledTypes = config.GetEnabledDataTypes(SupportedDataTypes);
         var activeTypes = request.DataTypes.Where(t => enabledTypes.Contains(t)).ToHashSet();
 
-        // Handle Glucose (CBG + SMBG)
+        // Handle Glucose (CBG + SMBG → SensorGlucose)
         if (activeTypes.Contains(SyncDataType.Glucose))
         {
             try
             {
-                var entries = await FetchGlucoseDataRangeAsync(request.From, request.To);
-                var entryList = entries.ToList();
-                result.ItemsSynced[SyncDataType.Glucose] = entryList.Count;
-                if (entryList.Count > 0)
+                var bgValues = await FetchDataAsync<TidepoolBgValue[]>(
+                    $"{TidepoolConstants.DataTypes.Cbg},{TidepoolConstants.DataTypes.Smbg}",
+                    request.From, request.To);
+
+                if (bgValues != null)
                 {
-                    result.LastEntryTimes[SyncDataType.Glucose] = entryList.Max(e => e.Date);
-                    var publishSuccess = await PublishGlucoseDataInBatchesAsync(
-                        entryList, config, cancellationToken);
-                    if (!publishSuccess)
+                    var sgList = _sensorGlucoseMapper.MapBgValues(bgValues).ToList();
+                    result.ItemsSynced[SyncDataType.Glucose] = sgList.Count;
+                    if (sgList.Count > 0)
                     {
-                        result.Success = false;
-                        result.Errors.Add("Glucose publish failed");
+                        result.LastEntryTimes[SyncDataType.Glucose] = DateTimeOffset
+                            .FromUnixTimeMilliseconds(sgList.Max(s => s.Mills)).UtcDateTime;
+                        var publishSuccess = await PublishSensorGlucoseDataAsync(sgList, config, cancellationToken);
+                        if (!publishSuccess)
+                        {
+                            result.Success = false;
+                            result.Errors.Add("Glucose publish failed");
+                        }
+                        else
+                        {
+                            _logger.LogInformation(
+                                "[{ConnectorSource}] Synced {Count} SensorGlucose records from Tidepool",
+                                ConnectorSource, sgList.Count);
+                        }
                     }
                 }
             }
@@ -171,33 +123,48 @@ public class TidepoolConnectorService : BaseConnectorService<TidepoolConnectorCo
             }
         }
 
-        // Handle Treatments (Boluses, CarbIntake, Activity) — fetched as one batch
-        SyncDataType[] treatmentTypes = [SyncDataType.Boluses, SyncDataType.CarbIntake, SyncDataType.Activity];
+        // Handle Boluses and CarbIntake
+        SyncDataType[] treatmentTypes = [SyncDataType.Boluses, SyncDataType.CarbIntake];
         if (activeTypes.Any(t => treatmentTypes.Contains(t)))
         {
             try
             {
-                var treatments = await FetchTreatmentsAsync(request.From, request.To);
-                var treatmentList = treatments.ToList();
-                if (treatmentList.Count > 0)
+                var bolusTask = FetchDataAsync<TidepoolBolus[]>(TidepoolConstants.DataTypes.Bolus, request.From, request.To);
+                var foodTask = FetchDataAsync<TidepoolFood[]>(TidepoolConstants.DataTypes.Food, request.From, request.To);
+                await Task.WhenAll(bolusTask, foodTask);
+
+                var boluses = await bolusTask;
+                var foods = await foodTask;
+
+                var (mappedBoluses, mappedCarbs) = _v4TreatmentMapper.MapTreatments(boluses, foods);
+
+                if (activeTypes.Contains(SyncDataType.Boluses) && mappedBoluses.Count > 0)
                 {
-                    var lastTime = treatmentList
-                        .Select(t => DateTime.TryParse(t.CreatedAt, out var dt) ? dt : (DateTime?)null)
-                        .Where(dt => dt.HasValue)
-                        .Max();
-                    var publishSuccess = await PublishTreatmentDataInBatchesAsync(
-                        treatmentList, config, cancellationToken);
-
-                    foreach (var tt in treatmentTypes.Where(t => activeTypes.Contains(t)))
+                    var success = await PublishBolusDataAsync(mappedBoluses, config, cancellationToken);
+                    if (success)
                     {
-                        result.ItemsSynced[tt] = treatmentList.Count;
-                        result.LastEntryTimes[tt] = lastTime;
+                        result.ItemsSynced[SyncDataType.Boluses] = mappedBoluses.Count;
+                        _logger.LogInformation("[{ConnectorSource}] Synced {Count} Bolus records", ConnectorSource, mappedBoluses.Count);
                     }
-
-                    if (!publishSuccess)
+                    else
                     {
                         result.Success = false;
-                        result.Errors.Add("Treatments publish failed");
+                        result.Errors.Add("Bolus publish failed");
+                    }
+                }
+
+                if (activeTypes.Contains(SyncDataType.CarbIntake) && mappedCarbs.Count > 0)
+                {
+                    var success = await PublishCarbIntakeDataAsync(mappedCarbs, config, cancellationToken);
+                    if (success)
+                    {
+                        result.ItemsSynced[SyncDataType.CarbIntake] = mappedCarbs.Count;
+                        _logger.LogInformation("[{ConnectorSource}] Synced {Count} CarbIntake records", ConnectorSource, mappedCarbs.Count);
+                    }
+                    else
+                    {
+                        result.Success = false;
+                        result.Errors.Add("CarbIntake publish failed");
                     }
                 }
             }
