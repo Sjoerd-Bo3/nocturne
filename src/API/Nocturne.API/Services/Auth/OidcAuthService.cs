@@ -251,6 +251,7 @@ public class OidcAuthService : IOidcAuthService
             RefreshToken = refreshToken,
             TokenType = "Bearer",
             ExpiresIn = (int)accessTokenLifetime.TotalSeconds,
+            RefreshExpiresIn = (int)_options.Session.RefreshTokenLifetime.TotalSeconds,
             ExpiresAt = DateTimeOffset.UtcNow.Add(accessTokenLifetime),
             SubjectId = subject.Id,
         };
@@ -358,6 +359,7 @@ public class OidcAuthService : IOidcAuthService
             RefreshToken = newRefreshToken,
             TokenType = "Bearer",
             ExpiresIn = (int)accessTokenLifetime.TotalSeconds,
+            RefreshExpiresIn = (int)_options.Session.RefreshTokenLifetime.TotalSeconds,
             ExpiresAt = DateTimeOffset.UtcNow.Add(accessTokenLifetime),
             SubjectId = subjectId2,
         };

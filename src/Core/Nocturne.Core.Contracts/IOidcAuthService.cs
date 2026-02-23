@@ -199,6 +199,11 @@ public class OidcTokenResponse
     public int ExpiresIn { get; set; }
 
     /// <summary>
+    /// Refresh token expiration in seconds
+    /// </summary>
+    public int RefreshExpiresIn { get; set; }
+
+    /// <summary>
     /// Absolute expiration time
     /// </summary>
     public DateTimeOffset ExpiresAt { get; set; }

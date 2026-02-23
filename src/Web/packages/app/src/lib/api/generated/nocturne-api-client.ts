@@ -23287,6 +23287,7 @@ export interface LoginResponse {
     accessToken?: string;
     refreshToken?: string;
     expiresIn?: number;
+    refreshExpiresIn?: number;
     user?: UserInfoDto;
     requirePasswordChange?: boolean;
 }
@@ -23783,6 +23784,7 @@ export interface OidcTokenResponse {
     refreshToken?: string;
     tokenType?: string;
     expiresIn?: number;
+    refreshExpiresIn?: number;
     expiresAt?: Date;
     subjectId?: string;
 }

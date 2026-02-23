@@ -48,6 +48,12 @@ public interface IJwtService
     /// </summary>
     /// <returns>Access token lifetime as TimeSpan</returns>
     TimeSpan GetAccessTokenLifetime();
+
+    /// <summary>
+    /// Get the configured refresh token lifetime
+    /// </summary>
+    /// <returns>Refresh token lifetime as TimeSpan</returns>
+    TimeSpan GetRefreshTokenLifetime();
 }
 
 /// <summary>

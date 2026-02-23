@@ -226,23 +226,27 @@ export const loginForm = form(loginSchema, async (data, issue) => {
       });
     }
 
+    const refreshMaxAge = response.refreshExpiresIn || 60 * 60 * 24 * 7;
+
     if (response.refreshToken) {
       event.cookies.set(AUTH_COOKIE_NAMES.refreshToken, response.refreshToken, {
         path: "/",
         httpOnly: true,
         secure: isSecure,
         sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: refreshMaxAge,
       });
     }
 
     // Set a non-HttpOnly cookie for client-side auth state checking
+    // This must match the refresh token lifetime, not the access token lifetime,
+    // so the frontend stays in "authenticated" state across access token refreshes
     event.cookies.set("IsAuthenticated", "true", {
       path: "/",
       httpOnly: false,
       secure: isSecure,
       sameSite: "lax",
-      maxAge: response.expiresIn || 3600,
+      maxAge: refreshMaxAge,
     });
     loginSucceeded = true;
     requirePasswordChange = response.requirePasswordChange ?? false;
@@ -592,12 +596,13 @@ export const refreshSession = query(async () => {
         maxAge: result.expiresIn || 3600,
       });
 
+      // Match refresh token lifetime so frontend stays authenticated across refreshes
       event.cookies.set("IsAuthenticated", "true", {
         path: "/",
         httpOnly: false,
         secure: isSecure,
         sameSite: "lax",
-        maxAge: result.expiresIn || 3600,
+        maxAge: result.refreshExpiresIn || 60 * 60 * 24 * 7,
       });
     }
 

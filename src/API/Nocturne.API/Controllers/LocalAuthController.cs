@@ -251,6 +251,7 @@ public class LocalAuthController : ControllerBase
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
                 ExpiresIn = (int)_jwtService.GetAccessTokenLifetime().TotalSeconds,
+                RefreshExpiresIn = (int)_jwtService.GetRefreshTokenLifetime().TotalSeconds,
                 User = new UserInfoDto
                 {
                     Id = result.User.Id,
@@ -792,6 +793,7 @@ public class LoginResponse
     public string AccessToken { get; set; } = string.Empty;
     public string RefreshToken { get; set; } = string.Empty;
     public int ExpiresIn { get; set; }
+    public int RefreshExpiresIn { get; set; }
     public UserInfoDto User { get; set; } = new();
     public bool RequirePasswordChange { get; set; }
 }

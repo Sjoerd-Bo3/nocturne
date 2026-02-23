@@ -21532,6 +21532,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "refreshExpiresIn": {
+            "type": "integer",
+            "format": "int32"
+          },
           "user": {
             "$ref": "#/components/schemas/UserInfoDto"
           },
@@ -22794,6 +22798,10 @@
             "type": "string"
           },
           "expiresIn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refreshExpiresIn": {
             "type": "integer",
             "format": "int32"
           },

@@ -249,4 +249,10 @@ public class JwtService : IJwtService
     {
         return TimeSpan.FromMinutes(_options.AccessTokenLifetimeMinutes);
     }
+
+    /// <inheritdoc />
+    public TimeSpan GetRefreshTokenLifetime()
+    {
+        return TimeSpan.FromDays(_options.RefreshTokenLifetimeDays);
+    }
 }
