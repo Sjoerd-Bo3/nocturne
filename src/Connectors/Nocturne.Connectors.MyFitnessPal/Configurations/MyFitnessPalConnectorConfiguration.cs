@@ -27,23 +27,9 @@ public class MyFitnessPalConnectorConfiguration : BaseConnectorConfiguration
         SyncIntervalMinutes = 15;
     }
 
-    [ConnectorProperty(
-        "Username",
-        Required = true,
-        RuntimeConfigurable = true,
-        Category = "Credentials",
-        Description = "MyFitnessPal username"
-    )]
+    [ConnectorProperty(ConnectorPropertyKey.Username, Required = true)]
     public string Username { get; set; } = string.Empty;
 
-    [ConnectorProperty(
-        "LookbackDays",
-        RuntimeConfigurable = true,
-        Category = "Sync",
-        Description = "Number of days to look back when syncing",
-        DefaultValue = "7",
-        MinValue = 1,
-        MaxValue = 365
-    )]
+    [ConnectorProperty(ConnectorPropertyKey.LookbackDays, DefaultValue = "7", MinValue = 1, MaxValue = 365)]
     public int LookbackDays { get; set; } = 7;
 }

@@ -162,7 +162,6 @@ msgstr "Absorption Time (minutes)"
 #: src/lib/components/status-pills/COBPill.svelte
 #: src/lib/components/status-pills/IOBPill.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Notes"
@@ -363,8 +362,6 @@ msgstr "Blood Glucose"
 
 #: src/lib/components/TreatmentsTable.svelte
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -632,7 +629,6 @@ msgstr "Today"
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/reports/TIRStackedChart.svelte
 #: src/routes/calendar/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
@@ -650,7 +646,6 @@ msgstr "In Range"
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/calendar/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
@@ -670,7 +665,6 @@ msgstr "Low"
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/calendar/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
@@ -777,8 +771,6 @@ msgstr "Carbs:"
 #. placeholder {0}: formatMacro(scaledCarbs)
 #. placeholder {0}: dayTotalCarbs
 #. placeholder {0}: totalCarbs
-#. placeholder {0}: d.totalCarbs.toFixed(0)
-#. placeholder {0}: selectedDay.totalCarbs.toFixed(0)
 #. placeholder {0}: treatmentStats.totalCarbs.toFixed(0)
 #. placeholder {0}: treatment.carbs
 #. placeholder {0}: d.totalCarbs.toFixed(0)
@@ -809,8 +801,6 @@ msgstr "Carbs:"
 #: src/routes/food/QuickPickItem.svelte
 #: src/routes/meals/+page.svelte
 #: src/routes/meals/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
@@ -891,7 +881,6 @@ msgstr "Time in Range"
 
 #: src/lib/components/entries/FoodBreakdown.svelte
 #: src/lib/components/treatments/TreatmentFoodBreakdown.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Total Carbs"
@@ -1720,8 +1709,6 @@ msgstr "Your database"
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
 #: src/routes/food/FoodList.svelte
 #: src/routes/food/QuickPickItem.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -1899,7 +1886,6 @@ msgid "No foods attributed"
 msgstr "No foods attributed"
 
 #: src/lib/components/entries/FoodBreakdown.svelte
-#: src/lib/components/settings/ConnectorConfigForm.svelte
 #: src/lib/components/trackers/TrackerCompletionDialog.svelte
 #: src/lib/components/trackers/TrackerStartDialog.svelte
 #: src/lib/components/treatments/CarbBreakdownBar.svelte
@@ -2571,7 +2557,6 @@ msgid "Full Report <0/>"
 msgstr "Full Report <0/>"
 
 #: src/routes/reports/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "No Data Available"
 msgstr "No Data Available"
@@ -2872,8 +2857,6 @@ msgstr "Temp Basal"
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
 #: src/lib/components/reports/InsulinDonutChart.svelte
 #: src/lib/components/treatments/TreatmentsDataTable.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 #: src/routes/reports/treatments/+page.svelte
@@ -3019,7 +3002,6 @@ msgstr "IOB/COB"
 #: src/lib/components/dashboard/glucose-chart/ChartTooltip.svelte
 #: src/lib/components/entries/BGCheckSection.svelte
 #: src/lib/components/reports/RetrospectiveStats.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Glucose"
 msgstr "Glucose"
@@ -3035,8 +3017,6 @@ msgstr "Glucose"
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
 #: src/lib/components/reports/InsulinDonutChart.svelte
 #: src/lib/components/reports/RetrospectiveStats.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
@@ -3062,7 +3042,6 @@ msgstr "Override"
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/reports/TIRStackedChart.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Very High"
@@ -3071,7 +3050,6 @@ msgstr "Very High"
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/reports/TIRStackedChart.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -3100,7 +3078,6 @@ msgstr "Overrides"
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/status-pills/IOBPill.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Activity"
 msgstr "Activity"
@@ -10884,7 +10861,6 @@ msgid "Records (24h)"
 msgstr "Records (24h)"
 
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 msgid "Total Records"
@@ -11676,7 +11652,6 @@ msgid "<0/> vs 90d"
 msgstr "<0/> vs 90d"
 
 #: src/lib/components/dashboard/widgets/TddWidget.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Total Daily Dose"
 msgstr "Total Daily Dose"
@@ -13812,6 +13787,31 @@ msgstr "Delete the attribution entries entirely."
 msgid "Delete Food"
 msgstr "Delete Food"
 
+#: src/lib/components/layout/AppSidebar.svelte
+msgid "Month to Month"
+msgstr "Month to Month"
+
+#: src/lib/components/layout/AppSidebar.svelte
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Year Overview"
+msgstr "Year Overview"
+
+#: src/routes/(legal)/+layout.svelte
+msgid "N"
+msgstr "N"
+
+#: src/routes/(legal)/+layout.svelte
+msgid "Last updated: February 21, 2026"
+msgstr "Last updated: February 21, 2026"
+
+#: src/routes/calendar/+page.svelte
+msgid "Bolus:"
+msgstr "Bolus:"
+
+#: src/routes/calendar/+page.svelte
+msgid "Basal:"
+msgstr "Basal:"
+
 #: src/routes/meals/+page.svelte
 msgid "Food unlinked"
 msgstr "Food unlinked"
@@ -13838,31 +13838,22 @@ msgstr "Removing..."
 msgid "Remove"
 msgstr "Remove"
 
-#: src/routes/settings/profile/+page.svelte
-msgid "Select a profile to view its settings."
-msgstr "Select a profile to view its settings."
+#: src/lib/components/auth/login-dialog.svelte
+msgid "Sign In Required"
+msgstr "Sign In Required"
 
-#. placeholder {0}: therapy.enteredBy
-#: src/routes/settings/profile/+page.svelte
-msgid "· Entered by {0}"
-msgstr "· Entered by {0}"
+#: src/lib/components/auth/login-dialog.svelte
+msgid "Please sign in to continue"
+msgstr "Please sign in to continue"
 
-#. placeholder {0}: formatRelativeTime(therapy.createdAt)
-#: src/routes/settings/profile/+page.svelte
-msgid "Created {0} <0/>"
-msgstr "Created {0} <0/>"
+#: src/routes/reports/+page.svelte
+msgid "Data Overview"
+msgstr "Data Overview"
 
-#: src/routes/settings/profile/+page.svelte
-msgid "Delay"
-msgstr "Delay"
-
-#~ msgid "Externally managed"
-#~ msgstr "Externally managed"
-
-#. placeholder {0}: selectedProfileName
-#: src/routes/settings/profile/+page.svelte
-msgid "No therapy settings found for profile \"{0}\"."
-msgstr "No therapy settings found for profile \"{0}\"."
+#: src/routes/reports/+page.svelte
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Multi-year heatmap of all your data"
+msgstr "Multi-year heatmap of all your data"
 
 #. placeholder {0}: snapshotTime
 #: src/lib/components/reports/ApsStateCard.svelte
@@ -13925,507 +13916,34 @@ msgstr "Auto-bolus"
 msgid "Recommended"
 msgstr "Recommended"
 
-#: src/routes/settings/profile/+page.svelte
-msgid "External"
-msgstr "External"
-
-#. placeholder {0}: therapy.enteredBy ?? "an external source"
-#: src/routes/settings/profile/+page.svelte
-msgid "Managed by {0}"
-msgstr "Managed by {0}"
-
-#: src/routes/settings/profile/+page.svelte
-msgid "This profile is read-only because it is synced from an external device or service. Changes to therapy settings must be made on the source device."
-msgstr "This profile is read-only because it is synced from an external device or service. Changes to therapy settings must be made on the source device."
-
-#: src/routes/settings/profile/+page.svelte
-msgid "<0/> Read-only"
-msgstr "<0/> Read-only"
-
-#. placeholder {0}: dataSummary.total?.toLocaleString() ?? 0
-#: src/routes/settings/connectors/[connector]/+page.svelte
-msgid "<0/> {0} total"
-msgstr "<0/> {0} total"
-
-#: src/routes/reports/+page.svelte
-msgid "Data Overview"
-msgstr "Data Overview"
-
-#: src/routes/reports/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Multi-year heatmap of all your data"
-msgstr "Multi-year heatmap of all your data"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Query timed out"
-msgstr "Query timed out"
-
-#~ msgid "Data Overview - Nocturne"
-#~ msgstr "Data Overview - Nocturne"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Multi-year heatmap overview of all your diabetes data"
-msgstr "Multi-year heatmap overview of all your diabetes data"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "All Data Sources"
-msgstr "All Data Sources"
-
-#~ msgid "<0/> Very Low"
-#~ msgstr "<0/> Very Low"
-
-#~ msgid "<0/> Low"
-#~ msgstr "<0/> Low"
-
-#~ msgid "<0/> In Range"
-#~ msgstr "<0/> In Range"
-
-#~ msgid "<0/> High"
-#~ msgstr "<0/> High"
-
-#~ msgid "<0/> Very High"
-#~ msgstr "<0/> Very High"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "<0/> Other Data (no glucose)"
-msgstr "<0/> Other Data (no glucose)"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Loading data overview..."
-msgstr "Loading data overview..."
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid ""
-"There is no data to display yet. Connect a data source in your\n"
-"settings to get started."
-msgstr ""
-"There is no data to display yet. Connect a data source in your\n"
-"settings to get started."
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Configure Data Sources"
-msgstr "Configure Data Sources"
-
-#~ msgid ""
-#~ "{0} days\n"
-#~ "with data"
-#~ msgstr ""
-#~ "{0} days\n"
-#~ "with data"
-
-#~ msgid "Avg: {0} {1}"
-#~ msgstr "Avg: {0} {1}"
-
-#. placeholder {0}: year
-#. placeholder {0}: year
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "<0/> Loading {0} data..."
-msgstr "<0/> Loading {0} data..."
-
-#. placeholder {0}: year
-#. placeholder {0}: year
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "No data for {0}"
-msgstr "No data for {0}"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Day Details"
-msgstr "Day Details"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Average Glucose"
-msgstr "Average Glucose"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "By Data Type"
-msgstr "By Data Type"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "View Day in Review <0/>"
-msgstr "View Day in Review <0/>"
-
-#~ msgid ""
-#~ "{0} days with\n"
-#~ "data"
-#~ msgstr ""
-#~ "{0} days with\n"
-#~ "data"
-
-#. placeholder {0}: days.filter((d) => (d.totalCount ?? 0) > 0).length
-#. placeholder {0}: days.filter((d) => (d.totalCount ?? 0) > 0).length
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "{0} days with data"
-msgstr "{0} days with data"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "ManualBG"
-msgstr "ManualBG"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Boluses"
-msgstr "Boluses"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "CarbIntake"
-msgstr "CarbIntake"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "BolusCalculations"
-msgstr "BolusCalculations"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "DeviceEvents"
-msgstr "DeviceEvents"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "StateSpans"
-msgstr "StateSpans"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "DeviceStatus"
-msgstr "DeviceStatus"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "<0/> Types <1/>"
-msgstr "<0/> Types <1/>"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Show data types"
-msgstr "Show data types"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Show all"
-msgstr "Show all"
-
-#. placeholder {0}: unitLabel
-#. placeholder {0}: unitLabel
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "avg {0}"
-msgstr "avg {0}"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "TDD"
-msgstr "TDD"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Counts"
-msgstr "Counts"
-
-#. placeholder {0}: unitLabel
-#. placeholder {0}: unitLabel
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Avg Glucose ({0}):"
-msgstr "Avg Glucose ({0}):"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Glucose color scale legend"
-msgstr "Glucose color scale legend"
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Year Overview - Nocturne"
-msgstr "Year Overview - Nocturne"
-
-#: src/lib/components/layout/AppSidebar.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Year Overview"
-msgstr "Year Overview"
-
-#: src/lib/components/layout/AppSidebar.svelte
-msgid "Month to Month"
-msgstr "Month to Month"
-
-#: src/lib/components/auth/login-dialog.svelte
-msgid "Sign In Required"
-msgstr "Sign In Required"
-
-#: src/lib/components/auth/login-dialog.svelte
-msgid "Please sign in to continue"
-msgstr "Please sign in to continue"
-
-#~ msgid "Need an account? <0>Sign up</0>"
-#~ msgstr "Need an account? <0>Sign up</0>"
-
-#: src/routes/calendar/+page.svelte
-msgid "Bolus:"
-msgstr "Bolus:"
-
-#: src/routes/calendar/+page.svelte
-msgid "Basal:"
-msgstr "Basal:"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Terms of Service - Nocturne"
-msgstr "Terms of Service - Nocturne"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Terms of Service"
-msgstr "Terms of Service"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Welcome to Nocturne. These terms explain your rights and responsibilities when using this open-source diabetes data management platform."
-msgstr "Welcome to Nocturne. These terms explain your rights and responsibilities when using this open-source diabetes data management platform."
-
-#: src/routes/(legal)/privacy/+page.svelte
-#: src/routes/(legal)/terms/+page.svelte
-msgid "1. Introduction"
-msgstr "1. Introduction"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Nocturne is an open-source, self-hosted platform for managing your diabetes data with full Nightscout API compatibility. It's built by the diabetes community, for the diabetes community."
-msgstr "Nocturne is an open-source, self-hosted platform for managing your diabetes data with full Nightscout API compatibility. It's built by the diabetes community, for the diabetes community."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Because Nocturne is self-hosted, you have full control over your installation, your data, and how you use the software. These terms apply to the Nocturne software itself, not to any specific hosted instance."
-msgstr "Because Nocturne is self-hosted, you have full control over your installation, your data, and how you use the software. These terms apply to the Nocturne software itself, not to any specific hosted instance."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "2. No Warranty - Provided \"AS IS\""
-msgstr "2. No Warranty - Provided \"AS IS\""
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Nocturne is provided <0>\"AS IS\"</0> without any warranties or guarantees of any kind, either express or implied. This means:"
-msgstr "Nocturne is provided <0>\"AS IS\"</0> without any warranties or guarantees of any kind, either express or implied. This means:"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>No medical advice:</0> Nocturne is not a medical device and does not provide medical advice. Always consult with healthcare professionals for medical decisions."
-msgstr "<0>No medical advice:</0> Nocturne is not a medical device and does not provide medical advice. Always consult with healthcare professionals for medical decisions."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>No reliability guarantee:</0> We don't guarantee the software will work perfectly, be error-free, or be available at all times."
-msgstr "<0>No reliability guarantee:</0> We don't guarantee the software will work perfectly, be error-free, or be available at all times."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>No fitness guarantee:</0> We don't warrant that Nocturne is suitable for any particular purpose or meets your specific needs."
-msgstr "<0>No fitness guarantee:</0> We don't warrant that Nocturne is suitable for any particular purpose or meets your specific needs."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>Use at your own risk:</0> You assume all risk when using Nocturne. We are not liable for any harm, data loss, or issues that may arise."
-msgstr "<0>Use at your own risk:</0> You assume all risk when using Nocturne. We are not liable for any harm, data loss, or issues that may arise."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "This is standard for open-source software. You're free to inspect the code, modify it, and use it as you see fit, but we can't guarantee outcomes."
-msgstr "This is standard for open-source software. You're free to inspect the code, modify it, and use it as you see fit, but we can't guarantee outcomes."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "3. Third-Party Data Connectors"
-msgstr "3. Third-Party Data Connectors"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Nocturne integrates with various third-party diabetes data services, including:"
-msgstr "Nocturne integrates with various third-party diabetes data services, including:"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Dexcom"
-msgstr "Dexcom"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "FreeStyle Libre"
-msgstr "FreeStyle Libre"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Glooko"
-msgstr "Glooko"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Tidepool"
-msgstr "Tidepool"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "And others"
-msgstr "And others"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Important disclaimers about third-party connectors:"
-msgstr "Important disclaimers about third-party connectors:"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>We don't control these services:</0> Third-party services have their own terms of service, privacy policies, and data practices. You are responsible for reviewing and agreeing to their terms."
-msgstr "<0>We don't control these services:</0> Third-party services have their own terms of service, privacy policies, and data practices. You are responsible for reviewing and agreeing to their terms."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>Data accuracy:</0> The accuracy of your data in Nocturne depends on the accuracy of data provided by these third-party sources. We cannot guarantee the accuracy of third-party data."
-msgstr "<0>Data accuracy:</0> The accuracy of your data in Nocturne depends on the accuracy of data provided by these third-party sources. We cannot guarantee the accuracy of third-party data."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>Service availability:</0> Third-party services may change their APIs, terms, or shut down at any time. We are not responsible for service interruptions or changes to third-party integrations."
-msgstr "<0>Service availability:</0> Third-party services may change their APIs, terms, or shut down at any time. We are not responsible for service interruptions or changes to third-party integrations."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>Your agreements:</0> By connecting a third-party service to Nocturne, you agree that you have the right to access that data and are in compliance with that service's terms."
-msgstr "<0>Your agreements:</0> By connecting a third-party service to Nocturne, you agree that you have the right to access that data and are in compliance with that service's terms."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>No liability:</0> We are not liable for any issues, data loss, or problems arising from third-party services or connectors."
-msgstr "<0>No liability:</0> We are not liable for any issues, data loss, or problems arising from third-party services or connectors."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "4. Your Data and Privacy"
-msgstr "4. Your Data and Privacy"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Nocturne is designed with privacy as a core principle:"
-msgstr "Nocturne is designed with privacy as a core principle:"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>Self-hosted:</0> Your data lives in your own database on your own server. We don't have access to it."
-msgstr "<0>Self-hosted:</0> Your data lives in your own database on your own server. We don't have access to it."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>No data collection:</0> The Nocturne software does not send data to us without your explicit consent."
-msgstr "<0>No data collection:</0> The Nocturne software does not send data to us without your explicit consent."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "<0>You're in control:</0> You decide where to host Nocturne, who has access, and how your data is used."
-msgstr "<0>You're in control:</0> You decide where to host Nocturne, who has access, and how your data is used."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "For more details, see our <0>Privacy Policy</0>."
-msgstr "For more details, see our <0>Privacy Policy</0>."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "5. Acceptable Use"
-msgstr "5. Acceptable Use"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "When using Nocturne, you agree to:"
-msgstr "When using Nocturne, you agree to:"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Use the software for lawful purposes only"
-msgstr "Use the software for lawful purposes only"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Not use it to harm others or violate their rights"
-msgstr "Not use it to harm others or violate their rights"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Not abuse the software or use it in ways that could damage the project or community"
-msgstr "Not abuse the software or use it in ways that could damage the project or community"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Comply with all applicable laws and regulations"
-msgstr "Comply with all applicable laws and regulations"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "If you're hosting Nocturne for others (family, friends, community), you're responsible for ensuring acceptable use by those users."
-msgstr "If you're hosting Nocturne for others (family, friends, community), you're responsible for ensuring acceptable use by those users."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "6. Changes to These Terms"
-msgstr "6. Changes to These Terms"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "We may update these terms from time to time to reflect changes in the software, legal requirements, or best practices. When we do:"
-msgstr "We may update these terms from time to time to reflect changes in the software, legal requirements, or best practices. When we do:"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "The updated terms will be posted at this URL"
-msgstr "The updated terms will be posted at this URL"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "The \"Last updated\" date at the bottom of the page will change"
-msgstr "The \"Last updated\" date at the bottom of the page will change"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Continued use of Nocturne after changes constitutes acceptance of the new terms"
-msgstr "Continued use of Nocturne after changes constitutes acceptance of the new terms"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "For significant changes, we'll announce them in the project's GitHub repository."
-msgstr "For significant changes, we'll announce them in the project's GitHub repository."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "7. Open Source License"
-msgstr "7. Open Source License"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Nocturne is released under the MIT License. This means you're free to:"
-msgstr "Nocturne is released under the MIT License. This means you're free to:"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Use the software for any purpose"
-msgstr "Use the software for any purpose"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Modify the source code"
-msgstr "Modify the source code"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Distribute copies"
-msgstr "Distribute copies"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Sublicense or sell copies"
-msgstr "Sublicense or sell copies"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "The MIT License provides the software \"as is\" without warranty. See the LICENSE file in the project repository for full details."
-msgstr "The MIT License provides the software \"as is\" without warranty. See the LICENSE file in the project repository for full details."
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "8. Contact"
-msgstr "8. Contact"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Nocturne is an open-source project. For questions, issues, or contributions:"
-msgstr "Nocturne is an open-source project. For questions, issues, or contributions:"
-
-#: src/routes/(legal)/privacy/+page.svelte
-#: src/routes/(legal)/terms/+page.svelte
-msgid "GitHub: <0>github.com/nightscout/nocturne</0>"
-msgstr "GitHub: <0>github.com/nightscout/nocturne</0>"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Issues: Use GitHub Issues for bug reports and feature requests"
-msgstr "Issues: Use GitHub Issues for bug reports and feature requests"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "Community: Join discussions in GitHub Discussions"
-msgstr "Community: Join discussions in GitHub Discussions"
-
-#: src/routes/(legal)/terms/+page.svelte
-msgid "These terms are effective as of February 21, 2026."
-msgstr "These terms are effective as of February 21, 2026."
-
-#: src/routes/(legal)/+layout.svelte
-msgid "N"
-msgstr "N"
-
-#: src/routes/(legal)/+layout.svelte
-msgid "Last updated: February 21, 2026"
-msgstr "Last updated: February 21, 2026"
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "<0/> Stale"
+msgstr "<0/> Stale"
+
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "<0/> Inactive"
+msgstr "<0/> Inactive"
+
+#. placeholder {0}: (entriesLast24h ?? 0).toLocaleString()
+#. placeholder {0}: (entriesLast24h ?? 0).toLocaleString()
+#: src/lib/components/settings/DataSourceRow.svelte
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "{0} in 24h"
+msgstr "{0} in 24h"
+
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "Last 24h by type:"
+msgstr "Last 24h by type:"
+
+#. placeholder {0}: formatRelativeTime(lastSyncAttempt)
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "Last attempted: {0}"
+msgstr "Last attempted: {0}"
+
+#. placeholder {0}: formatRelativeTime(lastSuccessfulSync)
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "<0/> Last successful: {0}"
+msgstr "<0/> Last successful: {0}"
 
 #: src/routes/(legal)/privacy/+page.svelte
 msgid "Privacy Policy - Nocturne"
@@ -14438,6 +13956,11 @@ msgstr "Privacy Policy"
 #: src/routes/(legal)/privacy/+page.svelte
 msgid "Your privacy matters. This policy explains how Nocturne handles your data and protects your privacy."
 msgstr "Your privacy matters. This policy explains how Nocturne handles your data and protects your privacy."
+
+#: src/routes/(legal)/privacy/+page.svelte
+#: src/routes/(legal)/terms/+page.svelte
+msgid "1. Introduction"
+msgstr "1. Introduction"
 
 #: src/routes/(legal)/privacy/+page.svelte
 msgid "Nocturne is a self-hosted, open-source diabetes data management platform. This means <0>you control where your data lives</0>. Unlike cloud-based services, Nocturne runs on your own server or hosting provider, and your data stays in your own database."
@@ -14756,6 +14279,11 @@ msgid "For questions about this privacy policy or Nocturne's privacy practices:"
 msgstr "For questions about this privacy policy or Nocturne's privacy practices:"
 
 #: src/routes/(legal)/privacy/+page.svelte
+#: src/routes/(legal)/terms/+page.svelte
+msgid "GitHub: <0>github.com/nightscout/nocturne</0>"
+msgstr "GitHub: <0>github.com/nightscout/nocturne</0>"
+
+#: src/routes/(legal)/privacy/+page.svelte
 msgid "Open an issue or discussion on GitHub"
 msgstr "Open an issue or discussion on GitHub"
 
@@ -14775,31 +14303,400 @@ msgstr "See also: <0>Terms of Service</0>"
 msgid "This privacy policy is effective as of February 21, 2026."
 msgstr "This privacy policy is effective as of February 21, 2026."
 
-#. placeholder {0}: formatRelativeTime(lastSyncAttempt)
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "Last attempted: {0}"
-msgstr "Last attempted: {0}"
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Terms of Service - Nocturne"
+msgstr "Terms of Service - Nocturne"
 
-#. placeholder {0}: formatRelativeTime(lastSuccessfulSync)
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "<0/> Last successful: {0}"
-msgstr "<0/> Last successful: {0}"
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Terms of Service"
+msgstr "Terms of Service"
 
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "<0/> Stale"
-msgstr "<0/> Stale"
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Welcome to Nocturne. These terms explain your rights and responsibilities when using this open-source diabetes data management platform."
+msgstr "Welcome to Nocturne. These terms explain your rights and responsibilities when using this open-source diabetes data management platform."
 
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "<0/> Inactive"
-msgstr "<0/> Inactive"
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne is an open-source, self-hosted platform for managing your diabetes data with full Nightscout API compatibility. It's built by the diabetes community, for the diabetes community."
+msgstr "Nocturne is an open-source, self-hosted platform for managing your diabetes data with full Nightscout API compatibility. It's built by the diabetes community, for the diabetes community."
 
-#. placeholder {0}: (entriesLast24h ?? 0).toLocaleString()
-#. placeholder {0}: (entriesLast24h ?? 0).toLocaleString()
-#: src/lib/components/settings/DataSourceRow.svelte
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "{0} in 24h"
-msgstr "{0} in 24h"
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Because Nocturne is self-hosted, you have full control over your installation, your data, and how you use the software. These terms apply to the Nocturne software itself, not to any specific hosted instance."
+msgstr "Because Nocturne is self-hosted, you have full control over your installation, your data, and how you use the software. These terms apply to the Nocturne software itself, not to any specific hosted instance."
 
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "Last 24h by type:"
-msgstr "Last 24h by type:"
+#: src/routes/(legal)/terms/+page.svelte
+msgid "2. No Warranty - Provided \"AS IS\""
+msgstr "2. No Warranty - Provided \"AS IS\""
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne is provided <0>\"AS IS\"</0> without any warranties or guarantees of any kind, either express or implied. This means:"
+msgstr "Nocturne is provided <0>\"AS IS\"</0> without any warranties or guarantees of any kind, either express or implied. This means:"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>No medical advice:</0> Nocturne is not a medical device and does not provide medical advice. Always consult with healthcare professionals for medical decisions."
+msgstr "<0>No medical advice:</0> Nocturne is not a medical device and does not provide medical advice. Always consult with healthcare professionals for medical decisions."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>No reliability guarantee:</0> We don't guarantee the software will work perfectly, be error-free, or be available at all times."
+msgstr "<0>No reliability guarantee:</0> We don't guarantee the software will work perfectly, be error-free, or be available at all times."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>No fitness guarantee:</0> We don't warrant that Nocturne is suitable for any particular purpose or meets your specific needs."
+msgstr "<0>No fitness guarantee:</0> We don't warrant that Nocturne is suitable for any particular purpose or meets your specific needs."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>Use at your own risk:</0> You assume all risk when using Nocturne. We are not liable for any harm, data loss, or issues that may arise."
+msgstr "<0>Use at your own risk:</0> You assume all risk when using Nocturne. We are not liable for any harm, data loss, or issues that may arise."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "This is standard for open-source software. You're free to inspect the code, modify it, and use it as you see fit, but we can't guarantee outcomes."
+msgstr "This is standard for open-source software. You're free to inspect the code, modify it, and use it as you see fit, but we can't guarantee outcomes."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "3. Third-Party Data Connectors"
+msgstr "3. Third-Party Data Connectors"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne integrates with various third-party diabetes data services, including:"
+msgstr "Nocturne integrates with various third-party diabetes data services, including:"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Dexcom"
+msgstr "Dexcom"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "FreeStyle Libre"
+msgstr "FreeStyle Libre"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Glooko"
+msgstr "Glooko"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Tidepool"
+msgstr "Tidepool"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "And others"
+msgstr "And others"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Important disclaimers about third-party connectors:"
+msgstr "Important disclaimers about third-party connectors:"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>We don't control these services:</0> Third-party services have their own terms of service, privacy policies, and data practices. You are responsible for reviewing and agreeing to their terms."
+msgstr "<0>We don't control these services:</0> Third-party services have their own terms of service, privacy policies, and data practices. You are responsible for reviewing and agreeing to their terms."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>Data accuracy:</0> The accuracy of your data in Nocturne depends on the accuracy of data provided by these third-party sources. We cannot guarantee the accuracy of third-party data."
+msgstr "<0>Data accuracy:</0> The accuracy of your data in Nocturne depends on the accuracy of data provided by these third-party sources. We cannot guarantee the accuracy of third-party data."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>Service availability:</0> Third-party services may change their APIs, terms, or shut down at any time. We are not responsible for service interruptions or changes to third-party integrations."
+msgstr "<0>Service availability:</0> Third-party services may change their APIs, terms, or shut down at any time. We are not responsible for service interruptions or changes to third-party integrations."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>Your agreements:</0> By connecting a third-party service to Nocturne, you agree that you have the right to access that data and are in compliance with that service's terms."
+msgstr "<0>Your agreements:</0> By connecting a third-party service to Nocturne, you agree that you have the right to access that data and are in compliance with that service's terms."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>No liability:</0> We are not liable for any issues, data loss, or problems arising from third-party services or connectors."
+msgstr "<0>No liability:</0> We are not liable for any issues, data loss, or problems arising from third-party services or connectors."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "4. Your Data and Privacy"
+msgstr "4. Your Data and Privacy"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne is designed with privacy as a core principle:"
+msgstr "Nocturne is designed with privacy as a core principle:"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>Self-hosted:</0> Your data lives in your own database on your own server. We don't have access to it."
+msgstr "<0>Self-hosted:</0> Your data lives in your own database on your own server. We don't have access to it."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>No data collection:</0> The Nocturne software does not send data to us without your explicit consent."
+msgstr "<0>No data collection:</0> The Nocturne software does not send data to us without your explicit consent."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "<0>You're in control:</0> You decide where to host Nocturne, who has access, and how your data is used."
+msgstr "<0>You're in control:</0> You decide where to host Nocturne, who has access, and how your data is used."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "For more details, see our <0>Privacy Policy</0>."
+msgstr "For more details, see our <0>Privacy Policy</0>."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "5. Acceptable Use"
+msgstr "5. Acceptable Use"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "When using Nocturne, you agree to:"
+msgstr "When using Nocturne, you agree to:"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Use the software for lawful purposes only"
+msgstr "Use the software for lawful purposes only"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Not use it to harm others or violate their rights"
+msgstr "Not use it to harm others or violate their rights"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Not abuse the software or use it in ways that could damage the project or community"
+msgstr "Not abuse the software or use it in ways that could damage the project or community"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Comply with all applicable laws and regulations"
+msgstr "Comply with all applicable laws and regulations"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "If you're hosting Nocturne for others (family, friends, community), you're responsible for ensuring acceptable use by those users."
+msgstr "If you're hosting Nocturne for others (family, friends, community), you're responsible for ensuring acceptable use by those users."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "6. Changes to These Terms"
+msgstr "6. Changes to These Terms"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "We may update these terms from time to time to reflect changes in the software, legal requirements, or best practices. When we do:"
+msgstr "We may update these terms from time to time to reflect changes in the software, legal requirements, or best practices. When we do:"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "The updated terms will be posted at this URL"
+msgstr "The updated terms will be posted at this URL"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "The \"Last updated\" date at the bottom of the page will change"
+msgstr "The \"Last updated\" date at the bottom of the page will change"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Continued use of Nocturne after changes constitutes acceptance of the new terms"
+msgstr "Continued use of Nocturne after changes constitutes acceptance of the new terms"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "For significant changes, we'll announce them in the project's GitHub repository."
+msgstr "For significant changes, we'll announce them in the project's GitHub repository."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "7. Open Source License"
+msgstr "7. Open Source License"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne is released under the MIT License. This means you're free to:"
+msgstr "Nocturne is released under the MIT License. This means you're free to:"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Use the software for any purpose"
+msgstr "Use the software for any purpose"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Modify the source code"
+msgstr "Modify the source code"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Distribute copies"
+msgstr "Distribute copies"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Sublicense or sell copies"
+msgstr "Sublicense or sell copies"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "The MIT License provides the software \"as is\" without warranty. See the LICENSE file in the project repository for full details."
+msgstr "The MIT License provides the software \"as is\" without warranty. See the LICENSE file in the project repository for full details."
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "8. Contact"
+msgstr "8. Contact"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Nocturne is an open-source project. For questions, issues, or contributions:"
+msgstr "Nocturne is an open-source project. For questions, issues, or contributions:"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Issues: Use GitHub Issues for bug reports and feature requests"
+msgstr "Issues: Use GitHub Issues for bug reports and feature requests"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "Community: Join discussions in GitHub Discussions"
+msgstr "Community: Join discussions in GitHub Discussions"
+
+#: src/routes/(legal)/terms/+page.svelte
+msgid "These terms are effective as of February 21, 2026."
+msgstr "These terms are effective as of February 21, 2026."
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "ManualBG"
+msgstr "ManualBG"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Boluses"
+msgstr "Boluses"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "CarbIntake"
+msgstr "CarbIntake"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "BolusCalculations"
+msgstr "BolusCalculations"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "DeviceEvents"
+msgstr "DeviceEvents"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "StateSpans"
+msgstr "StateSpans"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "DeviceStatus"
+msgstr "DeviceStatus"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Query timed out"
+msgstr "Query timed out"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Year Overview - Nocturne"
+msgstr "Year Overview - Nocturne"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Multi-year heatmap overview of all your diabetes data"
+msgstr "Multi-year heatmap overview of all your diabetes data"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "All Data Sources"
+msgstr "All Data Sources"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "<0/> Types <1/>"
+msgstr "<0/> Types <1/>"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Show data types"
+msgstr "Show data types"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Show all"
+msgstr "Show all"
+
+#. placeholder {0}: unitLabel
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Avg Glucose ({0}):"
+msgstr "Avg Glucose ({0}):"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Glucose color scale legend"
+msgstr "Glucose color scale legend"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "<0/> Other Data (no glucose)"
+msgstr "<0/> Other Data (no glucose)"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Loading data overview..."
+msgstr "Loading data overview..."
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid ""
+"There is no data to display yet. Connect a data source in your\n"
+"settings to get started."
+msgstr ""
+"There is no data to display yet. Connect a data source in your\n"
+"settings to get started."
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Configure Data Sources"
+msgstr "Configure Data Sources"
+
+#. placeholder {0}: days.filter((d) => (d.totalCount ?? 0) > 0).length
+#: src/routes/reports/year-overview/+page.svelte
+msgid "{0} days with data"
+msgstr "{0} days with data"
+
+#. placeholder {0}: unitLabel
+#: src/routes/reports/year-overview/+page.svelte
+msgid "avg {0}"
+msgstr "avg {0}"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "TDD"
+msgstr "TDD"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Counts"
+msgstr "Counts"
+
+#. placeholder {0}: year
+#: src/routes/reports/year-overview/+page.svelte
+msgid "<0/> Loading {0} data..."
+msgstr "<0/> Loading {0} data..."
+
+#. placeholder {0}: year
+#: src/routes/reports/year-overview/+page.svelte
+msgid "No data for {0}"
+msgstr "No data for {0}"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Day Details"
+msgstr "Day Details"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Average Glucose"
+msgstr "Average Glucose"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "By Data Type"
+msgstr "By Data Type"
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "View Day in Review <0/>"
+msgstr "View Day in Review <0/>"
+
+#: src/routes/settings/profile/+page.svelte
+msgid "Select a profile to view its settings."
+msgstr "Select a profile to view its settings."
+
+#: src/routes/settings/profile/+page.svelte
+msgid "External"
+msgstr "External"
+
+#. placeholder {0}: therapy.enteredBy ?? "an external source"
+#: src/routes/settings/profile/+page.svelte
+msgid "Managed by {0}"
+msgstr "Managed by {0}"
+
+#: src/routes/settings/profile/+page.svelte
+msgid "This profile is read-only because it is synced from an external device or service. Changes to therapy settings must be made on the source device."
+msgstr "This profile is read-only because it is synced from an external device or service. Changes to therapy settings must be made on the source device."
+
+#: src/routes/settings/profile/+page.svelte
+msgid "<0/> Read-only"
+msgstr "<0/> Read-only"
+
+#. placeholder {0}: therapy.enteredBy
+#: src/routes/settings/profile/+page.svelte
+msgid "· Entered by {0}"
+msgstr "· Entered by {0}"
+
+#. placeholder {0}: formatRelativeTime(therapy.createdAt)
+#: src/routes/settings/profile/+page.svelte
+msgid "Created {0} <0/>"
+msgstr "Created {0} <0/>"
+
+#: src/routes/settings/profile/+page.svelte
+msgid "Delay"
+msgstr "Delay"
+
+#. placeholder {0}: selectedProfileName
+#: src/routes/settings/profile/+page.svelte
+msgid "No therapy settings found for profile \"{0}\"."
+msgstr "No therapy settings found for profile \"{0}\"."
+
+#. placeholder {0}: dataSummary.total?.toLocaleString() ?? 0
+#: src/routes/settings/connectors/[connector]/+page.svelte
+msgid "<0/> {0} total"
+msgstr "<0/> {0} total"

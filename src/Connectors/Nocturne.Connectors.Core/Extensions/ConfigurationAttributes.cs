@@ -1,40 +1,6 @@
 namespace Nocturne.Connectors.Core.Extensions;
 
 /// <summary>
-///     Marks a property as runtime-configurable, meaning it can be stored in the database
-///     and modified without restarting the service. Properties without this attribute
-///     are considered static configuration (from environment variables or appsettings).
-/// </summary>
-[AttributeUsage(AttributeTargets.Property)]
-public class RuntimeConfigurableAttribute : Attribute
-{
-    /// <summary>
-    ///     Creates a new RuntimeConfigurableAttribute with display name and category.
-    /// </summary>
-    public RuntimeConfigurableAttribute(string displayName, string category)
-    {
-        DisplayName = displayName;
-        Category = category;
-    }
-
-    /// <summary>
-    ///     Display name shown in the UI configuration editor.
-    /// </summary>
-    public string? DisplayName { get; set; }
-
-    /// <summary>
-    ///     Description of what this configuration property does.
-    /// </summary>
-    public string? Description { get; set; }
-
-    /// <summary>
-    ///     Category for grouping related settings in the UI.
-    ///     Common categories: "General", "Connection", "Sync", "Advanced"
-    /// </summary>
-    public string? Category { get; set; }
-}
-
-/// <summary>
 ///     Marks a property as a secret that should be encrypted when stored in the database.
 ///     Secret properties are never returned in plain text via API responses.
 ///     The encryption key is derived from the api-secret using PBKDF2.

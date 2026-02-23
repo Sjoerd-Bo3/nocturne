@@ -64,7 +64,7 @@ public static class ConfigurationExtensions
             var connectorProp = property.GetCustomAttribute<ConnectorPropertyAttribute>();
             if (connectorProp != null)
             {
-                configKey = connectorProp.ConfigKey;
+                configKey = connectorProp.GetKeyName();
                 defaultValue = connectorProp.DefaultValue;
             }
             else

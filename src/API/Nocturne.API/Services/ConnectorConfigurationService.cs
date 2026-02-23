@@ -473,7 +473,6 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
 
     /// <summary>
     /// Generates a JSON Schema from a configuration type based on attributes.
-    /// Only includes properties marked with [RuntimeConfigurable].
     /// Includes default values and environment variable names for UI display.
     /// </summary>
     private static JsonDocument GenerateSchemaFromType(Type configType)
@@ -513,7 +512,7 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
                     continue;
             }
 
-            var propName = ToCamelCase(property.Name);
+            var propName = ToCamelCase(connectorPropAttr.GetKeyName());
 
             // Handle secret fields - include in schema and mark as secret
             if (connectorPropAttr.Secret)
@@ -523,20 +522,12 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
                 var secretSchema = new Dictionary<string, object>
                 {
                     ["type"] = "string",
-                    ["title"] = connectorPropAttr.GetDisplayName()
+                    ["x-secret"] = true
                 };
 
                 if (!string.IsNullOrEmpty(envPrefix))
                 {
-                    var envVarName = connectorPropAttr.GetFullEnvVarName(envPrefix);
-                    secretSchema["x-envVar"] = envVarName;
-                    secretSchema["description"] = connectorPropAttr.Description
-                        ?? $"Configure via environment variable: {envVarName}";
-                }
-                else
-                {
-                    secretSchema["description"] = connectorPropAttr.Description
-                        ?? "Sensitive credential (stored encrypted)";
+                    secretSchema["x-envVar"] = connectorPropAttr.GetFullEnvVarName(envPrefix);
                 }
 
                 if (connectorPropAttr.Required)
@@ -545,11 +536,6 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
                 }
 
                 properties[propName] = secretSchema;
-                continue;
-            }
-
-            if (!connectorPropAttr.RuntimeConfigurable)
-            {
                 continue;
             }
 
@@ -586,7 +572,6 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
         {
             ["$schema"] = "https://json-schema.org/draft/2020-12/schema",
             ["type"] = "object",
-            ["title"] = configType.Name,
             ["properties"] = properties
         };
 
@@ -597,7 +582,7 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
 
         if (secrets.Count > 0)
         {
-            schema["secrets"] = secrets;
+            schema["x-secrets"] = secrets;
         }
 
         var json = JsonSerializer.Serialize(schema, _jsonOptions);
@@ -614,7 +599,7 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
         foreach (var property in configType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             var connectorPropAttr = property.GetCustomAttribute<ConnectorPropertyAttribute>();
-            if (connectorPropAttr is not { RuntimeConfigurable: true })
+            if (connectorPropAttr == null)
                 continue;
 
             if (connectorPropAttr.Secret)
@@ -642,7 +627,7 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
                 value = value.ToString();
             }
 
-            result[ToCamelCase(property.Name)] = value;
+            result[ToCamelCase(connectorPropAttr.GetKeyName())] = value;
         }
 
         return result;
@@ -684,21 +669,6 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
         else
         {
             schema["type"] = "string";
-        }
-
-        // Title from ConnectorProperty
-        schema["title"] = connectorAttr.GetDisplayName();
-
-        // Description
-        if (!string.IsNullOrEmpty(connectorAttr.Description))
-        {
-            schema["description"] = connectorAttr.Description;
-        }
-
-        // Category for UI grouping
-        if (!string.IsNullOrEmpty(connectorAttr.Category))
-        {
-            schema["x-category"] = connectorAttr.Category;
         }
 
         // Default value: prefer instance default, fall back to attribute DefaultValue

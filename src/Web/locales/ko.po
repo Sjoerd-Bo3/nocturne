@@ -166,7 +166,6 @@ msgstr ""
 #: src/lib/components/status-pills/IOBPill.svelte
 #: src/lib/components/status-pills/SAGEPill.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Notes"
@@ -385,8 +384,6 @@ msgstr ""
 
 #: src/lib/components/TreatmentsTable.svelte
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -798,7 +795,6 @@ msgstr ""
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/reports/TIRStackedChart.svelte
 #: src/routes/calendar/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
@@ -817,7 +813,6 @@ msgstr ""
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/profile/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
@@ -838,7 +833,6 @@ msgstr ""
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/profile/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
@@ -945,8 +939,6 @@ msgstr ""
 #. placeholder {0}: formatMacro(scaledCarbs)
 #. placeholder {0}: dayTotalCarbs
 #. placeholder {0}: totalCarbs
-#. placeholder {0}: d.totalCarbs.toFixed(0)
-#. placeholder {0}: selectedDay.totalCarbs.toFixed(0)
 #. placeholder {0}: treatmentStats.totalCarbs.toFixed(0)
 #. placeholder {0}: treatment.carbs
 #. placeholder {0}: d.totalCarbs.toFixed(0)
@@ -977,8 +969,6 @@ msgstr ""
 #: src/routes/food/QuickPickItem.svelte
 #: src/routes/meals/+page.svelte
 #: src/routes/meals/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
@@ -1008,7 +998,6 @@ msgstr ""
 #. placeholder {0}: monthSummary.tdd.toFixed(1)
 #. placeholder {0}: dayTotalInsulin.toFixed(1)
 #. placeholder {0}: meal.correlatedBolus.insulin.toFixed(1)
-#. placeholder {0}: treatment.insulin.toFixed(2)
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
 #: src/lib/components/dashboard/glucose-chart/markers/BolusMarker.svelte
 #: src/lib/components/reports/ApsStateCard.svelte
@@ -1059,7 +1048,6 @@ msgstr ""
 
 #: src/lib/components/entries/FoodBreakdown.svelte
 #: src/lib/components/treatments/TreatmentFoodBreakdown.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Total Carbs"
@@ -1763,8 +1751,6 @@ msgstr ""
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
 #: src/routes/food/FoodList.svelte
 #: src/routes/food/QuickPickItem.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -1925,7 +1911,6 @@ msgid "Completed"
 msgstr ""
 
 #: src/lib/components/entries/FoodBreakdown.svelte
-#: src/lib/components/settings/ConnectorConfigForm.svelte
 #: src/lib/components/trackers/TrackerCompletionDialog.svelte
 #: src/lib/components/trackers/TrackerStartDialog.svelte
 #: src/lib/components/treatments/CarbBreakdownBar.svelte
@@ -3437,8 +3422,6 @@ msgstr ""
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
 #: src/lib/components/reports/InsulinDonutChart.svelte
 #: src/lib/components/treatments/TreatmentsDataTable.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 #: src/routes/reports/treatments/+page.svelte
@@ -3554,7 +3537,6 @@ msgstr ""
 #: src/lib/components/dashboard/glucose-chart/ChartTooltip.svelte
 #: src/lib/components/entries/BGCheckSection.svelte
 #: src/lib/components/reports/RetrospectiveStats.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Glucose"
 msgstr ""
@@ -3570,8 +3552,6 @@ msgstr ""
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
 #: src/lib/components/reports/InsulinDonutChart.svelte
 #: src/lib/components/reports/RetrospectiveStats.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
@@ -3586,7 +3566,6 @@ msgstr ""
 
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/reports/TIRStackedChart.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Very High"
@@ -3594,7 +3573,6 @@ msgstr ""
 
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/reports/TIRStackedChart.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -5206,7 +5184,6 @@ msgstr ""
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/status-pills/IOBPill.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Activity"
 msgstr ""
@@ -12048,7 +12025,6 @@ msgid "Glucose pattern over 24 hours"
 msgstr ""
 
 #: src/routes/reports/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "No Data Available"
 msgstr ""
@@ -12249,7 +12225,6 @@ msgid "Records (24h)"
 msgstr ""
 
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/services/+page.svelte
@@ -13817,7 +13792,6 @@ msgid "<0/> vs 90d"
 msgstr ""
 
 #: src/lib/components/dashboard/widgets/TddWidget.svelte
-#: src/routes/reports/data-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Total Daily Dose"
 msgstr ""
@@ -15905,6 +15879,15 @@ msgstr ""
 msgid "Delete Food"
 msgstr ""
 
+#: src/lib/components/layout/AppSidebar.svelte
+msgid "Month to Month"
+msgstr ""
+
+#: src/lib/components/layout/AppSidebar.svelte
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Year Overview"
+msgstr ""
+
 #: src/routes/meals/+page.svelte
 msgid "Food unlinked"
 msgstr ""
@@ -15931,30 +15914,21 @@ msgstr ""
 msgid "Remove"
 msgstr ""
 
-#: src/routes/settings/profile/+page.svelte
-msgid "Select a profile to view its settings."
+#: src/routes/calendar/+page.svelte
+msgid "Bolus:"
 msgstr ""
 
-#. placeholder {0}: therapy.enteredBy
-#: src/routes/settings/profile/+page.svelte
-msgid "· Entered by {0}"
+#: src/routes/calendar/+page.svelte
+msgid "Basal:"
 msgstr ""
 
-#. placeholder {0}: formatRelativeTime(therapy.createdAt)
-#: src/routes/settings/profile/+page.svelte
-msgid "Created {0} <0/>"
+#: src/routes/reports/+page.svelte
+msgid "Data Overview"
 msgstr ""
 
-#: src/routes/settings/profile/+page.svelte
-msgid "Delay"
-msgstr ""
-
-#~ msgid "Externally managed"
-#~ msgstr ""
-
-#. placeholder {0}: selectedProfileName
-#: src/routes/settings/profile/+page.svelte
-msgid "No therapy settings found for profile \"{0}\"."
+#: src/routes/reports/+page.svelte
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Multi-year heatmap of all your data"
 msgstr ""
 
 #. placeholder {0}: snapshotTime
@@ -16010,239 +15984,37 @@ msgstr ""
 msgid "Auto-bolus"
 msgstr ""
 
-#: src/routes/settings/profile/+page.svelte
-msgid "External"
+#: src/routes/(legal)/+layout.svelte
+msgid "Last updated: February 21, 2026"
 msgstr ""
 
-#. placeholder {0}: therapy.enteredBy ?? "an external source"
-#: src/routes/settings/profile/+page.svelte
-msgid "Managed by {0}"
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "<0/> Stale"
 msgstr ""
 
-#: src/routes/settings/profile/+page.svelte
-msgid "This profile is read-only because it is synced from an external device or service. Changes to therapy settings must be made on the source device."
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "<0/> Inactive"
 msgstr ""
 
-#: src/routes/settings/profile/+page.svelte
-msgid "<0/> Read-only"
+#. placeholder {0}: (entriesLast24h ?? 0).toLocaleString()
+#. placeholder {0}: (entriesLast24h ?? 0).toLocaleString()
+#: src/lib/components/settings/DataSourceRow.svelte
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "{0} in 24h"
 msgstr ""
 
-#. placeholder {0}: dataSummary.total?.toLocaleString() ?? 0
-#: src/routes/settings/connectors/[connector]/+page.svelte
-msgid "<0/> {0} total"
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "Last 24h by type:"
 msgstr ""
 
-#: src/routes/reports/+page.svelte
-msgid "Data Overview"
+#. placeholder {0}: formatRelativeTime(lastSyncAttempt)
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "Last attempted: {0}"
 msgstr ""
 
-#: src/routes/reports/+page.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Multi-year heatmap of all your data"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Query timed out"
-msgstr ""
-
-#~ msgid "Data Overview - Nocturne"
-#~ msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Multi-year heatmap overview of all your diabetes data"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "All Data Sources"
-msgstr ""
-
-#~ msgid "<0/> Very Low"
-#~ msgstr ""
-
-#~ msgid "<0/> Low"
-#~ msgstr ""
-
-#~ msgid "<0/> In Range"
-#~ msgstr ""
-
-#~ msgid "<0/> High"
-#~ msgstr ""
-
-#~ msgid "<0/> Very High"
-#~ msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "<0/> Other Data (no glucose)"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Loading data overview..."
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid ""
-"There is no data to display yet. Connect a data source in your\n"
-"settings to get started."
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Configure Data Sources"
-msgstr ""
-
-#~ msgid ""
-#~ "{0} days\n"
-#~ "with data"
-#~ msgstr ""
-
-#~ msgid "Avg: {0} {1}"
-#~ msgstr ""
-
-#. placeholder {0}: year
-#. placeholder {0}: year
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "<0/> Loading {0} data..."
-msgstr ""
-
-#. placeholder {0}: year
-#. placeholder {0}: year
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "No data for {0}"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Day Details"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Average Glucose"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "By Data Type"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "View Day in Review <0/>"
-msgstr ""
-
-#~ msgid ""
-#~ "{0} days with\n"
-#~ "data"
-#~ msgstr ""
-
-#. placeholder {0}: days.filter((d) => (d.totalCount ?? 0) > 0).length
-#. placeholder {0}: days.filter((d) => (d.totalCount ?? 0) > 0).length
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "{0} days with data"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "ManualBG"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Boluses"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "CarbIntake"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "BolusCalculations"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "DeviceEvents"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "StateSpans"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "DeviceStatus"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "<0/> Types <1/>"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Show data types"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Show all"
-msgstr ""
-
-#. placeholder {0}: unitLabel
-#. placeholder {0}: unitLabel
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "avg {0}"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "TDD"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Counts"
-msgstr ""
-
-#. placeholder {0}: unitLabel
-#. placeholder {0}: unitLabel
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Avg Glucose ({0}):"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Glucose color scale legend"
-msgstr ""
-
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Year Overview - Nocturne"
-msgstr ""
-
-#: src/lib/components/layout/AppSidebar.svelte
-#: src/routes/reports/data-overview/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Year Overview"
-msgstr ""
-
-#: src/lib/components/layout/AppSidebar.svelte
-msgid "Month to Month"
+#. placeholder {0}: formatRelativeTime(lastSuccessfulSync)
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "<0/> Last successful: {0}"
 msgstr ""
 
 #: src/lib/components/auth/login-dialog.svelte
@@ -16251,17 +16023,6 @@ msgstr ""
 
 #: src/lib/components/auth/login-dialog.svelte
 msgid "Please sign in to continue"
-msgstr ""
-
-#~ msgid "Need an account? <0>Sign up</0>"
-#~ msgstr ""
-
-#: src/routes/calendar/+page.svelte
-msgid "Bolus:"
-msgstr ""
-
-#: src/routes/calendar/+page.svelte
-msgid "Basal:"
 msgstr ""
 
 #: src/routes/(legal)/terms/+page.svelte
@@ -16488,10 +16249,6 @@ msgstr ""
 
 #: src/routes/(legal)/terms/+page.svelte
 msgid "These terms are effective as of February 21, 2026."
-msgstr ""
-
-#: src/routes/(legal)/+layout.svelte
-msgid "Last updated: February 21, 2026"
 msgstr ""
 
 #: src/routes/(legal)/privacy/+page.svelte
@@ -16842,31 +16599,174 @@ msgstr ""
 msgid "This privacy policy is effective as of February 21, 2026."
 msgstr ""
 
-#. placeholder {0}: formatRelativeTime(lastSyncAttempt)
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "Last attempted: {0}"
+#: src/routes/reports/year-overview/+page.svelte
+msgid "ManualBG"
 msgstr ""
 
-#. placeholder {0}: formatRelativeTime(lastSuccessfulSync)
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "<0/> Last successful: {0}"
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Boluses"
 msgstr ""
 
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "<0/> Stale"
+#: src/routes/reports/year-overview/+page.svelte
+msgid "CarbIntake"
 msgstr ""
 
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "<0/> Inactive"
+#: src/routes/reports/year-overview/+page.svelte
+msgid "BolusCalculations"
 msgstr ""
 
-#. placeholder {0}: (entriesLast24h ?? 0).toLocaleString()
-#. placeholder {0}: (entriesLast24h ?? 0).toLocaleString()
-#: src/lib/components/settings/DataSourceRow.svelte
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "{0} in 24h"
+#: src/routes/reports/year-overview/+page.svelte
+msgid "DeviceEvents"
 msgstr ""
 
-#: src/lib/components/settings/DataSourceRow.svelte
-msgid "Last 24h by type:"
+#: src/routes/reports/year-overview/+page.svelte
+msgid "StateSpans"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "DeviceStatus"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Query timed out"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Year Overview - Nocturne"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Multi-year heatmap overview of all your diabetes data"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "All Data Sources"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "<0/> Types <1/>"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Show data types"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Show all"
+msgstr ""
+
+#. placeholder {0}: unitLabel
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Avg Glucose ({0}):"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Glucose color scale legend"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "<0/> Other Data (no glucose)"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Loading data overview..."
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid ""
+"There is no data to display yet. Connect a data source in your\n"
+"settings to get started."
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Configure Data Sources"
+msgstr ""
+
+#. placeholder {0}: days.filter((d) => (d.totalCount ?? 0) > 0).length
+#: src/routes/reports/year-overview/+page.svelte
+msgid "{0} days with data"
+msgstr ""
+
+#. placeholder {0}: unitLabel
+#: src/routes/reports/year-overview/+page.svelte
+msgid "avg {0}"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "TDD"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Counts"
+msgstr ""
+
+#. placeholder {0}: year
+#: src/routes/reports/year-overview/+page.svelte
+msgid "<0/> Loading {0} data..."
+msgstr ""
+
+#. placeholder {0}: year
+#: src/routes/reports/year-overview/+page.svelte
+msgid "No data for {0}"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Day Details"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "Average Glucose"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "By Data Type"
+msgstr ""
+
+#: src/routes/reports/year-overview/+page.svelte
+msgid "View Day in Review <0/>"
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "Select a profile to view its settings."
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "External"
+msgstr ""
+
+#. placeholder {0}: therapy.enteredBy ?? "an external source"
+#: src/routes/settings/profile/+page.svelte
+msgid "Managed by {0}"
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "This profile is read-only because it is synced from an external device or service. Changes to therapy settings must be made on the source device."
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "<0/> Read-only"
+msgstr ""
+
+#. placeholder {0}: therapy.enteredBy
+#: src/routes/settings/profile/+page.svelte
+msgid "· Entered by {0}"
+msgstr ""
+
+#. placeholder {0}: formatRelativeTime(therapy.createdAt)
+#: src/routes/settings/profile/+page.svelte
+msgid "Created {0} <0/>"
+msgstr ""
+
+#: src/routes/settings/profile/+page.svelte
+msgid "Delay"
+msgstr ""
+
+#. placeholder {0}: selectedProfileName
+#: src/routes/settings/profile/+page.svelte
+msgid "No therapy settings found for profile \"{0}\"."
+msgstr ""
+
+#. placeholder {0}: dataSummary.total?.toLocaleString() ?? 0
+#: src/routes/settings/connectors/[connector]/+page.svelte
+msgid "<0/> {0} total"
 msgstr ""

@@ -1850,6 +1850,45 @@ export class MetadataClient {
     }
 
     /**
+     * Get connector property keys metadata
+    This endpoint exposes all available connector property keys for type-safe usage in frontend clients
+     * @return Connector property keys metadata
+     */
+    getConnectorPropertyKeys(signal?: AbortSignal): Promise<ConnectorPropertyKeysMetadata> {
+        let url_ = this.baseUrl + "/api/Metadata/connector-property-keys";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetConnectorPropertyKeys(_response);
+        });
+    }
+
+    protected processGetConnectorPropertyKeys(response: Response): Promise<ConnectorPropertyKeysMetadata> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ConnectorPropertyKeysMetadata;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ConnectorPropertyKeysMetadata>(null as any);
+    }
+
+    /**
      * Get widget definitions metadata
     This endpoint provides all available dashboard widget definitions for frontend configuration
      * @return Widget definitions metadata
@@ -23619,6 +23658,53 @@ export interface StatisticReliability {
     readingCount?: number;
 }
 
+/** Metadata about connector property keys for NSwag generation */
+export interface ConnectorPropertyKeysMetadata {
+    /** Array of all available connector property keys */
+    availableKeys?: ConnectorPropertyKey[];
+    /** Description of the connector property keys */
+    description?: string;
+}
+
+export enum ConnectorPropertyKey {
+    TimezoneOffset = 0,
+    Enabled = 1,
+    MaxRetryAttempts = 2,
+    BatchSize = 3,
+    SyncIntervalMinutes = 4,
+    SyncGlucose = 5,
+    SyncManualBG = 6,
+    SyncBoluses = 7,
+    SyncCarbIntake = 8,
+    SyncBolusCalculations = 9,
+    SyncNotes = 10,
+    SyncDeviceEvents = 11,
+    SyncStateSpans = 12,
+    SyncProfiles = 13,
+    SyncDeviceStatus = 14,
+    SyncActivity = 15,
+    SyncFood = 16,
+    Username = 17,
+    Password = 18,
+    Email = 19,
+    Server = 20,
+    Region = 21,
+    PatientId = 22,
+    UserId = 23,
+    Url = 24,
+    ApiSecret = 25,
+    MaxCount = 26,
+    UseV3Api = 27,
+    V3IncludeCgmBackfill = 28,
+    ServiceUrl = 29,
+    EnableMealCarbConsolidation = 30,
+    EnableTempBasalConsolidation = 31,
+    TempBasalConsolidationWindowMinutes = 32,
+    AppPlatform = 33,
+    AppVersion = 34,
+    LookbackDays = 35,
+}
+
 /** Metadata about available widget definitions */
 export interface WidgetDefinitionsMetadata {
     /** Array of all widget definitions with full metadata */
@@ -25619,6 +25705,13 @@ export interface DeduplicationResult {
     entriesProcessed?: number;
     treatmentsProcessed?: number;
     stateSpansProcessed?: number;
+    sensorGlucoseProcessed?: number;
+    bolusesProcessed?: number;
+    carbIntakesProcessed?: number;
+    bgChecksProcessed?: number;
+    deviceEventsProcessed?: number;
+    notesProcessed?: number;
+    bolusCalculationsProcessed?: number;
     success?: boolean;
     errorMessage?: string | undefined;
 }

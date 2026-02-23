@@ -1420,6 +1420,28 @@
         "x-remote-type": "query"
       }
     },
+    "/api/Metadata/connector-property-keys": {
+      "get": {
+        "tags": [
+          "Metadata"
+        ],
+        "summary": "Get connector property keys metadata\nThis endpoint exposes all available connector property keys for type-safe usage in frontend clients",
+        "operationId": "Metadata_GetConnectorPropertyKeys",
+        "responses": {
+          "200": {
+            "description": "Connector property keys metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorPropertyKeysMetadata"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
     "/api/Metadata/widget-definitions": {
       "get": {
         "tags": [
@@ -22486,6 +22508,104 @@
           }
         }
       },
+      "ConnectorPropertyKeysMetadata": {
+        "type": "object",
+        "description": "Metadata about connector property keys for NSwag generation",
+        "additionalProperties": false,
+        "properties": {
+          "availableKeys": {
+            "type": "array",
+            "description": "Array of all available connector property keys",
+            "items": {
+              "$ref": "#/components/schemas/ConnectorPropertyKey"
+            }
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the connector property keys"
+          }
+        }
+      },
+      "ConnectorPropertyKey": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "TimezoneOffset",
+          "Enabled",
+          "MaxRetryAttempts",
+          "BatchSize",
+          "SyncIntervalMinutes",
+          "SyncGlucose",
+          "SyncManualBG",
+          "SyncBoluses",
+          "SyncCarbIntake",
+          "SyncBolusCalculations",
+          "SyncNotes",
+          "SyncDeviceEvents",
+          "SyncStateSpans",
+          "SyncProfiles",
+          "SyncDeviceStatus",
+          "SyncActivity",
+          "SyncFood",
+          "Username",
+          "Password",
+          "Email",
+          "Server",
+          "Region",
+          "PatientId",
+          "UserId",
+          "Url",
+          "ApiSecret",
+          "MaxCount",
+          "UseV3Api",
+          "V3IncludeCgmBackfill",
+          "ServiceUrl",
+          "EnableMealCarbConsolidation",
+          "EnableTempBasalConsolidation",
+          "TempBasalConsolidationWindowMinutes",
+          "AppPlatform",
+          "AppVersion",
+          "LookbackDays"
+        ],
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35
+        ]
+      },
       "WidgetDefinitionsMetadata": {
         "type": "object",
         "description": "Metadata about available widget definitions",
@@ -28929,6 +29049,34 @@
             "format": "int32"
           },
           "stateSpansProcessed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sensorGlucoseProcessed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bolusesProcessed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "carbIntakesProcessed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bgChecksProcessed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deviceEventsProcessed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notesProcessed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bolusCalculationsProcessed": {
             "type": "integer",
             "format": "int32"
           },

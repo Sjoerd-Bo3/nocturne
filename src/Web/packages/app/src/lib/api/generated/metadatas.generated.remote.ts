@@ -85,6 +85,22 @@ export const getStatisticsTypes = query(async () => {
   }
 });
 
+/** Get connector property keys metadata
+This endpoint exposes all available connector property keys for type-safe usage in frontend clients */
+export const getConnectorPropertyKeys = query(async () => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    return await apiClient.metadata.getConnectorPropertyKeys();
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in metadata.getConnectorPropertyKeys:', err);
+    throw error(500, 'Failed to get connector property keys');
+  }
+});
+
 /** Get widget definitions metadata
 This endpoint provides all available dashboard widget definitions for frontend configuration */
 export const getWidgetDefinitions = query(async () => {

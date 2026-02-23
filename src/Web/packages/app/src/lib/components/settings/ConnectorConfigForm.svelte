@@ -34,6 +34,7 @@
     JsonSchema,
     JsonSchemaProperty,
   } from "$api/connectorConfig.remote";
+  import { getPropertyMeta } from "$lib/config/connectorPropertyMeta";
 
   interface Props {
     schema: JsonSchema;
@@ -109,7 +110,7 @@
       // Skip 'enabled' field - it's controlled by the "Enable Connector" toggle
       if (propName.toLowerCase() === "enabled") continue;
 
-      const category = propSchema["x-category"] ?? "Other";
+      const category = getPropertyMeta(propName).category;
 
       // Skip credential-category fields - they're shown in the credentials card
       if (category === "Credentials") continue;
@@ -155,8 +156,8 @@
     const secretFieldSet = new Set(schema.secrets ?? []);
     return Object.entries(schema.properties)
       .filter(
-        ([name, prop]) =>
-          prop["x-category"] === "Credentials" && !secretFieldSet.has(name)
+        ([name]) =>
+          getPropertyMeta(name).category === "Credentials" && !secretFieldSet.has(name)
       )
       .map(([name, schema]) => ({ name, schema }));
   });
@@ -271,30 +272,17 @@
     }
   }
 
-  function formatLabel(
-    propName: string,
-    propSchema: JsonSchemaProperty
-  ): string {
-    return propSchema.title ?? formatPropertyName(propName);
-  }
-
-  function formatPropertyName(name: string): string {
-    // Convert camelCase to Title Case with spaces
-    return name
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (s) => s.toUpperCase())
-      .trim();
-  }
 </script>
 
 {#snippet propertyField(propName: string, propSchema: JsonSchemaProperty)}
+  {@const meta = getPropertyMeta(propName)}
   <div class="space-y-2">
     {#if propSchema.type === "boolean"}
       <!-- Boolean: Switch -->
       <div class="flex items-center justify-between">
         <div class="space-y-0.5">
           <div class="flex items-center gap-2">
-            <Label>{formatLabel(propName, propSchema)}</Label>
+            <Label>{meta.label}</Label>
             {#if hasUnsavedChanges(propName)}
               <Badge variant="default" class="text-xs">Unsaved</Badge>
             {:else if hasUserOverride(propName)}
@@ -312,9 +300,9 @@
               <Badge variant="outline" class="text-xs">From Env</Badge>
             {/if}
           </div>
-          {#if propSchema.description}
+          {#if meta.description}
             <p class="text-sm text-muted-foreground">
-              {propSchema.description}
+              {meta.description}
             </p>
           {/if}
           {#if propSchema["x-envVar"]}
@@ -333,7 +321,7 @@
     {:else if propSchema.enum}
       <!-- Enum: Select -->
       <div class="flex items-center gap-2">
-        <Label>{formatLabel(propName, propSchema)}</Label>
+        <Label>{meta.label}</Label>
         {#if hasUnsavedChanges(propName)}
           <Badge variant="default" class="text-xs">Unsaved</Badge>
         {:else if hasUserOverride(propName)}
@@ -365,8 +353,8 @@
           {/each}
         </SelectContent>
       </Select>
-      {#if propSchema.description}
-        <p class="text-sm text-muted-foreground">{propSchema.description}</p>
+      {#if meta.description}
+        <p class="text-sm text-muted-foreground">{meta.description}</p>
       {/if}
       {#if propSchema["x-envVar"]}
         <p class="text-xs text-muted-foreground/70">
@@ -376,7 +364,7 @@
     {:else if propSchema.type === "integer" || propSchema.type === "number"}
       <!-- Number: Input with constraints -->
       <div class="flex items-center gap-2">
-        <Label>{formatLabel(propName, propSchema)}</Label>
+        <Label>{meta.label}</Label>
         {#if hasUnsavedChanges(propName)}
           <Badge variant="default" class="text-xs">Unsaved</Badge>
         {:else if hasUserOverride(propName)}
@@ -410,8 +398,8 @@
           }
         }}
       />
-      {#if propSchema.description}
-        <p class="text-sm text-muted-foreground">{propSchema.description}</p>
+      {#if meta.description}
+        <p class="text-sm text-muted-foreground">{meta.description}</p>
       {/if}
       {#if propSchema.minimum !== undefined || propSchema.maximum !== undefined}
         <p class="text-xs text-muted-foreground">
@@ -432,7 +420,7 @@
     {:else}
       <!-- String: Input -->
       <div class="flex items-center gap-2">
-        <Label>{formatLabel(propName, propSchema)}</Label>
+        <Label>{meta.label}</Label>
         {#if hasUnsavedChanges(propName)}
           <Badge variant="default" class="text-xs">Unsaved</Badge>
         {:else if hasUserOverride(propName)}
@@ -459,8 +447,8 @@
         pattern={propSchema.pattern}
         oninput={(e) => setPropertyValue(propName, e.currentTarget.value)}
       />
-      {#if propSchema.description}
-        <p class="text-sm text-muted-foreground">{propSchema.description}</p>
+      {#if meta.description}
+        <p class="text-sm text-muted-foreground">{meta.description}</p>
       {/if}
       {#if propSchema["x-envVar"]}
         <p class="text-xs text-muted-foreground/70">
@@ -572,8 +560,9 @@
           {/if}
         {/each}
         {#each secretFields as { name, schema: propSchema }, i (name)}
+          {@const secretMeta = getPropertyMeta(name)}
           <div class="space-y-2">
-            <Label>{formatLabel(name, propSchema)}</Label>
+            <Label>{secretMeta.label}</Label>
             <div class="flex gap-2">
               <Input
                 type={visibleSecrets.has(name) ? "text" : "password"}
@@ -594,9 +583,9 @@
                 {/if}
               </Button>
             </div>
-            {#if propSchema.description}
+            {#if secretMeta.description}
               <p class="text-sm text-muted-foreground">
-                {propSchema.description}
+                {secretMeta.description}
               </p>
             {/if}
             {#if propSchema["x-envVar"]}

@@ -37,52 +37,32 @@ public class GlookoConnectorConfiguration : BaseConnectorConfiguration
     /// <summary>
     ///     Glooko account email
     /// </summary>
-    [ConnectorProperty("Email",
-        Required = true,
-        RuntimeConfigurable = true,
-        Category = "Credentials",
-        Description = "Glooko account email")]
+    [ConnectorProperty(ConnectorPropertyKey.Email, Required = true)]
     public string Email { get; init; } = string.Empty;
 
     /// <summary>
     ///     Glooko account password
     /// </summary>
-    [ConnectorProperty("Password",
-        Required = true,
-        Secret = true,
-        Description = "Glooko account password")]
+    [ConnectorProperty(ConnectorPropertyKey.Password, Required = true, Secret = true)]
     public string Password { get; init; } = string.Empty;
 
     /// <summary>
     ///     Glooko server region (US or EU)
     /// </summary>
-    [ConnectorProperty("Server",
-        RuntimeConfigurable = true,
-        Category = "Credentials",
-        Description = "Glooko server (US or EU)",
-        DefaultValue = "US",
-        AllowedValues = ["US", "EU"])]
+    [ConnectorProperty(ConnectorPropertyKey.Server, DefaultValue = "US", AllowedValues = ["US", "EU"])]
     public string Server { get; init; } = "US";
 
     /// <summary>
     ///     Use v3 API for additional data types (alarms, automatic boluses, consumables).
     ///     This provides a single API call instead of multiple v2 calls.
     /// </summary>
-    [ConnectorProperty("UseV3Api",
-        RuntimeConfigurable = true,
-        Category = "Advanced",
-        Description = "Use V3 API for additional data types",
-        DefaultValue = "true")]
+    [ConnectorProperty(ConnectorPropertyKey.UseV3Api, DefaultValue = "true")]
     public bool UseV3Api { get; set; } = true;
 
     /// <summary>
     ///     Include CGM readings from v3 as backup to primary CGM source (e.g., xDrip).
     ///     Only use this if you want Glooko to fill gaps in your primary CGM data.
     /// </summary>
-    [ConnectorProperty("V3IncludeCgmBackfill",
-        RuntimeConfigurable = true,
-        Category = "Advanced",
-        Description = "Include CGM readings as backup",
-        DefaultValue = "false")]
+    [ConnectorProperty(ConnectorPropertyKey.V3IncludeCgmBackfill, DefaultValue = "false")]
     public bool V3IncludeCgmBackfill { get; set; } = false;
 }

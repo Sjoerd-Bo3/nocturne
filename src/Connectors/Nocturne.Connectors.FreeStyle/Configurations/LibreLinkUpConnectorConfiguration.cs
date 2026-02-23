@@ -32,39 +32,24 @@ public class LibreLinkUpConnectorConfiguration : BaseConnectorConfiguration
     /// <summary>
     ///     LibreLinkUp username
     /// </summary>
-    [ConnectorProperty("Username",
-        Required = true,
-        RuntimeConfigurable = true,
-        Category = "Credentials",
-        Description = "LibreLinkUp account username")]
+    [ConnectorProperty(ConnectorPropertyKey.Username, Required = true)]
     public string Username { get; set; } = string.Empty;
 
     /// <summary>
     ///     LibreLinkUp password
     /// </summary>
-    [ConnectorProperty("Password",
-        Required = true,
-        Secret = true,
-        Description = "LibreLinkUp account password")]
+    [ConnectorProperty(ConnectorPropertyKey.Password, Required = true, Secret = true)]
     public string Password { get; set; } = string.Empty;
 
     /// <summary>
     ///     LibreLinkUp region
     /// </summary>
-    [ConnectorProperty("Region",
-        RuntimeConfigurable = true,
-        Category = "Credentials",
-        Description = "LibreLinkUp region (EU, US, etc.)",
-        DefaultValue = "EU",
-        AllowedValues = ["EU", "US", "AE", "AP", "AU", "CA", "DE", "FR", "JP"])]
+    [ConnectorProperty(ConnectorPropertyKey.Region, DefaultValue = "EU", AllowedValues = ["EU", "US", "AE", "AP", "AU", "CA", "DE", "FR", "JP"])]
     public string Region { get; set; } = "EU";
 
     /// <summary>
     ///     Patient ID for LibreLinkUp (for caregiver accounts)
     /// </summary>
-    [ConnectorProperty("PatientId",
-        RuntimeConfigurable = true,
-        Category = "Connection",
-        Description = "Patient ID for caregiver accounts")]
+    [ConnectorProperty(ConnectorPropertyKey.PatientId)]
     public string PatientId { get; set; } = string.Empty;
 }

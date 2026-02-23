@@ -32,30 +32,18 @@ public class DexcomConnectorConfiguration : BaseConnectorConfiguration
     /// <summary>
     ///     Dexcom Share username
     /// </summary>
-    [ConnectorProperty("Username",
-        Required = true,
-        RuntimeConfigurable = true,
-        Category = "Credentials",
-        Description = "Dexcom account username")]
+    [ConnectorProperty(ConnectorPropertyKey.Username, Required = true)]
     public string Username { get; init; } = string.Empty;
 
     /// <summary>
     ///     Dexcom Share password
     /// </summary>
-    [ConnectorProperty("Password",
-        Required = true,
-        Secret = true,
-        Description = "Dexcom account password")]
+    [ConnectorProperty(ConnectorPropertyKey.Password, Required = true, Secret = true)]
     public string Password { get; init; } = string.Empty;
 
     /// <summary>
     ///     Dexcom server region (US or EU)
     /// </summary>
-    [ConnectorProperty("Server",
-        RuntimeConfigurable = true,
-        Category = "Credentials",
-        Description = "Dexcom server (US or EU)",
-        DefaultValue = "US",
-        AllowedValues = ["US", "EU"])]
+    [ConnectorProperty(ConnectorPropertyKey.Server, DefaultValue = "US", AllowedValues = ["US", "EU"])]
     public string Server { get; init; } = "US";
 }

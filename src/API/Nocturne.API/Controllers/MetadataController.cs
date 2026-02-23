@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
+using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Configuration;
@@ -117,6 +118,25 @@ public class MetadataController : ControllerBase
             new StatisticsTypesMetadata
             {
                 Description = "Statistics types for insulin delivery reports",
+            }
+        );
+    }
+
+    /// <summary>
+    /// Get connector property keys metadata
+    /// This endpoint exposes all available connector property keys for type-safe usage in frontend clients
+    /// </summary>
+    /// <returns>Connector property keys metadata</returns>
+    [HttpGet("connector-property-keys")]
+    [RemoteQuery]
+    [ProducesResponseType(typeof(ConnectorPropertyKeysMetadata), 200)]
+    public ActionResult<ConnectorPropertyKeysMetadata> GetConnectorPropertyKeys()
+    {
+        return Ok(
+            new ConnectorPropertyKeysMetadata
+            {
+                AvailableKeys = Enum.GetValues<ConnectorPropertyKey>(),
+                Description = "Available connector configuration property keys",
             }
         );
     }
@@ -450,3 +470,18 @@ public class StatisticsTypesMetadata
     public InsulinDeliveryStatistics? SampleInsulinDelivery { get; set; }
 }
 
+/// <summary>
+/// Metadata about connector property keys for NSwag generation
+/// </summary>
+public class ConnectorPropertyKeysMetadata
+{
+    /// <summary>
+    /// Array of all available connector property keys
+    /// </summary>
+    public ConnectorPropertyKey[] AvailableKeys { get; set; } = [];
+
+    /// <summary>
+    /// Description of the connector property keys
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
+}

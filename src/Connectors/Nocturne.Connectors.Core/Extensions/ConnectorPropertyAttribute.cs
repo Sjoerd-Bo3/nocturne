@@ -2,14 +2,13 @@ namespace Nocturne.Connectors.Core.Extensions;
 
 /// <summary>
 ///     Unified attribute for connector configuration properties.
-///     Combines environment variable mapping, Aspire parameters, runtime configuration,
-///     and validation into a single attribute.
+///     Combines environment variable mapping, Aspire parameters, and validation
+///     into a single attribute.
 /// </summary>
 /// <remarks>
 ///     This attribute replaces the need for multiple attributes:
 ///     - [EnvironmentVariable]
 ///     - [AspireParameter]
-///     - [RuntimeConfigurable]
 ///     - [Required]
 ///     - [Secret]
 ///     - [ConfigSchema]
@@ -23,26 +22,24 @@ public class ConnectorPropertyAttribute : Attribute
     private const int NotSet = int.MinValue;
 
     /// <summary>
-    ///     Creates a new ConnectorPropertyAttribute with the configuration key name.
+    ///     Creates a new ConnectorPropertyAttribute with the configuration key.
     /// </summary>
-    /// <param name="configKey">
-    ///     The configuration key name used in appsettings.json (e.g., "Username", "Password").
-    ///     This is used for JSON binding and display purposes.
+    /// <param name="key">
+    ///     The configuration key used for identification and JSON binding.
     /// </param>
-    public ConnectorPropertyAttribute(string configKey)
+    public ConnectorPropertyAttribute(ConnectorPropertyKey key)
     {
-        ConfigKey = configKey;
+        Key = key;
     }
 
     /// <summary>
-    ///     The configuration key name used in appsettings.json.
-    ///     Example: "Username" for Parameters:Connectors:Dexcom:Username
+    ///     The configuration key enum value.
     /// </summary>
-    public string ConfigKey { get; }
+    public ConnectorPropertyKey Key { get; }
 
     /// <summary>
     ///     The environment variable name suffix (without CONNECT_ prefix).
-    ///     If not specified, derived from ConfigKey in SCREAMING_SNAKE_CASE.
+    ///     If not specified, derived from Key enum name in SCREAMING_SNAKE_CASE.
     ///     Example: "USERNAME" becomes CONNECT_{CONNECTOR}_USERNAME
     /// </summary>
     public string? EnvVarSuffix { get; set; }
@@ -57,27 +54,6 @@ public class ConnectorPropertyAttribute : Attribute
     ///     Secret properties are encrypted when stored and masked in logs.
     /// </summary>
     public bool Secret { get; set; }
-
-    /// <summary>
-    ///     Whether this property can be modified at runtime via the UI.
-    ///     Defaults to false (static configuration only).
-    /// </summary>
-    public bool RuntimeConfigurable { get; set; }
-
-    /// <summary>
-    ///     Display name shown in UI. Defaults to ConfigKey if not specified.
-    /// </summary>
-    public string? DisplayName { get; set; }
-
-    /// <summary>
-    ///     Description shown in Aspire Dashboard and UI tooltips.
-    /// </summary>
-    public string? Description { get; set; }
-
-    /// <summary>
-    ///     Category for grouping in UI (e.g., "Connection", "Sync", "Advanced").
-    /// </summary>
-    public string? Category { get; set; }
 
     /// <summary>
     ///     Default value if not specified in configuration.
@@ -116,22 +92,22 @@ public class ConnectorPropertyAttribute : Attribute
     public string? Format { get; set; }
 
     /// <summary>
-    ///     Gets the display name, falling back to ConfigKey.
+    ///     Gets the property key name as a string (enum name).
     /// </summary>
-    public string GetDisplayName() => DisplayName ?? ConfigKey;
+    public string GetKeyName() => Key.ToString();
 
     /// <summary>
     ///     Gets the environment variable suffix in SCREAMING_SNAKE_CASE.
-    ///     Derives from ConfigKey if EnvVarSuffix is not explicitly set.
+    ///     Derives from Key enum name if EnvVarSuffix is not explicitly set.
     /// </summary>
     public string GetEnvVarSuffix()
     {
         if (!string.IsNullOrEmpty(EnvVarSuffix))
             return EnvVarSuffix;
 
-        // Convert ConfigKey to SCREAMING_SNAKE_CASE
+        // Convert Key enum name to SCREAMING_SNAKE_CASE
         // e.g., "Username" -> "USERNAME", "PatientId" -> "PATIENT_ID"
-        return ToScreamingSnakeCase(ConfigKey);
+        return ToScreamingSnakeCase(Key.ToString());
     }
 
     /// <summary>
@@ -151,7 +127,7 @@ public class ConnectorPropertyAttribute : Attribute
     /// <returns>Aspire parameter name (e.g., "dexcom-username")</returns>
     public string GetAspireParameterName(string connectorPrefix)
     {
-        return $"{connectorPrefix}-{ConfigKey.ToLowerInvariant()}";
+        return $"{connectorPrefix}-{Key.ToString().ToLowerInvariant()}";
     }
 
     private static string ToScreamingSnakeCase(string input)
