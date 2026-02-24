@@ -612,7 +612,8 @@ public class CobServiceTests
             List<DeviceStatus> deviceStatus,
             IProfileService? profile = null,
             long? time = null,
-            string? specProfile = null
+            string? specProfile = null,
+            List<Nocturne.Core.Models.V4.TempBasal>? tempBasals = null
         )
         {
             var currentTime = time ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -671,6 +672,26 @@ public class CobServiceTests
         )
         {
             return new IobContribution();
+        }
+
+        public IobContribution CalcTempBasalIob(
+            Nocturne.Core.Models.V4.TempBasal tempBasal,
+            IProfileService? profile = null,
+            long? time = null,
+            string? specProfile = null
+        )
+        {
+            return new IobContribution();
+        }
+
+        public IobResult FromTempBasals(
+            List<Nocturne.Core.Models.V4.TempBasal> tempBasals,
+            IProfileService? profile = null,
+            long? time = null,
+            string? specProfile = null
+        )
+        {
+            return new IobResult();
         }
 
         private static OrefModels.OrefProfile BuildProfile(

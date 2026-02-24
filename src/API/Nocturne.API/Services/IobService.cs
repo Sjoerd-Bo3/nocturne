@@ -1,5 +1,6 @@
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.API.Services;
 
@@ -24,7 +25,8 @@ public class IobService : IIobService
         List<DeviceStatus> deviceStatus,
         IProfileService? profile = null,
         long? time = null,
-        string? specProfile = null
+        string? specProfile = null,
+        List<TempBasal>? tempBasals = null
     )
     {
         var currentTime = time ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -37,6 +39,19 @@ public class IobService : IIobService
             treatments?.Any() == true
                 ? FromTreatments(treatments, profile, currentTime, specProfile)
                 : new IobResult();
+
+        // Calculate basal IOB from V4 TempBasal records (parallel path to legacy treatment-based basal IOB)
+        var tempBasalResult =
+            tempBasals?.Any() == true
+                ? FromTempBasals(tempBasals, profile, currentTime, specProfile)
+                : new IobResult();
+
+        // Merge V4 TempBasal basal IOB into the treatment result
+        if (tempBasalResult.BasalIob.HasValue)
+        {
+            treatmentResult.BasalIob = (treatmentResult.BasalIob ?? 0) + tempBasalResult.BasalIob.Value;
+            treatmentResult.Activity = (treatmentResult.Activity ?? 0) + (tempBasalResult.Activity ?? 0);
+        }
 
         if (IsEmpty(result))
         {
@@ -378,6 +393,120 @@ public class IobService : IIobService
         }
 
         return new IobContribution { IobContrib = 0, ActivityContrib = 0 };
+    }
+
+    /// <summary>
+    /// Calculate basal IOB contribution from a V4 TempBasal record.
+    /// Uses the same simplified linear decay algorithm as CalcBasalTreatment
+    /// but operates on the typed TempBasal model instead of legacy Treatment objects.
+    /// </summary>
+    public IobContribution CalcTempBasalIob(
+        TempBasal tempBasal,
+        IProfileService? profile = null,
+        long? time = null,
+        string? specProfile = null
+    )
+    {
+        var currentTime = time ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        // Cannot calculate IOB for a temp basal with no end time (still active has no known duration)
+        if (!tempBasal.EndMills.HasValue)
+        {
+            return new IobContribution { IobContrib = 0, ActivityContrib = 0 };
+        }
+
+        var dia = profile?.GetDIA(currentTime, specProfile) ?? DEFAULT_DIA;
+
+        // Use ScheduledRate from the TempBasal if available, otherwise fall back to profile lookup
+        var scheduledBasalRate = tempBasal.ScheduledRate
+            ?? profile?.GetBasalRate(tempBasal.StartMills, specProfile)
+            ?? 1.0;
+
+        var treatmentStart = tempBasal.StartMills;
+        var treatmentEnd = tempBasal.EndMills.Value;
+
+        // Only calculate if current time is after treatment start
+        if (currentTime <= treatmentStart)
+        {
+            return new IobContribution { IobContrib = 0, ActivityContrib = 0 };
+        }
+
+        // Calculate effective insulin delivered so far
+        var effectiveEnd = Math.Min(currentTime, treatmentEnd);
+        var durationActual = (effectiveEnd - treatmentStart) / 1000.0 / 60.0; // minutes
+
+        // For Suspended origin, rate is 0 (pump was suspended)
+        var rate = tempBasal.Origin == TempBasalOrigin.Suspended ? 0 : tempBasal.Rate;
+        var excessInsulin = Math.Max(0, (rate - scheduledBasalRate) * (durationActual / 60.0)); // excess insulin in units
+
+        if (excessInsulin <= 0)
+        {
+            return new IobContribution { IobContrib = 0, ActivityContrib = 0 };
+        }
+
+        // Simple linear decay over DIA period — identical to CalcBasalTreatment
+        var minAgo = (currentTime - treatmentStart) / 1000.0 / 60.0;
+        var diaMinutes = dia * 60.0;
+
+        if (minAgo < diaMinutes)
+        {
+            var decayFactor = Math.Max(0, 1.0 - (minAgo / diaMinutes));
+            var basalIob = excessInsulin * decayFactor;
+
+            return new IobContribution
+            {
+                IobContrib = RoundToThreeDecimals(basalIob),
+                ActivityContrib = 0, // Simplified — no activity calculation for basal
+            };
+        }
+
+        return new IobContribution { IobContrib = 0, ActivityContrib = 0 };
+    }
+
+    /// <summary>
+    /// Calculate aggregated basal IOB from a list of V4 TempBasal records.
+    /// Parallel path to the temp basal loop in FromTreatments, operating on
+    /// typed TempBasal records instead of legacy Treatment objects.
+    /// </summary>
+    public IobResult FromTempBasals(
+        List<TempBasal> tempBasals,
+        IProfileService? profile = null,
+        long? time = null,
+        string? specProfile = null
+    )
+    {
+        var currentTime = time ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        if (tempBasals?.Any() != true)
+        {
+            return new IobResult
+            {
+                Iob = 0.0,
+                Activity = 0.0,
+                Source = "Care Portal",
+            };
+        }
+
+        var totalBasalIob = 0.0;
+        var totalActivity = 0.0;
+
+        foreach (var tempBasal in tempBasals)
+        {
+            if (tempBasal.StartMills <= currentTime)
+            {
+                var contribution = CalcTempBasalIob(tempBasal, profile, currentTime, specProfile);
+                totalBasalIob += contribution.IobContrib;
+                totalActivity += contribution.ActivityContrib;
+            }
+        }
+
+        return new IobResult
+        {
+            Iob = 0.0, // Basal IOB does not contribute to bolus IOB
+            BasalIob = totalBasalIob > 0 ? RoundToThreeDecimals(totalBasalIob) : null,
+            Activity = totalActivity,
+            Source = "Care Portal",
+        };
     }
 
     #region Helper Methods

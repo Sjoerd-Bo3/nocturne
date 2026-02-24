@@ -1,4 +1,5 @@
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Contracts;
 
@@ -13,10 +14,17 @@ public interface IIobService
         List<DeviceStatus> deviceStatus,
         IProfileService? profile = null,
         long? time = null,
-        string? specProfile = null
+        string? specProfile = null,
+        List<TempBasal>? tempBasals = null
     );
     IobResult FromTreatments(
         List<Treatment> treatments,
+        IProfileService? profile = null,
+        long? time = null,
+        string? specProfile = null
+    );
+    IobResult FromTempBasals(
+        List<TempBasal> tempBasals,
         IProfileService? profile = null,
         long? time = null,
         string? specProfile = null
@@ -31,6 +39,12 @@ public interface IIobService
     );
     IobContribution CalcBasalTreatment(
         Treatment treatment,
+        IProfileService? profile = null,
+        long? time = null,
+        string? specProfile = null
+    );
+    IobContribution CalcTempBasalIob(
+        TempBasal tempBasal,
         IProfileService? profile = null,
         long? time = null,
         string? specProfile = null
