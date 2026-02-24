@@ -123,6 +123,48 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
     }
 
     /// <summary>
+    /// Maps only standalone V2 Food records to CarbIntake records.
+    /// Used when V3 handles boluses but V2 Foods have no V3 equivalent.
+    /// </summary>
+    public List<CarbIntake> MapFoods(GlookoBatchData batchData)
+    {
+        var carbs = new List<CarbIntake>();
+        if (batchData.Foods == null) return carbs;
+
+        foreach (var food in batchData.Foods)
+        {
+            try
+            {
+                var foodDate = _timeMapper.GetRawGlookoDate(food.Timestamp, food.PumpTimestamp);
+                var correctedDate = _timeMapper.GetCorrectedGlookoTime(foodDate);
+                var mills = new DateTimeOffset(correctedDate, TimeSpan.Zero).ToUnixTimeMilliseconds();
+                var carbValue = food.Carbs > 0 ? food.Carbs : food.CarbohydrateGrams;
+
+                if (carbValue <= 0) continue;
+
+                var now = DateTime.UtcNow;
+                carbs.Add(new CarbIntake
+                {
+                    Id = Guid.CreateVersion7(),
+                    Mills = mills,
+                    LegacyId = GenerateLegacyId("food", foodDate, $"carbs:{carbValue}"),
+                    Device = _connectorSource,
+                    DataSource = _connectorSource,
+                    Carbs = carbValue,
+                    CreatedAt = now,
+                    ModifiedAt = now
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[{ConnectorSource}] Error mapping V2 food record", _connectorSource);
+            }
+        }
+
+        return carbs;
+    }
+
+    /// <summary>
     /// Maps V3 bolus series (DeliveredBolus, AutomaticBolus, InjectionBolus) to Bolus and CarbIntake records.
     /// </summary>
     public (List<Bolus> boluses, List<CarbIntake> carbs) MapV3Boluses(GlookoV3GraphResponse graphData)

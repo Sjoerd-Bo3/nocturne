@@ -24,6 +24,8 @@ public static class TreatmentFoodMapper
             Note = entity.Note,
             FoodName = food?.Name,
             CarbsPerPortion = food != null ? (decimal)food.Carbs : null,
+            FatPerPortion = food != null ? (decimal)food.Fat : null,
+            ProteinPerPortion = food != null ? (decimal)food.Protein : null,
         };
     }
 

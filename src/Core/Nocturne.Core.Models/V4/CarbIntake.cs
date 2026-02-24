@@ -61,26 +61,6 @@ public class CarbIntake : IV4Record
     public double Carbs { get; set; }
 
     /// <summary>
-    /// Protein in grams
-    /// </summary>
-    public double? Protein { get; set; }
-
-    /// <summary>
-    /// Fat in grams
-    /// </summary>
-    public double? Fat { get; set; }
-
-    /// <summary>
-    /// User-specified food type (freeform)
-    /// </summary>
-    public string? FoodType { get; set; }
-
-    /// <summary>
-    /// Carbohydrate absorption time in minutes
-    /// </summary>
-    public double? AbsorptionTime { get; set; }
-
-    /// <summary>
     /// APS system sync/deduplication identifier (used by Loop and AAPS)
     /// </summary>
     public string? SyncIdentifier { get; set; }
@@ -89,4 +69,10 @@ public class CarbIntake : IV4Record
     /// Carb time offset in minutes
     /// </summary>
     public double? CarbTime { get; set; }
+
+    /// <summary>
+    /// Custom absorption time in minutes (set by Loop and other APS systems).
+    /// When present, overrides the profile default for COB calculations.
+    /// </summary>
+    public int? AbsorptionTime { get; set; }
 }

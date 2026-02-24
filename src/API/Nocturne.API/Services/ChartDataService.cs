@@ -4,11 +4,11 @@ using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Nocturne.API.Helpers;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Repositories;
-using Nocturne.Core.Contracts.V4.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -117,66 +117,94 @@ public class ChartDataService : IChartDataService
         var treatmentLimit = (int)Math.Max(500, Math.Ceiling(treatmentRangeHours * 10));
 
         // Fetch glucose data from v4 SensorGlucose table
-        var sensorGlucoseList =
-            (
-                await _sensorGlucoseRepository.GetAsync(
-                    from: startTime, to: endTime,
-                    device: null, source: null,
-                    limit: entryLimit, offset: 0,
-                    descending: true, ct: cancellationToken
-                )
-            ).ToList();
+        var sensorGlucoseList = (
+            await _sensorGlucoseRepository.GetAsync(
+                from: startTime,
+                to: endTime,
+                device: null,
+                source: null,
+                limit: entryLimit,
+                offset: 0,
+                descending: true,
+                ct: cancellationToken
+            )
+        ).ToList();
 
         // Fetch bolus data from v4 Bolus table — extended range for IOB calculation
-        var bolusList =
-            (
-                await _bolusRepository.GetAsync(
-                    from: startTime - bufferMs, to: endTime,
-                    device: null, source: null,
-                    limit: treatmentLimit, offset: 0,
-                    descending: true, ct: cancellationToken
-                )
-            ).ToList();
+        var bolusList = (
+            await _bolusRepository.GetAsync(
+                from: startTime - bufferMs,
+                to: endTime,
+                device: null,
+                source: null,
+                limit: treatmentLimit,
+                offset: 0,
+                descending: true,
+                ct: cancellationToken
+            )
+        ).ToList();
 
         // Fetch carb data from v4 CarbIntake table — extended range for COB calculation
-        var carbIntakeList =
-            (
-                await _carbIntakeRepository.GetAsync(
-                    from: startTime - bufferMs, to: endTime,
-                    device: null, source: null,
-                    limit: treatmentLimit, offset: 0,
-                    descending: true, ct: cancellationToken
-                )
-            ).ToList();
+        var carbIntakeList = (
+            await _carbIntakeRepository.GetAsync(
+                from: startTime - bufferMs,
+                to: endTime,
+                device: null,
+                source: null,
+                limit: treatmentLimit,
+                offset: 0,
+                descending: true,
+                ct: cancellationToken
+            )
+        ).ToList();
 
         // Fetch BG checks from v4 BGCheck table (display range only)
-        var bgCheckList =
-            (
-                await _bgCheckRepository.GetAsync(
-                    from: startTime, to: endTime,
-                    device: null, source: null,
-                    limit: treatmentLimit, offset: 0,
-                    descending: true, ct: cancellationToken
-                )
-            ).ToList();
+        var bgCheckList = (
+            await _bgCheckRepository.GetAsync(
+                from: startTime,
+                to: endTime,
+                device: null,
+                source: null,
+                limit: treatmentLimit,
+                offset: 0,
+                descending: true,
+                ct: cancellationToken
+            )
+        ).ToList();
 
         // Build Treatment adapter objects from v4 Bolus + CarbIntake for IOB/COB computation.
         // The IOB/COB services (IIobService, ICobService) expect List<Treatment> — their interfaces
         // are deeply coupled to the legacy Treatment type. Rather than rewriting those calculation
         // engines, we build thin Treatment adapters containing only the fields they actually use.
-        var syntheticTreatments = BuildTreatmentsFromV4Data(bolusList, carbIntakeList);
+        // Fat is derived from food breakdown (TreatmentFood → Food) for COB absorption adjustments.
+        var allCarbIntakeIds = carbIntakeList.Select(c => c.Id).ToList();
+        var allTreatmentFoods = await _treatmentFoodService.GetByCarbIntakeIdsAsync(
+            allCarbIntakeIds,
+            cancellationToken
+        );
+        var foodsByCarbIntake = allTreatmentFoods
+            .GroupBy(f => f.CarbIntakeId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+        var syntheticTreatments = BuildTreatmentsFromV4Data(
+            bolusList,
+            carbIntakeList,
+            foodsByCarbIntake
+        );
 
         // Fetch device events from v4 DeviceEvent table (display range only)
         var displayRangeLimit = (int)Math.Max(500, Math.Ceiling(rangeHours * 10));
-        var deviceEventList =
-            (
-                await _deviceEventRepository.GetAsync(
-                    from: startTime, to: endTime,
-                    device: null, source: null,
-                    limit: displayRangeLimit, offset: 0,
-                    descending: true, ct: cancellationToken
-                )
-            ).ToList();
+        var deviceEventList = (
+            await _deviceEventRepository.GetAsync(
+                from: startTime,
+                to: endTime,
+                device: null,
+                source: null,
+                limit: displayRangeLimit,
+                offset: 0,
+                descending: true,
+                ct: cancellationToken
+            )
+        ).ToList();
 
         // Device status - only need recent entries for IOB source detection
         var deviceStatusList =
@@ -189,8 +217,12 @@ public class ChartDataService : IChartDataService
             )?.ToList() ?? new List<DeviceStatus>();
 
         // Display-range subsets for markers
-        var displayBoluses = bolusList.Where(b => b.Mills >= startTime && b.Mills <= endTime).ToList();
-        var displayCarbIntakes = carbIntakeList.Where(c => c.Mills >= startTime && c.Mills <= endTime).ToList();
+        var displayBoluses = bolusList
+            .Where(b => b.Mills >= startTime && b.Mills <= endTime)
+            .ToList();
+        var displayCarbIntakes = carbIntakeList
+            .Where(c => c.Mills >= startTime && c.Mills <= endTime)
+            .ToList();
 
         // Fetch all state spans in a single batched query
         var stateSpanCategories = new[]
@@ -277,10 +309,7 @@ public class ChartDataService : IChartDataService
         var deviceEventMarkers = BuildDeviceEventMarkers(deviceEventList);
 
         // Process food offsets using carb intake IDs
-        var carbIntakeIds = displayCarbIntakes
-            .Select(c => c.Id)
-            .Distinct()
-            .ToList();
+        var carbIntakeIds = displayCarbIntakes.Select(c => c.Id).Distinct().ToList();
         await ProcessFoodOffsetsAsync(
             carbMarkers,
             carbIntakeIds,
@@ -344,7 +373,8 @@ public class ChartDataService : IChartDataService
         List<T> items,
         Func<T, long> getTime,
         Func<T, T, bool> valuesMatch,
-        long windowMillis = 30_000)
+        long windowMillis = 30_000
+    )
     {
         if (items.Count <= 1)
             return items;
@@ -533,13 +563,16 @@ public class ChartDataService : IChartDataService
         return $"iobcob:{hash}:{roundedStart}:{roundedEnd}:{intervalMinutes}";
     }
 
-    internal static (List<GlucosePointDto> data, double yMax) BuildGlucoseData(List<SensorGlucose> readings)
+    internal static (List<GlucosePointDto> data, double yMax) BuildGlucoseData(
+        List<SensorGlucose> readings
+    )
     {
         var sorted = readings.OrderBy(r => r.Mills).ToList();
         var deduped = DeduplicateByWindow(
             sorted,
             r => r.Mills,
-            (a, b) => Math.Abs(a.Mgdl - b.Mgdl) <= 1.0);
+            (a, b) => Math.Abs(a.Mgdl - b.Mgdl) <= 1.0
+        );
 
         var glucoseData = deduped
             .Select(r => new GlucosePointDto
@@ -558,15 +591,13 @@ public class ChartDataService : IChartDataService
 
     internal static List<BolusMarkerDto> BuildBolusMarkers(List<Bolus> boluses)
     {
-        var sorted = boluses
-            .Where(b => b.Insulin > 0)
-            .OrderBy(b => b.Mills)
-            .ToList();
+        var sorted = boluses.Where(b => b.Insulin > 0).OrderBy(b => b.Mills).ToList();
 
         var deduped = DeduplicateByWindow(
             sorted,
             b => b.Mills,
-            (a, b) => Math.Abs(a.Insulin - b.Insulin) <= 0.05);
+            (a, b) => Math.Abs(a.Insulin - b.Insulin) <= 0.05
+        );
 
         return deduped
             .Select(b => new BolusMarkerDto
@@ -580,40 +611,42 @@ public class ChartDataService : IChartDataService
             .ToList();
     }
 
-    internal static List<CarbMarkerDto> BuildCarbMarkers(List<CarbIntake> carbIntakes, string? timezone)
+    internal static List<CarbMarkerDto> BuildCarbMarkers(
+        List<CarbIntake> carbIntakes,
+        string? timezone
+    )
     {
-        var sorted = carbIntakes
-            .Where(c => c.Carbs > 0)
-            .OrderBy(c => c.Mills)
-            .ToList();
+        var sorted = carbIntakes.Where(c => c.Carbs > 0).OrderBy(c => c.Mills).ToList();
 
         var deduped = DeduplicateByWindow(
             sorted,
             c => c.Mills,
-            (a, b) => Math.Abs(a.Carbs - b.Carbs) <= 1.0);
+            (a, b) => Math.Abs(a.Carbs - b.Carbs) <= 1.0
+        );
 
         return deduped
             .Select(c => new CarbMarkerDto
             {
                 Time = c.Mills,
                 Carbs = c.Carbs,
-                Label = c.FoodType ?? GetMealNameForTime(c.Mills, timezone),
+                Label = GetMealNameForTime(c.Mills, timezone),
                 TreatmentId = c.LegacyId ?? c.Id.ToString(),
                 IsOffset = false,
             })
             .ToList();
     }
 
-    internal static List<DeviceEventMarkerDto> BuildDeviceEventMarkers(List<DeviceEvent> deviceEvents)
+    internal static List<DeviceEventMarkerDto> BuildDeviceEventMarkers(
+        List<DeviceEvent> deviceEvents
+    )
     {
-        var sorted = deviceEvents
-            .OrderBy(e => e.Mills)
-            .ToList();
+        var sorted = deviceEvents.OrderBy(e => e.Mills).ToList();
 
         var deduped = DeduplicateByWindow(
             sorted,
             e => e.Mills,
-            (a, b) => a.EventType == b.EventType);
+            (a, b) => a.EventType == b.EventType
+        );
 
         return deduped
             .Select(e => new DeviceEventMarkerDto
@@ -629,15 +662,13 @@ public class ChartDataService : IChartDataService
 
     internal static List<BgCheckMarkerDto> BuildBgCheckMarkers(List<BGCheck> bgChecks)
     {
-        var sorted = bgChecks
-            .Where(b => b.Mgdl > 0)
-            .OrderBy(b => b.Mills)
-            .ToList();
+        var sorted = bgChecks.Where(b => b.Mgdl > 0).OrderBy(b => b.Mills).ToList();
 
         var deduped = DeduplicateByWindow(
             sorted,
             b => b.Mills,
-            (a, b) => Math.Abs(a.Mgdl - b.Mgdl) <= 1.0);
+            (a, b) => Math.Abs(a.Mgdl - b.Mgdl) <= 1.0
+        );
 
         return deduped
             .Select(b => new BgCheckMarkerDto
@@ -658,12 +689,12 @@ public class ChartDataService : IChartDataService
     /// thin Treatment objects containing only the fields the calculations actually use:
     ///   - IOB: Treatment.Mills, Treatment.Insulin, Treatment.EventType ("Temp Basal"),
     ///          Treatment.Duration, Treatment.Absolute
-    ///   - COB: Treatment.Mills, Treatment.Carbs, Treatment.AbsorptionTime, Treatment.Fat,
-    ///          Treatment.Notes
+    ///   - COB: Treatment.Mills, Treatment.Carbs, Treatment.Notes
     /// </summary>
     internal static List<Treatment> BuildTreatmentsFromV4Data(
         List<Bolus> boluses,
-        List<CarbIntake> carbIntakes
+        List<CarbIntake> carbIntakes,
+        IReadOnlyDictionary<Guid, List<TreatmentFood>> foodsByCarbIntake
     )
     {
         var treatments = new List<Treatment>(boluses.Count + carbIntakes.Count);
@@ -673,12 +704,14 @@ public class ChartDataService : IChartDataService
             if (bolus.Insulin <= 0)
                 continue;
 
-            treatments.Add(new Treatment
-            {
-                Id = bolus.LegacyId ?? bolus.Id.ToString(),
-                Mills = bolus.Mills,
-                Insulin = bolus.Insulin,
-            });
+            treatments.Add(
+                new Treatment
+                {
+                    Id = bolus.LegacyId ?? bolus.Id.ToString(),
+                    Mills = bolus.Mills,
+                    Insulin = bolus.Insulin,
+                }
+            );
         }
 
         foreach (var carb in carbIntakes)
@@ -686,20 +719,26 @@ public class ChartDataService : IChartDataService
             if (carb.Carbs <= 0)
                 continue;
 
-            treatments.Add(new Treatment
+            double? totalFat = null;
+            if (foodsByCarbIntake.TryGetValue(carb.Id, out var foods))
             {
-                Id = carb.LegacyId ?? carb.Id.ToString(),
-                Mills = carb.Mills,
-                Carbs = carb.Carbs,
-                AbsorptionTime = carb.AbsorptionTime.HasValue
-                    ? (int)Math.Round(carb.AbsorptionTime.Value)
-                    : null,
-                Fat = carb.Fat,
-                // Notes field is not available on CarbIntake — COB advanced absorption
-                // adjustments based on notes (glucose tablets, juice, etc.) will not apply
-                // for v4-sourced carb records. This is acceptable as v4 records should use
-                // the AbsorptionTime field for explicit absorption control instead.
-            });
+                var sum = foods
+                    .Where(f => f.FatPerPortion.HasValue && f.Portions > 0)
+                    .Sum(f => (double)(f.FatPerPortion!.Value * f.Portions));
+                if (sum > 0)
+                    totalFat = sum;
+            }
+
+            treatments.Add(
+                new Treatment
+                {
+                    Id = carb.LegacyId ?? carb.Id.ToString(),
+                    Mills = carb.Mills,
+                    Carbs = carb.Carbs,
+                    Fat = totalFat,
+                    AbsorptionTime = carb.AbsorptionTime,
+                }
+            );
         }
 
         return treatments;

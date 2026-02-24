@@ -144,7 +144,7 @@
   // Helper to get meal label for sorting
   function getMealSortLabel(meal: MealCarbIntake): string {
     const foods = meal.foods ?? [];
-    if (foods.length === 0) return meal.carbIntake?.foodType ?? "Meal";
+    if (foods.length === 0) return "Meal";
     if (foods.length === 1 && foods[0].foodName) return foods[0].foodName;
     return getMealNameForTime(
       new Date(meal.carbIntake?.mills ?? Date.now())
@@ -160,7 +160,6 @@
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter((meal) => {
         const searchable = [
-          meal.carbIntake?.foodType,
           ...(meal.foods?.map((f) => f.foodName ?? f.note) ?? []),
         ]
           .filter(Boolean)
@@ -383,7 +382,7 @@
   function getMealLabel(meal: MealCarbIntake): string {
     const foods = meal.foods ?? [];
     if (foods.length === 0) {
-      return meal.carbIntake?.foodType ?? "Meal";
+      return "Meal";
     }
     if (foods.length === 1 && foods[0].foodName) {
       return foods[0].foodName;

@@ -24,6 +24,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
     private readonly IDeviceEventRepository _deviceEventRepository;
     private readonly IBolusCalculationRepository _bolusCalculationRepository;
     private readonly IStateSpanService _stateSpanService;
+    private readonly ITreatmentFoodService _treatmentFoodService;
     private readonly ILogger<TreatmentDecomposer> _logger;
 
     /// <summary>
@@ -44,6 +45,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         IDeviceEventRepository deviceEventRepository,
         IBolusCalculationRepository bolusCalculationRepository,
         IStateSpanService stateSpanService,
+        ITreatmentFoodService treatmentFoodService,
         ILogger<TreatmentDecomposer> logger)
     {
         _bolusRepository = bolusRepository;
@@ -53,6 +55,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         _deviceEventRepository = deviceEventRepository;
         _bolusCalculationRepository = bolusCalculationRepository;
         _stateSpanService = stateSpanService;
+        _treatmentFoodService = treatmentFoodService;
         _logger = logger;
     }
 
@@ -237,18 +240,34 @@ public class TreatmentDecomposer : ITreatmentDecomposer
 
         var model = MapToCarbIntake(treatment, result.CorrelationId);
 
+        Guid carbIntakeId;
         if (existing != null)
         {
             model.Id = existing.Id;
             var updated = await _carbIntakeRepository.UpdateAsync(existing.Id, model, ct);
             result.UpdatedRecords.Add(updated);
+            carbIntakeId = existing.Id;
             _logger.LogDebug("Updated existing CarbIntake {Id} from legacy treatment {LegacyId}", existing.Id, treatment.Id);
         }
         else
         {
             var created = await _carbIntakeRepository.CreateAsync(model, ct);
             result.CreatedRecords.Add(created);
+            carbIntakeId = created.Id;
             _logger.LogDebug("Created CarbIntake from legacy treatment {LegacyId}", treatment.Id);
+
+            // Preserve legacy FoodType as a TreatmentFood entry (log without saving)
+            if (!string.IsNullOrWhiteSpace(treatment.FoodType) && treatment.Carbs is > 0)
+            {
+                await _treatmentFoodService.AddAsync(new TreatmentFood
+                {
+                    CarbIntakeId = carbIntakeId,
+                    Portions = 0m,
+                    Carbs = (decimal)treatment.Carbs.Value,
+                    TimeOffsetMinutes = 0,
+                    Note = treatment.FoodType,
+                }, ct);
+            }
         }
     }
 
@@ -428,16 +447,13 @@ public class TreatmentDecomposer : ITreatmentDecomposer
             LegacyId = treatment.Id,
             Mills = treatment.Mills,
             Carbs = treatment.Carbs ?? 0,
-            Protein = treatment.Protein,
-            Fat = treatment.Fat,
-            FoodType = treatment.FoodType,
-            AbsorptionTime = treatment.AbsorptionTime,
             Device = treatment.EnteredBy,
             DataSource = treatment.DataSource,
             UtcOffset = treatment.UtcOffset,
             CorrelationId = correlationId,
             SyncIdentifier = treatment.SyncIdentifier,
             CarbTime = treatment.CarbTime,
+            AbsorptionTime = treatment.AbsorptionTime,
         };
     }
 

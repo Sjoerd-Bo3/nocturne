@@ -19,6 +19,7 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
     private readonly IBGCheckRepository _bgCheckRepository;
     private readonly INoteRepository _noteRepository;
     private readonly IDeviceEventRepository _deviceEventRepository;
+    private readonly ITreatmentFoodService _treatmentFoodService;
     private readonly ILogger<V4ToLegacyProjectionService> _logger;
 
     // DeviceEventType → legacy Nightscout eventType string (reverse of TreatmentTypes.DeviceEventTypeMap)
@@ -44,6 +45,7 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
         IBGCheckRepository bgCheckRepository,
         INoteRepository noteRepository,
         IDeviceEventRepository deviceEventRepository,
+        ITreatmentFoodService treatmentFoodService,
         ILogger<V4ToLegacyProjectionService> logger
     )
     {
@@ -53,6 +55,7 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
         _bgCheckRepository = bgCheckRepository;
         _noteRepository = noteRepository;
         _deviceEventRepository = deviceEventRepository;
+        _treatmentFoodService = treatmentFoodService;
         _logger = logger;
     }
 
@@ -205,6 +208,15 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
         var notes = (await noteTask).ToList();
         var deviceEvents = (await deviceEventTask).ToList();
 
+        // Load food breakdown entries for all carb intakes to populate legacy fields
+        var carbIds = carbs.Select(c => c.Id).ToList();
+        var allFoodEntries = carbIds.Count > 0
+            ? (await _treatmentFoodService.GetByCarbIntakeIdsAsync(carbIds, ct)).ToList()
+            : [];
+        var foodsByCarbId = allFoodEntries
+            .GroupBy(f => f.CarbIntakeId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         var treatments = new List<Treatment>();
 
         // --- Bolus + CarbIntake pairing via CorrelationId ---
@@ -239,7 +251,7 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
                 var bolus = pairedBoluses.First();
                 var carb = pairedCarbs.First();
                 pairedCarbIds.Add(carb.Id);
-                treatments.Add(ProjectMealBolus(bolus, carb));
+                treatments.Add(ProjectMealBolus(bolus, carb, foodsByCarbId.GetValueOrDefault(carb.Id, [])));
             }
             else if (pairedBoluses.Count > 0)
             {
@@ -253,7 +265,7 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
                 foreach (var carb in pairedCarbs)
                 {
                     pairedCarbIds.Add(carb.Id);
-                    treatments.Add(ProjectCarbCorrection(carb));
+                    treatments.Add(ProjectCarbCorrection(carb, foodsByCarbId.GetValueOrDefault(carb.Id, [])));
                 }
             }
         }
@@ -264,7 +276,7 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
 
         // Singleton carbs (no CorrelationId, not already paired) → Carb Correction
         foreach (var carb in carbsWithoutCorrelation.Where(c => !pairedCarbIds.Contains(c.Id)))
-            treatments.Add(ProjectCarbCorrection(carb));
+            treatments.Add(ProjectCarbCorrection(carb, foodsByCarbId.GetValueOrDefault(carb.Id, [])));
 
         // --- BGCheck → Treatment ---
         foreach (var bgCheck in bgChecks)
@@ -304,7 +316,7 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
             DataSource = sg.DataSource,
         };
 
-    private static Treatment ProjectMealBolus(Bolus bolus, CarbIntake carb) =>
+    private static Treatment ProjectMealBolus(Bolus bolus, CarbIntake carb, List<TreatmentFood> foods) =>
         new()
         {
             Id = bolus.Id.ToString(),
@@ -312,10 +324,10 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
             Mills = bolus.Mills,
             Insulin = bolus.Insulin,
             Carbs = carb.Carbs,
-            Protein = carb.Protein,
-            Fat = carb.Fat,
-            FoodType = carb.FoodType,
-            AbsorptionTime = carb.AbsorptionTime.HasValue ? (int?)((int)carb.AbsorptionTime.Value) : null,
+            FoodType = DeriveeFoodType(foods),
+            Fat = DeriveTotalFat(foods),
+            Protein = DeriveTotalProtein(foods),
+            AbsorptionTime = carb.AbsorptionTime,
             CarbTime = carb.CarbTime.HasValue ? (int?)((int)carb.CarbTime.Value) : null,
             EnteredBy = bolus.Device,
             DataSource = bolus.DataSource,
@@ -338,22 +350,50 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
             IsBasalInsulin = bolus.IsBasalInsulin,
         };
 
-    private static Treatment ProjectCarbCorrection(CarbIntake carb) =>
+    private static Treatment ProjectCarbCorrection(CarbIntake carb, List<TreatmentFood> foods) =>
         new()
         {
             Id = carb.Id.ToString(),
             EventType = TreatmentTypes.CarbCorrection,
             Mills = carb.Mills,
             Carbs = carb.Carbs,
-            Protein = carb.Protein,
-            Fat = carb.Fat,
-            FoodType = carb.FoodType,
-            AbsorptionTime = carb.AbsorptionTime.HasValue ? (int?)((int)carb.AbsorptionTime.Value) : null,
+            FoodType = DeriveeFoodType(foods),
+            Fat = DeriveTotalFat(foods),
+            Protein = DeriveTotalProtein(foods),
+            AbsorptionTime = carb.AbsorptionTime,
             CarbTime = carb.CarbTime.HasValue ? (int?)((int)carb.CarbTime.Value) : null,
             EnteredBy = carb.Device,
             DataSource = carb.DataSource,
             SyncIdentifier = carb.SyncIdentifier,
         };
+
+    private static string? DeriveeFoodType(List<TreatmentFood> foods)
+    {
+        if (foods.Count == 0) return null;
+
+        var names = foods
+            .Select(f => f.FoodName ?? f.Note)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .ToList();
+
+        return names.Count > 0 ? string.Join(", ", names) : null;
+    }
+
+    private static double? DeriveTotalFat(List<TreatmentFood> foods)
+    {
+        var sum = foods
+            .Where(f => f.FatPerPortion.HasValue && f.Portions > 0)
+            .Sum(f => (double)(f.FatPerPortion!.Value * f.Portions));
+        return sum > 0 ? sum : null;
+    }
+
+    private static double? DeriveTotalProtein(List<TreatmentFood> foods)
+    {
+        var sum = foods
+            .Where(f => f.ProteinPerPortion.HasValue && f.Portions > 0)
+            .Sum(f => (double)(f.ProteinPerPortion!.Value * f.Portions));
+        return sum > 0 ? sum : null;
+    }
 
     private static Treatment ProjectBgCheck(BGCheck bgCheck) =>
         new()

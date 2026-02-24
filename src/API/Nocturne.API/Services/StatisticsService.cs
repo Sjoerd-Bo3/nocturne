@@ -1576,7 +1576,8 @@ public class StatisticsService : IStatisticsService
     /// <returns>Treatment summary with totals and counts</returns>
     public TreatmentSummary CalculateTreatmentSummary(
         IEnumerable<Bolus> boluses,
-        IEnumerable<CarbIntake> carbIntakes
+        IEnumerable<CarbIntake> carbIntakes,
+        IReadOnlyDictionary<Guid, List<TreatmentFood>>? foodsByCarbIntake = null
     )
     {
         var summary = new TreatmentSummary
@@ -1598,10 +1599,18 @@ public class StatisticsService : IStatisticsService
             summary.TreatmentCount++;
 
             summary.Totals.Food.Carbs += carbIntake.Carbs;
-            if (carbIntake.Protein.HasValue)
-                summary.Totals.Food.Protein += carbIntake.Protein.Value;
-            if (carbIntake.Fat.HasValue)
-                summary.Totals.Food.Fat += carbIntake.Fat.Value;
+
+            // Aggregate fat/protein from food breakdown (TreatmentFood → Food)
+            if (foodsByCarbIntake?.TryGetValue(carbIntake.Id, out var foods) == true)
+            {
+                foreach (var food in foods.Where(f => f.Portions > 0))
+                {
+                    if (food.FatPerPortion.HasValue)
+                        summary.Totals.Food.Fat += (double)(food.FatPerPortion.Value * food.Portions);
+                    if (food.ProteinPerPortion.HasValue)
+                        summary.Totals.Food.Protein += (double)(food.ProteinPerPortion.Value * food.Portions);
+                }
+            }
         }
 
         // Calculate carb to insulin ratio

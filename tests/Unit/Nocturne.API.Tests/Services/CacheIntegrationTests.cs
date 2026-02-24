@@ -28,6 +28,7 @@ public class CacheIntegrationTests
     private readonly Mock<IOptions<CacheConfiguration>> _mockCacheConfig;
     private readonly Mock<IDemoModeService> _mockDemoModeService;
     private readonly Mock<IEntryDecomposer> _mockEntryDecomposer;
+    private readonly Mock<IV4ToLegacyProjectionService> _mockProjectionService;
     private readonly Mock<ILogger<EntryService>> _mockEntryLogger;
     private readonly Mock<ILogger<StatusService>> _mockStatusLogger;
 
@@ -39,6 +40,7 @@ public class CacheIntegrationTests
         _mockCacheConfig = new Mock<IOptions<CacheConfiguration>>();
         _mockDemoModeService = new Mock<IDemoModeService>();
         _mockEntryDecomposer = new Mock<IEntryDecomposer>();
+        _mockProjectionService = new Mock<IV4ToLegacyProjectionService>();
         _mockEntryLogger = new Mock<ILogger<EntryService>>();
         _mockStatusLogger = new Mock<ILogger<StatusService>>();
 
@@ -71,6 +73,7 @@ public class CacheIntegrationTests
             _mockCacheConfig.Object,
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
+            _mockProjectionService.Object,
             _mockEntryLogger.Object
         );
 
@@ -133,6 +136,7 @@ public class CacheIntegrationTests
             _mockCacheConfig.Object,
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
+            _mockProjectionService.Object,
             _mockEntryLogger.Object
         );
 
@@ -204,6 +208,7 @@ public class CacheIntegrationTests
             _mockCacheConfig.Object,
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
+            _mockProjectionService.Object,
             _mockEntryLogger.Object
         );
 

@@ -24178,12 +24178,9 @@ export interface CarbIntake {
     createdAt?: Date;
     modifiedAt?: Date;
     carbs?: number;
-    protein?: number | undefined;
-    fat?: number | undefined;
-    foodType?: string | undefined;
-    absorptionTime?: number | undefined;
     syncIdentifier?: string | undefined;
     carbTime?: number | undefined;
+    absorptionTime?: number | undefined;
 }
 
 export interface OverallAverages {
@@ -26358,6 +26355,8 @@ export interface TreatmentFood {
     note?: string | undefined;
     foodName?: string | undefined;
     carbsPerPortion?: number | undefined;
+    fatPerPortion?: number | undefined;
+    proteinPerPortion?: number | undefined;
 }
 
 /** Request body for adding/updating a food entry on a carb intake record. */

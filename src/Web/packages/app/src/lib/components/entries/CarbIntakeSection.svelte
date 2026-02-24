@@ -4,8 +4,7 @@
   import { Label } from "$lib/components/ui/label";
   import { Button } from "$lib/components/ui/button";
   import { Badge } from "$lib/components/ui/badge";
-  import * as Collapsible from "$lib/components/ui/collapsible";
-  import { Apple, X, ChevronDown, Plus, Trash2 } from "lucide-svelte";
+  import { Apple, X, Plus, Trash2 } from "lucide-svelte";
   import FoodBreakdown from "./FoodBreakdown.svelte";
   import { TreatmentFoodSelectorDialog } from "$lib/components/treatments";
 
@@ -31,7 +30,6 @@
     onRemove,
   }: Props = $props();
 
-  let showAdvanced = $state(false);
   let showAddFood = $state(false);
 
   const pendingTotalCarbs = $derived(
@@ -71,77 +69,17 @@
     {/if}
   </div>
 
-  <div class="grid grid-cols-2 gap-3">
-    <div class="space-y-1.5">
-      <Label for="carb-carbs{carbIntakeId ?? ''}">Carbs (g)</Label>
-      <Input
-        id="carb-carbs{carbIntakeId ?? ''}"
-        type="number"
-        step="1"
-        min="0"
-        bind:value={carbIntake.carbs}
-        placeholder="0"
-      />
-    </div>
-
-    <div class="space-y-1.5">
-      <Label for="carb-food-type{carbIntakeId ?? ''}">Food Type</Label>
-      <Input
-        id="carb-food-type{carbIntakeId ?? ''}"
-        type="text"
-        bind:value={carbIntake.foodType}
-        placeholder="e.g. Sandwich"
-      />
-    </div>
+  <div class="space-y-1.5">
+    <Label for="carb-carbs{carbIntakeId ?? ''}">Carbs (g)</Label>
+    <Input
+      id="carb-carbs{carbIntakeId ?? ''}"
+      type="number"
+      step="1"
+      min="0"
+      bind:value={carbIntake.carbs}
+      placeholder="0"
+    />
   </div>
-
-  <Collapsible.Root bind:open={showAdvanced}>
-    <Collapsible.Trigger
-      class="flex items-center gap-1 px-2 h-7 text-xs text-muted-foreground hover:text-foreground transition-colors"
-    >
-      <ChevronDown class="h-3 w-3 transition-transform {showAdvanced ? 'rotate-180' : ''}" />
-      Advanced
-    </Collapsible.Trigger>
-    <Collapsible.Content>
-      <div class="grid grid-cols-3 gap-3 pt-2">
-        <div class="space-y-1.5">
-          <Label for="carb-protein{carbIntakeId ?? ''}">Protein (g)</Label>
-          <Input
-            id="carb-protein{carbIntakeId ?? ''}"
-            type="number"
-            step="1"
-            min="0"
-            bind:value={carbIntake.protein}
-            placeholder="0"
-          />
-        </div>
-
-        <div class="space-y-1.5">
-          <Label for="carb-fat{carbIntakeId ?? ''}">Fat (g)</Label>
-          <Input
-            id="carb-fat{carbIntakeId ?? ''}"
-            type="number"
-            step="1"
-            min="0"
-            bind:value={carbIntake.fat}
-            placeholder="0"
-          />
-        </div>
-
-        <div class="space-y-1.5">
-          <Label for="carb-absorption{carbIntakeId ?? ''}">Absorption (min)</Label>
-          <Input
-            id="carb-absorption{carbIntakeId ?? ''}"
-            type="number"
-            step="1"
-            min="0"
-            bind:value={carbIntake.absorptionTime}
-            placeholder="0"
-          />
-        </div>
-      </div>
-    </Collapsible.Content>
-  </Collapsible.Root>
 
   {#if carbIntakeId}
     <FoodBreakdown {carbIntakeId} totalCarbs={carbIntake.carbs ?? 0} />

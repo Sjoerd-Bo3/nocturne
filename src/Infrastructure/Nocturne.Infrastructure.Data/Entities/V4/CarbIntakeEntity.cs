@@ -80,35 +80,13 @@ public class CarbIntakeEntity
     [Column("carbs")]
     public double Carbs { get; set; }
 
-    /// <summary>
-    /// Protein in grams
-    /// </summary>
-    [Column("protein")]
-    public double? Protein { get; set; }
-
-    /// <summary>
-    /// Fat in grams
-    /// </summary>
-    [Column("fat")]
-    public double? Fat { get; set; }
-
-    /// <summary>
-    /// User-specified food type (freeform)
-    /// </summary>
-    [Column("food_type")]
-    [MaxLength(256)]
-    public string? FoodType { get; set; }
-
-    /// <summary>
-    /// Carbohydrate absorption time in minutes
-    /// </summary>
-    [Column("absorption_time")]
-    public double? AbsorptionTime { get; set; }
-
     [Column("sync_identifier")]
     [MaxLength(256)]
     public string? SyncIdentifier { get; set; }
 
     [Column("carb_time")]
     public double? CarbTime { get; set; }
+
+    [Column("absorption_time")]
+    public int? AbsorptionTime { get; set; }
 }

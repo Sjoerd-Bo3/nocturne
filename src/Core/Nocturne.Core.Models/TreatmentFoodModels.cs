@@ -34,6 +34,12 @@ public class TreatmentFood
 
     [JsonPropertyName("carbsPerPortion")]
     public decimal? CarbsPerPortion { get; set; }
+
+    [JsonPropertyName("fatPerPortion")]
+    public decimal? FatPerPortion { get; set; }
+
+    [JsonPropertyName("proteinPerPortion")]
+    public decimal? ProteinPerPortion { get; set; }
 }
 
 /// <summary>

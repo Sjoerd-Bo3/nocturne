@@ -17,22 +17,26 @@ public class TreatmentDecomposerTests : IDisposable
 {
     private readonly NocturneDbContext _context;
     private readonly Mock<IStateSpanService> _stateSpanServiceMock;
+    private readonly Mock<ITreatmentFoodService> _treatmentFoodServiceMock;
     private readonly TreatmentDecomposer _decomposer;
 
     public TreatmentDecomposerTests()
     {
         _context = TestDbContextFactory.CreateInMemoryContext();
-        var bolusRepo = new BolusRepository(_context, NullLogger<BolusRepository>.Instance);
-        var carbIntakeRepo = new CarbIntakeRepository(_context, NullLogger<CarbIntakeRepository>.Instance);
-        var bgCheckRepo = new BGCheckRepository(_context, NullLogger<BGCheckRepository>.Instance);
-        var noteRepo = new NoteRepository(_context, NullLogger<NoteRepository>.Instance);
-        var deviceEventRepo = new DeviceEventRepository(_context, NullLogger<DeviceEventRepository>.Instance);
-        var bolusCalcRepo = new BolusCalculationRepository(_context, NullLogger<BolusCalculationRepository>.Instance);
+        var mockDedup = new Mock<IDeduplicationService>();
+        var bolusRepo = new BolusRepository(_context, mockDedup.Object, NullLogger<BolusRepository>.Instance);
+        var carbIntakeRepo = new CarbIntakeRepository(_context, mockDedup.Object, NullLogger<CarbIntakeRepository>.Instance);
+        var bgCheckRepo = new BGCheckRepository(_context, mockDedup.Object, NullLogger<BGCheckRepository>.Instance);
+        var noteRepo = new NoteRepository(_context, mockDedup.Object, NullLogger<NoteRepository>.Instance);
+        var deviceEventRepo = new DeviceEventRepository(_context, mockDedup.Object, NullLogger<DeviceEventRepository>.Instance);
+        var bolusCalcRepo = new BolusCalculationRepository(_context, mockDedup.Object, NullLogger<BolusCalculationRepository>.Instance);
         _stateSpanServiceMock = new Mock<IStateSpanService>();
+        _treatmentFoodServiceMock = new Mock<ITreatmentFoodService>();
 
         _decomposer = new TreatmentDecomposer(
             bolusRepo, carbIntakeRepo, bgCheckRepo, noteRepo, deviceEventRepo, bolusCalcRepo,
             _stateSpanServiceMock.Object,
+            _treatmentFoodServiceMock.Object,
             NullLogger<TreatmentDecomposer>.Instance);
     }
 
@@ -87,10 +91,6 @@ public class TreatmentDecomposerTests : IDisposable
         carbIntake.LegacyId.Should().Be("meal-bolus-1");
         carbIntake.Mills.Should().Be(1700000000000);
         carbIntake.Carbs.Should().Be(45);
-        carbIntake.Protein.Should().Be(10);
-        carbIntake.Fat.Should().Be(5);
-        carbIntake.FoodType.Should().Be("Sandwich");
-        carbIntake.AbsorptionTime.Should().Be(120);
         carbIntake.CorrelationId.Should().Be(result.CorrelationId);
 
         // Both records share the same CorrelationId
@@ -176,7 +176,6 @@ public class TreatmentDecomposerTests : IDisposable
         result.CreatedRecords.Should().HaveCount(1);
         var carbIntake = result.CreatedRecords[0].Should().BeOfType<V4Models.CarbIntake>().Subject;
         carbIntake.Carbs.Should().Be(15);
-        carbIntake.FoodType.Should().Be("Juice");
         carbIntake.LegacyId.Should().Be("carb-correction-1");
     }
 

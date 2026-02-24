@@ -27,6 +27,7 @@ public class TreatmentServiceTests
     private readonly Mock<IDemoModeService> _mockDemoModeService;
     private readonly Mock<IStateSpanService> _mockStateSpanService;
     private readonly Mock<ITreatmentDecomposer> _mockTreatmentDecomposer;
+    private readonly Mock<IV4ToLegacyProjectionService> _mockProjectionService;
     private readonly Mock<ILogger<TreatmentService>> _mockLogger;
     private readonly TreatmentService _treatmentService;
 
@@ -39,6 +40,7 @@ public class TreatmentServiceTests
         _mockDemoModeService = new Mock<IDemoModeService>();
         _mockStateSpanService = new Mock<IStateSpanService>();
         _mockTreatmentDecomposer = new Mock<ITreatmentDecomposer>();
+        _mockProjectionService = new Mock<IV4ToLegacyProjectionService>();
         _mockLogger = new Mock<ILogger<TreatmentService>>();
 
         _mockCacheConfig.Setup(x => x.Value).Returns(new CacheConfiguration());
@@ -63,6 +65,7 @@ public class TreatmentServiceTests
             _mockDemoModeService.Object,
             _mockStateSpanService.Object,
             _mockTreatmentDecomposer.Object,
+            _mockProjectionService.Object,
             _mockLogger.Object
         );
     }

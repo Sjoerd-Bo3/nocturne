@@ -193,20 +193,27 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
             var allCarbs = new List<CarbIntake>();
             var allDeviceEvents = new List<DeviceEvent>();
 
-            // V2 data
-            var (v2Boluses, v2Carbs) = _v4TreatmentMapper.MapBatchData(batchData);
-            allBoluses.AddRange(v2Boluses);
-            allCarbs.AddRange(v2Carbs);
-
-            // V3 data
+            // Prefer V3 data for boluses/carbs when available (V2 and V3 return
+            // the same records with different shapes, so using both causes duplicates).
+            // V2 standalone Foods have no V3 equivalent, so always include those.
             if (_config.UseV3Api && v3Data != null)
             {
                 var (v3Boluses, v3BolusCarbIntakes) = _v4TreatmentMapper.MapV3Boluses(v3Data);
                 allBoluses.AddRange(v3Boluses);
                 allCarbs.AddRange(v3BolusCarbIntakes);
 
+                // V2 standalone food records have no V3 equivalent
+                var v2Foods = _v4TreatmentMapper.MapFoods(batchData);
+                allCarbs.AddRange(v2Foods);
+
                 var v3DeviceEvents = _v4TreatmentMapper.MapV3DeviceEvents(v3Data);
                 allDeviceEvents.AddRange(v3DeviceEvents);
+            }
+            else
+            {
+                var (v2Boluses, v2Carbs) = _v4TreatmentMapper.MapBatchData(batchData);
+                allBoluses.AddRange(v2Boluses);
+                allCarbs.AddRange(v2Carbs);
             }
 
             // Publish boluses

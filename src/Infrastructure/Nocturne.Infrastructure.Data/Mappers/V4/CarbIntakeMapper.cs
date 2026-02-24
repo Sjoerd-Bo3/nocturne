@@ -26,12 +26,9 @@ public static class CarbIntakeMapper
             SysCreatedAt = DateTime.UtcNow,
             SysUpdatedAt = DateTime.UtcNow,
             Carbs = model.Carbs,
-            Protein = model.Protein,
-            Fat = model.Fat,
-            FoodType = model.FoodType,
-            AbsorptionTime = model.AbsorptionTime,
             SyncIdentifier = model.SyncIdentifier,
             CarbTime = model.CarbTime,
+            AbsorptionTime = model.AbsorptionTime,
         };
     }
 
@@ -53,12 +50,9 @@ public static class CarbIntakeMapper
             CreatedAt = entity.SysCreatedAt,
             ModifiedAt = entity.SysUpdatedAt,
             Carbs = entity.Carbs,
-            Protein = entity.Protein,
-            Fat = entity.Fat,
-            FoodType = entity.FoodType,
-            AbsorptionTime = entity.AbsorptionTime,
             SyncIdentifier = entity.SyncIdentifier,
             CarbTime = entity.CarbTime,
+            AbsorptionTime = entity.AbsorptionTime,
         };
     }
 
@@ -76,11 +70,8 @@ public static class CarbIntakeMapper
         entity.LegacyId = model.LegacyId;
         entity.SysUpdatedAt = DateTime.UtcNow;
         entity.Carbs = model.Carbs;
-        entity.Protein = model.Protein;
-        entity.Fat = model.Fat;
-        entity.FoodType = model.FoodType;
-        entity.AbsorptionTime = model.AbsorptionTime;
         entity.SyncIdentifier = model.SyncIdentifier;
         entity.CarbTime = model.CarbTime;
+        entity.AbsorptionTime = model.AbsorptionTime;
     }
 }

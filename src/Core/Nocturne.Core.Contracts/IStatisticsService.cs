@@ -110,7 +110,7 @@ public interface IStatisticsService
     IEnumerable<AveragedStats> CalculateAveragedStats(IEnumerable<SensorGlucose> entries);
 
     // Treatment Statistics
-    TreatmentSummary CalculateTreatmentSummary(IEnumerable<Bolus> boluses, IEnumerable<CarbIntake> carbIntakes);
+    TreatmentSummary CalculateTreatmentSummary(IEnumerable<Bolus> boluses, IEnumerable<CarbIntake> carbIntakes, IReadOnlyDictionary<Guid, List<TreatmentFood>>? foodsByCarbIntake = null);
     OverallAverages? CalculateOverallAverages(IEnumerable<DayData> dailyDataPoints);
     double GetTotalInsulin(TreatmentSummary treatmentSummary);
     double GetBolusPercentage(TreatmentSummary treatmentSummary);

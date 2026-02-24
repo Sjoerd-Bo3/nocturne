@@ -25,6 +25,7 @@ public class EntryServiceTests
     private readonly Mock<IOptions<CacheConfiguration>> _mockCacheConfig;
     private readonly Mock<IDemoModeService> _mockDemoModeService;
     private readonly Mock<IEntryDecomposer> _mockEntryDecomposer;
+    private readonly Mock<IV4ToLegacyProjectionService> _mockProjectionService;
     private readonly Mock<ILogger<EntryService>> _mockLogger;
     private readonly EntryService _entryService;
 
@@ -39,6 +40,7 @@ public class EntryServiceTests
         _mockCacheConfig = new Mock<IOptions<CacheConfiguration>>();
         _mockDemoModeService = new Mock<IDemoModeService>();
         _mockEntryDecomposer = new Mock<IEntryDecomposer>();
+        _mockProjectionService = new Mock<IV4ToLegacyProjectionService>();
         _mockLogger = new Mock<ILogger<EntryService>>();
 
         _mockCacheConfig.Setup(x => x.Value).Returns(new CacheConfiguration());
@@ -51,6 +53,7 @@ public class EntryServiceTests
             _mockCacheConfig.Object,
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
+            _mockProjectionService.Object,
             _mockLogger.Object
         );
     }

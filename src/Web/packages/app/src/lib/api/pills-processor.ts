@@ -336,7 +336,7 @@ export function processCOB(
 			cobFromDevice.lastCarbs = {
 				mills: lastCarbs.mills ?? 0,
 				carbs: lastCarbs.carbs ?? 0,
-				food: lastCarbs.foodType,
+				food: undefined,
 			};
 		}
 		return cobFromDevice;
@@ -360,7 +360,7 @@ export function processCOB(
 			lastCarbs: {
 				mills: lastCarbs.mills ?? 0,
 				carbs: lastCarbs.carbs ?? 0,
-				food: lastCarbs.foodType,
+				food: undefined,
 			},
 			isDecaying: estimatedCOB > 0,
 			lastUpdated: now

@@ -57,15 +57,13 @@ public class StatisticsServiceTDDTests
         };
         var carbIntakes = new[]
         {
-            new CarbIntake { Carbs = 45, Protein = 20, Fat = 10 },
+            new CarbIntake { Carbs = 45 },
             new CarbIntake { Carbs = 15 },
         };
 
         var result = _sut.CalculateTreatmentSummary(boluses, carbIntakes);
 
         result.Totals.Food.Carbs.Should().Be(60);
-        result.Totals.Food.Protein.Should().Be(20);
-        result.Totals.Food.Fat.Should().Be(10);
         result.CarbToInsulinRatio.Should().Be(12, "60g / 5U = 12");
     }
 

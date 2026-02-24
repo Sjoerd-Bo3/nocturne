@@ -24014,25 +24014,6 @@
             "type": "number",
             "format": "double"
           },
-          "protein": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "fat": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "foodType": {
-            "type": "string",
-            "nullable": true
-          },
-          "absorptionTime": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
           "syncIdentifier": {
             "type": "string",
             "nullable": true
@@ -24040,6 +24021,11 @@
           "carbTime": {
             "type": "number",
             "format": "double",
+            "nullable": true
+          },
+          "absorptionTime": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         }
@@ -31140,6 +31126,16 @@
             "nullable": true
           },
           "carbsPerPortion": {
+            "type": "number",
+            "format": "decimal",
+            "nullable": true
+          },
+          "fatPerPortion": {
+            "type": "number",
+            "format": "decimal",
+            "nullable": true
+          },
+          "proteinPerPortion": {
             "type": "number",
             "format": "decimal",
             "nullable": true

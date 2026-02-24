@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Nocturne.API.Helpers;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Repositories;
@@ -45,11 +46,11 @@ public class ChartDataServiceTests
     {
         // V4 repositories and StateSpanRepository, SystemEventRepository, TrackerRepository
         // are concrete classes. We use MockBehavior.Loose and suppress constructor args.
-        _mockSensorGlucoseRepo = new Mock<SensorGlucoseRepository>(MockBehavior.Loose, null!, null!);
-        _mockBolusRepo = new Mock<BolusRepository>(MockBehavior.Loose, null!, null!);
-        _mockCarbIntakeRepo = new Mock<CarbIntakeRepository>(MockBehavior.Loose, null!, null!);
-        _mockBgCheckRepo = new Mock<BGCheckRepository>(MockBehavior.Loose, null!, null!);
-        _mockDeviceEventRepo = new Mock<DeviceEventRepository>(MockBehavior.Loose, null!, null!);
+        _mockSensorGlucoseRepo = new Mock<SensorGlucoseRepository>(MockBehavior.Loose, null!, null!, null!);
+        _mockBolusRepo = new Mock<BolusRepository>(MockBehavior.Loose, null!, null!, null!);
+        _mockCarbIntakeRepo = new Mock<CarbIntakeRepository>(MockBehavior.Loose, null!, null!, null!);
+        _mockBgCheckRepo = new Mock<BGCheckRepository>(MockBehavior.Loose, null!, null!, null!);
+        _mockDeviceEventRepo = new Mock<DeviceEventRepository>(MockBehavior.Loose, null!, null!, null!);
         _mockStateSpanRepo = new Mock<StateSpanRepository>(MockBehavior.Loose, null!, null!, null!);
         _mockSystemEventRepo = new Mock<SystemEventRepository>(MockBehavior.Loose, null!);
         _mockTrackerRepo = new Mock<TrackerRepository>(MockBehavior.Loose, null!);
@@ -352,7 +353,6 @@ public class ChartDataServiceTests
                     LegacyId = "treat-1",
                     Carbs = 30.0,
                     Mills = TestMills,
-                    FoodType = "Pizza",
                 },
             };
 
@@ -360,7 +360,7 @@ public class ChartDataServiceTests
 
             result.Should().HaveCount(1);
             result[0].Carbs.Should().Be(30.0);
-            result[0].Label.Should().Be("Pizza");
+            result[0].Label.Should().NotBeNullOrEmpty();
             result[0].Time.Should().Be(TestMills);
             result[0].TreatmentId.Should().Be("treat-1");
             result[0].IsOffset.Should().BeFalse();
@@ -380,7 +380,6 @@ public class ChartDataServiceTests
                     Id = Guid.NewGuid(),
                     Carbs = 20.0,
                     Mills = noonUtcMills,
-                    FoodType = null,
                 },
             };
 
@@ -631,12 +630,16 @@ public class ChartDataServiceTests
 
     public class BuildTreatmentsFromV4DataTests
     {
+        private static readonly IReadOnlyDictionary<Guid, List<TreatmentFood>> NoFoods =
+            new Dictionary<Guid, List<TreatmentFood>>();
+
         [Fact]
         public void EmptyInputs_ReturnsEmpty()
         {
             var result = ChartDataService.BuildTreatmentsFromV4Data(
                 new List<Bolus>(),
-                new List<CarbIntake>()
+                new List<CarbIntake>(),
+                NoFoods
             );
 
             result.Should().BeEmpty();
@@ -657,7 +660,7 @@ public class ChartDataServiceTests
                 },
             };
 
-            var result = ChartDataService.BuildTreatmentsFromV4Data(boluses, new List<CarbIntake>());
+            var result = ChartDataService.BuildTreatmentsFromV4Data(boluses, new List<CarbIntake>(), NoFoods);
 
             result.Should().HaveCount(1);
             result[0].Id.Should().Be("legacy-1");
@@ -679,7 +682,7 @@ public class ChartDataServiceTests
                 },
             };
 
-            var result = ChartDataService.BuildTreatmentsFromV4Data(boluses, new List<CarbIntake>());
+            var result = ChartDataService.BuildTreatmentsFromV4Data(boluses, new List<CarbIntake>(), NoFoods);
 
             result.Should().BeEmpty();
         }
@@ -696,19 +699,15 @@ public class ChartDataServiceTests
                     LegacyId = "legacy-2",
                     Mills = TestMills,
                     Carbs = 30.0,
-                    AbsorptionTime = 45.0,
-                    Fat = 12.0,
                 },
             };
 
-            var result = ChartDataService.BuildTreatmentsFromV4Data(new List<Bolus>(), carbs);
+            var result = ChartDataService.BuildTreatmentsFromV4Data(new List<Bolus>(), carbs, NoFoods);
 
             result.Should().HaveCount(1);
             result[0].Id.Should().Be("legacy-2");
             result[0].Mills.Should().Be(TestMills);
             result[0].Carbs.Should().Be(30.0);
-            result[0].AbsorptionTime.Should().Be(45);
-            result[0].Fat.Should().Be(12.0);
             result[0].Insulin.Should().BeNull();
         }
 
@@ -725,7 +724,7 @@ public class ChartDataServiceTests
                 },
             };
 
-            var result = ChartDataService.BuildTreatmentsFromV4Data(new List<Bolus>(), carbs);
+            var result = ChartDataService.BuildTreatmentsFromV4Data(new List<Bolus>(), carbs, NoFoods);
 
             result.Should().BeEmpty();
         }
@@ -742,7 +741,7 @@ public class ChartDataServiceTests
                 new() { Id = Guid.NewGuid(), Mills = TestMills + 1000, Carbs = 20.0 },
             };
 
-            var result = ChartDataService.BuildTreatmentsFromV4Data(boluses, carbs);
+            var result = ChartDataService.BuildTreatmentsFromV4Data(boluses, carbs, NoFoods);
 
             result.Should().HaveCount(2);
             result.Should().Contain(t => t.Insulin == 3.0);
@@ -758,13 +757,13 @@ public class ChartDataServiceTests
                 new() { Id = bolusId, LegacyId = null, Mills = TestMills, Insulin = 2.0 },
             };
 
-            var result = ChartDataService.BuildTreatmentsFromV4Data(boluses, new List<CarbIntake>());
+            var result = ChartDataService.BuildTreatmentsFromV4Data(boluses, new List<CarbIntake>(), NoFoods);
 
             result[0].Id.Should().Be(bolusId.ToString());
         }
 
         [Fact]
-        public void AbsorptionTimeRounded_ToInt()
+        public void CarbIntake_AbsorptionTimeAndFat_NotSet()
         {
             var carbs = new List<CarbIntake>
             {
@@ -773,32 +772,56 @@ public class ChartDataServiceTests
                     Id = Guid.NewGuid(),
                     Mills = TestMills,
                     Carbs = 25.0,
-                    AbsorptionTime = 37.6,
                 },
             };
 
-            var result = ChartDataService.BuildTreatmentsFromV4Data(new List<Bolus>(), carbs);
+            var result = ChartDataService.BuildTreatmentsFromV4Data(new List<Bolus>(), carbs, NoFoods);
 
-            result[0].AbsorptionTime.Should().Be(38);
+            result[0].AbsorptionTime.Should().BeNull();
+            result[0].Fat.Should().BeNull();
         }
 
         [Fact]
-        public void NullAbsorptionTime_StaysNull()
+        public void CarbIntake_WithLinkedFoodFat_PopulatesTreatmentFat()
         {
+            var carbId = Guid.NewGuid();
             var carbs = new List<CarbIntake>
             {
-                new()
+                new() { Id = carbId, Mills = TestMills, Carbs = 40.0 },
+            };
+            var foodData = new Dictionary<Guid, List<TreatmentFood>>
+            {
+                [carbId] = new()
                 {
-                    Id = Guid.NewGuid(),
-                    Mills = TestMills,
-                    Carbs = 25.0,
-                    AbsorptionTime = null,
+                    new TreatmentFood { FatPerPortion = 10m, Portions = 2m },
+                    new TreatmentFood { FatPerPortion = 5m, Portions = 1m },
                 },
             };
 
-            var result = ChartDataService.BuildTreatmentsFromV4Data(new List<Bolus>(), carbs);
+            var result = ChartDataService.BuildTreatmentsFromV4Data(new List<Bolus>(), carbs, foodData);
 
-            result[0].AbsorptionTime.Should().BeNull();
+            result[0].Fat.Should().Be(25.0); // 10*2 + 5*1
+        }
+
+        [Fact]
+        public void CarbIntake_WithAnonymousFood_FatStaysNull()
+        {
+            var carbId = Guid.NewGuid();
+            var carbs = new List<CarbIntake>
+            {
+                new() { Id = carbId, Mills = TestMills, Carbs = 30.0 },
+            };
+            var foodData = new Dictionary<Guid, List<TreatmentFood>>
+            {
+                [carbId] = new()
+                {
+                    new TreatmentFood { FatPerPortion = null, Portions = 0m, Carbs = 30m },
+                },
+            };
+
+            var result = ChartDataService.BuildTreatmentsFromV4Data(new List<Bolus>(), carbs, foodData);
+
+            result[0].Fat.Should().BeNull();
         }
     }
 

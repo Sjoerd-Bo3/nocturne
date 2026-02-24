@@ -1671,7 +1671,6 @@ msgstr "Category"
 msgid "Additional Macros"
 msgstr "Additional Macros"
 
-#: src/lib/components/entries/CarbIntakeSection.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
@@ -1679,7 +1678,6 @@ msgstr "Additional Macros"
 msgid "Fat (g)"
 msgstr "Fat (g)"
 
-#: src/lib/components/entries/CarbIntakeSection.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
@@ -13354,7 +13352,6 @@ msgid "Rate (U/hr)"
 msgstr "Rate (U/hr)"
 
 #: src/lib/components/entries/BolusSection.svelte
-#: src/lib/components/entries/CarbIntakeSection.svelte
 msgid "<0/> Advanced"
 msgstr "<0/> Advanced"
 
@@ -13379,14 +13376,12 @@ msgstr "Unabsorbed (U)"
 msgid "<0/> Carb Intake"
 msgstr "<0/> Carb Intake"
 
-#: src/lib/components/entries/CarbIntakeSection.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
 msgid "Food Type"
 msgstr "Food Type"
 
-#: src/lib/components/entries/CarbIntakeSection.svelte
-msgid "Absorption (min)"
-msgstr "Absorption (min)"
+#~ msgid "Absorption (min)"
+#~ msgstr "Absorption (min)"
 
 #: src/lib/components/entries/DeviceEventSection.svelte
 msgid "Pod Change"

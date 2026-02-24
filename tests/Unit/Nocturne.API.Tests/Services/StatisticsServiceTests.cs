@@ -390,8 +390,6 @@ public class StatisticsServiceTests
             {
                 Carbs = 45,
                 Mills = now,
-                Protein = 10,
-                Fat = 5,
             },
             new CarbIntake { Carbs = 15, Mills = now + 1 },
         };
@@ -404,8 +402,6 @@ public class StatisticsServiceTests
         result.TreatmentCount.Should().Be(4);
         result.Totals.Insulin.Bolus.Should().Be(7.0);
         result.Totals.Food.Carbs.Should().Be(60);
-        result.Totals.Food.Protein.Should().Be(10);
-        result.Totals.Food.Fat.Should().Be(5);
     }
 
     [Fact]
