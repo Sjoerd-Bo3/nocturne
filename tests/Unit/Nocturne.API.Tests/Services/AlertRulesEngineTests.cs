@@ -479,6 +479,66 @@ public class AlertRulesEngineTests
         result[0].AlertType.Should().Be(AlertType.Low);
     }
 
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task EvaluateGlucoseData_WhenGlucoseReturnsAboveLowThreshold_ShouldResolveExistingAlert()
+    {
+        // Arrange: rule with lowThreshold=80, existing ACTIVE "Low" alert (CreatedAt 30 min ago)
+        var userId = "test-user";
+        var glucoseReading = CreateSensorGlucose(95, DateTime.UtcNow); // above 80 threshold
+        var rule = CreateAlertRule(userId, lowThreshold: 80);
+
+        _mockAlertRuleRepository
+            .Setup(x => x.GetActiveRulesForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { rule });
+
+        _mockNotificationPreferencesRepository
+            .Setup(x =>
+                x.IsUserInQuietHoursAsync(userId, It.IsAny<DateTime?>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(false);
+
+        _mockAlertHistoryRepository
+            .Setup(x => x.GetActiveAlertCountForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var existingAlert = new AlertHistoryEntity
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            AlertRuleId = rule.Id,
+            AlertType = "Low",
+            Status = "ACTIVE",
+            TriggerTime = DateTime.UtcNow.AddMinutes(-30),
+            CreatedAt = DateTime.UtcNow.AddMinutes(-30),
+        };
+
+        _mockAlertHistoryRepository
+            .Setup(x => x.GetActiveAlertsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { existingAlert });
+
+        // Act
+        var result = await _alertRulesEngine.EvaluateGlucoseData(
+            glucoseReading, userId, CancellationToken.None
+        );
+
+        // Assert: UpdateAlertStatusAsync was called with RESOLVED
+        _mockAlertHistoryRepository.Verify(
+            x => x.UpdateAlertStatusAsync(
+                existingAlert.Id,
+                "RESOLVED",
+                null,
+                It.IsAny<DateTime?>(),
+                null,
+                It.IsAny<CancellationToken>()
+            ),
+            Times.Once
+        );
+
+        // Assert: no new alert events returned (glucose is normal)
+        result.Should().BeEmpty();
+    }
+
     private static SensorGlucose CreateSensorGlucose(double glucoseValue, DateTime timestamp)
     {
         return new SensorGlucose

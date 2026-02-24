@@ -57,6 +57,9 @@ public class AlertRulesEngine : IAlertRulesEngine
                 return alertEvents;
             }
 
+            // Auto-resolve alerts that are no longer warranted by current glucose
+            await AutoResolveStaleAlerts(glucoseReading, userId, activeRules, cancellationToken);
+
             var readingTime = DateTimeOffset.FromUnixTimeMilliseconds(glucoseReading.Mills).UtcDateTime;
 
             // Check if user is in quiet hours
@@ -362,6 +365,44 @@ public class AlertRulesEngine : IAlertRulesEngine
                 rule.Id
             );
             return true;
+        }
+    }
+
+    private async Task AutoResolveStaleAlerts(
+        SensorGlucose glucoseReading,
+        string userId,
+        AlertRuleEntity[] activeRules,
+        CancellationToken cancellationToken)
+    {
+        var glucoseValue = (decimal)glucoseReading.Mgdl;
+        var activeAlerts = await _alertHistoryRepository.GetActiveAlertsForUserAsync(userId, cancellationToken);
+
+        foreach (var alert in activeAlerts)
+        {
+            var rule = activeRules.FirstOrDefault(r => r.Id == alert.AlertRuleId);
+            var shouldResolve = alert.AlertType switch
+            {
+                "Low" => rule?.LowThreshold == null || glucoseValue > rule.LowThreshold.Value,
+                "UrgentLow" => rule?.UrgentLowThreshold == null || glucoseValue > rule.UrgentLowThreshold.Value,
+                "High" => rule?.HighThreshold == null || glucoseValue < rule.HighThreshold.Value,
+                "UrgentHigh" => rule?.UrgentHighThreshold == null || glucoseValue < rule.UrgentHighThreshold.Value,
+                _ => false,
+            };
+
+            if (rule == null)
+                shouldResolve = true;
+
+            if (shouldResolve)
+            {
+                await _alertHistoryRepository.UpdateAlertStatusAsync(
+                    alert.Id,
+                    "RESOLVED",
+                    resolvedAt: DateTime.UtcNow,
+                    cancellationToken: cancellationToken);
+                _logger.LogInformation(
+                    "Auto-resolved {AlertType} alert {AlertId} for user {UserId} — glucose {Value} no longer breaches threshold",
+                    alert.AlertType, alert.Id, userId, glucoseValue);
+            }
         }
     }
 
