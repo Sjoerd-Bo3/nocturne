@@ -90,11 +90,11 @@ export const getFoodAttributionCount = query(z.string(), async (foodId) => {
 });
 
 /** Delete a food from the database, handling any meal attributions that reference it. */
-export const deleteFood = command(z.object({ foodId: z.string(), attributionMode: z.string().optional() }), async (params) => {
+export const deleteFood = command(z.object({ attributionMode: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    await apiClient.foodsV4.deleteFood(params.foodId, params.attributionMode);
+    await apiClient.foodsV4.deleteFood(params?.attributionMode);
     await Promise.all([
       getFavorites(undefined).refresh(),
       getRecentFoods(undefined).refresh()
