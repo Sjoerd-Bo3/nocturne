@@ -386,6 +386,7 @@ public class AlertRulesEngine : IAlertRulesEngine
                 "UrgentLow" => rule?.UrgentLowThreshold == null || glucoseValue > rule.UrgentLowThreshold.Value,
                 "High" => rule?.HighThreshold == null || glucoseValue < rule.HighThreshold.Value,
                 "UrgentHigh" => rule?.UrgentHighThreshold == null || glucoseValue < rule.UrgentHighThreshold.Value,
+                "ForecastLow" => rule?.LowThreshold == null || glucoseValue > rule.LowThreshold.Value,
                 _ => false,
             };
 

@@ -21,17 +21,20 @@ public class GlucoseController : ControllerBase
     private readonly IMeterGlucoseRepository _meterRepo;
     private readonly ICalibrationRepository _calibrationRepo;
     private readonly IAlertOrchestrator _alertOrchestrator;
+    private readonly ILogger<GlucoseController> _logger;
 
     public GlucoseController(
         ISensorGlucoseRepository sensorRepo,
         IMeterGlucoseRepository meterRepo,
         ICalibrationRepository calibrationRepo,
-        IAlertOrchestrator alertOrchestrator)
+        IAlertOrchestrator alertOrchestrator,
+        ILogger<GlucoseController> logger)
     {
         _sensorRepo = sensorRepo;
         _meterRepo = meterRepo;
         _calibrationRepo = calibrationRepo;
         _alertOrchestrator = alertOrchestrator;
+        _logger = logger;
     }
 
     #region Sensor Glucose
@@ -89,9 +92,10 @@ public class GlucoseController : ControllerBase
             await _alertOrchestrator.EvaluateAndProcessSensorGlucoseAsync(
                 [created], null, ct);
         }
-        catch
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
         {
-            // Alert evaluation failure should not fail the creation
+            _logger.LogWarning(ex, "Alert evaluation failed for sensor glucose {Id}", created.Id);
         }
         return CreatedAtAction(nameof(GetSensorGlucoseById), new { id = created.Id }, created);
     }
