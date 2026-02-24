@@ -126,7 +126,6 @@
             if (r.data.bolusType) searchable.push(r.data.bolusType);
             break;
           case "carbs":
-            if (r.data.foodType) searchable.push(r.data.foodType);
             break;
           case "bgCheck":
             if (r.data.glucoseType) searchable.push(r.data.glucoseType);

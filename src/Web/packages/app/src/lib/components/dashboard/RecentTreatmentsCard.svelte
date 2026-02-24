@@ -62,7 +62,7 @@
       case "bolus":
         return entry.data.bolusType ?? "";
       case "carbs":
-        return entry.data.foodType ?? "";
+        return "";
       case "bgCheck":
         return entry.data.glucoseType ?? "";
       case "note":

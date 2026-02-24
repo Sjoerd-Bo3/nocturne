@@ -88,9 +88,6 @@
 
   let carbsForm = $state({
     carbs: 0 as number,
-    protein: undefined as number | undefined,
-    fat: undefined as number | undefined,
-    foodType: "",
     absorptionTime: undefined as number | undefined,
     carbTime: undefined as number | undefined,
   });
@@ -139,9 +136,6 @@
         const d = activeRecord.data;
         carbsForm = {
           carbs: d.carbs ?? 0,
-          protein: d.protein ?? undefined,
-          fat: d.fat ?? undefined,
-          foodType: d.foodType ?? "",
           absorptionTime: d.absorptionTime ?? undefined,
           carbTime: d.carbTime ?? undefined,
         };
@@ -519,37 +513,6 @@
                 bind:value={carbsForm.carbs}
               />
             </div>
-            <div class="space-y-2">
-              <Label for="protein">Protein (g)</Label>
-              <Input
-                id="protein"
-                type="number"
-                step="1"
-                min="0"
-                bind:value={carbsForm.protein}
-                placeholder={"\u2014"}
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="fat">Fat (g)</Label>
-              <Input
-                id="fat"
-                type="number"
-                step="1"
-                min="0"
-                bind:value={carbsForm.fat}
-                placeholder={"\u2014"}
-              />
-            </div>
-          </div>
-
-          <div class="space-y-2">
-            <Label for="foodType">Food Type</Label>
-            <Input
-              id="foodType"
-              bind:value={carbsForm.foodType}
-              placeholder="e.g. Lunch, Snack"
-            />
           </div>
 
           <div class="grid grid-cols-2 gap-4">

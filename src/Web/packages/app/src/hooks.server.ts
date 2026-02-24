@@ -160,9 +160,6 @@ const proxyHandle: Handle = async ({ event, resolve }) => {
       headers.set("api-secret", hashedSecret);
     }
 
-    // Debug: Log all cookies SvelteKit sees
-    const allCookies = event.request.headers.get("cookie");
-
     // Forward both access and refresh tokens for authentication and token refresh
     const accessToken = event.cookies.get(AUTH_COOKIE_NAMES.accessToken);
     const refreshToken = event.cookies.get(AUTH_COOKIE_NAMES.refreshToken);

@@ -149,11 +149,8 @@
         if (record.data.automatic) parts.push("Auto");
         return parts.length > 0 ? parts.join(" \u00B7 ") : "\u2014";
       }
-      case "carbs": {
-        const foodType = record.data.foodType;
-        if (!foodType) return "\u2014";
-        return foodType.length > 30 ? foodType.slice(0, 30) + "\u2026" : foodType;
-      }
+      case "carbs":
+        return "\u2014";
       case "bgCheck":
         return record.data.glucoseType ?? "\u2014";
       case "note": {
@@ -346,7 +343,6 @@
           if (r.data.bolusType) values.push(r.data.bolusType);
           break;
         case "carbs":
-          if (r.data.foodType) values.push(r.data.foodType);
           break;
         case "bgCheck":
           if (r.data.glucoseType) values.push(r.data.glucoseType);

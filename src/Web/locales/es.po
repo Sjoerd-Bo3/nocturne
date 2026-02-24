@@ -1703,14 +1703,12 @@ msgid "Additional Macros"
 msgstr ""
 
 #: src/lib/components/food/AddFoodDialog.svelte
-#: src/lib/components/treatments/TreatmentEditDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/food/FoodEditor.svelte
 msgid "Fat (g)"
 msgstr ""
 
 #: src/lib/components/food/AddFoodDialog.svelte
-#: src/lib/components/treatments/TreatmentEditDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/food/FoodEditor.svelte
 msgid "Protein (g)"
@@ -15520,9 +15518,8 @@ msgstr ""
 msgid "<0/> Carb Intake"
 msgstr ""
 
-#: src/lib/components/treatments/TreatmentEditDialog.svelte
-msgid "Food Type"
-msgstr ""
+#~ msgid "Food Type"
+#~ msgstr ""
 
 #: src/lib/components/entries/BolusSection.svelte
 msgid "<0/> Advanced"

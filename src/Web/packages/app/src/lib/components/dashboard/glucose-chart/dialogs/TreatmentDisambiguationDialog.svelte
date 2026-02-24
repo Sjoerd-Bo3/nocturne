@@ -22,7 +22,6 @@
         break;
       case "carbs":
         if (entry.data.carbs) parts.push(`${entry.data.carbs}g carbs`);
-        if (entry.data.foodType) parts.push(entry.data.foodType);
         break;
       case "bgCheck":
         if (entry.data.mgdl) parts.push(`${entry.data.mgdl} mg/dL`);

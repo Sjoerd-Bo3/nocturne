@@ -1679,14 +1679,12 @@ msgid "Additional Macros"
 msgstr "Additional Macros"
 
 #: src/lib/components/food/AddFoodDialog.svelte
-#: src/lib/components/treatments/TreatmentEditDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/food/FoodEditor.svelte
 msgid "Fat (g)"
 msgstr "Fat (g)"
 
 #: src/lib/components/food/AddFoodDialog.svelte
-#: src/lib/components/treatments/TreatmentEditDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/food/FoodEditor.svelte
 msgid "Protein (g)"
@@ -13388,9 +13386,8 @@ msgstr "Unabsorbed (U)"
 msgid "<0/> Carb Intake"
 msgstr "<0/> Carb Intake"
 
-#: src/lib/components/treatments/TreatmentEditDialog.svelte
-msgid "Food Type"
-msgstr "Food Type"
+#~ msgid "Food Type"
+#~ msgstr "Food Type"
 
 #~ msgid "Absorption (min)"
 #~ msgstr "Absorption (min)"

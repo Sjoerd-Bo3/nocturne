@@ -15,10 +15,6 @@
 	} = $props();
 </script>
 
-{#snippet Fallback()}
-	<ChevronLeftIcon class="size-4" />
-{/snippet}
-
 <RangeCalendarPrimitive.PrevButton
 	bind:ref
 	class={cn(
@@ -26,6 +22,11 @@
 		"size-(--cell-size) bg-transparent p-0 select-none disabled:opacity-50 rtl:rotate-180",
 		className
 	)}
-	children={children || Fallback}
 	{...restProps}
-/>
+>
+	{#if children}
+		{@render children()}
+	{:else}
+		<ChevronLeftIcon class="size-4" />
+	{/if}
+</RangeCalendarPrimitive.PrevButton>
