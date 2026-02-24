@@ -525,6 +525,7 @@ msgstr ""
 msgid "Announcement"
 msgstr ""
 
+#: src/lib/components/AlarmOverlay.svelte
 #: src/lib/stores/realtime-store.svelte.ts
 msgid "Glucose alarm"
 msgstr ""
@@ -811,6 +812,10 @@ msgstr ""
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
+#: src/lib/stores/alarm-state.svelte.ts
+#: src/lib/stores/alarm-state.svelte.ts
+#: src/lib/stores/alarm-state.svelte.ts
+#: src/lib/stores/alarm-state.svelte.ts
 #: src/routes/calendar/+page.svelte
 #: src/routes/profile/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
@@ -831,6 +836,8 @@ msgstr ""
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
+#: src/lib/stores/alarm-state.svelte.ts
+#: src/lib/stores/alarm-state.svelte.ts
 #: src/routes/calendar/+page.svelte
 #: src/routes/profile/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
@@ -998,6 +1005,7 @@ msgstr ""
 #. placeholder {0}: monthSummary.tdd.toFixed(1)
 #. placeholder {0}: dayTotalInsulin.toFixed(1)
 #. placeholder {0}: meal.correlatedBolus.insulin.toFixed(1)
+#. placeholder {0}: treatment.insulin.toFixed(2)
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
 #: src/lib/components/dashboard/glucose-chart/markers/BolusMarker.svelte
 #: src/lib/components/reports/ApsStateCard.svelte
@@ -1694,7 +1702,6 @@ msgstr ""
 msgid "Additional Macros"
 msgstr ""
 
-#: src/lib/components/entries/CarbIntakeSection.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
@@ -1702,7 +1709,6 @@ msgstr ""
 msgid "Fat (g)"
 msgstr ""
 
-#: src/lib/components/entries/CarbIntakeSection.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
@@ -5005,6 +5011,7 @@ msgstr ""
 msgid "Info"
 msgstr ""
 
+#: src/lib/components/AlarmOverlay.svelte
 #: src/lib/components/trackers/tracker-notification-editor.svelte
 msgid "Warning"
 msgstr ""
@@ -5261,6 +5268,8 @@ msgstr ""
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
+#: src/lib/stores/alarm-state.svelte.ts
+#: src/lib/stores/alarm-state.svelte.ts
 #: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
@@ -5269,6 +5278,7 @@ msgstr ""
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
+#: src/lib/stores/alarm-state.svelte.ts
 #: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
@@ -15229,6 +15239,7 @@ msgstr ""
 msgid "<0/> Accept"
 msgstr ""
 
+#: src/lib/components/AlarmOverlay.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 msgid "<0/> Dismiss"
 msgstr ""
@@ -15509,19 +15520,16 @@ msgstr ""
 msgid "<0/> Carb Intake"
 msgstr ""
 
-#: src/lib/components/entries/CarbIntakeSection.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
 msgid "Food Type"
 msgstr ""
 
 #: src/lib/components/entries/BolusSection.svelte
-#: src/lib/components/entries/CarbIntakeSection.svelte
 msgid "<0/> Advanced"
 msgstr ""
 
-#: src/lib/components/entries/CarbIntakeSection.svelte
-msgid "Absorption (min)"
-msgstr ""
+#~ msgid "Absorption (min)"
+#~ msgstr ""
 
 #: src/lib/components/entries/BolusSection.svelte
 msgid "Square Wave"
@@ -16769,4 +16777,20 @@ msgstr ""
 #. placeholder {0}: dataSummary.total?.toLocaleString() ?? 0
 #: src/routes/settings/connectors/[connector]/+page.svelte
 msgid "<0/> {0} total"
+msgstr ""
+
+#: src/lib/components/AlarmOverlay.svelte
+msgid "Urgent Alarm"
+msgstr ""
+
+#: src/lib/components/AlarmOverlay.svelte
+msgid "<0/> 5 min"
+msgstr ""
+
+#: src/lib/components/AlarmOverlay.svelte
+msgid "<0/> 10 min"
+msgstr ""
+
+#: src/lib/components/AlarmOverlay.svelte
+msgid "<0/> 15 min"
 msgstr ""

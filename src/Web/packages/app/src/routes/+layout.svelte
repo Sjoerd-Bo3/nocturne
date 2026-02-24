@@ -15,6 +15,33 @@
   import { page } from "$app/state";
   import { ModeWatcher } from "mode-watcher";
   import * as Card from "$lib/components/ui/card";
+  import * as alarmState from "$lib/stores/alarm-state.svelte";
+  import AlarmActiveView from "$lib/components/settings/alarm-preview/AlarmActiveView.svelte";
+  import EmergencyOverlay from "$lib/components/settings/alarm-preview/EmergencyOverlay.svelte";
+
+  const activeAlarm = $derived(alarmState.getActiveAlarm());
+  const alarmIsFlashing = $derived(alarmState.getIsFlashing());
+  let isEmergencyView = $state(false);
+
+  // Derive emergency contacts from the active alarm profile
+  const showEmergencyButton = $derived(
+    activeAlarm?.profile.visual.showEmergencyContacts ?? false
+  );
+
+  function handleAlarmDismiss() {
+    alarmState.dismiss();
+    isEmergencyView = false;
+  }
+
+  function handleAlarmSnooze(minutes?: number) {
+    alarmState.snooze(minutes ?? activeAlarm?.profile.snooze.defaultMinutes ?? 15);
+    isEmergencyView = false;
+  }
+
+  function handleEmergencyClick() {
+    alarmState.dismiss();
+    isEmergencyView = true;
+  }
 
   // Routes that should hide the sidebar (fullscreen mode)
   // Matches /clock/[id] but not /clock or /clock/config or /clock/config/[id]
@@ -172,6 +199,25 @@
 </script>
 
 <ModeWatcher />
+
+{#if isEmergencyView && activeAlarm}
+  <EmergencyOverlay
+    profile={activeAlarm.profile}
+    enabledContacts={[]}
+    onClose={() => (isEmergencyView = false)}
+  />
+{/if}
+
+{#if activeAlarm && !isEmergencyView}
+  <AlarmActiveView
+    profile={activeAlarm.profile}
+    isFlashing={alarmIsFlashing}
+    {showEmergencyButton}
+    onSnooze={handleAlarmSnooze}
+    onDismiss={handleAlarmDismiss}
+    onEmergencyClick={handleEmergencyClick}
+  />
+{/if}
 
 {#if isFullscreen}
   <!-- Fullscreen mode (no sidebar) for clock display -->

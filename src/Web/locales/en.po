@@ -645,6 +645,10 @@ msgstr "In Range"
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
+#: src/lib/stores/alarm-state.svelte.ts
+#: src/lib/stores/alarm-state.svelte.ts
+#: src/lib/stores/alarm-state.svelte.ts
+#: src/lib/stores/alarm-state.svelte.ts
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
@@ -664,6 +668,8 @@ msgstr "Low"
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
+#: src/lib/stores/alarm-state.svelte.ts
+#: src/lib/stores/alarm-state.svelte.ts
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
@@ -938,6 +944,7 @@ msgstr "Real-time data disconnected"
 msgid "Failed to connect to real-time data"
 msgstr "Failed to connect to real-time data"
 
+#: src/lib/components/AlarmOverlay.svelte
 #: src/lib/stores/realtime-store.svelte.ts
 msgid "Glucose alarm"
 msgstr "Glucose alarm"
@@ -4603,6 +4610,8 @@ msgstr "• {0}g carbs"
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
+#: src/lib/stores/alarm-state.svelte.ts
+#: src/lib/stores/alarm-state.svelte.ts
 #: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
@@ -4611,6 +4620,7 @@ msgstr "UrgentLow"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
+#: src/lib/stores/alarm-state.svelte.ts
 #: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
@@ -5470,6 +5480,7 @@ msgstr "Syncing..."
 msgid "Info"
 msgstr "Info"
 
+#: src/lib/components/AlarmOverlay.svelte
 #: src/lib/components/trackers/tracker-notification-editor.svelte
 msgid "Warning"
 msgstr "Warning"
@@ -13181,6 +13192,7 @@ msgstr "Drag the handles on the chart to adjust"
 msgid "<0/> Accept"
 msgstr "<0/> Accept"
 
+#: src/lib/components/AlarmOverlay.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 msgid "<0/> Dismiss"
 msgstr "<0/> Dismiss"
@@ -14695,3 +14707,19 @@ msgstr "No therapy settings found for profile \"{0}\"."
 #: src/routes/settings/connectors/[connector]/+page.svelte
 msgid "<0/> {0} total"
 msgstr "<0/> {0} total"
+
+#: src/lib/components/AlarmOverlay.svelte
+msgid "Urgent Alarm"
+msgstr "Urgent Alarm"
+
+#: src/lib/components/AlarmOverlay.svelte
+msgid "<0/> 5 min"
+msgstr "<0/> 5 min"
+
+#: src/lib/components/AlarmOverlay.svelte
+msgid "<0/> 10 min"
+msgstr "<0/> 10 min"
+
+#: src/lib/components/AlarmOverlay.svelte
+msgid "<0/> 15 min"
+msgstr "<0/> 15 min"

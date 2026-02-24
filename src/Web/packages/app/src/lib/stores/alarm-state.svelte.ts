@@ -1,0 +1,131 @@
+// Alarm state management using Svelte 5 runes
+// Connects SignalR alarm events to audio playback and the existing AlarmActiveView overlay
+import { playAlarmSound, stopAlarmSound } from '$lib/audio/alarm-sounds';
+import type { AlarmEvent } from '$lib/websocket/types';
+import type { AlarmProfileConfiguration } from '$lib/types/alarm-profile';
+import { createDefaultAlarmProfile } from '$lib/types/alarm-profile';
+
+export interface ActiveAlarm {
+	event: AlarmEvent;
+	profile: AlarmProfileConfiguration;
+	triggeredAt: number;
+}
+
+let activeAlarm = $state<ActiveAlarm | null>(null);
+let isSnoozed = $state(false);
+let snoozeUntil = $state<number | null>(null);
+let snoozeTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+let isFlashing = $state(false);
+let flashInterval = $state<ReturnType<typeof setInterval> | null>(null);
+
+/**
+ * Resolve an AlarmEvent level to the best matching user alarm profile.
+ */
+function resolveProfile(
+	event: AlarmEvent,
+	profiles: AlarmProfileConfiguration[]
+): AlarmProfileConfiguration {
+	const levelMap: Record<string, string[]> = {
+		urgent: ['UrgentLow', 'UrgentHigh'],
+		warn: ['Low', 'High'],
+		warning: ['Low', 'High'],
+	};
+
+	const candidates = levelMap[event.level] ?? ['Low'];
+	const match = profiles.find((p) => p.enabled && candidates.includes(p.alarmType));
+	if (match) return match;
+
+	// Fall back to a sensible default profile
+	const isUrgent = event.level === 'urgent';
+	return createDefaultAlarmProfile(isUrgent ? 'UrgentLow' : 'Low');
+}
+
+/**
+ * Trigger an alarm from a SignalR alarm event.
+ * Pass the user's alarm profiles so we resolve the right sound/visual settings.
+ */
+export function trigger(event: AlarmEvent, profiles: AlarmProfileConfiguration[] = []) {
+	if (isSnoozed && snoozeUntil && Date.now() < snoozeUntil) {
+		return;
+	}
+
+	isSnoozed = false;
+	snoozeUntil = null;
+
+	const profile = resolveProfile(event, profiles);
+	activeAlarm = { event, profile, triggeredAt: Date.now() };
+
+	if (profile.audio.enabled) {
+		playAlarmSound(profile.audio.soundId, {
+			volume: profile.audio.maxVolume,
+			ascending: profile.audio.ascendingVolume,
+			startVolume: profile.audio.startVolume,
+			ascendDurationSeconds: profile.audio.ascendDurationSeconds,
+			vibrate: profile.vibration.enabled,
+		});
+	}
+
+	startFlashing(profile);
+}
+
+export function dismiss() {
+	stopAlarmSound();
+	stopFlashing();
+	activeAlarm = null;
+}
+
+export function snooze(minutes: number) {
+	stopAlarmSound();
+	stopFlashing();
+	activeAlarm = null;
+	isSnoozed = true;
+	snoozeUntil = Date.now() + minutes * 60 * 1000;
+
+	if (snoozeTimer) clearTimeout(snoozeTimer);
+	snoozeTimer = setTimeout(() => {
+		isSnoozed = false;
+		snoozeUntil = null;
+		snoozeTimer = null;
+	}, minutes * 60 * 1000);
+}
+
+export function clear() {
+	stopAlarmSound();
+	stopFlashing();
+	activeAlarm = null;
+	isSnoozed = false;
+	snoozeUntil = null;
+	if (snoozeTimer) {
+		clearTimeout(snoozeTimer);
+		snoozeTimer = null;
+	}
+}
+
+function startFlashing(profile: AlarmProfileConfiguration) {
+	stopFlashing();
+	if (profile.visual.screenFlash) {
+		flashInterval = setInterval(() => {
+			isFlashing = !isFlashing;
+		}, profile.visual.flashIntervalMs);
+	}
+}
+
+function stopFlashing() {
+	if (flashInterval) {
+		clearInterval(flashInterval);
+		flashInterval = null;
+	}
+	isFlashing = false;
+}
+
+export function getActiveAlarm(): ActiveAlarm | null {
+	return activeAlarm;
+}
+
+export function getIsSnoozed(): boolean {
+	return isSnoozed;
+}
+
+export function getIsFlashing(): boolean {
+	return isFlashing;
+}

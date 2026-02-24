@@ -27,6 +27,7 @@ import {
   type EntryRecord,
 } from "$lib/constants/entry-categories";
 import { toast } from "svelte-sonner";
+import * as alarmState from "$lib/stores/alarm-state.svelte";
 import { getContext, setContext } from "svelte";
 import { getApiClient } from "$lib/api/client";
 import { processPillsData, type ProcessedPillsData } from "$api/pills-processor";
@@ -507,6 +508,10 @@ export class RealtimeStore {
     const isUrgent = event.level === "urgent";
     const toastMethod = isUrgent ? "error" : "warning";
 
+    // Trigger full-screen alarm overlay and sound
+    alarmState.trigger(event);
+
+    // Keep toast as secondary notification
     toast[toastMethod](event.message || "Glucose alarm", {
       description: event.title,
       duration: isUrgent ? 10000 : 5000,
@@ -515,6 +520,9 @@ export class RealtimeStore {
 
   /** Handle alarm clearing */
   private handleClearAlarm(): void {
+    // Clear alarm overlay, sound, and snooze state
+    alarmState.clear();
+
     toast.success("Glucose alarm cleared");
   }
 
