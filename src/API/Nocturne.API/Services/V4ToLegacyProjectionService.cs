@@ -333,7 +333,6 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
             DataSource = bolus.DataSource,
             SyncIdentifier = bolus.SyncIdentifier,
             InsulinType = bolus.InsulinType,
-            IsBasalInsulin = bolus.IsBasalInsulin,
         };
 
     private static Treatment ProjectCorrectionBolus(Bolus bolus) =>
@@ -347,7 +346,6 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
             DataSource = bolus.DataSource,
             SyncIdentifier = bolus.SyncIdentifier,
             InsulinType = bolus.InsulinType,
-            IsBasalInsulin = bolus.IsBasalInsulin,
         };
 
     private static Treatment ProjectCarbCorrection(CarbIntake carb, List<TreatmentFood> foods) =>

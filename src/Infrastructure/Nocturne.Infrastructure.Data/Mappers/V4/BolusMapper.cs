@@ -34,10 +34,8 @@ public static class BolusMapper
             SyncIdentifier = model.SyncIdentifier,
             InsulinType = model.InsulinType,
             Unabsorbed = model.Unabsorbed,
-            IsBasalInsulin = model.IsBasalInsulin,
-            PumpId = model.PumpId,
-            PumpSerial = model.PumpSerial,
-            PumpType = model.PumpType,
+            PumpDeviceId = model.PumpDeviceId,
+            PumpRecordId = model.PumpRecordId,
         };
     }
 
@@ -67,10 +65,8 @@ public static class BolusMapper
             SyncIdentifier = entity.SyncIdentifier,
             InsulinType = entity.InsulinType,
             Unabsorbed = entity.Unabsorbed,
-            IsBasalInsulin = entity.IsBasalInsulin,
-            PumpId = entity.PumpId,
-            PumpSerial = entity.PumpSerial,
-            PumpType = entity.PumpType,
+            PumpDeviceId = entity.PumpDeviceId,
+            PumpRecordId = entity.PumpRecordId,
         };
     }
 
@@ -96,9 +92,7 @@ public static class BolusMapper
         entity.SyncIdentifier = model.SyncIdentifier;
         entity.InsulinType = model.InsulinType;
         entity.Unabsorbed = model.Unabsorbed;
-        entity.IsBasalInsulin = model.IsBasalInsulin;
-        entity.PumpId = model.PumpId;
-        entity.PumpSerial = model.PumpSerial;
-        entity.PumpType = model.PumpType;
+        entity.PumpDeviceId = model.PumpDeviceId;
+        entity.PumpRecordId = model.PumpRecordId;
     }
 }

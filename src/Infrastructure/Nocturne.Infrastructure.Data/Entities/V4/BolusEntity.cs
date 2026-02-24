@@ -122,18 +122,10 @@ public class BolusEntity
     [Column("unabsorbed")]
     public double? Unabsorbed { get; set; }
 
-    [Column("is_basal_insulin")]
-    public bool IsBasalInsulin { get; set; }
+    [Column("pump_device_id")]
+    public Guid? PumpDeviceId { get; set; }
 
-    [Column("pump_id")]
+    [Column("pump_record_id")]
     [MaxLength(256)]
-    public string? PumpId { get; set; }
-
-    [Column("pump_serial")]
-    [MaxLength(128)]
-    public string? PumpSerial { get; set; }
-
-    [Column("pump_type")]
-    [MaxLength(128)]
-    public string? PumpType { get; set; }
+    public string? PumpRecordId { get; set; }
 }

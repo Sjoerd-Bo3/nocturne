@@ -101,22 +101,12 @@ public class Bolus : IV4Record
     public double? Unabsorbed { get; set; }
 
     /// <summary>
-    /// Whether this represents basal insulin delivery (AAPS-specific)
+    /// Foreign key to the PumpDevice table
     /// </summary>
-    public bool IsBasalInsulin { get; set; }
+    public Guid? PumpDeviceId { get; set; }
 
     /// <summary>
-    /// AAPS internal pump identifier
+    /// Per-record pump counter (AAPS internal identifier)
     /// </summary>
-    public string? PumpId { get; set; }
-
-    /// <summary>
-    /// Pump serial number
-    /// </summary>
-    public string? PumpSerial { get; set; }
-
-    /// <summary>
-    /// Pump type/model name
-    /// </summary>
-    public string? PumpType { get; set; }
+    public string? PumpRecordId { get; set; }
 }

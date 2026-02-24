@@ -433,10 +433,8 @@ public class TreatmentDecomposer : ITreatmentDecomposer
             SyncIdentifier = treatment.SyncIdentifier,
             InsulinType = treatment.InsulinType,
             Unabsorbed = treatment.Unabsorbed,
-            IsBasalInsulin = treatment.IsBasalInsulin ?? false,
-            PumpId = treatment.PumpId?.ToString(),
-            PumpSerial = treatment.PumpSerial,
-            PumpType = treatment.PumpType,
+            PumpDeviceId = null, // Resolved in Task 7
+            PumpRecordId = treatment.PumpId?.ToString(),
         };
     }
 

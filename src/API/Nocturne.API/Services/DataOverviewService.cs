@@ -462,8 +462,8 @@ public class DataOverviewService : IDataOverviewService
     }
 
     /// <summary>
-    /// Collects insulin totals from the Boluses table (bolus + APS micro-bolus basal)
-    /// and from BasalDelivery StateSpans (pump basal delivery with pre-calculated insulin).
+    /// Collects insulin totals from the Boluses table and from BasalDelivery StateSpans
+    /// (pump basal delivery with pre-calculated insulin).
     /// </summary>
     private async Task CollectInsulinTotals(
         long startMills,
@@ -473,13 +473,14 @@ public class DataOverviewService : IDataOverviewService
         Dictionary<string, DailySummaryDay> dayMap,
         CancellationToken cancellationToken)
     {
-        // Bolus records (regular boluses + APS micro-boluses marked as basal)
+        // Bolus records — all boluses are summed into TotalBolusUnits
+        // TODO: Query micro_boluses table for basal insulin (Task 14)
         try
         {
             var bolusRecords = await _context.Boluses
                 .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Insulin > 0)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => new { e.Mills, e.Insulin, e.IsBasalInsulin })
+                .Select(e => new { e.Mills, e.Insulin })
                 .ToListAsync(cancellationToken);
 
             if (bolusRecords.Count > 0)
@@ -489,8 +490,7 @@ public class DataOverviewService : IDataOverviewService
                     .Select(g => new
                     {
                         Date = g.Key,
-                        BolusUnits = g.Where(r => !r.IsBasalInsulin).Sum(r => r.Insulin),
-                        BasalUnits = g.Where(r => r.IsBasalInsulin).Sum(r => r.Insulin)
+                        BolusUnits = g.Sum(r => r.Insulin),
                     });
 
                 foreach (var group in grouped)
@@ -503,8 +503,6 @@ public class DataOverviewService : IDataOverviewService
 
                     if (group.BolusUnits > 0)
                         day.TotalBolusUnits = Math.Round(group.BolusUnits, 2);
-                    if (group.BasalUnits > 0)
-                        day.TotalBasalUnits = Math.Round(group.BasalUnits, 2);
                 }
             }
         }
