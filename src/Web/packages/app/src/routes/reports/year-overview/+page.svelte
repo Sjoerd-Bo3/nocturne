@@ -809,7 +809,7 @@
                                 fill={getCellFill(cell.data)}
                                 onpointermove={(e) =>
                                   context.tooltip?.show(e, cell.data)}
-                                onpointerleave={(e) => context.tooltip?.hide()}
+                                onpointerleave={() => context.tooltip?.hide()}
                                 onclick={() => {
                                   if (cellDate) {
                                     navigateToDayInReview(cellDate);
