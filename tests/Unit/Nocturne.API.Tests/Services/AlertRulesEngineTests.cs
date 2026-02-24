@@ -371,6 +371,114 @@ public class AlertRulesEngineTests
         result.Should().Be(expected);
     }
 
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task EvaluateGlucoseData_WithRecentAlert_ShouldRespectCooldownUsingCreatedAt()
+    {
+        // Arrange: rule with lowThreshold=80, existing ACTIVE alert with TriggerTime = 1 day ago
+        // but CreatedAt = 5 min ago. Cooldown should be based on CreatedAt, not TriggerTime.
+        var userId = "test-user";
+        var glucoseReading = CreateSensorGlucose(68, DateTime.UtcNow);
+        var rule = CreateAlertRule(userId, lowThreshold: 80);
+
+        _mockAlertRuleRepository
+            .Setup(x => x.GetActiveRulesForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { rule });
+
+        _mockNotificationPreferencesRepository
+            .Setup(x =>
+                x.IsUserInQuietHoursAsync(userId, It.IsAny<DateTime?>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(false);
+
+        _mockAlertHistoryRepository
+            .Setup(x => x.GetActiveAlertCountForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var existingAlert = new AlertHistoryEntity
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            AlertRuleId = rule.Id,
+            AlertType = "Low",
+            Status = "ACTIVE",
+            TriggerTime = DateTime.UtcNow.AddDays(-1), // reading timestamp: 1 day ago
+            CreatedAt = DateTime.UtcNow.AddMinutes(-5), // alert was created 5 min ago (within cooldown)
+        };
+
+        _mockAlertHistoryRepository
+            .Setup(x =>
+                x.GetActiveAlertForRuleAndTypeAsync(userId, rule.Id, "Low", It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(existingAlert);
+
+        _mockAlertHistoryRepository
+            .Setup(x => x.GetActiveAlertsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { existingAlert });
+
+        // Act
+        var result = await _alertRulesEngine.EvaluateGlucoseData(
+            glucoseReading, userId, CancellationToken.None
+        );
+
+        // Assert: cooldown active because CreatedAt is 5 min ago, within 15 min cooldown
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task EvaluateGlucoseData_WithExpiredCooldown_ShouldFireAlert()
+    {
+        // Arrange: same as above but CreatedAt = 20 min ago (beyond 15 min cooldown)
+        var userId = "test-user";
+        var glucoseReading = CreateSensorGlucose(68, DateTime.UtcNow);
+        var rule = CreateAlertRule(userId, lowThreshold: 80);
+
+        _mockAlertRuleRepository
+            .Setup(x => x.GetActiveRulesForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { rule });
+
+        _mockNotificationPreferencesRepository
+            .Setup(x =>
+                x.IsUserInQuietHoursAsync(userId, It.IsAny<DateTime?>(), It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(false);
+
+        _mockAlertHistoryRepository
+            .Setup(x => x.GetActiveAlertCountForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var existingAlert = new AlertHistoryEntity
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            AlertRuleId = rule.Id,
+            AlertType = "Low",
+            Status = "ACTIVE",
+            TriggerTime = DateTime.UtcNow.AddDays(-1), // reading timestamp: 1 day ago
+            CreatedAt = DateTime.UtcNow.AddMinutes(-20), // alert was created 20 min ago (beyond cooldown)
+        };
+
+        _mockAlertHistoryRepository
+            .Setup(x =>
+                x.GetActiveAlertForRuleAndTypeAsync(userId, rule.Id, "Low", It.IsAny<CancellationToken>())
+            )
+            .ReturnsAsync(existingAlert);
+
+        _mockAlertHistoryRepository
+            .Setup(x => x.GetActiveAlertsForUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { existingAlert });
+
+        // Act
+        var result = await _alertRulesEngine.EvaluateGlucoseData(
+            glucoseReading, userId, CancellationToken.None
+        );
+
+        // Assert: should produce 1 alert event because cooldown has expired
+        result.Should().HaveCount(1);
+        result[0].AlertType.Should().Be(AlertType.Low);
+    }
+
     private static SensorGlucose CreateSensorGlucose(double glucoseValue, DateTime timestamp)
     {
         return new SensorGlucose

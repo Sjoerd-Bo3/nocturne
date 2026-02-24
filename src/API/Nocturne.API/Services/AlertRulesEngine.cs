@@ -266,7 +266,7 @@ public class AlertRulesEngine : IAlertRulesEngine
 
                 if (existingAlert != null)
                 {
-                    var timeSinceLastAlert = DateTime.UtcNow - existingAlert.TriggerTime;
+                    var timeSinceLastAlert = DateTime.UtcNow - existingAlert.CreatedAt;
                     if (timeSinceLastAlert.TotalMinutes < _options.AlertCooldownMinutes)
                     {
                         _logger.LogDebug(
@@ -391,7 +391,7 @@ public class AlertRulesEngine : IAlertRulesEngine
 
         if (existingAlert != null)
         {
-            var timeSinceLastAlert = DateTime.UtcNow - existingAlert.TriggerTime;
+            var timeSinceLastAlert = DateTime.UtcNow - existingAlert.CreatedAt;
             if (timeSinceLastAlert.TotalMinutes < _options.AlertCooldownMinutes)
             {
                 return null;
