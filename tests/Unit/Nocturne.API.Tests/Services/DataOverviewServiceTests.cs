@@ -858,7 +858,6 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon,
             Insulin = 5.5,
-            IsBasalInsulin = false,
             DataSource = "glooko"
         });
         _dbContext.Boluses.Add(new BolusEntity
@@ -866,7 +865,6 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon + 300000,
             Insulin = 3.2,
-            IsBasalInsulin = false,
             DataSource = "glooko"
         });
         await _dbContext.SaveChangesAsync();
@@ -880,47 +878,18 @@ public class DataOverviewServiceTests : IDisposable
         day.TotalDailyDose.Should().Be(8.7);
     }
 
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_BasalInsulin_CalculatedCorrectly()
-    {
-        _dbContext.Boluses.Add(new BolusEntity
-        {
-            Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
-            Insulin = 0.05,
-            IsBasalInsulin = true,
-            DataSource = "glooko"
-        });
-        _dbContext.Boluses.Add(new BolusEntity
-        {
-            Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
-            Insulin = 0.05,
-            IsBasalInsulin = true,
-            DataSource = "glooko"
-        });
-        await _dbContext.SaveChangesAsync();
-
-        var result = await _service.GetDailySummaryAsync(2024);
-
-        result.Days.Should().ContainSingle();
-        var day = result.Days[0];
-        day.TotalBolusUnits.Should().BeNull();
-        day.TotalBasalUnits.Should().Be(0.1);
-        day.TotalDailyDose.Should().Be(0.1);
-    }
+    // TODO: BasalInsulin test will be rewritten in Task 14 to use MicroBolus records
+    // The old test used IsBasalInsulin flag on Bolus which has been removed
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_MixedBolusAndBasal_TddIsSum()
+    public async Task GetDailySummaryAsync_MultipleBoluses_AllCountAsBolus()
     {
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon,
             Insulin = 5.0,
-            IsBasalInsulin = false,
             DataSource = "glooko"
         });
         _dbContext.Boluses.Add(new BolusEntity
@@ -928,7 +897,6 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon + 300000,
             Insulin = 10.0,
-            IsBasalInsulin = true,
             DataSource = "glooko"
         });
         await _dbContext.SaveChangesAsync();
@@ -937,8 +905,7 @@ public class DataOverviewServiceTests : IDisposable
 
         result.Days.Should().ContainSingle();
         var day = result.Days[0];
-        day.TotalBolusUnits.Should().Be(5.0);
-        day.TotalBasalUnits.Should().Be(10.0);
+        day.TotalBolusUnits.Should().Be(15.0);
         day.TotalDailyDose.Should().Be(15.0);
     }
 
@@ -973,7 +940,6 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon,
             Insulin = 5.0,
-            IsBasalInsulin = false,
             DataSource = "dexcom"
         });
         _dbContext.Boluses.Add(new BolusEntity
@@ -981,7 +947,6 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon + 300000,
             Insulin = 10.0,
-            IsBasalInsulin = false,
             DataSource = "glooko"
         });
         await _dbContext.SaveChangesAsync();
@@ -1039,7 +1004,6 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon,
             Insulin = 5.0,
-            IsBasalInsulin = false,
             DataSource = "glooko"
         });
         _dbContext.StateSpans.Add(new StateSpanEntity

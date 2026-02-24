@@ -919,10 +919,7 @@ public class TreatmentDecomposerTests : IDisposable
         bolus.SyncIdentifier.Should().Be("loop-sync-abc123");
         bolus.InsulinType.Should().Be("Humalog");
         bolus.Unabsorbed.Should().Be(1.2);
-        bolus.IsBasalInsulin.Should().BeTrue();
-        bolus.PumpId.Should().Be("42");
-        bolus.PumpSerial.Should().Be("SN-12345");
-        bolus.PumpType.Should().Be("Omnipod DASH");
+        bolus.PumpRecordId.Should().Be("42");
     }
 
     #endregion
@@ -1530,13 +1527,13 @@ public class TreatmentDecomposerTests : IDisposable
     }
 
     [Fact]
-    public void MapToBolus_NullIsBasalInsulin_DefaultsToFalse()
+    public void MapToBolus_NullPumpId_DefaultsToNull()
     {
         var correlationId = Guid.CreateVersion7();
-        var treatment = new Treatment { Id = "null-basal", Mills = 1700000000000, Insulin = 3.0 };
+        var treatment = new Treatment { Id = "null-pump", Mills = 1700000000000, Insulin = 3.0 };
 
         var bolus = TreatmentDecomposer.MapToBolus(treatment, correlationId);
-        bolus.IsBasalInsulin.Should().BeFalse();
+        bolus.PumpRecordId.Should().BeNull();
     }
 
     [Fact]

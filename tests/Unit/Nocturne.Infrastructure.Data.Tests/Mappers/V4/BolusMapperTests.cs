@@ -321,6 +321,7 @@ public class BolusMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_MapsApsFields()
     {
+        var pumpDeviceId = Guid.CreateVersion7();
         var model = new Bolus
         {
             Mills = 1700000000000,
@@ -328,10 +329,8 @@ public class BolusMapperTests
             SyncIdentifier = "loop-sync-abc123",
             InsulinType = "Humalog",
             Unabsorbed = 1.5,
-            IsBasalInsulin = true,
-            PumpId = "pump-42",
-            PumpSerial = "SN-12345",
-            PumpType = "Omnipod DASH"
+            PumpDeviceId = pumpDeviceId,
+            PumpRecordId = "pump-42"
         };
 
         var entity = BolusMapper.ToEntity(model);
@@ -339,16 +338,15 @@ public class BolusMapperTests
         entity.SyncIdentifier.Should().Be("loop-sync-abc123");
         entity.InsulinType.Should().Be("Humalog");
         entity.Unabsorbed.Should().Be(1.5);
-        entity.IsBasalInsulin.Should().BeTrue();
-        entity.PumpId.Should().Be("pump-42");
-        entity.PumpSerial.Should().Be("SN-12345");
-        entity.PumpType.Should().Be("Omnipod DASH");
+        entity.PumpDeviceId.Should().Be(pumpDeviceId);
+        entity.PumpRecordId.Should().Be("pump-42");
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     public void ToDomainModel_MapsApsFields()
     {
+        var pumpDeviceId = Guid.CreateVersion7();
         var entity = new BolusEntity
         {
             Id = Guid.CreateVersion7(),
@@ -357,10 +355,8 @@ public class BolusMapperTests
             SyncIdentifier = "loop-sync-abc123",
             InsulinType = "Humalog",
             Unabsorbed = 1.5,
-            IsBasalInsulin = true,
-            PumpId = "pump-42",
-            PumpSerial = "SN-12345",
-            PumpType = "Omnipod DASH"
+            PumpDeviceId = pumpDeviceId,
+            PumpRecordId = "pump-42"
         };
 
         var model = BolusMapper.ToDomainModel(entity);
@@ -368,10 +364,8 @@ public class BolusMapperTests
         model.SyncIdentifier.Should().Be("loop-sync-abc123");
         model.InsulinType.Should().Be("Humalog");
         model.Unabsorbed.Should().Be(1.5);
-        model.IsBasalInsulin.Should().BeTrue();
-        model.PumpId.Should().Be("pump-42");
-        model.PumpSerial.Should().Be("SN-12345");
-        model.PumpType.Should().Be("Omnipod DASH");
+        model.PumpDeviceId.Should().Be(pumpDeviceId);
+        model.PumpRecordId.Should().Be("pump-42");
     }
 
     [Fact]
