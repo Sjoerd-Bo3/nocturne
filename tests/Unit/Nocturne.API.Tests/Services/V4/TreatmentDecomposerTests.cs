@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nocturne.API.Services.V4;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Repositories.V4;
@@ -18,6 +19,9 @@ public class TreatmentDecomposerTests : IDisposable
     private readonly NocturneDbContext _context;
     private readonly Mock<IStateSpanService> _stateSpanServiceMock;
     private readonly Mock<ITreatmentFoodService> _treatmentFoodServiceMock;
+    private readonly Mock<IMicroBolusRepository> _microBolusRepoMock;
+    private readonly Mock<ITempBasalRepository> _tempBasalRepoMock;
+    private readonly Mock<IPumpDeviceService> _pumpDeviceServiceMock;
     private readonly TreatmentDecomposer _decomposer;
 
     public TreatmentDecomposerTests()
@@ -32,11 +36,21 @@ public class TreatmentDecomposerTests : IDisposable
         var bolusCalcRepo = new BolusCalculationRepository(_context, mockDedup.Object, NullLogger<BolusCalculationRepository>.Instance);
         _stateSpanServiceMock = new Mock<IStateSpanService>();
         _treatmentFoodServiceMock = new Mock<ITreatmentFoodService>();
+        _microBolusRepoMock = new Mock<IMicroBolusRepository>();
+        _tempBasalRepoMock = new Mock<ITempBasalRepository>();
+        _pumpDeviceServiceMock = new Mock<IPumpDeviceService>();
+
+        // Default: PumpDeviceService returns null (no pump device resolved)
+        _pumpDeviceServiceMock
+            .Setup(s => s.ResolveAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid?)null);
 
         _decomposer = new TreatmentDecomposer(
-            bolusRepo, carbIntakeRepo, bgCheckRepo, noteRepo, deviceEventRepo, bolusCalcRepo,
+            bolusRepo, _microBolusRepoMock.Object, _tempBasalRepoMock.Object,
+            carbIntakeRepo, bgCheckRepo, noteRepo, deviceEventRepo, bolusCalcRepo,
             _stateSpanServiceMock.Object,
             _treatmentFoodServiceMock.Object,
+            _pumpDeviceServiceMock.Object,
             NullLogger<TreatmentDecomposer>.Instance);
     }
 
@@ -278,13 +292,13 @@ public class TreatmentDecomposerTests : IDisposable
 
     #endregion
 
-    #region TempBasal → Delegates to IStateSpanService
+    #region TempBasal → Creates TempBasal via Repository
 
     [Theory]
     [InlineData("Temp Basal")]
     [InlineData("Temp Basal Start")]
     [InlineData("TempBasal")]
-    public async Task DecomposeAsync_TempBasal_DelegatesToStateSpanService(string eventType)
+    public async Task DecomposeAsync_TempBasal_CreatesTempBasalViaRepository(string eventType)
     {
         // Arrange
         var treatment = new Treatment
@@ -296,26 +310,34 @@ public class TreatmentDecomposerTests : IDisposable
             Duration = 30
         };
 
-        var expectedStateSpan = new StateSpan
-        {
-            Id = "state-span-123",
-            Category = StateSpanCategory.BasalDelivery,
-            StartMills = 1700000000000
-        };
+        _tempBasalRepoMock
+            .Setup(r => r.GetByLegacyIdAsync("temp-basal-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((V4Models.TempBasal?)null);
 
-        _stateSpanServiceMock
-            .Setup(s => s.CreateBasalDeliveryFromTreatmentAsync(treatment, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedStateSpan);
+        _tempBasalRepoMock
+            .Setup(r => r.CreateAsync(It.IsAny<V4Models.TempBasal>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((V4Models.TempBasal tb, CancellationToken _) => tb);
 
         // Act
         var result = await _decomposer.DecomposeAsync(treatment);
 
         // Assert
         result.CreatedRecords.Should().HaveCount(1);
-        result.CreatedRecords[0].Should().BeOfType<StateSpan>();
-        _stateSpanServiceMock.Verify(
-            s => s.CreateBasalDeliveryFromTreatmentAsync(treatment, It.IsAny<CancellationToken>()),
+        var tempBasal = result.CreatedRecords[0].Should().BeOfType<V4Models.TempBasal>().Subject;
+        tempBasal.LegacyId.Should().Be("temp-basal-1");
+        tempBasal.StartMills.Should().Be(1700000000000);
+        tempBasal.Rate.Should().Be(1.5);
+        tempBasal.EndMills.Should().Be(1700000000000 + (30 * 60 * 1000));
+        tempBasal.Origin.Should().Be(V4Models.TempBasalOrigin.Manual);
+
+        _tempBasalRepoMock.Verify(
+            r => r.CreateAsync(It.IsAny<V4Models.TempBasal>(), It.IsAny<CancellationToken>()),
             Times.Once);
+
+        // Should NOT delegate to StateSpanService for temp basals anymore
+        _stateSpanServiceMock.Verify(
+            s => s.CreateBasalDeliveryFromTreatmentAsync(It.IsAny<Treatment>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     #endregion

@@ -18,6 +18,8 @@ namespace Nocturne.API.Services.V4;
 public class TreatmentDecomposer : ITreatmentDecomposer
 {
     private readonly IBolusRepository _bolusRepository;
+    private readonly IMicroBolusRepository _microBolusRepository;
+    private readonly ITempBasalRepository _tempBasalRepository;
     private readonly ICarbIntakeRepository _carbIntakeRepository;
     private readonly IBGCheckRepository _bgCheckRepository;
     private readonly INoteRepository _noteRepository;
@@ -25,6 +27,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
     private readonly IBolusCalculationRepository _bolusCalculationRepository;
     private readonly IStateSpanService _stateSpanService;
     private readonly ITreatmentFoodService _treatmentFoodService;
+    private readonly IPumpDeviceService _pumpDeviceService;
     private readonly ILogger<TreatmentDecomposer> _logger;
 
     /// <summary>
@@ -39,6 +42,8 @@ public class TreatmentDecomposer : ITreatmentDecomposer
 
     public TreatmentDecomposer(
         IBolusRepository bolusRepository,
+        IMicroBolusRepository microBolusRepository,
+        ITempBasalRepository tempBasalRepository,
         ICarbIntakeRepository carbIntakeRepository,
         IBGCheckRepository bgCheckRepository,
         INoteRepository noteRepository,
@@ -46,9 +51,12 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         IBolusCalculationRepository bolusCalculationRepository,
         IStateSpanService stateSpanService,
         ITreatmentFoodService treatmentFoodService,
+        IPumpDeviceService pumpDeviceService,
         ILogger<TreatmentDecomposer> logger)
     {
         _bolusRepository = bolusRepository;
+        _microBolusRepository = microBolusRepository;
+        _tempBasalRepository = tempBasalRepository;
         _carbIntakeRepository = carbIntakeRepository;
         _bgCheckRepository = bgCheckRepository;
         _noteRepository = noteRepository;
@@ -56,6 +64,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         _bolusCalculationRepository = bolusCalculationRepository;
         _stateSpanService = stateSpanService;
         _treatmentFoodService = treatmentFoodService;
+        _pumpDeviceService = pumpDeviceService;
         _logger = logger;
     }
 
@@ -211,11 +220,19 @@ public class TreatmentDecomposer : ITreatmentDecomposer
 
     private async Task DecomposeBolusAsync(Treatment treatment, V4Models.DecompositionResult result, CancellationToken ct)
     {
+        if (treatment.IsBasalInsulin == true && treatment.Insulin > 0)
+        {
+            await DecomposeMicroBolusAsync(treatment, result, ct);
+            return;
+        }
+
         var existing = treatment.Id != null
             ? await _bolusRepository.GetByLegacyIdAsync(treatment.Id, ct)
             : null;
 
         var model = MapToBolus(treatment, result.CorrelationId);
+        model.PumpDeviceId = await _pumpDeviceService.ResolveAsync(
+            treatment.PumpType, treatment.PumpSerial, treatment.Mills, ct);
 
         if (existing != null)
         {
@@ -229,6 +246,31 @@ public class TreatmentDecomposer : ITreatmentDecomposer
             var created = await _bolusRepository.CreateAsync(model, ct);
             result.CreatedRecords.Add(created);
             _logger.LogDebug("Created Bolus from legacy treatment {LegacyId}", treatment.Id);
+        }
+    }
+
+    private async Task DecomposeMicroBolusAsync(Treatment treatment, V4Models.DecompositionResult result, CancellationToken ct)
+    {
+        var existing = treatment.Id != null
+            ? await _microBolusRepository.GetByLegacyIdAsync(treatment.Id, ct)
+            : null;
+
+        var model = MapToMicroBolus(treatment, result.CorrelationId);
+        model.PumpDeviceId = await _pumpDeviceService.ResolveAsync(
+            treatment.PumpType, treatment.PumpSerial, treatment.Mills, ct);
+
+        if (existing != null)
+        {
+            model.Id = existing.Id;
+            var updated = await _microBolusRepository.UpdateAsync(existing.Id, model, ct);
+            result.UpdatedRecords.Add(updated);
+            _logger.LogDebug("Updated existing MicroBolus {Id} from legacy treatment {LegacyId}", existing.Id, treatment.Id);
+        }
+        else
+        {
+            var created = await _microBolusRepository.CreateAsync(model, ct);
+            result.CreatedRecords.Add(created);
+            _logger.LogDebug("Created MicroBolus from legacy treatment {LegacyId}", treatment.Id);
         }
     }
 
@@ -365,9 +407,27 @@ public class TreatmentDecomposer : ITreatmentDecomposer
 
     private async Task DecomposeTempBasalAsync(Treatment treatment, V4Models.DecompositionResult result, CancellationToken ct)
     {
-        var stateSpan = await _stateSpanService.CreateBasalDeliveryFromTreatmentAsync(treatment, ct);
-        result.CreatedRecords.Add(stateSpan);
-        _logger.LogDebug("Delegated TempBasal treatment {LegacyId} to IStateSpanService", treatment.Id);
+        var existing = treatment.Id != null
+            ? await _tempBasalRepository.GetByLegacyIdAsync(treatment.Id, ct)
+            : null;
+
+        var model = MapToTempBasal(treatment, result.CorrelationId);
+        model.PumpDeviceId = await _pumpDeviceService.ResolveAsync(
+            treatment.PumpType, treatment.PumpSerial, treatment.Mills, ct);
+
+        if (existing != null)
+        {
+            model.Id = existing.Id;
+            var updated = await _tempBasalRepository.UpdateAsync(existing.Id, model, ct);
+            result.UpdatedRecords.Add(updated);
+            _logger.LogDebug("Updated existing TempBasal {Id} from legacy treatment {LegacyId}", existing.Id, treatment.Id);
+        }
+        else
+        {
+            var created = await _tempBasalRepository.CreateAsync(model, ct);
+            result.CreatedRecords.Add(created);
+            _logger.LogDebug("Created TempBasal from legacy treatment {LegacyId}", treatment.Id);
+        }
     }
 
     private async Task DecomposeProfileSwitchAsync(Treatment treatment, V4Models.DecompositionResult result, CancellationToken ct)
@@ -414,6 +474,47 @@ public class TreatmentDecomposer : ITreatmentDecomposer
 
     #region Mapping Methods
 
+    internal static V4Models.MicroBolus MapToMicroBolus(Treatment treatment, Guid? correlationId)
+    {
+        return new V4Models.MicroBolus
+        {
+            Id = Guid.CreateVersion7(),
+            LegacyId = treatment.Id,
+            Mills = treatment.Mills,
+            UtcOffset = treatment.UtcOffset,
+            Device = treatment.EnteredBy,
+            App = treatment.EnteredBy,
+            DataSource = treatment.DataSource,
+            CorrelationId = correlationId,
+            Insulin = treatment.Insulin ?? 0,
+            SyncIdentifier = treatment.SyncIdentifier,
+            PumpRecordId = treatment.PumpId?.ToString(),
+        };
+    }
+
+    internal static V4Models.TempBasal MapToTempBasal(Treatment treatment, Guid? correlationId)
+    {
+        var startMills = treatment.Mills;
+        var durationMs = (treatment.DurationInMilliseconds ?? (long?)((treatment.Duration ?? 0) * 60 * 1000)) ?? 0;
+
+        return new V4Models.TempBasal
+        {
+            Id = Guid.CreateVersion7(),
+            LegacyId = treatment.Id,
+            StartMills = startMills,
+            EndMills = durationMs > 0 ? startMills + durationMs : null,
+            UtcOffset = treatment.UtcOffset,
+            Device = treatment.EnteredBy,
+            App = treatment.EnteredBy,
+            DataSource = treatment.DataSource,
+            CorrelationId = correlationId,
+            Rate = treatment.Absolute ?? treatment.Rate ?? 0,
+            ScheduledRate = null, // Not available from legacy treatments
+            Origin = V4Models.TempBasalOrigin.Manual, // v1/v3 treatments default to Manual
+            PumpRecordId = treatment.PumpId?.ToString(),
+        };
+    }
+
     internal static V4Models.Bolus MapToBolus(Treatment treatment, Guid? correlationId)
     {
         return new V4Models.Bolus
@@ -433,7 +534,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
             SyncIdentifier = treatment.SyncIdentifier,
             InsulinType = treatment.InsulinType,
             Unabsorbed = treatment.Unabsorbed,
-            PumpDeviceId = null, // Resolved in Task 7
+            PumpDeviceId = null, // Resolved by caller via IPumpDeviceService
             PumpRecordId = treatment.PumpId?.ToString(),
         };
     }
@@ -665,6 +766,8 @@ public class TreatmentDecomposer : ITreatmentDecomposer
     {
         var deleted = 0;
         deleted += await _bolusRepository.DeleteByLegacyIdAsync(legacyId, ct);
+        deleted += await _microBolusRepository.DeleteByLegacyIdAsync(legacyId, ct);
+        deleted += await _tempBasalRepository.DeleteByLegacyIdAsync(legacyId, ct);
         deleted += await _carbIntakeRepository.DeleteByLegacyIdAsync(legacyId, ct);
         deleted += await _bgCheckRepository.DeleteByLegacyIdAsync(legacyId, ct);
         deleted += await _noteRepository.DeleteByLegacyIdAsync(legacyId, ct);
