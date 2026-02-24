@@ -262,6 +262,11 @@ public class NocturneDbContext : DbContext
     public DbSet<BolusEntity> Boluses { get; set; }
 
     /// <summary>
+    /// Gets or sets the MicroBoluses table for algorithm-delivered micro-dose insulin records (v4 granular model)
+    /// </summary>
+    public DbSet<MicroBolusEntity> MicroBoluses { get; set; }
+
+    /// <summary>
     /// Gets or sets the CarbIntakes table for carbohydrate intake records (v4 granular model)
     /// </summary>
     public DbSet<CarbIntakeEntity> CarbIntakes { get; set; }
@@ -305,6 +310,11 @@ public class NocturneDbContext : DbContext
     /// Gets or sets the PumpDevices table for physical insulin pump device records (v4 granular model)
     /// </summary>
     public DbSet<PumpDeviceEntity> PumpDevices { get; set; }
+
+    /// <summary>
+    /// Gets or sets the TempBasals table for temporary basal rate change records (v4 granular model)
+    /// </summary>
+    public DbSet<TempBasalEntity> TempBasals { get; set; }
 
     // V4 Profile Decomposition Models
 
