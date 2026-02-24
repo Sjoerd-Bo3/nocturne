@@ -301,6 +301,11 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<UploaderSnapshotEntity> UploaderSnapshots { get; set; }
 
+    /// <summary>
+    /// Gets or sets the PumpDevices table for physical insulin pump device records (v4 granular model)
+    /// </summary>
+    public DbSet<PumpDeviceEntity> PumpDevices { get; set; }
+
     // V4 Profile Decomposition Models
 
     /// <summary>
