@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
+using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models.V4;
 using Nocturne.Core.Contracts.V4.Repositories;
 
@@ -19,15 +20,18 @@ public class GlucoseController : ControllerBase
     private readonly ISensorGlucoseRepository _sensorRepo;
     private readonly IMeterGlucoseRepository _meterRepo;
     private readonly ICalibrationRepository _calibrationRepo;
+    private readonly IAlertOrchestrator _alertOrchestrator;
 
     public GlucoseController(
         ISensorGlucoseRepository sensorRepo,
         IMeterGlucoseRepository meterRepo,
-        ICalibrationRepository calibrationRepo)
+        ICalibrationRepository calibrationRepo,
+        IAlertOrchestrator alertOrchestrator)
     {
         _sensorRepo = sensorRepo;
         _meterRepo = meterRepo;
         _calibrationRepo = calibrationRepo;
+        _alertOrchestrator = alertOrchestrator;
     }
 
     #region Sensor Glucose
@@ -80,6 +84,15 @@ public class GlucoseController : ControllerBase
         if (model.Mills <= 0)
             return BadRequest(new { error = "Mills must be a positive value" });
         var created = await _sensorRepo.CreateAsync(model, ct);
+        try
+        {
+            await _alertOrchestrator.EvaluateAndProcessSensorGlucoseAsync(
+                [created], null, ct);
+        }
+        catch
+        {
+            // Alert evaluation failure should not fail the creation
+        }
         return CreatedAtAction(nameof(GetSensorGlucoseById), new { id = created.Id }, created);
     }
 
