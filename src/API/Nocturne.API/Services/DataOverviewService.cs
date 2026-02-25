@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts;
@@ -256,7 +255,7 @@ public class DataOverviewService : IDataOverviewService
         // Glucose averages (SensorGlucose + MeterGlucose + legacy Entries)
         await CollectGlucoseAverages(startMills, endMills, dataSources, hasFilter, dayMap, cancellationToken);
 
-        // Insulin totals (Bolus from Boluses table + Basal from Boluses & StateSpans)
+        // Insulin totals (Bolus from Boluses table + Basal from MicroBoluses & TempBasals)
         await CollectInsulinTotals(startMills, endMills, dataSources, hasFilter, dayMap, cancellationToken);
 
         // Carb totals
@@ -462,8 +461,8 @@ public class DataOverviewService : IDataOverviewService
     }
 
     /// <summary>
-    /// Collects insulin totals from the Boluses table and from BasalDelivery StateSpans
-    /// (pump basal delivery with pre-calculated insulin).
+    /// Collects insulin totals from the Boluses table (bolus insulin) and from
+    /// MicroBoluses + TempBasals tables (basal insulin delivery).
     /// </summary>
     private async Task CollectInsulinTotals(
         long startMills,
@@ -474,7 +473,6 @@ public class DataOverviewService : IDataOverviewService
         CancellationToken cancellationToken)
     {
         // Bolus records — all boluses are summed into TotalBolusUnits
-        // TODO: Query micro_boluses table for basal insulin (Task 14)
         try
         {
             var bolusRecords = await _context.Boluses
@@ -511,67 +509,79 @@ public class DataOverviewService : IDataOverviewService
             _logger.LogWarning(ex, "Failed to collect bolus insulin totals");
         }
 
-        // Basal delivery from StateSpans (pump-confirmed basal rates with calculatedInsulin metadata)
+        // MicroBolus records (APS micro-boluses that contribute to basal insulin)
         try
         {
-            var basalCategory = nameof(StateSpanCategory.BasalDelivery);
-            var basalSpans = await _context.StateSpans
-                .Where(e => e.Category == basalCategory
-                    && e.StartMills >= startMills && e.StartMills < endMills
-                    && e.MetadataJson != null)
-                .Where(e => !hasFilter || dataSources!.Contains(e.Source!))
-                .Select(e => new { e.StartMills, e.MetadataJson })
+            var microBolusRecords = await _context.MicroBoluses
+                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Insulin > 0)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
+                .Select(e => new { e.Mills, e.Insulin })
                 .ToListAsync(cancellationToken);
 
-            if (basalSpans.Count == 0) return;
-
-            var basalByDate = basalSpans
-                .Select(s =>
-                {
-                    var insulin = ExtractCalculatedInsulin(s.MetadataJson!);
-                    return new { Date = MillsToDateString(s.StartMills), Insulin = insulin };
-                })
-                .Where(s => s.Insulin > 0)
-                .GroupBy(s => s.Date)
-                .Select(g => new { Date = g.Key, TotalBasal = g.Sum(s => s.Insulin) });
-
-            foreach (var group in basalByDate)
+            if (microBolusRecords.Count > 0)
             {
-                if (!dayMap.TryGetValue(group.Date, out var day))
-                {
-                    day = new DailySummaryDay { Date = group.Date };
-                    dayMap[group.Date] = day;
-                }
+                var grouped = microBolusRecords
+                    .GroupBy(r => MillsToDateString(r.Mills))
+                    .Select(g => new { Date = g.Key, TotalBasal = g.Sum(r => r.Insulin) });
 
-                // Add to any existing basal from Boluses (APS micro-boluses)
-                day.TotalBasalUnits = Math.Round((day.TotalBasalUnits ?? 0) + group.TotalBasal, 2);
+                foreach (var group in grouped)
+                {
+                    if (!dayMap.TryGetValue(group.Date, out var day))
+                    {
+                        day = new DailySummaryDay { Date = group.Date };
+                        dayMap[group.Date] = day;
+                    }
+
+                    day.TotalBasalUnits = Math.Round((day.TotalBasalUnits ?? 0) + group.TotalBasal, 2);
+                }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to collect basal delivery from StateSpans");
+            _logger.LogWarning(ex, "Failed to collect basal insulin from MicroBoluses");
         }
-    }
 
-    /// <summary>
-    /// Extracts the calculatedInsulin value from a StateSpan's metadata JSON.
-    /// </summary>
-    private static double ExtractCalculatedInsulin(string metadataJson)
-    {
+        // TempBasal records (pump basal delivery with rate x duration)
         try
         {
-            using var doc = JsonDocument.Parse(metadataJson);
-            if (doc.RootElement.TryGetProperty("calculatedInsulin", out var prop))
+            var tempBasalRecords = await _context.TempBasals
+                .Where(e => e.StartMills >= startMills && e.StartMills < endMills && e.Rate > 0)
+                .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
+                .Select(e => new { e.StartMills, e.Rate, e.EndMills })
+                .ToListAsync(cancellationToken);
+
+            if (tempBasalRecords.Count > 0)
             {
-                return prop.GetDouble();
+                const long defaultDurationMills = 5L * 60 * 1000; // 5 minutes
+                const double millisPerHour = 1000.0 * 60 * 60;
+
+                var grouped = tempBasalRecords
+                    .Select(r =>
+                    {
+                        var durationMills = (r.EndMills ?? r.StartMills + defaultDurationMills) - r.StartMills;
+                        var insulin = r.Rate * durationMills / millisPerHour;
+                        return new { Date = MillsToDateString(r.StartMills), Insulin = insulin };
+                    })
+                    .Where(r => r.Insulin > 0)
+                    .GroupBy(r => r.Date)
+                    .Select(g => new { Date = g.Key, TotalBasal = g.Sum(r => r.Insulin) });
+
+                foreach (var group in grouped)
+                {
+                    if (!dayMap.TryGetValue(group.Date, out var day))
+                    {
+                        day = new DailySummaryDay { Date = group.Date };
+                        dayMap[group.Date] = day;
+                    }
+
+                    day.TotalBasalUnits = Math.Round((day.TotalBasalUnits ?? 0) + group.TotalBasal, 2);
+                }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Malformed JSON or missing property — skip
+            _logger.LogWarning(ex, "Failed to collect basal insulin from TempBasals");
         }
-
-        return 0;
     }
 
     /// <summary>

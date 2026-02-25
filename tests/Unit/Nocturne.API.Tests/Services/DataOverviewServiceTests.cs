@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nocturne.API.Services;
@@ -878,8 +877,123 @@ public class DataOverviewServiceTests : IDisposable
         day.TotalDailyDose.Should().Be(8.7);
     }
 
-    // TODO: BasalInsulin test will be rewritten in Task 14 to use MicroBolus records
-    // The old test used IsBasalInsulin flag on Bolus which has been removed
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_BasalFromMicroBoluses_CalculatedCorrectly()
+    {
+        // Two micro-boluses: 0.3U + 0.5U = 0.8U total basal
+        _dbContext.MicroBoluses.Add(new MicroBolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Insulin = 0.3,
+            DataSource = "glooko"
+        });
+        _dbContext.MicroBoluses.Add(new MicroBolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon + 300000,
+            Insulin = 0.5,
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBasalUnits.Should().Be(0.8);
+        day.TotalDailyDose.Should().Be(0.8);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_BasalFromTempBasals_CalculatedFromRateAndDuration()
+    {
+        // TempBasal: 1.0 U/hr for 1 hour (3600000ms) = 1.0U
+        // TempBasal: 0.5 U/hr for 30 min (1800000ms) = 0.25U
+        // Total: 1.25U
+        _dbContext.TempBasals.Add(new TempBasalEntity
+        {
+            Id = Guid.NewGuid(),
+            StartMills = June15_2024_Noon,
+            EndMills = June15_2024_Noon + 3600000,
+            Rate = 1.0,
+            Origin = "Scheduled",
+            DataSource = "glooko"
+        });
+        _dbContext.TempBasals.Add(new TempBasalEntity
+        {
+            Id = Guid.NewGuid(),
+            StartMills = June15_2024_Noon + 3600000,
+            EndMills = June15_2024_Noon + 5400000,
+            Rate = 0.5,
+            Origin = "Algorithm",
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBasalUnits.Should().Be(1.25);
+        day.TotalDailyDose.Should().Be(1.25);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_TempBasalWithoutEndMills_UsesDefaultFiveMinuteDuration()
+    {
+        // TempBasal with no EndMills: 1.2 U/hr for default 5 min = 1.2 * (5*60*1000) / (1000*60*60) = 0.1U
+        _dbContext.TempBasals.Add(new TempBasalEntity
+        {
+            Id = Guid.NewGuid(),
+            StartMills = June15_2024_Noon,
+            EndMills = null,
+            Rate = 1.2,
+            Origin = "Algorithm",
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBasalUnits.Should().Be(0.1);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_MicroBolusAndTempBasal_CombinedForTotalBasal()
+    {
+        // MicroBolus: 0.5U + TempBasal: 1.0 U/hr for 1hr = 1.0U -> Total basal = 1.5U
+        _dbContext.MicroBoluses.Add(new MicroBolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Insulin = 0.5,
+            DataSource = "glooko"
+        });
+        _dbContext.TempBasals.Add(new TempBasalEntity
+        {
+            Id = Guid.NewGuid(),
+            StartMills = June15_2024_Noon,
+            EndMills = June15_2024_Noon + 3600000,
+            Rate = 1.0,
+            Origin = "Scheduled",
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBasalUnits.Should().Be(1.5);
+        day.TotalDailyDose.Should().Be(1.5);
+    }
 
     [Fact]
     [Trait("Category", "Unit")]
@@ -961,44 +1075,9 @@ public class DataOverviewServiceTests : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_BasalFromStateSpans_CalculatedFromMetadata()
+    public async Task GetDailySummaryAsync_BasalFromMicroBoluses_CombinedWithBolusForTdd()
     {
-        // Two basal delivery spans: 1 U/hr for 1800s (0.5U) + 0.8 U/hr for 3600s (0.8U) = 1.3U total
-        _dbContext.StateSpans.Add(new StateSpanEntity
-        {
-            Id = Guid.NewGuid(),
-            Category = "BasalDelivery",
-            State = "Active",
-            StartMills = June15_2024_Noon,
-            EndMills = June15_2024_Noon + 1800000,
-            Source = "glooko",
-            MetadataJson = JsonSerializer.Serialize(new { rate = 1.0, origin = "Scheduled", durationSeconds = 1800, calculatedInsulin = 0.5 })
-        });
-        _dbContext.StateSpans.Add(new StateSpanEntity
-        {
-            Id = Guid.NewGuid(),
-            Category = "BasalDelivery",
-            State = "Active",
-            StartMills = June15_2024_Noon + 1800000,
-            EndMills = June15_2024_Noon + 5400000,
-            Source = "glooko",
-            MetadataJson = JsonSerializer.Serialize(new { rate = 0.8, origin = "Algorithm", durationSeconds = 3600, calculatedInsulin = 0.8 })
-        });
-        await _dbContext.SaveChangesAsync();
-
-        var result = await _service.GetDailySummaryAsync(2024);
-
-        result.Days.Should().ContainSingle();
-        var day = result.Days[0];
-        day.TotalBasalUnits.Should().Be(1.3);
-        day.TotalDailyDose.Should().Be(1.3);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_BasalFromStateSpans_CombinedWithBolusForTdd()
-    {
-        // Bolus: 5U, Basal from StateSpan: 10U -> TDD = 15U
+        // Bolus: 5U, MicroBolus basal: 2.5U -> TDD = 7.5U
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
@@ -1006,15 +1085,44 @@ public class DataOverviewServiceTests : IDisposable
             Insulin = 5.0,
             DataSource = "glooko"
         });
-        _dbContext.StateSpans.Add(new StateSpanEntity
+        _dbContext.MicroBoluses.Add(new MicroBolusEntity
         {
             Id = Guid.NewGuid(),
-            Category = "BasalDelivery",
-            State = "Active",
+            Mills = June15_2024_Noon + 300000,
+            Insulin = 2.5,
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        result.Days.Should().ContainSingle();
+        var day = result.Days[0];
+        day.TotalBolusUnits.Should().Be(5.0);
+        day.TotalBasalUnits.Should().Be(2.5);
+        day.TotalDailyDose.Should().Be(7.5);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_BasalFromTempBasals_CombinedWithBolusForTdd()
+    {
+        // Bolus: 5U, TempBasal: 2.0 U/hr for 5hr = 10U -> TDD = 15U
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Mills = June15_2024_Noon,
+            Insulin = 5.0,
+            DataSource = "glooko"
+        });
+        _dbContext.TempBasals.Add(new TempBasalEntity
+        {
+            Id = Guid.NewGuid(),
             StartMills = June15_2024_Noon,
-            EndMills = June15_2024_Noon + 36000000,
-            Source = "glooko",
-            MetadataJson = JsonSerializer.Serialize(new { rate = 1.0, origin = "Scheduled", durationSeconds = 36000, calculatedInsulin = 10.0 })
+            EndMills = June15_2024_Noon + 18000000, // 5 hours
+            Rate = 2.0,
+            Origin = "Scheduled",
+            DataSource = "glooko"
         });
         await _dbContext.SaveChangesAsync();
 
@@ -1029,56 +1137,58 @@ public class DataOverviewServiceTests : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_BasalStateSpans_FilteredBySource()
+    public async Task GetDailySummaryAsync_BasalMicroBoluses_FilteredByDataSource()
     {
-        _dbContext.StateSpans.Add(new StateSpanEntity
+        _dbContext.MicroBoluses.Add(new MicroBolusEntity
         {
             Id = Guid.NewGuid(),
-            Category = "BasalDelivery",
-            State = "Active",
-            StartMills = June15_2024_Noon,
-            Source = "glooko",
-            MetadataJson = JsonSerializer.Serialize(new { rate = 1.0, calculatedInsulin = 5.0 })
+            Mills = June15_2024_Noon,
+            Insulin = 0.5,
+            DataSource = "glooko"
         });
-        _dbContext.StateSpans.Add(new StateSpanEntity
+        _dbContext.MicroBoluses.Add(new MicroBolusEntity
         {
             Id = Guid.NewGuid(),
-            Category = "BasalDelivery",
-            State = "Active",
-            StartMills = June15_2024_Noon + 300000,
-            Source = "medtronic",
-            MetadataJson = JsonSerializer.Serialize(new { rate = 0.8, calculatedInsulin = 3.0 })
+            Mills = June15_2024_Noon + 300000,
+            Insulin = 0.3,
+            DataSource = "medtronic"
         });
         await _dbContext.SaveChangesAsync();
 
         var result = await _service.GetDailySummaryAsync(2024, ["glooko"]);
 
         result.Days.Should().ContainSingle();
-        result.Days[0].TotalBasalUnits.Should().Be(5.0);
+        result.Days[0].TotalBasalUnits.Should().Be(0.5);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_NonBasalStateSpans_NotCountedAsInsulin()
+    public async Task GetDailySummaryAsync_BasalTempBasals_FilteredByDataSource()
     {
-        // PumpMode StateSpan should NOT contribute to basal insulin
-        _dbContext.StateSpans.Add(new StateSpanEntity
+        _dbContext.TempBasals.Add(new TempBasalEntity
         {
             Id = Guid.NewGuid(),
-            Category = "PumpMode",
-            State = "Automatic",
             StartMills = June15_2024_Noon,
-            Source = "glooko",
-            MetadataJson = JsonSerializer.Serialize(new { mode = "Auto" })
+            EndMills = June15_2024_Noon + 3600000,
+            Rate = 1.0,
+            Origin = "Scheduled",
+            DataSource = "glooko"
+        });
+        _dbContext.TempBasals.Add(new TempBasalEntity
+        {
+            Id = Guid.NewGuid(),
+            StartMills = June15_2024_Noon + 300000,
+            EndMills = June15_2024_Noon + 3900000,
+            Rate = 0.8,
+            Origin = "Algorithm",
+            DataSource = "medtronic"
         });
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetDailySummaryAsync(2024);
+        var result = await _service.GetDailySummaryAsync(2024, ["glooko"]);
 
         result.Days.Should().ContainSingle();
-        var day = result.Days[0];
-        day.TotalBasalUnits.Should().BeNull();
-        day.TotalDailyDose.Should().BeNull();
+        result.Days[0].TotalBasalUnits.Should().Be(1.0);
     }
 
     #endregion
