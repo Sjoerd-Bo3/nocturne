@@ -9,8 +9,8 @@ namespace Nocturne.API.Tests.Services;
 /// Tests for Total Daily Dose (TDD) and insulin delivery calculations.
 /// Ensures consistency across all calculation paths:
 ///   - CalculateTreatmentSummary (v4: Bolus + CarbIntake)
-///   - CalculateInsulinDeliveryStatistics (v4: Bolus + StateSpan)
-///   - CalculateDailyBasalBolusRatios (v4: Bolus + StateSpan)
+///   - CalculateInsulinDeliveryStatistics (v4: Bolus + TempBasal + MicroBolus)
+///   - CalculateDailyBasalBolusRatios (v4: Bolus + TempBasal + MicroBolus)
 ///   - GetTotalInsulin / GetBolusPercentage / GetBasalPercentage
 /// </summary>
 public class StatisticsServiceTDDTests
@@ -82,7 +82,7 @@ public class StatisticsServiceTDDTests
         };
 
         var result = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, Array.Empty<StateSpan>(), Array.Empty<CarbIntake>(), StartDate, EndDate);
+            boluses, Array.Empty<MicroBolus>(), Array.Empty<TempBasal>(), Array.Empty<CarbIntake>(), StartDate, EndDate);
 
         result.TotalBolus.Should().Be(6.8);
         result.TotalBasal.Should().Be(0);
@@ -91,16 +91,16 @@ public class StatisticsServiceTDDTests
     }
 
     [Fact]
-    public void InsulinDelivery_BasalFromStateSpans_ShouldCalculateCorrectly()
+    public void InsulinDelivery_BasalFromTempBasals_ShouldCalculateCorrectly()
     {
-        var stateSpans = new[]
+        var tempBasals = new[]
         {
-            MakeBasalStateSpan(rate: 1.0, durationMinutes: 30, mills: Day1Mills), // 0.5U
-            MakeBasalStateSpan(rate: 0.8, durationMinutes: 60, mills: Day1Mills), // 0.8U
+            MakeTempBasal(rate: 1.0, durationMinutes: 30, mills: Day1Mills), // 0.5U
+            MakeTempBasal(rate: 0.8, durationMinutes: 60, mills: Day1Mills), // 0.8U
         };
 
         var result = _sut.CalculateInsulinDeliveryStatistics(
-            Array.Empty<Bolus>(), stateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
+            Array.Empty<Bolus>(), Array.Empty<MicroBolus>(), tempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
 
         result.TotalBasal.Should().Be(1.3);
         result.TotalBolus.Should().Be(0);
@@ -115,14 +115,14 @@ public class StatisticsServiceTDDTests
         {
             MakeBolus(35.0, Day1Mills),
         };
-        var stateSpans = new[]
+        var tempBasals = new[]
         {
             // 35 hours at 1.0 U/hr = 35U
-            MakeBasalStateSpan(rate: 1.0, durationMinutes: 60 * 35, mills: Day1Mills),
+            MakeTempBasal(rate: 1.0, durationMinutes: 60 * 35, mills: Day1Mills),
         };
 
         var result = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, stateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
+            boluses, Array.Empty<MicroBolus>(), tempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
 
         result.Tdd.Should().Be(10.0, "70U / 7 days = 10 U/day");
         result.DayCount.Should().Be(7);
@@ -141,17 +141,17 @@ public class StatisticsServiceTDDTests
             MakeBolus(2.0, Day1Mills),
             MakeBolus(0.5, Day2Mills, automatic: true), // SMB
         };
-        var stateSpans = new[]
+        var tempBasals = new[]
         {
-            MakeBasalStateSpan(rate: 1.0, durationMinutes: 60, mills: Day1Mills), // 1.0U
-            MakeBasalStateSpan(rate: 0.5, durationMinutes: 120, mills: Day2Mills), // 1.0U
+            MakeTempBasal(rate: 1.0, durationMinutes: 60, mills: Day1Mills), // 1.0U
+            MakeTempBasal(rate: 0.5, durationMinutes: 120, mills: Day2Mills), // 1.0U
         };
 
         var summary = _sut.CalculateTreatmentSummary(boluses, Array.Empty<CarbIntake>());
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, stateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
+            boluses, Array.Empty<MicroBolus>(), tempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
 
-        // TreatmentSummary in v4 only tracks bolus (basal comes from StateSpans)
+        // TreatmentSummary in v4 only tracks bolus (basal comes from TempBasals)
         summary.Totals.Insulin.Bolus.Should().Be(delivery.TotalBolus,
             "TreatmentSummary and InsulinDeliveryStatistics should agree on bolus insulin");
     }
@@ -164,21 +164,21 @@ public class StatisticsServiceTDDTests
             MakeBolus(5.0, Day1Mills),
             MakeBolus(2.0, Day2Mills),
         };
-        var stateSpans = new[]
+        var tempBasals = new[]
         {
-            MakeBasalStateSpan(rate: 1.0, durationMinutes: 60, mills: Day1Mills), // 1.0U
-            MakeBasalStateSpan(rate: 0.5, durationMinutes: 120, mills: Day2Mills), // 1.0U
+            MakeTempBasal(rate: 1.0, durationMinutes: 60, mills: Day1Mills), // 1.0U
+            MakeTempBasal(rate: 0.5, durationMinutes: 120, mills: Day2Mills), // 1.0U
         };
 
         var summary = _sut.CalculateTreatmentSummary(boluses, Array.Empty<CarbIntake>());
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, stateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
+            boluses, Array.Empty<MicroBolus>(), tempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
 
         summary.Totals.Insulin.Bolus.Should().Be(delivery.TotalBolus,
             "bolus totals should match between methods");
-        // In v4, TreatmentSummary does not track basal (that's from StateSpans)
+        // In v4, TreatmentSummary does not track basal (that's from TempBasals)
         delivery.TotalBasal.Should().Be(2.0,
-            "basal total should come from StateSpans in InsulinDeliveryStatistics");
+            "basal total should come from TempBasals in InsulinDeliveryStatistics");
     }
 
     [Fact]
@@ -190,15 +190,15 @@ public class StatisticsServiceTDDTests
             MakeBolus(2.0, Day1Mills),
             MakeBolus(4.0, Day2Mills),
         };
-        var stateSpans = new[]
+        var tempBasals = new[]
         {
-            MakeBasalStateSpan(rate: 1.0, durationMinutes: 60, mills: Day1Mills), // 1.0U
-            MakeBasalStateSpan(rate: 0.8, durationMinutes: 60, mills: Day2Mills), // 0.8U
+            MakeTempBasal(rate: 1.0, durationMinutes: 60, mills: Day1Mills), // 1.0U
+            MakeTempBasal(rate: 0.8, durationMinutes: 60, mills: Day2Mills), // 0.8U
         };
 
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, stateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
-        var ratios = _sut.CalculateDailyBasalBolusRatios(boluses, stateSpans);
+            boluses, Array.Empty<MicroBolus>(), tempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
+        var ratios = _sut.CalculateDailyBasalBolusRatios(boluses, Array.Empty<MicroBolus>(), tempBasals);
 
         var ratiosGrandTotal = ratios.DailyData.Sum(d => d.Total);
 
@@ -213,14 +213,14 @@ public class StatisticsServiceTDDTests
         {
             MakeBolus(5.0, Day1Mills),
         };
-        var stateSpans = new[]
+        var tempBasals = new[]
         {
-            MakeBasalStateSpan(rate: 1.0, durationMinutes: 60, mills: Day1Mills), // 1.0U
+            MakeTempBasal(rate: 1.0, durationMinutes: 60, mills: Day1Mills), // 1.0U
         };
 
         var summary = _sut.CalculateTreatmentSummary(boluses, Array.Empty<CarbIntake>());
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, stateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
+            boluses, Array.Empty<MicroBolus>(), tempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
 
         (delivery.BolusPercent + delivery.BasalPercent).Should().BeApproximately(100.0, 0.1,
             "InsulinDelivery basal% + bolus% should sum to 100");
@@ -235,14 +235,14 @@ public class StatisticsServiceTDDTests
     {
         // AndroidAPS pattern: many SMBs (small boluses) + frequent temp basals
         var boluses = new List<Bolus>();
-        var stateSpans = new List<StateSpan>();
+        var tempBasals = new List<TempBasal>();
         var baseMills = Day1Mills;
 
         // 24 temp basals over the day (one per hour), varying rates
         for (int hour = 0; hour < 24; hour++)
         {
             var mills = baseMills + (hour * 3600000L);
-            stateSpans.Add(MakeBasalStateSpan(
+            tempBasals.Add(MakeTempBasal(
                 rate: 0.5 + (hour % 4) * 0.2, // Varies 0.5-1.1 U/hr
                 durationMinutes: 60,
                 mills: mills
@@ -263,7 +263,7 @@ public class StatisticsServiceTDDTests
 
         var summary = _sut.CalculateTreatmentSummary(boluses, Array.Empty<CarbIntake>());
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, stateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
+            boluses, Array.Empty<MicroBolus>(), tempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
 
         // Bolus total from TreatmentSummary should match delivery bolus total
         summary.Totals.Insulin.Bolus.Should().Be(delivery.TotalBolus,
@@ -288,12 +288,12 @@ public class StatisticsServiceTDDTests
 
         var summary = _sut.CalculateTreatmentSummary(boluses, Array.Empty<CarbIntake>());
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, Array.Empty<StateSpan>(), Array.Empty<CarbIntake>(), StartDate, EndDate);
+            boluses, Array.Empty<MicroBolus>(), Array.Empty<TempBasal>(), Array.Empty<CarbIntake>(), StartDate, EndDate);
 
         // Only bolus insulin should be reported
         summary.Totals.Insulin.Bolus.Should().Be(11.0);
         summary.Totals.Insulin.Basal.Should().Be(0,
-            "no basal StateSpans — basal should be 0");
+            "no TempBasals -- basal should be 0");
         delivery.TotalBolus.Should().Be(11.0);
         delivery.TotalBasal.Should().Be(0);
 
@@ -307,12 +307,12 @@ public class StatisticsServiceTDDTests
     {
         // MDI (Multiple Daily Injections) pattern:
         // One long-acting basal injection + multiple rapid-acting boluses
-        // In v4, long-acting basal is represented as a StateSpan covering the day
-        var stateSpans = new[]
+        // In v4, long-acting basal is represented as a TempBasal covering the day
+        var tempBasals = new[]
         {
             // Long-acting basal (e.g., Lantus 20U once daily)
-            // Modeled as a 24-hour StateSpan: rate = 20/24 U/hr over 1440 minutes
-            MakeBasalStateSpan(rate: 20.0 / 24.0, durationMinutes: 1440, mills: Day1Mills),
+            // Modeled as a 24-hour TempBasal: rate = 20/24 U/hr over 1440 minutes
+            MakeTempBasal(rate: 20.0 / 24.0, durationMinutes: 1440, mills: Day1Mills),
         };
         var boluses = new[]
         {
@@ -324,10 +324,10 @@ public class StatisticsServiceTDDTests
 
         var summary = _sut.CalculateTreatmentSummary(boluses, Array.Empty<CarbIntake>());
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, stateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
+            boluses, Array.Empty<MicroBolus>(), tempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
 
-        // Basal comes from StateSpan: 20/24 U/hr * 24 hr = 20U
-        delivery.TotalBasal.Should().BeApproximately(20.0, 0.01, "long-acting basal = 20U via StateSpan");
+        // Basal comes from TempBasal: 20/24 U/hr * 24 hr = 20U
+        delivery.TotalBasal.Should().BeApproximately(20.0, 0.01, "long-acting basal = 20U via TempBasal");
         summary.Totals.Insulin.Bolus.Should().Be(20.0, "meal + correction boluses = 20U");
 
         delivery.TotalBolus.Should().Be(20.0);
@@ -350,13 +350,13 @@ public class StatisticsServiceTDDTests
             MakeBolus(5.0, Day1Mills),
             MakeBolus(3.0, Day2Mills),
         };
-        var stateSpans = new[]
+        var tempBasals = new[]
         {
-            MakeBasalStateSpan(rate: 1.0, durationMinutes: 60, mills: Day1Mills), // 1.0U
-            MakeBasalStateSpan(rate: 0.8, durationMinutes: 60, mills: Day2Mills), // 0.8U
+            MakeTempBasal(rate: 1.0, durationMinutes: 60, mills: Day1Mills), // 1.0U
+            MakeTempBasal(rate: 0.8, durationMinutes: 60, mills: Day2Mills), // 0.8U
         };
 
-        var result = _sut.CalculateDailyBasalBolusRatios(boluses, stateSpans);
+        var result = _sut.CalculateDailyBasalBolusRatios(boluses, Array.Empty<MicroBolus>(), tempBasals);
 
         result.DayCount.Should().Be(2);
         result.DailyData.Should().HaveCount(2);
@@ -381,7 +381,7 @@ public class StatisticsServiceTDDTests
             MakeBolus(20.0, Day2Mills),
         };
 
-        var result = _sut.CalculateDailyBasalBolusRatios(boluses, Array.Empty<StateSpan>());
+        var result = _sut.CalculateDailyBasalBolusRatios(boluses, Array.Empty<MicroBolus>(), Array.Empty<TempBasal>());
 
         // AverageTdd divides by DayCount (days with data), not date range
         result.DayCount.Should().Be(2);
@@ -408,8 +408,8 @@ public class StatisticsServiceTDDTests
         };
 
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, Array.Empty<StateSpan>(), Array.Empty<CarbIntake>(), StartDate, EndDate);
-        var ratios = _sut.CalculateDailyBasalBolusRatios(boluses, Array.Empty<StateSpan>());
+            boluses, Array.Empty<MicroBolus>(), Array.Empty<TempBasal>(), Array.Empty<CarbIntake>(), StartDate, EndDate);
+        var ratios = _sut.CalculateDailyBasalBolusRatios(boluses, Array.Empty<MicroBolus>(), Array.Empty<TempBasal>());
 
         // InsulinDelivery: 70U / 7 days = 10 U/day
         delivery.DayCount.Should().Be(7);
@@ -419,7 +419,7 @@ public class StatisticsServiceTDDTests
         ratios.DayCount.Should().Be(2);
         ratios.AverageTdd.Should().Be(35.0);
 
-        // These INTENTIONALLY differ — document this design choice:
+        // These INTENTIONALLY differ -- document this design choice:
         // InsulinDelivery.Tdd is better for "average across the period"
         // DailyRatios.AverageTdd is better for "average on days with insulin"
     }
@@ -513,12 +513,13 @@ public class StatisticsServiceTDDTests
     public void EmptyCollections_AllMethods_ShouldReturnZeroes()
     {
         var emptyBoluses = Array.Empty<Bolus>();
-        var emptyStateSpans = Array.Empty<StateSpan>();
+        var emptyTempBasals = Array.Empty<TempBasal>();
+        var emptyMicroBoluses = Array.Empty<MicroBolus>();
 
         var summary = _sut.CalculateTreatmentSummary(emptyBoluses, Array.Empty<CarbIntake>());
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            emptyBoluses, emptyStateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
-        var ratios = _sut.CalculateDailyBasalBolusRatios(emptyBoluses, emptyStateSpans);
+            emptyBoluses, emptyMicroBoluses, emptyTempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
+        var ratios = _sut.CalculateDailyBasalBolusRatios(emptyBoluses, emptyMicroBoluses, emptyTempBasals);
 
         _sut.GetTotalInsulin(summary).Should().Be(0);
         delivery.TotalInsulin.Should().Be(0);
@@ -536,7 +537,7 @@ public class StatisticsServiceTDDTests
 
         var summary = _sut.CalculateTreatmentSummary(boluses, Array.Empty<CarbIntake>());
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, Array.Empty<StateSpan>(), Array.Empty<CarbIntake>(), StartDate, EndDate);
+            boluses, Array.Empty<MicroBolus>(), Array.Empty<TempBasal>(), Array.Empty<CarbIntake>(), StartDate, EndDate);
 
         // 20 * 0.05 = 1.0U
         summary.Totals.Insulin.Bolus.Should().BeApproximately(1.0, 0.001,
@@ -569,16 +570,16 @@ public class StatisticsServiceTDDTests
     }
 
     [Fact]
-    public void Suspension_StateSpan_ShouldNotAddInsulin()
+    public void Suspension_TempBasal_ShouldNotAddInsulin()
     {
         // Suspension = Rate 0 for a duration -> 0 insulin
-        var stateSpans = new[]
+        var tempBasals = new[]
         {
-            MakeBasalStateSpan(rate: 0.0, durationMinutes: 30, mills: Day1Mills),
+            MakeTempBasal(rate: 0.0, durationMinutes: 30, mills: Day1Mills),
         };
 
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            Array.Empty<Bolus>(), stateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
+            Array.Empty<Bolus>(), Array.Empty<MicroBolus>(), tempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
 
         delivery.TotalBasal.Should().Be(0);
     }
@@ -591,7 +592,7 @@ public class StatisticsServiceTDDTests
     public void SevenDayRealisticScenario_AllMethodsShouldBeConsistent()
     {
         var boluses = new List<Bolus>();
-        var stateSpans = new List<StateSpan>();
+        var tempBasals = new List<TempBasal>();
         var dailyExpectedBolus = new double[] { 18.0, 22.0, 15.0, 20.0, 19.0, 21.0, 17.0 };
         var dailyExpectedBasal = new double[] { 24.0, 24.0, 23.5, 24.0, 22.0, 24.5, 24.0 };
 
@@ -604,11 +605,11 @@ public class StatisticsServiceTDDTests
             boluses.Add(MakeBolus(dailyExpectedBolus[day] * 0.35, dayMills + 4 * 3600000L));
             boluses.Add(MakeBolus(dailyExpectedBolus[day] * 0.25, dayMills + 10 * 3600000L));
 
-            // 24 hourly temp basals per day as StateSpans
+            // 24 hourly temp basals per day
             for (int hour = 0; hour < 24; hour++)
             {
                 var hourMills = new DateTimeOffset(2024, 1, 1 + day, hour, 0, 0, TimeSpan.Zero).ToUnixTimeMilliseconds();
-                stateSpans.Add(MakeBasalStateSpan(
+                tempBasals.Add(MakeTempBasal(
                     rate: dailyExpectedBasal[day] / 24.0, // Even hourly rate
                     durationMinutes: 60,
                     mills: hourMills
@@ -618,8 +619,8 @@ public class StatisticsServiceTDDTests
 
         var summary = _sut.CalculateTreatmentSummary(boluses, Array.Empty<CarbIntake>());
         var delivery = _sut.CalculateInsulinDeliveryStatistics(
-            boluses, stateSpans, Array.Empty<CarbIntake>(), StartDate, EndDate);
-        var ratios = _sut.CalculateDailyBasalBolusRatios(boluses, stateSpans);
+            boluses, Array.Empty<MicroBolus>(), tempBasals, Array.Empty<CarbIntake>(), StartDate, EndDate);
+        var ratios = _sut.CalculateDailyBasalBolusRatios(boluses, Array.Empty<MicroBolus>(), tempBasals);
 
         var expectedTotalBolus = dailyExpectedBolus.Sum();
         var expectedTotalBasal = dailyExpectedBasal.Sum();
@@ -650,15 +651,15 @@ public class StatisticsServiceTDDTests
         };
     }
 
-    private static StateSpan MakeBasalStateSpan(double rate, double durationMinutes, long? mills = null)
+    private static TempBasal MakeTempBasal(double rate, double durationMinutes, long? mills = null)
     {
         var startMills = mills ?? Day1Mills;
-        return new StateSpan
+        return new TempBasal
         {
-            Category = StateSpanCategory.BasalDelivery,
             StartMills = startMills,
             EndMills = startMills + (long)(durationMinutes * 60 * 1000),
-            Metadata = new Dictionary<string, object> { ["rate"] = rate },
+            Rate = rate,
+            Origin = TempBasalOrigin.Algorithm,
         };
     }
 

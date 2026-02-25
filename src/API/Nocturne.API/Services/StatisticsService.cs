@@ -1842,55 +1842,23 @@ public class StatisticsService : IStatisticsService
     }
 
     /// <summary>
-    /// Extract the rate (U/hr) from a StateSpan's metadata, handling various stored types.
+    /// Calculate the insulin delivered (units) for a single TempBasal record.
+    /// duration = (EndMills ?? StartMills + 5 min) - StartMills, converted to hours.
     /// </summary>
-    internal static double GetStateSpanRate(StateSpan span)
+    internal static double GetTempBasalInsulin(TempBasal tb)
     {
-        if (span.Metadata?.TryGetValue("rate", out var rateObj) != true)
-            return 0;
-
-        return rateObj switch
-        {
-            System.Text.Json.JsonElement je => je.GetDouble(),
-            double d => d,
-            _ => Convert.ToDouble(rateObj),
-        };
+        var endMills = tb.EndMills ?? tb.StartMills + (5 * 60 * 1000); // Default 5 min
+        var durationHours = (endMills - tb.StartMills) / (1000.0 * 60 * 60);
+        return tb.Rate * durationHours;
     }
 
     /// <summary>
-    /// Calculate the insulin delivered (units) for a single basal StateSpan.
-    /// </summary>
-    internal static double GetStateSpanBasalInsulin(StateSpan span)
-    {
-        var endMills = span.EndMills ?? span.StartMills + (5 * 60 * 1000); // Default 5 min
-        var durationHours = (endMills - span.StartMills) / (1000.0 * 60 * 60);
-        var rate = GetStateSpanRate(span);
-        return rate * durationHours;
-    }
-
-    /// <summary>
-    /// Sum total basal insulin delivered across a collection of BasalDelivery StateSpans.
-    /// </summary>
-    public double SumBasalFromStateSpans(IEnumerable<StateSpan> basalStateSpans)
-    {
-        double total = 0;
-        foreach (var span in basalStateSpans)
-        {
-            if (span.Category != StateSpanCategory.BasalDelivery)
-                continue;
-            var insulin = GetStateSpanBasalInsulin(span);
-            if (insulin > 0)
-                total += insulin;
-        }
-        return total;
-    }
-
-    /// <summary>
-    /// Calculate comprehensive insulin delivery statistics using StateSpans for basal data.
+    /// Calculate comprehensive insulin delivery statistics using TempBasals and MicroBoluses for basal data.
     /// </summary>
     public InsulinDeliveryStatistics CalculateInsulinDeliveryStatistics(
         IEnumerable<Bolus> boluses,
-        IEnumerable<StateSpan> basalStateSpans,
+        IEnumerable<MicroBolus> microBoluses,
+        IEnumerable<TempBasal> tempBasals,
         IEnumerable<CarbIntake> carbIntakes,
         DateTime startDate,
         DateTime endDate
@@ -1899,34 +1867,47 @@ public class StatisticsService : IStatisticsService
         // Start with bolus-based calculation (includes carb stats)
         var stats = CalculateBolusDeliveryStatistics(boluses, carbIntakes, startDate, endDate);
 
-        // Replace basal with StateSpan-derived total
-        var stateSpanBasal = SumBasalFromStateSpans(basalStateSpans);
-        var totalInsulin = stats.TotalBolus + stateSpanBasal;
+        // Sum basal from TempBasals + MicroBoluses
+        var tempBasalInsulin = 0.0;
+        foreach (var tb in tempBasals)
+        {
+            var insulin = GetTempBasalInsulin(tb);
+            if (insulin > 0)
+                tempBasalInsulin += insulin;
+        }
 
-        stats.TotalBasal = Math.Round(stateSpanBasal * 100) / 100;
+        var microBolusList = microBoluses.ToList();
+        var microBolusInsulin = microBolusList.Sum(mb => mb.Insulin);
+
+        var totalBasal = tempBasalInsulin + microBolusInsulin;
+        var totalInsulin = stats.TotalBolus + totalBasal;
+
+        stats.TotalBasal = Math.Round(totalBasal * 100) / 100;
         stats.TotalInsulin = Math.Round(totalInsulin * 100) / 100;
         stats.Tdd = Math.Round(totalInsulin / Math.Max(1, stats.DayCount) * 10) / 10;
         stats.BasalPercent =
-            totalInsulin > 0 ? Math.Round(stateSpanBasal / totalInsulin * 100 * 10) / 10 : 0;
+            totalInsulin > 0 ? Math.Round(totalBasal / totalInsulin * 100 * 10) / 10 : 0;
         stats.BolusPercent =
             totalInsulin > 0 ? Math.Round(stats.TotalBolus / totalInsulin * 100 * 10) / 10 : 0;
+        stats.MicroBolusCount = microBolusList.Count;
+        stats.MicroBolusInsulin = Math.Round(microBolusInsulin * 100) / 100;
 
         return stats;
     }
 
     /// <summary>
-    /// Calculate daily basal/bolus ratio breakdown using StateSpans for basal data
+    /// Calculate daily basal/bolus ratio breakdown using TempBasals and MicroBoluses for basal data
     /// </summary>
     public DailyBasalBolusRatioResponse CalculateDailyBasalBolusRatios(
         IEnumerable<Bolus> boluses,
-        IEnumerable<StateSpan> basalStateSpans
+        IEnumerable<MicroBolus> microBoluses,
+        IEnumerable<TempBasal> tempBasals
     )
     {
         var bolusList = boluses.ToList();
-        var basalSpansList = basalStateSpans.ToList();
         var dailyData = new Dictionary<string, (double Basal, double Bolus)>();
 
-        // Process boluses (all Bolus records are bolus insulin; basal comes from StateSpans)
+        // Process boluses (all Bolus records are bolus insulin)
         foreach (var bolus in bolusList)
         {
             if (bolus.Insulin <= 0 || bolus.Mills <= 0)
@@ -1941,23 +1922,35 @@ public class StatisticsService : IStatisticsService
             dailyData[dateKey] = (currentBasal, currentBolus + bolus.Insulin);
         }
 
-        // Process basal StateSpans
-        foreach (var span in basalSpansList)
+        // Process TempBasals
+        foreach (var tb in tempBasals)
         {
-            if (span.Category != StateSpanCategory.BasalDelivery)
-                continue;
-
-            var basalInsulin = GetStateSpanBasalInsulin(span);
+            var basalInsulin = GetTempBasalInsulin(tb);
             if (basalInsulin <= 0)
                 continue;
 
-            var spanDate = DateTimeOffset.FromUnixTimeMilliseconds(span.StartMills).DateTime;
-            var dateKey = spanDate.ToString("yyyy-MM-dd");
+            var tbDate = DateTimeOffset.FromUnixTimeMilliseconds(tb.StartMills).DateTime;
+            var dateKey = tbDate.ToString("yyyy-MM-dd");
             if (!dailyData.ContainsKey(dateKey))
                 dailyData[dateKey] = (0, 0);
 
             var (currentBasal, currentBolus) = dailyData[dateKey];
             dailyData[dateKey] = (currentBasal + basalInsulin, currentBolus);
+        }
+
+        // Process MicroBoluses (basal side)
+        foreach (var mb in microBoluses)
+        {
+            if (mb.Insulin <= 0 || mb.Mills <= 0)
+                continue;
+
+            var mbDate = DateTimeOffset.FromUnixTimeMilliseconds(mb.Mills).DateTime;
+            var dateKey = mbDate.ToString("yyyy-MM-dd");
+            if (!dailyData.ContainsKey(dateKey))
+                dailyData[dateKey] = (0, 0);
+
+            var (currentBasal, currentBolus) = dailyData[dateKey];
+            dailyData[dateKey] = (currentBasal + mb.Insulin, currentBolus);
         }
 
         // Build response
@@ -2010,17 +2003,16 @@ public class StatisticsService : IStatisticsService
     }
 
     /// <summary>
-    /// Calculate comprehensive basal analysis statistics using StateSpans
+    /// Calculate comprehensive basal analysis statistics using TempBasals and MicroBoluses
     /// </summary>
     public BasalAnalysisResponse CalculateBasalAnalysis(
-        IEnumerable<StateSpan> basalStateSpans,
+        IEnumerable<TempBasal> tempBasals,
+        IEnumerable<MicroBolus> microBoluses,
         DateTime startDate,
         DateTime endDate
     )
     {
-        var spansList = basalStateSpans
-            .Where(s => s.Category == StateSpanCategory.BasalDelivery)
-            .ToList();
+        var tempBasalList = tempBasals.ToList();
         var dayCount = Math.Max(1, (int)Math.Ceiling((endDate - startDate).TotalDays));
 
         // Track stats
@@ -2036,49 +2028,27 @@ public class StatisticsService : IStatisticsService
         for (int h = 0; h < 24; h++)
             hourlyRates[h] = new List<double>();
 
-        foreach (var span in spansList)
+        foreach (var tb in tempBasalList)
         {
-            var rate = GetStateSpanRate(span);
+            var rate = tb.Rate;
+            var scheduledRate = tb.ScheduledRate;
+            var origin = tb.Origin;
 
-            // Get origin and scheduledRate from metadata (specific to basal analysis)
-            string? origin = null;
-            double? scheduledRate = null;
-            if (span.Metadata != null)
-            {
-                if (span.Metadata.TryGetValue("origin", out var originObj))
-                {
-                    origin = originObj?.ToString();
-                }
-                if (span.Metadata.TryGetValue("scheduledRate", out var schedObj))
-                {
-                    scheduledRate = schedObj switch
-                    {
-                        System.Text.Json.JsonElement je => je.GetDouble(),
-                        double d => d,
-                        _ => Convert.ToDouble(schedObj),
-                    };
-                }
-            }
-
-            var startTime = DateTimeOffset.FromUnixTimeMilliseconds(span.StartMills).DateTime;
+            var startTime = DateTimeOffset.FromUnixTimeMilliseconds(tb.StartMills).DateTime;
 
             allRates.Add(rate);
-            totalDelivered += GetStateSpanBasalInsulin(span);
+            totalDelivered += GetTempBasalInsulin(tb);
 
             // Add to hourly buckets
             var hour = startTime.Hour;
             hourlyRates[hour].Add(rate);
 
             // Track temp basals (non-scheduled origins)
-            if (
-                origin != null
-                && !origin.Equals("Scheduled", StringComparison.OrdinalIgnoreCase)
-                && !origin.Equals("Inferred", StringComparison.OrdinalIgnoreCase)
-            )
+            if (origin != TempBasalOrigin.Scheduled && origin != TempBasalOrigin.Inferred)
             {
                 tempBasalCount++;
 
-                if (rate == 0 || origin.Equals("Suspended", StringComparison.OrdinalIgnoreCase))
+                if (rate == 0 || origin == TempBasalOrigin.Suspended)
                 {
                     zeroTempCount++;
                 }
@@ -2092,9 +2062,15 @@ public class StatisticsService : IStatisticsService
             }
         }
 
+        // Add MicroBolus insulin to total delivered
+        foreach (var mb in microBoluses)
+        {
+            totalDelivered += mb.Insulin;
+        }
+
         var basalStats = new BasalStats
         {
-            Count = spansList.Count,
+            Count = tempBasalList.Count,
             AvgRate = allRates.Count > 0 ? Math.Round(allRates.Average() * 100) / 100 : 0,
             MinRate = allRates.Count > 0 ? Math.Round(allRates.Min() * 100) / 100 : 0,
             MaxRate = allRates.Count > 0 ? Math.Round(allRates.Max() * 100) / 100 : 0,

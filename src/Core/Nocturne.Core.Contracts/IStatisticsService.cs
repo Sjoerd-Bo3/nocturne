@@ -118,20 +118,16 @@ public interface IStatisticsService
 
     /// <summary>
     /// Calculate comprehensive insulin delivery statistics.
-    /// Basal data comes from StateSpans; pass an empty collection if none are available.
+    /// Basal data comes from TempBasals and MicroBoluses; pass empty collections if none are available.
     /// </summary>
     InsulinDeliveryStatistics CalculateInsulinDeliveryStatistics(
         IEnumerable<Bolus> boluses,
-        IEnumerable<StateSpan> basalStateSpans,
+        IEnumerable<MicroBolus> microBoluses,
+        IEnumerable<TempBasal> tempBasals,
         IEnumerable<CarbIntake> carbIntakes,
         DateTime startDate,
         DateTime endDate
     );
-
-    /// <summary>
-    /// Sum total basal insulin delivered across a collection of BasalDelivery StateSpans
-    /// </summary>
-    double SumBasalFromStateSpans(IEnumerable<StateSpan> basalStateSpans);
 
     // Formatting Utilities
     string FormatInsulinDisplay(double value);
@@ -177,18 +173,20 @@ public interface IStatisticsService
 
     /// <summary>
     /// Calculate daily basal/bolus ratio breakdown.
-    /// Basal data comes from StateSpans; pass an empty collection if none are available.
+    /// Basal data comes from TempBasals and MicroBoluses; pass empty collections if none are available.
     /// </summary>
     DailyBasalBolusRatioResponse CalculateDailyBasalBolusRatios(
         IEnumerable<Bolus> boluses,
-        IEnumerable<StateSpan> basalStateSpans);
+        IEnumerable<MicroBolus> microBoluses,
+        IEnumerable<TempBasal> tempBasals);
 
     /// <summary>
-    /// Calculate comprehensive basal analysis statistics from StateSpans.
-    /// Pass an empty collection if none are available.
+    /// Calculate comprehensive basal analysis statistics from TempBasals.
+    /// Pass empty collections if none are available.
     /// </summary>
     BasalAnalysisResponse CalculateBasalAnalysis(
-        IEnumerable<StateSpan> basalStateSpans,
+        IEnumerable<TempBasal> tempBasals,
+        IEnumerable<MicroBolus> microBoluses,
         DateTime startDate,
         DateTime endDate);
 }

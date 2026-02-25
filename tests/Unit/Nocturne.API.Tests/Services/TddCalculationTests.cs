@@ -28,70 +28,61 @@ public class TddCalculationTests
     #region Helper Methods
 
     /// <summary>
-    /// Creates a basal delivery StateSpan at the given hour with explicit rate and duration.
+    /// Creates a TempBasal at the given hour with explicit rate and duration.
     /// </summary>
-    private static StateSpan MakeBasalStateSpan(
+    private static TempBasal MakeTempBasal(
         int hourOffset,
         double rateUPerHr,
         double durationMinutes,
-        string? origin = null,
+        TempBasalOrigin origin = TempBasalOrigin.Scheduled,
         double? scheduledRate = null
     )
     {
         var startMills = DayStart.AddHours(hourOffset).ToUnixTimeMilliseconds();
         var endMills = startMills + (long)(durationMinutes * 60 * 1000);
 
-        var metadata = new Dictionary<string, object>
+        return new TempBasal
         {
-            ["rate"] = rateUPerHr,
-        };
-
-        if (origin != null)
-            metadata["origin"] = origin;
-
-        if (scheduledRate.HasValue)
-            metadata["scheduledRate"] = scheduledRate.Value;
-
-        return new StateSpan
-        {
-            Id = $"basal-{hourOffset}",
-            Category = StateSpanCategory.BasalDelivery,
+            Id = Guid.NewGuid(),
             StartMills = startMills,
             EndMills = endMills,
-            Metadata = metadata,
+            Rate = rateUPerHr,
+            Origin = origin,
+            ScheduledRate = scheduledRate,
         };
     }
 
     /// <summary>
-    /// Creates a temp basal StateSpan at the given hour.
-    /// Origin is set to "Algorithm" to indicate a temp/AID adjustment.
+    /// Creates a temp basal (AID/algorithm-originated) at the given hour.
+    /// Origin is set to Algorithm to indicate a temp/AID adjustment,
+    /// except for zero-rate temps which use Suspended.
     /// </summary>
-    private static StateSpan MakeTempBasalSpan(
+    private static TempBasal MakeAlgorithmTempBasal(
         int hourOffset,
         double rateUPerHr,
         double durationMinutes,
         double? scheduledRate = null
     )
     {
-        return MakeBasalStateSpan(
+        return MakeTempBasal(
             hourOffset,
             rateUPerHr,
             durationMinutes,
-            origin: rateUPerHr == 0 ? "Suspended" : "Algorithm",
+            origin: rateUPerHr == 0 ? TempBasalOrigin.Suspended : TempBasalOrigin.Algorithm,
             scheduledRate: scheduledRate
         );
     }
 
     /// <summary>
-    /// Creates a scheduled basal StateSpan at the given hour.
+    /// Creates a scheduled basal TempBasal at the given hour.
     /// </summary>
-    private static StateSpan MakeScheduledBasalSpan(
+    private static TempBasal MakeScheduledBasal(
         int hourOffset,
         double rateUPerHr,
         double durationMinutes
     )
     {
-        return MakeBasalStateSpan(hourOffset, rateUPerHr, durationMinutes, origin: "Scheduled");
+        return MakeTempBasal(hourOffset, rateUPerHr, durationMinutes, origin: TempBasalOrigin.Scheduled);
     }
 
     /// <summary>
@@ -115,35 +106,27 @@ public class TddCalculationTests
     }
 
     /// <summary>
-    /// Creates a StateSpan from a DateTimeOffset base with day offset.
+    /// Creates a TempBasal from a DateTimeOffset base with day offset.
     /// </summary>
-    private static StateSpan MakeBasalStateSpanFromBase(
+    private static TempBasal MakeTempBasalFromBase(
         DateTimeOffset baseTime,
         int dayOffset,
         int hourOffset,
         double rateUPerHr,
         double durationMinutes,
-        string? origin = null
+        TempBasalOrigin origin = TempBasalOrigin.Scheduled
     )
     {
         var startMills = baseTime.AddDays(dayOffset).AddHours(hourOffset).ToUnixTimeMilliseconds();
         var endMills = startMills + (long)(durationMinutes * 60 * 1000);
 
-        var metadata = new Dictionary<string, object>
+        return new TempBasal
         {
-            ["rate"] = rateUPerHr,
-        };
-
-        if (origin != null)
-            metadata["origin"] = origin;
-
-        return new StateSpan
-        {
-            Id = $"basal-d{dayOffset}-h{hourOffset}",
-            Category = StateSpanCategory.BasalDelivery,
+            Id = Guid.NewGuid(),
             StartMills = startMills,
             EndMills = endMills,
-            Metadata = metadata,
+            Rate = rateUPerHr,
+            Origin = origin,
         };
     }
 
@@ -156,14 +139,15 @@ public class TddCalculationTests
     {
         // A flat 1.0 U/hr basal for 24 hours = 24.0 U total basal
         // Delivered as 24 one-hour segments
-        var stateSpans = Enumerable
+        var tempBasals = Enumerable
             .Range(0, 24)
-            .Select(h => MakeScheduledBasalSpan(h, rateUPerHr: 1.0, durationMinutes: 60))
+            .Select(h => MakeScheduledBasal(h, rateUPerHr: 1.0, durationMinutes: 60))
             .ToList();
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -187,31 +171,32 @@ public class TddCalculationTests
         //   16:00-22:00  1.1 U/hr  (6 hrs = 6.60 U)
         //   22:00-00:00  0.9 U/hr  (2 hrs = 1.80 U)
         //   Total expected: 24.00 U
-        var stateSpans = new List<StateSpan>();
+        var tempBasals = new List<TempBasal>();
 
         // Overnight: 0.8 U/hr for 6 hours
         for (var h = 0; h < 6; h++)
-            stateSpans.Add(MakeScheduledBasalSpan(h, rateUPerHr: 0.8, durationMinutes: 60));
+            tempBasals.Add(MakeScheduledBasal(h, rateUPerHr: 0.8, durationMinutes: 60));
 
         // Morning: 1.2 U/hr for 4 hours
         for (var h = 6; h < 10; h++)
-            stateSpans.Add(MakeScheduledBasalSpan(h, rateUPerHr: 1.2, durationMinutes: 60));
+            tempBasals.Add(MakeScheduledBasal(h, rateUPerHr: 1.2, durationMinutes: 60));
 
         // Midday: 1.0 U/hr for 6 hours
         for (var h = 10; h < 16; h++)
-            stateSpans.Add(MakeScheduledBasalSpan(h, rateUPerHr: 1.0, durationMinutes: 60));
+            tempBasals.Add(MakeScheduledBasal(h, rateUPerHr: 1.0, durationMinutes: 60));
 
         // Afternoon/Evening: 1.1 U/hr for 6 hours
         for (var h = 16; h < 22; h++)
-            stateSpans.Add(MakeScheduledBasalSpan(h, rateUPerHr: 1.1, durationMinutes: 60));
+            tempBasals.Add(MakeScheduledBasal(h, rateUPerHr: 1.1, durationMinutes: 60));
 
         // Late night: 0.9 U/hr for 2 hours
         for (var h = 22; h < 24; h++)
-            stateSpans.Add(MakeScheduledBasalSpan(h, rateUPerHr: 0.9, durationMinutes: 60));
+            tempBasals.Add(MakeScheduledBasal(h, rateUPerHr: 0.9, durationMinutes: 60));
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -226,9 +211,9 @@ public class TddCalculationTests
     public void TDD_WithScheduledBasalAndBoluses_ShouldSumBothCorrectly()
     {
         // Scheduled basal: 0.8 U/hr for 24 hours = 19.2 U
-        var stateSpans = Enumerable
+        var tempBasals = Enumerable
             .Range(0, 24)
-            .Select(h => MakeScheduledBasalSpan(h, rateUPerHr: 0.8, durationMinutes: 60))
+            .Select(h => MakeScheduledBasal(h, rateUPerHr: 0.8, durationMinutes: 60))
             .ToList();
 
         // Add meal boluses throughout the day
@@ -242,7 +227,8 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             boluses,
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -264,14 +250,15 @@ public class TddCalculationTests
     public void TDD_WithTempBasalAbsoluteRate_ShouldCalculateFromRate()
     {
         // A single temp basal at 2.0 U/hr for 30 minutes = 1.0 U
-        var stateSpans = new List<StateSpan>
+        var tempBasals = new List<TempBasal>
         {
-            MakeTempBasalSpan(hourOffset: 10, rateUPerHr: 2.0, durationMinutes: 30),
+            MakeAlgorithmTempBasal(hourOffset: 10, rateUPerHr: 2.0, durationMinutes: 30),
         };
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -284,15 +271,16 @@ public class TddCalculationTests
     [Fact]
     public void TDD_WithTempBasalFromRateOnly_ShouldCalculateInsulin()
     {
-        // StateSpan with rate 1.5 U/hr for 60 minutes = 1.5 U
-        var stateSpans = new List<StateSpan>
+        // TempBasal with rate 1.5 U/hr for 60 minutes = 1.5 U
+        var tempBasals = new List<TempBasal>
         {
-            MakeBasalStateSpan(hourOffset: 8, rateUPerHr: 1.5, durationMinutes: 60),
+            MakeTempBasal(hourOffset: 8, rateUPerHr: 1.5, durationMinutes: 60),
         };
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -305,14 +293,15 @@ public class TddCalculationTests
     public void TDD_WithZeroRateTempBasal_ShouldContributeZeroInsulin()
     {
         // A suspend (zero temp) should contribute 0 insulin
-        var stateSpans = new List<StateSpan>
+        var tempBasals = new List<TempBasal>
         {
-            MakeTempBasalSpan(hourOffset: 3, rateUPerHr: 0.0, durationMinutes: 30),
+            MakeAlgorithmTempBasal(hourOffset: 3, rateUPerHr: 0.0, durationMinutes: 30),
         };
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -326,18 +315,19 @@ public class TddCalculationTests
     public void TDD_WithMultipleTempBasals_ShouldSumAllSegments()
     {
         // Multiple temp basals throughout the day (as an AID system would produce)
-        var stateSpans = new List<StateSpan>
+        var tempBasals = new List<TempBasal>
         {
-            MakeTempBasalSpan(0, rateUPerHr: 0.5, durationMinutes: 30),  // 0.25 U
-            MakeTempBasalSpan(1, rateUPerHr: 1.2, durationMinutes: 30),  // 0.60 U
-            MakeTempBasalSpan(2, rateUPerHr: 0.0, durationMinutes: 30),  // 0.00 U (suspend)
-            MakeTempBasalSpan(3, rateUPerHr: 1.8, durationMinutes: 30),  // 0.90 U
-            MakeTempBasalSpan(4, rateUPerHr: 0.3, durationMinutes: 30),  // 0.15 U
+            MakeAlgorithmTempBasal(0, rateUPerHr: 0.5, durationMinutes: 30),  // 0.25 U
+            MakeAlgorithmTempBasal(1, rateUPerHr: 1.2, durationMinutes: 30),  // 0.60 U
+            MakeAlgorithmTempBasal(2, rateUPerHr: 0.0, durationMinutes: 30),  // 0.00 U (suspend)
+            MakeAlgorithmTempBasal(3, rateUPerHr: 1.8, durationMinutes: 30),  // 0.90 U
+            MakeAlgorithmTempBasal(4, rateUPerHr: 0.3, durationMinutes: 30),  // 0.15 U
         };
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -352,16 +342,17 @@ public class TddCalculationTests
     {
         // Temp basal expressed as 150% of scheduled rate.
         // The insulin delivered is still the absolute amount (rate * duration),
-        // but the scheduledRate metadata enables analysis.
+        // but the scheduledRate property enables analysis.
         // Scheduled rate was 1.0 U/hr, temp is 150% = 1.5 U/hr for 60 min = 1.5 U
-        var stateSpans = new List<StateSpan>
+        var tempBasals = new List<TempBasal>
         {
-            MakeTempBasalSpan(hourOffset: 14, rateUPerHr: 1.5, durationMinutes: 60, scheduledRate: 1.0),
+            MakeAlgorithmTempBasal(hourOffset: 14, rateUPerHr: 1.5, durationMinutes: 60, scheduledRate: 1.0),
         };
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -378,29 +369,30 @@ public class TddCalculationTests
     public void TDD_TempBasalReplacesScheduledBasal_ShouldOnlyCountTempInsulin()
     {
         // When a temp basal is active, the pump replaces the scheduled basal.
-        // The StateSpan for that period reflects the temp rate, not the scheduled rate.
+        // The TempBasal for that period reflects the temp rate, not the scheduled rate.
         //
         // Schedule: 1.0 U/hr all day (24 segments)
         // Temp at hour 10: 2.0 U/hr for 60 min (replaces the 1.0 U/hr segment)
         //
         // Expected: 23 hours at 1.0 = 23.0 U scheduled + 1 hour at 2.0 = 2.0 U temp = 25.0 U total
 
-        var stateSpans = new List<StateSpan>();
+        var tempBasals = new List<TempBasal>();
 
         // Scheduled basal for all hours EXCEPT hour 10 (replaced by temp)
         for (var h = 0; h < 24; h++)
         {
             if (h == 10)
                 continue;
-            stateSpans.Add(MakeScheduledBasalSpan(h, rateUPerHr: 1.0, durationMinutes: 60));
+            tempBasals.Add(MakeScheduledBasal(h, rateUPerHr: 1.0, durationMinutes: 60));
         }
 
         // Temp basal at hour 10: higher rate
-        stateSpans.Add(MakeTempBasalSpan(10, rateUPerHr: 2.0, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(10, rateUPerHr: 2.0, durationMinutes: 60));
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -418,22 +410,23 @@ public class TddCalculationTests
         // Schedule: 1.0 U/hr all day
         // Hours 14-16: temp at 0.3 U/hr (2 hours replaced)
 
-        var stateSpans = new List<StateSpan>();
+        var tempBasals = new List<TempBasal>();
 
         for (var h = 0; h < 24; h++)
         {
             if (h >= 14 && h < 16)
                 continue;
-            stateSpans.Add(MakeScheduledBasalSpan(h, rateUPerHr: 1.0, durationMinutes: 60));
+            tempBasals.Add(MakeScheduledBasal(h, rateUPerHr: 1.0, durationMinutes: 60));
         }
 
         // 2 hours of reduced temp basal
-        stateSpans.Add(MakeTempBasalSpan(14, rateUPerHr: 0.3, durationMinutes: 60));
-        stateSpans.Add(MakeTempBasalSpan(15, rateUPerHr: 0.3, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(14, rateUPerHr: 0.3, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(15, rateUPerHr: 0.3, durationMinutes: 60));
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -451,22 +444,23 @@ public class TddCalculationTests
         // Schedule: 1.0 U/hr all day
         // Hours 2-4: suspended (0 U/hr)
 
-        var stateSpans = new List<StateSpan>();
+        var tempBasals = new List<TempBasal>();
 
         for (var h = 0; h < 24; h++)
         {
             if (h >= 2 && h < 4)
                 continue;
-            stateSpans.Add(MakeScheduledBasalSpan(h, rateUPerHr: 1.0, durationMinutes: 60));
+            tempBasals.Add(MakeScheduledBasal(h, rateUPerHr: 1.0, durationMinutes: 60));
         }
 
         // 2 hours of zero temp (suspend)
-        stateSpans.Add(MakeTempBasalSpan(2, rateUPerHr: 0.0, durationMinutes: 60));
-        stateSpans.Add(MakeTempBasalSpan(3, rateUPerHr: 0.0, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(2, rateUPerHr: 0.0, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(3, rateUPerHr: 0.0, durationMinutes: 60));
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -500,7 +494,7 @@ public class TddCalculationTests
         //   18:30 Meal Bolus 6.0 U (dinner)
         //   15:30 Correction Bolus 1.2 U
 
-        var stateSpans = new List<StateSpan>();
+        var tempBasals = new List<TempBasal>();
 
         // Build scheduled basal segments (excluding hours overridden by temps)
         var overriddenHours = new HashSet<int> { 2, 7, 14, 20 };
@@ -518,14 +512,14 @@ public class TddCalculationTests
                 _ => 0.85,
             };
 
-            stateSpans.Add(MakeScheduledBasalSpan(h, rate, 60));
+            tempBasals.Add(MakeScheduledBasal(h, rate, 60));
         }
 
         // AID temp basals
-        stateSpans.Add(MakeTempBasalSpan(2, rateUPerHr: 0.0, durationMinutes: 60));
-        stateSpans.Add(MakeTempBasalSpan(7, rateUPerHr: 1.8, durationMinutes: 60));
-        stateSpans.Add(MakeTempBasalSpan(14, rateUPerHr: 0.4, durationMinutes: 60));
-        stateSpans.Add(MakeTempBasalSpan(20, rateUPerHr: 1.3, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(2, rateUPerHr: 0.0, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(7, rateUPerHr: 1.8, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(14, rateUPerHr: 0.4, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(20, rateUPerHr: 1.3, durationMinutes: 60));
 
         // Boluses
         var boluses = new List<Bolus>
@@ -538,7 +532,8 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             boluses,
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -575,16 +570,17 @@ public class TddCalculationTests
     [Fact]
     public void TDD_TempBasalWithAbsoluteRate_ShouldUseRate()
     {
-        // A StateSpan with rate metadata directly represents the absolute rate.
+        // A TempBasal with rate directly represents the absolute rate.
         // 1.6 U/hr for 30 minutes = 0.8 U
-        var stateSpans = new List<StateSpan>
+        var tempBasals = new List<TempBasal>
         {
-            MakeBasalStateSpan(hourOffset: 5, rateUPerHr: 1.6, durationMinutes: 30),
+            MakeTempBasal(hourOffset: 5, rateUPerHr: 1.6, durationMinutes: 30),
         };
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -602,9 +598,9 @@ public class TddCalculationTests
     public void DailyRatios_WithScheduledBasalAndBoluses_ShouldSplitCorrectly()
     {
         // Full day scheduled basal at 1.0 U/hr = 24.0 U basal
-        var stateSpans = Enumerable
+        var tempBasals = Enumerable
             .Range(0, 24)
-            .Select(h => MakeScheduledBasalSpan(h, rateUPerHr: 1.0, durationMinutes: 60))
+            .Select(h => MakeScheduledBasal(h, rateUPerHr: 1.0, durationMinutes: 60))
             .ToList();
 
         // 16.0 U bolus total
@@ -615,7 +611,11 @@ public class TddCalculationTests
             MakeBolus(18, units: 5.0),
         };
 
-        var result = _statisticsService.CalculateDailyBasalBolusRatios(boluses, stateSpans);
+        var result = _statisticsService.CalculateDailyBasalBolusRatios(
+            boluses,
+            Array.Empty<MicroBolus>(),
+            tempBasals
+        );
 
         result.DayCount.Should().Be(1);
         result.DailyData.Should().HaveCount(1);
@@ -633,23 +633,24 @@ public class TddCalculationTests
     [Fact]
     public void DailyRatios_WithTempBasalReplacingScheduled_ShouldReflectTempRate()
     {
-        var stateSpans = new List<StateSpan>();
+        var tempBasals = new List<TempBasal>();
 
         // Scheduled basal for 22 hours at 1.0 U/hr
         for (var h = 0; h < 24; h++)
         {
             if (h >= 10 && h < 12)
                 continue; // replaced by temp
-            stateSpans.Add(MakeScheduledBasalSpan(h, rateUPerHr: 1.0, durationMinutes: 60));
+            tempBasals.Add(MakeScheduledBasal(h, rateUPerHr: 1.0, durationMinutes: 60));
         }
 
         // Temp basal hours 10-12 at 2.5 U/hr = 5.0 U
-        stateSpans.Add(MakeTempBasalSpan(10, rateUPerHr: 2.5, durationMinutes: 60));
-        stateSpans.Add(MakeTempBasalSpan(11, rateUPerHr: 2.5, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(10, rateUPerHr: 2.5, durationMinutes: 60));
+        tempBasals.Add(MakeAlgorithmTempBasal(11, rateUPerHr: 2.5, durationMinutes: 60));
 
         var result = _statisticsService.CalculateDailyBasalBolusRatios(
             Array.Empty<Bolus>(),
-            stateSpans
+            Array.Empty<MicroBolus>(),
+            tempBasals
         );
 
         result.DayCount.Should().Be(1);
@@ -664,15 +665,14 @@ public class TddCalculationTests
     public void DailyRatios_MultiDay_WithVaryingTempBasals_ShouldTrackPerDay()
     {
         var day1Start = DayStart;
-        var day2Start = DayStart.AddDays(1);
 
-        var stateSpans = new List<StateSpan>();
+        var tempBasals = new List<TempBasal>();
 
         // Day 1: flat 1.0 U/hr, no temps = 24.0 U
         for (var h = 0; h < 24; h++)
         {
-            stateSpans.Add(
-                MakeBasalStateSpanFromBase(day1Start, 0, h, rateUPerHr: 1.0, durationMinutes: 60)
+            tempBasals.Add(
+                MakeTempBasalFromBase(day1Start, 0, h, rateUPerHr: 1.0, durationMinutes: 60)
             );
         }
 
@@ -681,16 +681,16 @@ public class TddCalculationTests
         {
             if (h >= 8 && h < 12)
             {
-                stateSpans.Add(
-                    MakeBasalStateSpanFromBase(
-                        day1Start, 1, h, rateUPerHr: 0.5, durationMinutes: 60, origin: "Algorithm"
+                tempBasals.Add(
+                    MakeTempBasalFromBase(
+                        day1Start, 1, h, rateUPerHr: 0.5, durationMinutes: 60, origin: TempBasalOrigin.Algorithm
                     )
                 );
             }
             else
             {
-                stateSpans.Add(
-                    MakeBasalStateSpanFromBase(
+                tempBasals.Add(
+                    MakeTempBasalFromBase(
                         day1Start, 1, h, rateUPerHr: 1.0, durationMinutes: 60
                     )
                 );
@@ -699,7 +699,8 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateDailyBasalBolusRatios(
             Array.Empty<Bolus>(),
-            stateSpans
+            Array.Empty<MicroBolus>(),
+            tempBasals
         );
 
         result.DayCount.Should().Be(2);
@@ -724,16 +725,21 @@ public class TddCalculationTests
     public void BasalAnalysis_ShouldCountTempBasalCategories()
     {
         // Mix of high, low, and zero temp basals
-        // Using origin and scheduledRate metadata for temp basal categorization
-        var stateSpans = new List<StateSpan>
+        // Using origin and scheduledRate for temp basal categorization
+        var tempBasals = new List<TempBasal>
         {
-            MakeTempBasalSpan(8, rateUPerHr: 1.5, durationMinutes: 30, scheduledRate: 1.0),   // High (1.5 > 1.0)
-            MakeTempBasalSpan(10, rateUPerHr: 1.8, durationMinutes: 30, scheduledRate: 1.0),  // High (1.8 > 1.0)
-            MakeTempBasalSpan(14, rateUPerHr: 0.5, durationMinutes: 30, scheduledRate: 1.0),  // Low (0.5 < 1.0)
-            MakeTempBasalSpan(16, rateUPerHr: 0.0, durationMinutes: 30, scheduledRate: 1.0),  // Zero (suspend)
+            MakeAlgorithmTempBasal(8, rateUPerHr: 1.5, durationMinutes: 30, scheduledRate: 1.0),   // High (1.5 > 1.0)
+            MakeAlgorithmTempBasal(10, rateUPerHr: 1.8, durationMinutes: 30, scheduledRate: 1.0),  // High (1.8 > 1.0)
+            MakeAlgorithmTempBasal(14, rateUPerHr: 0.5, durationMinutes: 30, scheduledRate: 1.0),  // Low (0.5 < 1.0)
+            MakeAlgorithmTempBasal(16, rateUPerHr: 0.0, durationMinutes: 30, scheduledRate: 1.0),  // Zero (suspend)
         };
 
-        var result = _statisticsService.CalculateBasalAnalysis(stateSpans, StartDate, EndDate);
+        var result = _statisticsService.CalculateBasalAnalysis(
+            tempBasals,
+            Array.Empty<MicroBolus>(),
+            StartDate,
+            EndDate
+        );
 
         result.TempBasalInfo.Total.Should().Be(4);
         result.TempBasalInfo.HighTemps.Should().Be(2);
@@ -745,15 +751,20 @@ public class TddCalculationTests
     [Fact]
     public void BasalAnalysis_WithMixedRates_ShouldCalculateCorrectStats()
     {
-        var stateSpans = new List<StateSpan>
+        var tempBasals = new List<TempBasal>
         {
-            MakeScheduledBasalSpan(0, rateUPerHr: 0.8, durationMinutes: 60),
-            MakeScheduledBasalSpan(6, rateUPerHr: 1.2, durationMinutes: 60),
-            MakeTempBasalSpan(12, rateUPerHr: 1.5, durationMinutes: 60, scheduledRate: 1.0),
-            MakeScheduledBasalSpan(18, rateUPerHr: 0.9, durationMinutes: 60),
+            MakeScheduledBasal(0, rateUPerHr: 0.8, durationMinutes: 60),
+            MakeScheduledBasal(6, rateUPerHr: 1.2, durationMinutes: 60),
+            MakeAlgorithmTempBasal(12, rateUPerHr: 1.5, durationMinutes: 60, scheduledRate: 1.0),
+            MakeScheduledBasal(18, rateUPerHr: 0.9, durationMinutes: 60),
         };
 
-        var result = _statisticsService.CalculateBasalAnalysis(stateSpans, StartDate, EndDate);
+        var result = _statisticsService.CalculateBasalAnalysis(
+            tempBasals,
+            Array.Empty<MicroBolus>(),
+            StartDate,
+            EndDate
+        );
 
         result.Stats.Count.Should().Be(4);
         result.Stats.MinRate.Should().Be(0.8);
@@ -773,7 +784,8 @@ public class TddCalculationTests
     {
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<StateSpan>(),
+            Array.Empty<MicroBolus>(),
+            Array.Empty<TempBasal>(),
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -796,7 +808,8 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             boluses,
-            Array.Empty<StateSpan>(),
+            Array.Empty<MicroBolus>(),
+            Array.Empty<TempBasal>(),
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -815,20 +828,21 @@ public class TddCalculationTests
         var start = StartDate;
         var end = StartDate.AddDays(3);
 
-        var stateSpans = new List<StateSpan>();
+        var tempBasals = new List<TempBasal>();
         for (var d = 0; d < 3; d++)
         {
             for (var h = 0; h < 24; h++)
             {
-                stateSpans.Add(
-                    MakeBasalStateSpanFromBase(DayStart, d, h, rateUPerHr: 1.0, durationMinutes: 60)
+                tempBasals.Add(
+                    MakeTempBasalFromBase(DayStart, d, h, rateUPerHr: 1.0, durationMinutes: 60)
                 );
             }
         }
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             start,
             end
@@ -845,14 +859,15 @@ public class TddCalculationTests
     public void TDD_SubHourTempBasal_ShouldCalculateFractionalInsulin()
     {
         // A very short temp basal: 3.0 U/hr for 5 minutes = 0.25 U
-        var stateSpans = new List<StateSpan>
+        var tempBasals = new List<TempBasal>
         {
-            MakeTempBasalSpan(hourOffset: 10, rateUPerHr: 3.0, durationMinutes: 5),
+            MakeAlgorithmTempBasal(hourOffset: 10, rateUPerHr: 3.0, durationMinutes: 5),
         };
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            stateSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate
@@ -873,7 +888,8 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             boluses,
-            Array.Empty<StateSpan>(),
+            Array.Empty<MicroBolus>(),
+            Array.Empty<TempBasal>(),
             Array.Empty<CarbIntake>(),
             StartDate,
             EndDate

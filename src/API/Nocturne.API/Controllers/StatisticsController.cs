@@ -22,30 +22,33 @@ public class StatisticsController : ControllerBase
     private readonly ICacheService _cacheService;
     private readonly IPostgreSqlService _postgreSqlService;
     private readonly IProfileService _profileService;
-    private readonly IStateSpanService _stateSpanService;
     private readonly ISensorGlucoseRepository _sensorGlucoseRepository;
     private readonly IBolusRepository _bolusRepository;
     private readonly ICarbIntakeRepository _carbIntakeRepository;
+    private readonly ITempBasalRepository _tempBasalRepository;
+    private readonly IMicroBolusRepository _microBolusRepository;
 
     public StatisticsController(
         IStatisticsService statisticsService,
         ICacheService cacheService,
         IPostgreSqlService postgreSqlService,
         IProfileService profileService,
-        IStateSpanService stateSpanService,
         ISensorGlucoseRepository sensorGlucoseRepository,
         IBolusRepository bolusRepository,
-        ICarbIntakeRepository carbIntakeRepository
+        ICarbIntakeRepository carbIntakeRepository,
+        ITempBasalRepository tempBasalRepository,
+        IMicroBolusRepository microBolusRepository
     )
     {
         _statisticsService = statisticsService;
         _cacheService = cacheService;
         _postgreSqlService = postgreSqlService;
         _profileService = profileService;
-        _stateSpanService = stateSpanService;
         _sensorGlucoseRepository = sensorGlucoseRepository;
         _bolusRepository = bolusRepository;
         _carbIntakeRepository = carbIntakeRepository;
+        _tempBasalRepository = tempBasalRepository;
+        _microBolusRepository = microBolusRepository;
     }
 
     /// <summary>
@@ -618,25 +621,38 @@ public class StatisticsController : ControllerBase
                         filteredCarbs
                     );
 
-                    // Fetch basal StateSpans (actual pump delivery data)
-                    var basalSpans = await _stateSpanService.GetStateSpansAsync(
-                        category: StateSpanCategory.BasalDelivery,
+                    // Fetch TempBasals and MicroBoluses for basal data
+                    var tempBasals = (await _tempBasalRepository.GetAsync(
                         from: startTimestamp,
                         to: endTimestamp,
-                        count: 10000
-                    );
-                    var basalSpansList = basalSpans.ToList();
+                        device: null,
+                        source: null,
+                        limit: 10000,
+                        descending: false,
+                        ct: cancellationToken
+                    )).ToList();
+
+                    var microBoluses = (await _microBolusRepository.GetAsync(
+                        from: startTimestamp,
+                        to: endTimestamp,
+                        device: null,
+                        source: null,
+                        limit: 10000,
+                        descending: false,
+                        ct: cancellationToken
+                    )).ToList();
 
                     insulinDelivery = _statisticsService.CalculateInsulinDeliveryStatistics(
                         filteredBoluses,
-                        basalSpansList,
+                        microBoluses,
+                        tempBasals,
                         filteredCarbs,
                         startDate,
                         endDate
                     );
 
-                    // If no StateSpans but we have profile data, augment with scheduled basal
-                    if (basalSpansList.Count == 0 && _profileService.HasData())
+                    // If no TempBasals/MicroBoluses but we have profile data, augment with scheduled basal
+                    if (tempBasals.Count == 0 && microBoluses.Count == 0 && _profileService.HasData())
                     {
                         var profileBasal = CalculateScheduledBasalForPeriod(
                             startTimestamp,
@@ -835,16 +851,28 @@ public class StatisticsController : ControllerBase
                 descending: false
             );
 
-            var basalSpans = await _stateSpanService.GetStateSpansAsync(
-                category: StateSpanCategory.BasalDelivery,
+            var tempBasals = await _tempBasalRepository.GetAsync(
                 from: startMills,
                 to: endMills,
-                count: 10000
+                device: null,
+                source: null,
+                limit: 10000,
+                descending: false
+            );
+
+            var microBoluses = await _microBolusRepository.GetAsync(
+                from: startMills,
+                to: endMills,
+                device: null,
+                source: null,
+                limit: 10000,
+                descending: false
             );
 
             var result = _statisticsService.CalculateDailyBasalBolusRatios(
                 boluses,
-                basalSpans
+                microBoluses,
+                tempBasals
             );
             return Ok(result);
         }
@@ -872,7 +900,7 @@ public class StatisticsController : ControllerBase
             var startMills = new DateTimeOffset(startDate).ToUnixTimeMilliseconds();
             var endMills = new DateTimeOffset(endDate).ToUnixTimeMilliseconds();
 
-            // Fetch boluses and basal StateSpans
+            // Fetch boluses, TempBasals, MicroBoluses, and carbs
             var boluses = await _bolusRepository.GetAsync(
                 from: startMills,
                 to: endMills,
@@ -882,11 +910,22 @@ public class StatisticsController : ControllerBase
                 descending: false
             );
 
-            var basalSpans = await _stateSpanService.GetStateSpansAsync(
-                category: StateSpanCategory.BasalDelivery,
+            var tempBasals = await _tempBasalRepository.GetAsync(
                 from: startMills,
                 to: endMills,
-                count: 10000
+                device: null,
+                source: null,
+                limit: 10000,
+                descending: false
+            );
+
+            var microBoluses = await _microBolusRepository.GetAsync(
+                from: startMills,
+                to: endMills,
+                device: null,
+                source: null,
+                limit: 10000,
+                descending: false
             );
 
             var carbs = await _carbIntakeRepository.GetAsync(
@@ -899,7 +938,7 @@ public class StatisticsController : ControllerBase
             );
 
             var result = _statisticsService.CalculateInsulinDeliveryStatistics(
-                boluses, basalSpans, carbs, startDate, endDate);
+                boluses, microBoluses, tempBasals, carbs, startDate, endDate);
             return Ok(result);
         }
         catch (Exception ex)
@@ -934,20 +973,29 @@ public class StatisticsController : ControllerBase
             var startMills = new DateTimeOffset(startUtc).ToUnixTimeMilliseconds();
             var endMills = new DateTimeOffset(endUtc).ToUnixTimeMilliseconds();
 
-            // Fetch basal StateSpans directly
-            var basalSpans = await _stateSpanService.GetStateSpansAsync(
-                category: StateSpanCategory.BasalDelivery,
+            // Fetch TempBasals and MicroBoluses
+            var tempBasals = (await _tempBasalRepository.GetAsync(
                 from: startMills,
                 to: endMills,
-                count: 10000
+                device: null,
+                source: null,
+                limit: 10000,
+                descending: false
+            )).ToList();
+
+            var microBoluses = await _microBolusRepository.GetAsync(
+                from: startMills,
+                to: endMills,
+                device: null,
+                source: null,
+                limit: 10000,
+                descending: false
             );
 
-            var spansList = basalSpans.ToList();
-
-            // Fall back to profile-based scheduled rates when no StateSpans exist.
+            // Fall back to profile-based scheduled rates when no TempBasals exist.
             // This matches ChartDataService.BuildBasalSeriesFromStateSpans which also
             // falls back to BuildBasalSeriesFromProfile, keeping both charts consistent.
-            if (spansList.Count == 0 && _profileService.HasData())
+            if (tempBasals.Count == 0 && _profileService.HasData())
             {
                 for (var day = startUtc.Date; day <= endUtc.Date; day = day.AddDays(1))
                 {
@@ -959,23 +1007,20 @@ public class StatisticsController : ControllerBase
                             continue;
 
                         var rate = _profileService.GetBasalRate(hourMills);
-                        spansList.Add(new StateSpan
+                        tempBasals.Add(new TempBasal
                         {
-                            Category = StateSpanCategory.BasalDelivery,
                             StartMills = hourMills,
                             EndMills = hourMills + 3_600_000,
-                            Metadata = new Dictionary<string, object>
-                            {
-                                ["rate"] = rate,
-                                ["origin"] = "Scheduled",
-                            },
+                            Rate = rate,
+                            Origin = TempBasalOrigin.Scheduled,
                         });
                     }
                 }
             }
 
             var result = _statisticsService.CalculateBasalAnalysis(
-                spansList,
+                tempBasals,
+                microBoluses,
                 startUtc,
                 endUtc
             );

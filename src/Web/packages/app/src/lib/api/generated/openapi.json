@@ -22481,6 +22481,14 @@
             "type": "integer",
             "format": "int32"
           },
+          "microBolusCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "microBolusInsulin": {
+            "type": "number",
+            "format": "double"
+          },
           "reliability": {
             "nullable": true,
             "oneOf": [
@@ -23933,18 +23941,12 @@
             "format": "double",
             "nullable": true
           },
-          "isBasalInsulin": {
-            "type": "boolean"
-          },
-          "pumpId": {
+          "pumpDeviceId": {
             "type": "string",
+            "format": "guid",
             "nullable": true
           },
-          "pumpSerial": {
-            "type": "string",
-            "nullable": true
-          },
-          "pumpType": {
+          "pumpRecordId": {
             "type": "string",
             "nullable": true
           }

@@ -552,11 +552,11 @@ public class StatisticsServiceClinicalAccuracyTests
             new Bolus { Insulin = 1.5, Automatic = false, Mills = DateTimeOffset.Parse("2024-01-02T20:00:00Z").ToUnixTimeMilliseconds() },
         };
 
-        var result = _sut.CalculateInsulinDeliveryStatistics(boluses, Array.Empty<StateSpan>(), Array.Empty<CarbIntake>(), startDate, endDate);
+        var result = _sut.CalculateInsulinDeliveryStatistics(boluses, Array.Empty<MicroBolus>(), Array.Empty<TempBasal>(), Array.Empty<CarbIntake>(), startDate, endDate);
 
         // Bolus = 5 + 7 + 2 + 1.5 = 15.5
         result.TotalBolus.Should().Be(15.5);
-        // No basal StateSpans provided
+        // No basal TempBasals provided
         result.TotalBasal.Should().Be(0);
         // Total = 15.5
         result.TotalInsulin.Should().Be(15.5);
@@ -573,7 +573,8 @@ public class StatisticsServiceClinicalAccuracyTests
     {
         var result = _sut.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<StateSpan>(),
+            Array.Empty<MicroBolus>(),
+            Array.Empty<TempBasal>(),
             Array.Empty<CarbIntake>(),
             new DateTime(2024, 1, 1),
             new DateTime(2024, 1, 8)
@@ -595,21 +596,22 @@ public class StatisticsServiceClinicalAccuracyTests
             new Bolus { Insulin = 8.0, Automatic = false, Mills = DateTimeOffset.Parse("2024-01-02T12:00:00Z").ToUnixTimeMilliseconds() },
         };
 
-        // Basal delivered via StateSpan: 12 units over 24 hours (rate=0.5 U/hr)
-        var basalSpans = new[]
+        // Basal delivered via TempBasal: 12 units over 24 hours (rate=0.5 U/hr)
+        var tempBasals = new[]
         {
-            new StateSpan
+            new TempBasal
             {
-                Category = StateSpanCategory.BasalDelivery,
                 StartMills = DateTimeOffset.Parse("2024-01-01T00:00:00Z").ToUnixTimeMilliseconds(),
                 EndMills = DateTimeOffset.Parse("2024-01-02T00:00:00Z").ToUnixTimeMilliseconds(),
-                Metadata = new Dictionary<string, object> { { "rate", 0.5 } },
+                Rate = 0.5,
+                Origin = TempBasalOrigin.Scheduled,
             },
         };
 
         var result = _sut.CalculateInsulinDeliveryStatistics(
             boluses,
-            basalSpans,
+            Array.Empty<MicroBolus>(),
+            tempBasals,
             Array.Empty<CarbIntake>(),
             new DateTime(2024, 1, 1),
             new DateTime(2024, 1, 2)
@@ -631,7 +633,8 @@ public class StatisticsServiceClinicalAccuracyTests
 
         var result = _sut.CalculateInsulinDeliveryStatistics(
             boluses,
-            Array.Empty<StateSpan>(),
+            Array.Empty<MicroBolus>(),
+            Array.Empty<TempBasal>(),
             Array.Empty<CarbIntake>(),
             new DateTime(2024, 1, 1),
             new DateTime(2024, 1, 3)

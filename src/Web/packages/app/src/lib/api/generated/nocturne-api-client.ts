@@ -23649,6 +23649,8 @@ export interface InsulinDeliveryStatistics {
     endDate?: string;
     carbCount?: number;
     carbBolusCount?: number;
+    microBolusCount?: number;
+    microBolusInsulin?: number;
     reliability?: StatisticReliability | undefined;
 }
 
@@ -24154,10 +24156,8 @@ export interface Bolus {
     syncIdentifier?: string | undefined;
     insulinType?: string | undefined;
     unabsorbed?: number | undefined;
-    isBasalInsulin?: boolean;
-    pumpId?: string | undefined;
-    pumpSerial?: string | undefined;
-    pumpType?: string | undefined;
+    pumpDeviceId?: string | undefined;
+    pumpRecordId?: string | undefined;
 }
 
 export enum BolusType {

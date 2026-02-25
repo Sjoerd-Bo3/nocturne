@@ -1880,6 +1880,16 @@ public class InsulinDeliveryStatistics
     public int CarbBolusCount { get; set; }
 
     /// <summary>
+    /// Number of algorithm-delivered micro-boluses (SMBs) in the period
+    /// </summary>
+    public int MicroBolusCount { get; set; }
+
+    /// <summary>
+    /// Total insulin delivered via micro-boluses (SMBs) in units
+    /// </summary>
+    public double MicroBolusInsulin { get; set; }
+
+    /// <summary>
     /// Reliability assessment for insulin delivery statistics
     /// </summary>
     public StatisticReliability? Reliability { get; set; }
