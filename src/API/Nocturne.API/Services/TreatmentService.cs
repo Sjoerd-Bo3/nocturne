@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
@@ -26,6 +27,7 @@ public class TreatmentService : ITreatmentService
     private readonly IStateSpanService _stateSpanService;
     private readonly ITreatmentDecomposer _treatmentDecomposer;
     private readonly IV4ToLegacyProjectionService _projectionService;
+    private readonly ITempBasalRepository _tempBasalRepository;
     private readonly ILogger<TreatmentService> _logger;
     private const string CollectionName = "treatments";
     private const string DefaultTenantId = "default"; // TODO: Replace with actual tenant context
@@ -39,6 +41,7 @@ public class TreatmentService : ITreatmentService
         IStateSpanService stateSpanService,
         ITreatmentDecomposer treatmentDecomposer,
         IV4ToLegacyProjectionService projectionService,
+        ITempBasalRepository tempBasalRepository,
         ILogger<TreatmentService> logger
     )
     {
@@ -50,6 +53,7 @@ public class TreatmentService : ITreatmentService
         _stateSpanService = stateSpanService;
         _treatmentDecomposer = treatmentDecomposer;
         _projectionService = projectionService;
+        _tempBasalRepository = tempBasalRepository;
         _logger = logger;
     }
 
@@ -311,7 +315,19 @@ public class TreatmentService : ITreatmentService
     {
         var (fromMills, toMills) = ParseTimeRangeFromFind(findQuery);
 
-        // Get BasalDelivery StateSpans as Treatments (for V1-V3 compatibility)
+        // Get temp basals from V4 TempBasal table (primary path)
+        var tempBasalTask = _tempBasalRepository.GetAsync(
+            from: fromMills,
+            to: toMills,
+            device: null,
+            source: null,
+            limit: count,
+            offset: 0, // We'll handle skip in the merge
+            descending: true,
+            ct: cancellationToken
+        );
+
+        // Get BasalDelivery StateSpans as Treatments (fallback for transition period)
         var basalDeliveryTask = _stateSpanService.GetBasalDeliveriesAsTreatmentsAsync(
             from: fromMills,
             to: toMills,
@@ -328,24 +344,35 @@ public class TreatmentService : ITreatmentService
             cancellationToken
         );
 
-        await Task.WhenAll(basalDeliveryTask, projectedTask);
+        await Task.WhenAll(tempBasalTask, basalDeliveryTask, projectedTask);
 
-        var basalDeliveryTreatments = await basalDeliveryTask;
+        var tempBasals = await tempBasalTask;
+        var tempBasalTreatments = TempBasalToTreatmentMapper.ToTreatments(tempBasals).ToList();
+        var basalDeliveryTreatments = (await basalDeliveryTask).ToList();
         var projectedTreatments = await projectedTask;
+
+        // Dedup: TempBasal records take precedence over StateSpan records with the same Mills
+        var tempBasalMillsSet = tempBasalTreatments.Select(t => t.Mills).ToHashSet();
+        var dedupedBasalDeliveries = basalDeliveryTreatments
+            .Where(t => !tempBasalMillsSet.Contains(t.Mills))
+            .ToList();
+
+        // Combine all basal sources
+        var allBasalTreatments = tempBasalTreatments.Concat(dedupedBasalDeliveries).ToList();
 
         // Build a set of legacy treatment IDs for dedup; V4 projection only returns records
         // with LegacyId == null, so there will be no Id overlap with legacy treatments.
         // Dedup by Mills to guard against timestamp collisions.
         var legacyList = treatments.ToList();
         var legacyMillsSet = legacyList.Select(t => t.Mills).ToHashSet();
-        var basalMillsSet = basalDeliveryTreatments.Select(t => t.Mills).ToHashSet();
+        var basalMillsSet = allBasalTreatments.Select(t => t.Mills).ToHashSet();
 
         var filteredProjected = projectedTreatments
             .Where(p => !legacyMillsSet.Contains(p.Mills) && !basalMillsSet.Contains(p.Mills));
 
         // Merge all sources and sort
         var allTreatments = legacyList
-            .Concat(basalDeliveryTreatments)
+            .Concat(allBasalTreatments)
             .Concat(filteredProjected)
             .OrderByDescending(t => t.Mills)
             .Skip(skip)
@@ -366,7 +393,14 @@ public class TreatmentService : ITreatmentService
         if (treatment != null)
             return treatment;
 
-        // Fall back to StateSpans (temp basals are stored only as StateSpans)
+        // Try V4 TempBasal table by legacy ID first, then by GUID
+        var tempBasal = await _tempBasalRepository.GetByLegacyIdAsync(id, cancellationToken);
+        if (tempBasal == null && Guid.TryParse(id, out var guid))
+            tempBasal = await _tempBasalRepository.GetByIdAsync(guid, cancellationToken);
+        if (tempBasal != null)
+            return TempBasalToTreatmentMapper.ToTreatment(tempBasal);
+
+        // Fall back to StateSpans (transition period — data may still be in StateSpans)
         var stateSpan = await _stateSpanService.GetStateSpanByIdAsync(id, cancellationToken);
         if (stateSpan != null && stateSpan.Category == StateSpanCategory.BasalDelivery)
             return TreatmentStateSpanMapper.ToTreatment(stateSpan);
@@ -417,6 +451,20 @@ public class TreatmentService : ITreatmentService
             cancellationToken
         );
 
+        // Get temp basals from V4 TempBasal table (primary path)
+        var tempBasals = await _tempBasalRepository.GetAsync(
+            from: lastModifiedMills,
+            to: null,
+            device: null,
+            source: null,
+            limit: limit,
+            offset: 0,
+            descending: true,
+            ct: cancellationToken
+        );
+        var tempBasalTreatments = TempBasalToTreatmentMapper.ToTreatments(tempBasals).ToList();
+
+        // Fallback: get BasalDelivery StateSpans (transition period)
         var basalTreatments = await _stateSpanService.GetBasalDeliveriesAsTreatmentsAsync(
             from: lastModifiedMills,
             to: null,
@@ -425,8 +473,14 @@ public class TreatmentService : ITreatmentService
             cancellationToken: cancellationToken
         );
 
+        // Dedup: TempBasal records take precedence over StateSpan records
+        var tempBasalMillsSet = tempBasalTreatments.Select(t => t.Mills).ToHashSet();
+        var dedupedBasalTreatments = basalTreatments
+            .Where(t => !tempBasalMillsSet.Contains(t.Mills));
+
         return treatments
-            .Concat(basalTreatments)
+            .Concat(tempBasalTreatments)
+            .Concat(dedupedBasalTreatments)
             .OrderBy(t => t.SrvModified ?? t.Mills)
             .Take(limit);
     }
@@ -440,13 +494,21 @@ public class TreatmentService : ITreatmentService
         var treatmentList = treatments.ToList();
         var regularTreatments = new List<Treatment>();
         var stateSpanTreatments = new List<Treatment>();
+        var microBolusTreatments = new List<Treatment>();
 
-        // Separate StateSpan-backed types (temp basals, profile switches) from regular treatments
+        // Separate treatments into buckets:
+        // 1. Temp basals → skip legacy table, go to decomposer (StateSpan/TempBasal path)
+        // 2. Micro-boluses (IsBasalInsulin == true with insulin) → skip legacy table, go to decomposer
+        // 3. Regular → write to legacy table, then decompose
         foreach (var treatment in treatmentList)
         {
             if (TreatmentStateSpanMapper.IsTempBasalTreatment(treatment))
             {
                 stateSpanTreatments.Add(treatment);
+            }
+            else if (treatment.IsBasalInsulin == true && treatment.Insulin > 0)
+            {
+                microBolusTreatments.Add(treatment);
             }
             else
             {
@@ -501,6 +563,46 @@ public class TreatmentService : ITreatmentService
                     ex,
                     "Failed to decompose StateSpan-backed treatment {Id}",
                     stateSpanTreatment.Id
+                );
+            }
+        }
+
+        // Process micro-bolus treatments through the decomposer (not written to legacy table)
+        foreach (var microBolus in microBolusTreatments)
+        {
+            try
+            {
+                var decompositionResult = await _treatmentDecomposer.DecomposeAsync(
+                    microBolus,
+                    cancellationToken
+                );
+
+                // For micro-boluses the decomposer writes to the MicroBolus repo;
+                // return the original treatment shape so callers see what was accepted.
+                results.Add(microBolus);
+
+                try
+                {
+                    await _broadcastService.BroadcastStorageCreateAsync(
+                        CollectionName,
+                        new { colName = CollectionName, doc = microBolus }
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Failed to broadcast storage create event for micro-bolus {TreatmentId}",
+                        microBolus.Id
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to decompose micro-bolus treatment {Id}",
+                    microBolus.Id
                 );
             }
         }
@@ -588,7 +690,58 @@ public class TreatmentService : ITreatmentService
         CancellationToken cancellationToken = default
     )
     {
-        // Check if this is a basal delivery in StateSpans
+        // Check if this is a temp basal in the V4 TempBasal table
+        var existingTempBasal = await _tempBasalRepository.GetByLegacyIdAsync(id, cancellationToken);
+        if (existingTempBasal == null && Guid.TryParse(id, out var tempBasalGuid))
+            existingTempBasal = await _tempBasalRepository.GetByIdAsync(tempBasalGuid, cancellationToken);
+
+        if (existingTempBasal != null)
+        {
+            try
+            {
+                treatment.Id = id;
+                await _treatmentDecomposer.DecomposeAsync(treatment, cancellationToken);
+
+                // Re-read after decompose to get updated values
+                var refreshed = await _tempBasalRepository.GetByIdAsync(existingTempBasal.Id, cancellationToken);
+                var updatedTreatment = refreshed != null
+                    ? TempBasalToTreatmentMapper.ToTreatment(refreshed)
+                    : TempBasalToTreatmentMapper.ToTreatment(existingTempBasal);
+
+                try
+                {
+                    await _broadcastService.BroadcastStorageUpdateAsync(
+                        CollectionName,
+                        new { colName = CollectionName, doc = updatedTreatment }
+                    );
+                    _logger.LogDebug(
+                        "Broadcasted storage update event for temp basal treatment {TreatmentId}",
+                        updatedTreatment.Id
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Failed to broadcast storage update event for temp basal {TreatmentId}",
+                        updatedTreatment.Id
+                    );
+                }
+
+                return updatedTreatment;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to update TempBasal-backed treatment {TreatmentId}",
+                    id
+                );
+                return null;
+            }
+        }
+
+        // Fallback: Check if this is a basal delivery in StateSpans (transition period)
         var existingStateSpan = await _stateSpanService.GetStateSpanByIdAsync(
             id,
             cancellationToken
@@ -892,7 +1045,53 @@ public class TreatmentService : ITreatmentService
             _logger.LogError(ex, "Failed to delete v4 records for legacy treatment {TreatmentId}", id);
         }
 
-        // Check if this is a basal delivery in StateSpans
+        // Check if this is a temp basal in the V4 TempBasal table
+        var existingTempBasal = await _tempBasalRepository.GetByLegacyIdAsync(id, cancellationToken);
+        if (existingTempBasal == null && Guid.TryParse(id, out var tempBasalDeleteGuid))
+            existingTempBasal = await _tempBasalRepository.GetByIdAsync(tempBasalDeleteGuid, cancellationToken);
+
+        if (existingTempBasal != null)
+        {
+            var treatmentForBroadcast = TempBasalToTreatmentMapper.ToTreatment(existingTempBasal);
+
+            try
+            {
+                await _tempBasalRepository.DeleteAsync(existingTempBasal.Id, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to delete TempBasal record {TempBasalId}",
+                    existingTempBasal.Id
+                );
+                return false;
+            }
+
+            try
+            {
+                await _broadcastService.BroadcastStorageDeleteAsync(
+                    CollectionName,
+                    new { colName = CollectionName, doc = treatmentForBroadcast }
+                );
+                _logger.LogDebug(
+                    "Broadcasted storage delete event for temp basal treatment {TreatmentId}",
+                    treatmentForBroadcast.Id
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to broadcast storage delete event for temp basal {TreatmentId}",
+                    treatmentForBroadcast.Id
+                );
+            }
+
+            return true;
+        }
+
+        // Fallback: Check if this is a basal delivery in StateSpans (transition period)
         var existingStateSpan = await _stateSpanService.GetStateSpanByIdAsync(
             id,
             cancellationToken
@@ -907,18 +1106,18 @@ public class TreatmentService : ITreatmentService
 
             if (deleted)
             {
-                var treatmentForBroadcast = TreatmentStateSpanMapper.ToTreatment(existingStateSpan);
-                if (treatmentForBroadcast != null)
+                var stateSpanTreatmentForBroadcast = TreatmentStateSpanMapper.ToTreatment(existingStateSpan);
+                if (stateSpanTreatmentForBroadcast != null)
                 {
                     try
                     {
                         await _broadcastService.BroadcastStorageDeleteAsync(
                             CollectionName,
-                            new { colName = CollectionName, doc = treatmentForBroadcast }
+                            new { colName = CollectionName, doc = stateSpanTreatmentForBroadcast }
                         );
                         _logger.LogDebug(
                             "Broadcasted storage delete event for temp basal treatment {TreatmentId}",
-                            treatmentForBroadcast.Id
+                            stateSpanTreatmentForBroadcast.Id
                         );
                     }
                     catch (Exception ex)
@@ -926,7 +1125,7 @@ public class TreatmentService : ITreatmentService
                         _logger.LogError(
                             ex,
                             "Failed to broadcast storage delete event for temp basal {TreatmentId}",
-                            treatmentForBroadcast.Id
+                            stateSpanTreatmentForBroadcast.Id
                         );
                     }
                 }

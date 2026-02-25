@@ -6,7 +6,9 @@ using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Data.Abstractions;
@@ -28,6 +30,7 @@ public class TreatmentServiceTests
     private readonly Mock<IStateSpanService> _mockStateSpanService;
     private readonly Mock<ITreatmentDecomposer> _mockTreatmentDecomposer;
     private readonly Mock<IV4ToLegacyProjectionService> _mockProjectionService;
+    private readonly Mock<ITempBasalRepository> _mockTempBasalRepository;
     private readonly Mock<ILogger<TreatmentService>> _mockLogger;
     private readonly TreatmentService _treatmentService;
 
@@ -41,6 +44,7 @@ public class TreatmentServiceTests
         _mockStateSpanService = new Mock<IStateSpanService>();
         _mockTreatmentDecomposer = new Mock<ITreatmentDecomposer>();
         _mockProjectionService = new Mock<IV4ToLegacyProjectionService>();
+        _mockTempBasalRepository = new Mock<ITempBasalRepository>();
         _mockLogger = new Mock<ILogger<TreatmentService>>();
 
         _mockCacheConfig.Setup(x => x.Value).Returns(new CacheConfiguration());
@@ -56,6 +60,20 @@ public class TreatmentServiceTests
                 )
             )
             .ReturnsAsync(new List<Treatment>());
+        _mockTempBasalRepository
+            .Setup(x =>
+                x.GetAsync(
+                    It.IsAny<long?>(),
+                    It.IsAny<long?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<int>(),
+                    It.IsAny<int>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(new List<TempBasal>());
 
         _treatmentService = new TreatmentService(
             _mockPostgreSqlService.Object,
@@ -66,6 +84,7 @@ public class TreatmentServiceTests
             _mockStateSpanService.Object,
             _mockTreatmentDecomposer.Object,
             _mockProjectionService.Object,
+            _mockTempBasalRepository.Object,
             _mockLogger.Object
         );
     }
