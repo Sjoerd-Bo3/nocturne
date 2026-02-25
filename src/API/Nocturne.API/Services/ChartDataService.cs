@@ -31,6 +31,7 @@ public class ChartDataService : IChartDataService
     private readonly ICarbIntakeRepository _carbIntakeRepository;
     private readonly IBGCheckRepository _bgCheckRepository;
     private readonly IDeviceEventRepository _deviceEventRepository;
+    private readonly ITempBasalRepository _tempBasalRepository;
     private readonly StateSpanRepository _stateSpanRepository;
     private readonly SystemEventRepository _systemEventRepository;
     private readonly TrackerRepository _trackerRepository;
@@ -56,6 +57,7 @@ public class ChartDataService : IChartDataService
         ICarbIntakeRepository carbIntakeRepository,
         IBGCheckRepository bgCheckRepository,
         IDeviceEventRepository deviceEventRepository,
+        ITempBasalRepository tempBasalRepository,
         StateSpanRepository stateSpanRepository,
         SystemEventRepository systemEventRepository,
         TrackerRepository trackerRepository,
@@ -74,6 +76,7 @@ public class ChartDataService : IChartDataService
         _carbIntakeRepository = carbIntakeRepository;
         _bgCheckRepository = bgCheckRepository;
         _deviceEventRepository = deviceEventRepository;
+        _tempBasalRepository = tempBasalRepository;
         _stateSpanRepository = stateSpanRepository;
         _systemEventRepository = systemEventRepository;
         _trackerRepository = trackerRepository;
@@ -224,11 +227,24 @@ public class ChartDataService : IChartDataService
             .Where(c => c.Mills >= startTime && c.Mills <= endTime)
             .ToList();
 
-        // Fetch all state spans in a single batched query
+        // Fetch TempBasal records from v4 table (replaces BasalDelivery StateSpans)
+        var tempBasalList = (
+            await _tempBasalRepository.GetAsync(
+                from: startTime,
+                to: endTime,
+                device: null,
+                source: null,
+                limit: displayRangeLimit,
+                offset: 0,
+                descending: false,
+                ct: cancellationToken
+            )
+        ).ToList();
+
+        // Fetch all state spans in a single batched query (BasalDelivery now comes from TempBasal table)
         var stateSpanCategories = new[]
         {
             StateSpanCategory.PumpMode,
-            StateSpanCategory.BasalDelivery,
             StateSpanCategory.Profile,
             StateSpanCategory.Override,
             StateSpanCategory.Sleep,
@@ -245,7 +261,6 @@ public class ChartDataService : IChartDataService
         );
 
         var pumpModeSpansResult = allStateSpans[StateSpanCategory.PumpMode];
-        var basalDeliverySpansResult = allStateSpans[StateSpanCategory.BasalDelivery];
         var profileSpansResult = allStateSpans[StateSpanCategory.Profile];
         var overrideSpansResult = allStateSpans[StateSpanCategory.Override];
         var sleepSpansResult = allStateSpans[StateSpanCategory.Sleep];
@@ -286,9 +301,8 @@ public class ChartDataService : IChartDataService
             intervalMinutes
         );
 
-        var basalDeliverySpans = basalDeliverySpansResult.ToList();
-        var basalSeries = BuildBasalSeriesFromStateSpans(
-            basalDeliverySpans,
+        var basalSeries = BuildBasalSeriesFromTempBasals(
+            tempBasalList,
             startTime,
             endTime,
             defaultBasalRate
@@ -328,8 +342,8 @@ public class ChartDataService : IChartDataService
         activitySpanDtos.AddRange(MapStateSpans(illnessSpansResult, StateSpanCategory.Illness));
         activitySpanDtos.AddRange(MapStateSpans(travelSpansResult, StateSpanCategory.Travel));
 
-        var basalDeliverySpanDtos = MapBasalDeliverySpans(basalDeliverySpans, defaultBasalRate);
-        var tempBasalSpanDtos = MapTempBasalSpans(basalDeliverySpans, defaultBasalRate);
+        var basalDeliverySpanDtos = MapBasalDeliverySpans(tempBasalList);
+        var tempBasalSpanDtos = MapTempBasalSpans(tempBasalList);
         var systemEventDtos = MapSystemEvents(systemEventsResult);
         var trackerMarkers = MapTrackerMarkers(trackerDefs, trackerInstances, startTime, endTime);
 
@@ -898,6 +912,63 @@ public class ChartDataService : IChartDataService
             .ToList();
     }
 
+    internal static List<BasalDeliverySpanDto> MapBasalDeliverySpans(
+        List<TempBasal> tempBasals
+    )
+    {
+        return tempBasals
+            .Select(tb =>
+            {
+                var origin = MapTempBasalOrigin(tb.Origin);
+                return new BasalDeliverySpanDto
+                {
+                    Id = tb.LegacyId ?? tb.Id.ToString(),
+                    StartMills = tb.StartMills,
+                    EndMills = tb.EndMills,
+                    Rate = origin == BasalDeliveryOrigin.Suspended ? 0 : tb.Rate,
+                    Origin = origin,
+                    Source = tb.DataSource,
+                    FillColor = ChartColorMapper.FillFromBasalOrigin(origin),
+                    StrokeColor = ChartColorMapper.StrokeFromBasalOrigin(origin),
+                };
+            })
+            .ToList();
+    }
+
+    internal static List<ChartStateSpanDto> MapTempBasalSpans(
+        List<TempBasal> tempBasals
+    )
+    {
+        return tempBasals
+            .Where(tb => tb.Origin == TempBasalOrigin.Manual)
+            .Select(tb => new ChartStateSpanDto
+            {
+                Id = tb.LegacyId ?? tb.Id.ToString(),
+                Category = StateSpanCategory.BasalDelivery,
+                State = "TempBasal",
+                StartMills = tb.StartMills,
+                EndMills = tb.EndMills,
+                Color = ChartColor.InsulinBasal,
+                Metadata = null,
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Maps a TempBasalOrigin enum value to the corresponding BasalDeliveryOrigin enum value.
+    /// Both enums have identical members (Algorithm, Scheduled, Manual, Suspended, Inferred).
+    /// </summary>
+    internal static BasalDeliveryOrigin MapTempBasalOrigin(TempBasalOrigin origin) =>
+        origin switch
+        {
+            TempBasalOrigin.Algorithm => BasalDeliveryOrigin.Algorithm,
+            TempBasalOrigin.Scheduled => BasalDeliveryOrigin.Scheduled,
+            TempBasalOrigin.Manual => BasalDeliveryOrigin.Manual,
+            TempBasalOrigin.Suspended => BasalDeliveryOrigin.Suspended,
+            TempBasalOrigin.Inferred => BasalDeliveryOrigin.Inferred,
+            _ => BasalDeliveryOrigin.Scheduled,
+        };
+
     internal static List<SystemEventMarkerDto> MapSystemEvents(
         IEnumerable<SystemEvent>? systemEvents
     )
@@ -1112,6 +1183,94 @@ public class ChartDataService : IChartDataService
             );
 
             currentTime = spanEnd;
+        }
+
+        if (currentTime < endTime)
+            series.AddRange(BuildBasalSeriesFromProfile(currentTime, endTime, defaultBasalRate));
+
+        if (series.Count == 0)
+        {
+            series.Add(
+                new BasalPoint
+                {
+                    Timestamp = startTime,
+                    Rate = defaultBasalRate,
+                    ScheduledRate = defaultBasalRate,
+                    Origin = BasalDeliveryOrigin.Scheduled,
+                    FillColor = ChartColorMapper.FillFromBasalOrigin(BasalDeliveryOrigin.Scheduled),
+                    StrokeColor = ChartColorMapper.StrokeFromBasalOrigin(
+                        BasalDeliveryOrigin.Scheduled
+                    ),
+                }
+            );
+        }
+
+        return series;
+    }
+
+    /// <summary>
+    /// Build basal series from TempBasal records.
+    /// TempBasal records are the v4 source of truth for pump-confirmed basal delivery.
+    /// Falls back to profile-based rates when there are gaps in TempBasal data.
+    /// </summary>
+    internal List<BasalPoint> BuildBasalSeriesFromTempBasals(
+        List<TempBasal> tempBasals,
+        long startTime,
+        long endTime,
+        double defaultBasalRate
+    )
+    {
+        var series = new List<BasalPoint>();
+        var sorted = tempBasals.OrderBy(tb => tb.StartMills).ToList();
+
+        _logger.LogDebug(
+            "Building basal series from {Count} TempBasal records",
+            sorted.Count
+        );
+
+        if (sorted.Count == 0)
+            return BuildBasalSeriesFromProfile(startTime, endTime, defaultBasalRate);
+
+        long currentTime = startTime;
+
+        foreach (var tb in sorted)
+        {
+            var tbStart = tb.StartMills;
+            var tbEnd = tb.EndMills ?? endTime;
+
+            if (tbEnd < startTime || tbStart > endTime)
+                continue;
+
+            tbStart = Math.Max(tbStart, startTime);
+            tbEnd = Math.Min(tbEnd, endTime);
+
+            if (tbStart > currentTime)
+            {
+                series.AddRange(
+                    BuildBasalSeriesFromProfile(currentTime, tbStart, defaultBasalRate)
+                );
+            }
+
+            var origin = MapTempBasalOrigin(tb.Origin);
+
+            var scheduledRate = tb.ScheduledRate
+                ?? (_profileService.HasData()
+                    ? _profileService.GetBasalRate(tbStart, null)
+                    : defaultBasalRate);
+
+            series.Add(
+                new BasalPoint
+                {
+                    Timestamp = tbStart,
+                    Rate = origin == BasalDeliveryOrigin.Suspended ? 0 : tb.Rate,
+                    ScheduledRate = scheduledRate,
+                    Origin = origin,
+                    FillColor = ChartColorMapper.FillFromBasalOrigin(origin),
+                    StrokeColor = ChartColorMapper.StrokeFromBasalOrigin(origin),
+                }
+            );
+
+            currentTime = tbEnd;
         }
 
         if (currentTime < endTime)

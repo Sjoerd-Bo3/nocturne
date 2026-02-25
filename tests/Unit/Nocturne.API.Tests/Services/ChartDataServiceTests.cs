@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Nocturne.API.Helpers;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities;
@@ -32,6 +33,7 @@ public class ChartDataServiceTests
     private readonly Mock<CarbIntakeRepository> _mockCarbIntakeRepo;
     private readonly Mock<BGCheckRepository> _mockBgCheckRepo;
     private readonly Mock<DeviceEventRepository> _mockDeviceEventRepo;
+    private readonly Mock<ITempBasalRepository> _mockTempBasalRepo = new();
     private readonly Mock<StateSpanRepository> _mockStateSpanRepo;
     private readonly Mock<SystemEventRepository> _mockSystemEventRepo;
     private readonly Mock<TrackerRepository> _mockTrackerRepo;
@@ -67,6 +69,7 @@ public class ChartDataServiceTests
             _mockCarbIntakeRepo.Object,
             _mockBgCheckRepo.Object,
             _mockDeviceEventRepo.Object,
+            _mockTempBasalRepo.Object,
             _mockStateSpanRepo.Object,
             _mockSystemEventRepo.Object,
             _mockTrackerRepo.Object,
