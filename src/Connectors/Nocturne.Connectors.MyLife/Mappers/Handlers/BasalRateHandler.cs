@@ -1,7 +1,7 @@
 using Nocturne.Connectors.MyLife.Mappers.Constants;
 using Nocturne.Connectors.MyLife.Mappers.Helpers;
 using Nocturne.Connectors.MyLife.Models;
-using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Connectors.MyLife.Mappers.Handlers;
 
@@ -9,7 +9,7 @@ namespace Nocturne.Connectors.MyLife.Mappers.Handlers;
 ///     Handler for MyLife BasalRate events (event ID 17) - Pump program basal rate changes.
 ///     These events report the current basal rate being delivered by the pump.
 ///     The IsTempBasalRate flag indicates if this is an algorithm-adjusted rate (CamAPS).
-///     Produces BasalDelivery StateSpans.
+///     Produces TempBasal records.
 /// </summary>
 internal sealed class BasalRateHandler : IMyLifeStateSpanHandler
 {
@@ -18,7 +18,7 @@ internal sealed class BasalRateHandler : IMyLifeStateSpanHandler
         return ev.EventTypeId == MyLifeEventType.BasalRate;
     }
 
-    public IEnumerable<StateSpan> HandleStateSpan(MyLifeEvent ev, MyLifeContext context)
+    public IEnumerable<TempBasal> HandleStateSpan(MyLifeEvent ev, MyLifeContext context)
     {
         var info = MyLifeMapperHelpers.ParseInfo(ev.InformationFromDevice);
         if (!MyLifeMapperHelpers.TryGetInfoDouble(info, MyLifeJsonKeys.BasalRate, out var rate)) return [];
@@ -29,17 +29,17 @@ internal sealed class BasalRateHandler : IMyLifeStateSpanHandler
         // - IsTempBasalRate = true means algorithm adjusted (CamAPS, Loop, etc.)
         // - IsTempBasalRate = false means scheduled basal from pump profile
         // - Rate = 0 indicates suspended delivery
-        BasalDeliveryOrigin origin;
+        TempBasalOrigin origin;
         if (rate <= 0)
-            origin = BasalDeliveryOrigin.Suspended;
+            origin = TempBasalOrigin.Suspended;
         else if (isTemp)
             // IsTempBasalRate = true indicates algorithm adjustment (e.g., CamAPS)
-            origin = BasalDeliveryOrigin.Algorithm;
+            origin = TempBasalOrigin.Algorithm;
         else
             // Regular basal rate from pump schedule
-            origin = BasalDeliveryOrigin.Scheduled;
+            origin = TempBasalOrigin.Scheduled;
 
-        var stateSpan = MyLifeStateSpanFactory.CreateBasalDelivery(ev, rate, origin);
-        return [stateSpan];
+        var tempBasal = MyLifeStateSpanFactory.CreateTempBasal(ev, rate, origin);
+        return [tempBasal];
     }
 }

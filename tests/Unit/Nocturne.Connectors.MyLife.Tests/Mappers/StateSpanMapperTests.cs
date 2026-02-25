@@ -1,15 +1,14 @@
 using FluentAssertions;
 using Nocturne.Connectors.MyLife.Mappers;
+using Nocturne.Connectors.MyLife.Mappers.Constants;
 using Nocturne.Connectors.MyLife.Models;
-using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 using Xunit;
 
 namespace Nocturne.Connectors.MyLife.Tests.Mappers;
 
 public class StateSpanMapperTests
 {
-    private readonly MyLifeEventProcessor _processor = new();
-
     private static MyLifeEvent CreateBasalRateEvent(
         long eventDateTime,
         double rate,
@@ -21,7 +20,7 @@ public class StateSpanMapperTests
 
         return new MyLifeEvent
         {
-            EventTypeId = 17, // BasalRate
+            EventTypeId = MyLifeEventType.BasalRate,
             EventDateTime = eventDateTime,
             InformationFromDevice = info,
             PatientId = "test-patient",
@@ -42,7 +41,7 @@ public class StateSpanMapperTests
 
         return new MyLifeEvent
         {
-            EventTypeId = 4, // TempBasal
+            EventTypeId = MyLifeEventType.TempBasal,
             EventDateTime = eventDateTime,
             InformationFromDevice = "{" + string.Join(", ", parts) + "}",
             PatientId = "test-patient",
@@ -57,7 +56,7 @@ public class StateSpanMapperTests
     {
         return new MyLifeEvent
         {
-            EventTypeId = 22, // Basal
+            EventTypeId = MyLifeEventType.Basal,
             EventDateTime = eventDateTime,
             Value = insulin.ToString(),
             PatientId = "test-patient",
@@ -73,7 +72,7 @@ public class StateSpanMapperTests
     }
 
     [Fact]
-    public void MapStateSpans_BasalRateEvent_CreatesBasalDeliveryStateSpan()
+    public void MapTempBasals_BasalRateEvent_CreatesTempBasalWithScheduledOrigin()
     {
         // Arrange
         var eventTime = DateTime.UtcNow.AddHours(-1);
@@ -83,20 +82,18 @@ public class StateSpanMapperTests
         };
 
         // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
 
         // Assert
-        stateSpans.Should().HaveCount(1);
-        var span = stateSpans[0];
-        span.Category.Should().Be(StateSpanCategory.BasalDelivery);
-        span.State.Should().Be(BasalDeliveryState.Active.ToString());
-        span.Metadata!["rate"].Should().Be(1.5);
-        span.Metadata["origin"].Should().Be(BasalDeliveryOrigin.Scheduled.ToString());
-        span.Source.Should().Be("mylife-connector");
+        tempBasals.Should().HaveCount(1);
+        var record = tempBasals[0];
+        record.Rate.Should().Be(1.5);
+        record.Origin.Should().Be(TempBasalOrigin.Scheduled);
+        record.DataSource.Should().Be("mylife-connector");
     }
 
     [Fact]
-    public void MapStateSpans_TempBasalRateEvent_SetsOriginToAlgorithm()
+    public void MapTempBasals_TempBasalRateEvent_SetsOriginToAlgorithm()
     {
         // Arrange
         var eventTime = DateTime.UtcNow.AddHours(-1);
@@ -106,16 +103,16 @@ public class StateSpanMapperTests
         };
 
         // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
 
         // Assert
-        stateSpans.Should().HaveCount(1);
-        var span = stateSpans[0];
-        span.Metadata!["origin"].Should().Be(BasalDeliveryOrigin.Algorithm.ToString());
+        tempBasals.Should().HaveCount(1);
+        var record = tempBasals[0];
+        record.Origin.Should().Be(TempBasalOrigin.Algorithm);
     }
 
     [Fact]
-    public void MapStateSpans_ZeroRate_SetsOriginToSuspended()
+    public void MapTempBasals_ZeroRate_SetsOriginToSuspended()
     {
         // Arrange
         var eventTime = DateTime.UtcNow.AddHours(-1);
@@ -125,16 +122,16 @@ public class StateSpanMapperTests
         };
 
         // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
 
         // Assert
-        stateSpans.Should().HaveCount(1);
-        var span = stateSpans[0];
-        span.Metadata!["origin"].Should().Be(BasalDeliveryOrigin.Suspended.ToString());
+        tempBasals.Should().HaveCount(1);
+        var record = tempBasals[0];
+        record.Origin.Should().Be(TempBasalOrigin.Suspended);
     }
 
     [Fact]
-    public void MapStateSpans_TempBasalEvent_SetsOriginToManual()
+    public void MapTempBasals_TempBasalEvent_SetsOriginToManual()
     {
         // Arrange
         var eventTime = DateTime.UtcNow.AddHours(-1);
@@ -144,18 +141,17 @@ public class StateSpanMapperTests
         };
 
         // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
 
         // Assert
-        stateSpans.Should().HaveCount(1);
-        var span = stateSpans[0];
-        span.Category.Should().Be(StateSpanCategory.BasalDelivery);
-        span.Metadata!["origin"].Should().Be(BasalDeliveryOrigin.Manual.ToString());
-        span.Metadata["durationMinutes"].Should().Be(60.0);
+        tempBasals.Should().HaveCount(1);
+        var record = tempBasals[0];
+        record.Rate.Should().Be(1.5);
+        record.Origin.Should().Be(TempBasalOrigin.Manual);
     }
 
     [Fact]
-    public void MapStateSpans_TempBasalWithDuration_SetsEndMills()
+    public void MapTempBasals_TempBasalWithDuration_SetsEndMills()
     {
         // Arrange
         var eventTime = DateTime.UtcNow.AddHours(-1);
@@ -165,18 +161,18 @@ public class StateSpanMapperTests
         };
 
         // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
 
         // Assert
-        stateSpans.Should().HaveCount(1);
-        var span = stateSpans[0];
-        span.EndMills.Should().NotBeNull();
+        tempBasals.Should().HaveCount(1);
+        var record = tempBasals[0];
+        record.EndMills.Should().NotBeNull();
         var expectedEnd = new DateTimeOffset(eventTime).ToUnixTimeMilliseconds() + (30 * 60 * 1000);
-        span.EndMills.Should().Be(expectedEnd);
+        record.EndMills.Should().Be(expectedEnd);
     }
 
     [Fact]
-    public void MapStateSpans_ConsecutiveSpans_SetsEndMillsOnPreviousSpans()
+    public void MapTempBasals_ConsecutiveRecords_SetsEndMillsOnPreviousRecords()
     {
         // Arrange
         var time1 = DateTime.UtcNow.AddHours(-3);
@@ -191,45 +187,23 @@ public class StateSpanMapperTests
         };
 
         // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
 
         // Assert
-        stateSpans.Should().HaveCount(3);
+        tempBasals.Should().HaveCount(3);
 
-        // First span should end when second starts
-        stateSpans[0].EndMills.Should().Be(stateSpans[1].StartMills);
+        // First record should end when second starts
+        tempBasals[0].EndMills.Should().Be(tempBasals[1].StartMills);
 
-        // Second span should end when third starts
-        stateSpans[1].EndMills.Should().Be(stateSpans[2].StartMills);
+        // Second record should end when third starts
+        tempBasals[1].EndMills.Should().Be(tempBasals[2].StartMills);
 
-        // Third span (most recent) should be open-ended
-        stateSpans[2].EndMills.Should().BeNull();
+        // Third record (most recent) should be open-ended
+        tempBasals[2].EndMills.Should().BeNull();
     }
 
     [Fact]
-    public void MapStateSpans_ConsecutiveSpans_CalculatesInsulinDelivered()
-    {
-        // Arrange
-        var time1 = DateTime.UtcNow.AddHours(-2);
-        var time2 = DateTime.UtcNow.AddHours(-1); // 1 hour later
-
-        var events = new[]
-        {
-            CreateBasalRateEvent(ToMyLifeTicks(time1), 1.5), // 1.5 U/h for 1 hour = 1.5 U
-            CreateBasalRateEvent(ToMyLifeTicks(time2), 2.0),
-        };
-
-        // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
-
-        // Assert
-        stateSpans[0].Metadata!.Should().ContainKey("insulinDelivered");
-        var insulin = (double)stateSpans[0].Metadata["insulinDelivered"];
-        insulin.Should().BeApproximately(1.5, 0.01); // 1.5 U/h * 1 hour = 1.5 U
-    }
-
-    [Fact]
-    public void MapStateSpans_BasalAmountEvent_CreatesStateSpanWithScheduledOrigin()
+    public void MapTempBasals_BasalAmountEvent_CreatesTempBasalWithScheduledOrigin()
     {
         // Arrange
         var eventTime = DateTime.UtcNow.AddHours(-1);
@@ -239,17 +213,17 @@ public class StateSpanMapperTests
         };
 
         // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
 
         // Assert
-        stateSpans.Should().HaveCount(1);
-        var span = stateSpans[0];
-        span.Category.Should().Be(StateSpanCategory.BasalDelivery);
-        span.Metadata!["origin"].Should().Be(BasalDeliveryOrigin.Scheduled.ToString());
+        tempBasals.Should().HaveCount(1);
+        var record = tempBasals[0];
+        record.Rate.Should().Be(1.0);
+        record.Origin.Should().Be(TempBasalOrigin.Scheduled);
     }
 
     [Fact]
-    public void MapStateSpans_DeletedEvents_AreIgnored()
+    public void MapTempBasals_DeletedEvents_AreIgnored()
     {
         // Arrange
         var eventTime = DateTime.UtcNow.AddHours(-1);
@@ -257,7 +231,7 @@ public class StateSpanMapperTests
         {
             new MyLifeEvent
             {
-                EventTypeId = 17,
+                EventTypeId = MyLifeEventType.BasalRate,
                 EventDateTime = ToMyLifeTicks(eventTime),
                 InformationFromDevice = "{\"BasalRate\": 1.5}",
                 Deleted = true,
@@ -268,14 +242,14 @@ public class StateSpanMapperTests
         };
 
         // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
 
         // Assert
-        stateSpans.Should().BeEmpty();
+        tempBasals.Should().BeEmpty();
     }
 
     [Fact]
-    public void MapStateSpans_MixedEventTypes_ProcessesAllBasalEvents()
+    public void MapTempBasals_MixedEventTypes_ProcessesAllBasalEvents()
     {
         // Arrange
         var time1 = DateTime.UtcNow.AddHours(-3);
@@ -290,17 +264,17 @@ public class StateSpanMapperTests
         };
 
         // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
 
         // Assert
-        stateSpans.Should().HaveCount(3);
-        stateSpans[0].Metadata!["origin"].Should().Be(BasalDeliveryOrigin.Scheduled.ToString());
-        stateSpans[1].Metadata!["origin"].Should().Be(BasalDeliveryOrigin.Manual.ToString());
-        stateSpans[2].Metadata!["origin"].Should().Be(BasalDeliveryOrigin.Scheduled.ToString());
+        tempBasals.Should().HaveCount(3);
+        tempBasals[0].Origin.Should().Be(TempBasalOrigin.Scheduled);
+        tempBasals[1].Origin.Should().Be(TempBasalOrigin.Manual);
+        tempBasals[2].Origin.Should().Be(TempBasalOrigin.Scheduled);
     }
 
     [Fact]
-    public void MapStateSpans_EventsNotInOrder_SortsBeforeProcessing()
+    public void MapTempBasals_EventsNotInOrder_SortsBeforeProcessing()
     {
         // Arrange - events not in chronological order
         var time1 = DateTime.UtcNow.AddHours(-3);
@@ -315,17 +289,61 @@ public class StateSpanMapperTests
         };
 
         // Act
-        var stateSpans = _processor.MapStateSpans(events, false, 0).ToList();
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
 
         // Assert
-        stateSpans.Should().HaveCount(3);
+        tempBasals.Should().HaveCount(3);
 
         // Should be sorted by StartMills
-        stateSpans[0].StartMills.Should().BeLessThan(stateSpans[1].StartMills);
-        stateSpans[1].StartMills.Should().BeLessThan(stateSpans[2].StartMills);
+        tempBasals[0].StartMills.Should().BeLessThan(tempBasals[1].StartMills);
+        tempBasals[1].StartMills.Should().BeLessThan(tempBasals[2].StartMills);
 
         // End times should chain correctly
-        stateSpans[0].EndMills.Should().Be(stateSpans[1].StartMills);
-        stateSpans[1].EndMills.Should().Be(stateSpans[2].StartMills);
+        tempBasals[0].EndMills.Should().Be(tempBasals[1].StartMills);
+        tempBasals[1].EndMills.Should().Be(tempBasals[2].StartMills);
+    }
+
+    [Fact]
+    public void MapTempBasals_TempBasalRecords_HaveRequiredFields()
+    {
+        // Arrange
+        var eventTime = DateTime.UtcNow.AddHours(-1);
+        var events = new[]
+        {
+            CreateBasalRateEvent(ToMyLifeTicks(eventTime), 1.5)
+        };
+
+        // Act
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
+
+        // Assert
+        tempBasals.Should().HaveCount(1);
+        var record = tempBasals[0];
+        record.Id.Should().NotBe(Guid.Empty);
+        record.StartMills.Should().BeGreaterThan(0);
+        record.Rate.Should().Be(1.5);
+        record.LegacyId.Should().NotBeNullOrEmpty();
+        record.DataSource.Should().Be("mylife-connector");
+        record.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        record.ModifiedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public void MapTempBasals_ZeroBasalAmount_SetsOriginToSuspended()
+    {
+        // Arrange
+        var eventTime = DateTime.UtcNow.AddHours(-1);
+        var events = new[]
+        {
+            CreateBasalAmountEvent(ToMyLifeTicks(eventTime), 0)
+        };
+
+        // Act
+        var tempBasals = MyLifeStateSpanMapper.MapTempBasals(events, false, 0).ToList();
+
+        // Assert
+        tempBasals.Should().HaveCount(1);
+        var record = tempBasals[0];
+        record.Origin.Should().Be(TempBasalOrigin.Suspended);
     }
 }

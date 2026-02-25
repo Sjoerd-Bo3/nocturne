@@ -1,61 +1,44 @@
-using Nocturne.Connectors.MyLife.Configurations.Constants;
-using Nocturne.Connectors.MyLife.Mappers.Constants;
 using Nocturne.Connectors.MyLife.Mappers.Helpers;
 using Nocturne.Connectors.MyLife.Models;
 using Nocturne.Core.Constants;
-using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Connectors.MyLife.Mappers;
 
 /// <summary>
-///     Factory for creating StateSpan instances from MyLife events
+///     Factory for creating TempBasal instances from MyLife events
 /// </summary>
 internal static class MyLifeStateSpanFactory
 {
     /// <summary>
-    ///     Creates a BasalDelivery StateSpan from a MyLife event
+    ///     Creates a TempBasal record from a MyLife event
     /// </summary>
     /// <param name="ev">The MyLife event</param>
     /// <param name="rate">The basal rate in U/h</param>
     /// <param name="origin">The origin of the basal delivery</param>
-    /// <returns>A configured StateSpan</returns>
-    internal static StateSpan CreateBasalDelivery(
+    /// <returns>A configured TempBasal record</returns>
+    internal static TempBasal CreateTempBasal(
         MyLifeEvent ev,
         double rate,
-        BasalDeliveryOrigin origin)
+        TempBasalOrigin origin)
     {
         var timestamp = MyLifeMapperHelpers.FromInstantTicks(ev.EventDateTime);
         var eventKey = MyLifeMapperHelpers.BuildEventKey(ev);
 
-        return new StateSpan
+        return new TempBasal
         {
-            Id = $"{MyLifeIdPrefixes.StateSpan}basal-{eventKey}",
-            OriginalId = eventKey,
-            Category = StateSpanCategory.BasalDelivery,
-            State = BasalDeliveryState.Active.ToString(),
+            Id = Guid.CreateVersion7(),
             StartMills = timestamp.ToUnixTimeMilliseconds(),
-            EndMills = null, // Will be set when the next span arrives
-            Source = DataSources.MyLifeConnector,
-            Metadata = new Dictionary<string, object>
-            {
-                ["rate"] = rate,
-                ["origin"] = origin.ToString()
-            },
-            CreatedAt = DateTime.UtcNow
+            EndMills = null, // Will be set when the next record arrives
+            Rate = rate,
+            ScheduledRate = null,
+            Origin = origin,
+            Device = null,
+            App = null,
+            DataSource = DataSources.MyLifeConnector,
+            LegacyId = eventKey,
+            CreatedAt = DateTime.UtcNow,
+            ModifiedAt = DateTime.UtcNow,
         };
-    }
-
-    /// <summary>
-    ///     Creates a BasalDelivery StateSpan with a suffix for unique identification
-    /// </summary>
-    internal static StateSpan CreateBasalDeliveryWithSuffix(
-        MyLifeEvent ev,
-        double rate,
-        BasalDeliveryOrigin origin,
-        string suffix)
-    {
-        var stateSpan = CreateBasalDelivery(ev, rate, origin);
-        if (!string.IsNullOrWhiteSpace(suffix)) stateSpan.Id = $"{stateSpan.Id}-{suffix}";
-        return stateSpan;
     }
 }

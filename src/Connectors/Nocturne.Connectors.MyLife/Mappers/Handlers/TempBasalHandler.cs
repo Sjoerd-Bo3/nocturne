@@ -1,14 +1,14 @@
 using Nocturne.Connectors.MyLife.Mappers.Constants;
 using Nocturne.Connectors.MyLife.Mappers.Helpers;
 using Nocturne.Connectors.MyLife.Models;
-using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Connectors.MyLife.Mappers.Handlers;
 
 /// <summary>
 ///     Handler for MyLife TempBasal events (event ID 4) - Temporary basal rate program.
 ///     These events represent user-initiated temporary basal programs (not algorithm-adjusted).
-///     Produces BasalDelivery StateSpans.
+///     Produces TempBasal records.
 /// </summary>
 internal sealed class TempBasalHandler : IMyLifeStateSpanHandler
 {
@@ -17,7 +17,7 @@ internal sealed class TempBasalHandler : IMyLifeStateSpanHandler
         return ev.EventTypeId == MyLifeEventType.TempBasal;
     }
 
-    public IEnumerable<StateSpan> HandleStateSpan(MyLifeEvent ev, MyLifeContext context)
+    public IEnumerable<TempBasal> HandleStateSpan(MyLifeEvent ev, MyLifeContext context)
     {
         var info = MyLifeMapperHelpers.ParseInfo(ev.InformationFromDevice);
 
@@ -35,7 +35,7 @@ internal sealed class TempBasalHandler : IMyLifeStateSpanHandler
         // TempBasal events (event ID 4) are user-initiated temporary basal programs.
         // This is different from IsTempBasalRate which indicates algorithm adjustments.
         // Origin is "Manual" for user-initiated temp basal programs.
-        BasalDeliveryOrigin origin;
+        TempBasalOrigin origin;
         if (rate <= 0)
         {
             // Zero rate or percentage indicates suspended delivery
@@ -48,33 +48,25 @@ internal sealed class TempBasalHandler : IMyLifeStateSpanHandler
                 )
                 && percent <= 0
             )
-                origin = BasalDeliveryOrigin.Suspended;
+                origin = TempBasalOrigin.Suspended;
             else if (
                 rate <= 0
                 && !MyLifeMapperHelpers.TryGetInfoDouble(info, MyLifeJsonKeys.Percentage, out _)
             )
-                origin = BasalDeliveryOrigin.Suspended;
+                origin = TempBasalOrigin.Suspended;
             else
-                origin = BasalDeliveryOrigin.Manual;
+                origin = TempBasalOrigin.Manual;
         }
         else
         {
             // User-initiated temporary basal rate
-            origin = BasalDeliveryOrigin.Manual;
+            origin = TempBasalOrigin.Manual;
         }
 
-        var stateSpan = MyLifeStateSpanFactory.CreateBasalDelivery(ev, rate, origin);
+        var tempBasal = MyLifeStateSpanFactory.CreateTempBasal(ev, rate, origin);
 
-        // Include additional metadata for TempBasal events
-        if (
-            MyLifeMapperHelpers.TryGetInfoDouble(
-                info,
-                MyLifeJsonKeys.Percentage,
-                out var percentValue
-            )
-        )
-            stateSpan.Metadata!["percent"] = percentValue;
-
+        // For user-initiated temp basals, we can calculate the end time
+        // since the duration is explicit in the event
         if (
             MyLifeMapperHelpers.TryGetInfoDouble(
                 info,
@@ -83,15 +75,9 @@ internal sealed class TempBasalHandler : IMyLifeStateSpanHandler
             )
         )
         {
-            stateSpan.Metadata!["durationMinutes"] = durationMinutes;
-
-            // For user-initiated temp basals, we can calculate the end time
-            // since the duration is explicit in the event
-            var startMills = stateSpan.StartMills;
-            var endMills = startMills + (long)(durationMinutes * 60 * 1000);
-            stateSpan.EndMills = endMills;
+            tempBasal.EndMills = tempBasal.StartMills + (long)(durationMinutes * 60 * 1000);
         }
 
-        return [stateSpan];
+        return [tempBasal];
     }
 }

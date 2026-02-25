@@ -15,7 +15,7 @@ namespace Nocturne.Connectors.MyLife.Services;
 /// <summary>
 /// MyLife connector service that syncs data using granular models.
 /// This connector creates SensorGlucose, Bolus, CarbIntake, BGCheck, Note,
-/// DeviceEvent, and StateSpan records directly instead of legacy Entry/Treatment.
+/// DeviceEvent, and TempBasal records directly instead of legacy Entry/Treatment.
 /// </summary>
 public class MyLifeConnectorService(
     HttpClient httpClient,
@@ -111,9 +111,9 @@ public class MyLifeConnectorService(
     }
 
     /// <summary>
-    /// Fetches BasalDelivery StateSpans from MyLife events.
+    /// Fetches TempBasal records from MyLife basal delivery events.
     /// </summary>
-    public async Task<IEnumerable<StateSpan>> FetchStateSpansAsync(DateTime? from, DateTime? to)
+    public async Task<IEnumerable<TempBasal>> FetchTempBasalsAsync(DateTime? from, DateTime? to)
     {
         var actualSince = await CalculateTreatmentSinceTimestampAsync(_config, from);
         var actualUntil = to ?? DateTime.UtcNow;
@@ -124,7 +124,7 @@ public class MyLifeConnectorService(
         );
 
         var filtered = FilterEventsBySince(events, actualSince);
-        return MyLifeStateSpanMapper.MapStateSpans(
+        return MyLifeStateSpanMapper.MapTempBasals(
             filtered,
             _config.EnableTempBasalConsolidation,
             _config.TempBasalConsolidationWindowMinutes
@@ -335,31 +335,31 @@ public class MyLifeConnectorService(
                 }
             }
 
-            // Publish StateSpans for basal delivery
+            // Publish TempBasal records for basal delivery
             if (activeTypes.Contains(SyncDataType.StateSpans))
             {
-                var stateSpans = await FetchStateSpansAsync(request.From, request.To);
-                var stateSpanList = stateSpans.ToList();
+                var tempBasals = await FetchTempBasalsAsync(request.From, request.To);
+                var tempBasalList = tempBasals.ToList();
 
-                if (stateSpanList.Count > 0)
+                if (tempBasalList.Count > 0)
                 {
-                    var success = await PublishStateSpanDataAsync(
-                        stateSpanList,
+                    var success = await PublishTempBasalDataAsync(
+                        tempBasalList,
                         config,
                         cancellationToken
                     );
                     if (success)
                     {
                         _logger.LogInformation(
-                            "Synced {Count} StateSpan records",
-                            stateSpanList.Count
+                            "Synced {Count} TempBasal records",
+                            tempBasalList.Count
                         );
-                        result.ItemsSynced[SyncDataType.StateSpans] = stateSpanList.Count;
+                        result.ItemsSynced[SyncDataType.StateSpans] = tempBasalList.Count;
                     }
                     else
                     {
                         result.Success = false;
-                        result.Errors.Add("StateSpan publish failed");
+                        result.Errors.Add("TempBasal publish failed");
                     }
                 }
             }
