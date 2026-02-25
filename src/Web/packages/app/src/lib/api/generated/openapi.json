@@ -12661,52 +12661,6 @@
         }
       }
     },
-    "/api/v4/state-spans/basal-delivery": {
-      "get": {
-        "tags": [
-          "StateSpans"
-        ],
-        "summary": "Get basal delivery state spans (pump-confirmed basal rates)",
-        "operationId": "StateSpans_GetBasalDelivery",
-        "parameters": [
-          {
-            "name": "from",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int64",
-              "nullable": true
-            },
-            "x-position": 1
-          },
-          {
-            "name": "to",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int64",
-              "nullable": true
-            },
-            "x-position": 2
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/StateSpan"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v4/state-spans/sleep": {
       "get": {
         "tags": [
@@ -22041,13 +21995,6 @@
               "$ref": "#/components/schemas/StateSpanCategory"
             }
           },
-          "basalDeliveryStates": {
-            "type": "array",
-            "description": "Array of all basal delivery states",
-            "items": {
-              "$ref": "#/components/schemas/BasalDeliveryState"
-            }
-          },
           "basalDeliveryOrigins": {
             "type": "array",
             "description": "Array of all basal delivery origin values",
@@ -22083,7 +22030,6 @@
           "PumpConnectivity",
           "Override",
           "Profile",
-          "BasalDelivery",
           "Sleep",
           "Exercise",
           "Illness",
@@ -22095,22 +22041,11 @@
           "PumpConnectivity",
           "Override",
           "Profile",
-          "BasalDelivery",
           "Sleep",
           "Exercise",
           "Illness",
           "Travel",
           "DataExclusion"
-        ]
-      },
-      "BasalDeliveryState": {
-        "type": "string",
-        "description": "",
-        "x-enumNames": [
-          "Active"
-        ],
-        "enum": [
-          "Active"
         ]
       },
       "BasalDeliveryOrigin": {

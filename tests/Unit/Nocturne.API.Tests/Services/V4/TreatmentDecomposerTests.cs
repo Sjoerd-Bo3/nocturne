@@ -333,11 +333,6 @@ public class TreatmentDecomposerTests : IDisposable
         _tempBasalRepoMock.Verify(
             r => r.CreateAsync(It.IsAny<V4Models.TempBasal>(), It.IsAny<CancellationToken>()),
             Times.Once);
-
-        // Should NOT delegate to StateSpanService for temp basals anymore
-        _stateSpanServiceMock.Verify(
-            s => s.CreateBasalDeliveryFromTreatmentAsync(It.IsAny<Treatment>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     #endregion

@@ -550,14 +550,14 @@ public class DeduplicationServiceTests : IDisposable
         // They should still be deduplicated because they're within the 30-second window
 
         var glookoStateSpan = CreateTestStateSpan(
-            category: StateSpanCategory.BasalDelivery,
+            category: StateSpanCategory.PumpMode,
             state: "Active",
             startMills: glookoTimestamp,
             source: "glooko-connector"
         );
 
         var mylifeStateSpan = CreateTestStateSpan(
-            category: StateSpanCategory.BasalDelivery,
+            category: StateSpanCategory.PumpMode,
             state: "Active",
             startMills: mylifeTimestamp,
             source: "mylife-connector"
@@ -610,14 +610,14 @@ public class DeduplicationServiceTests : IDisposable
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         var stateSpan1 = CreateTestStateSpan(
-            category: StateSpanCategory.BasalDelivery,
+            category: StateSpanCategory.PumpMode,
             state: "Active",
             startMills: timestamp,
             source: "glooko-connector"
         );
 
         var stateSpan2 = CreateTestStateSpan(
-            category: StateSpanCategory.BasalDelivery,
+            category: StateSpanCategory.PumpMode,
             state: "Suspended",  // Different state
             startMills: timestamp + 1000,
             source: "mylife-connector"

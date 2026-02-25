@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Nocturne.Core.Models;
 
 /// <summary>
@@ -153,4 +155,37 @@ public class TrackerMarkerDto
     public long Time { get; set; }
     public string? Icon { get; set; }
     public ChartColor Color { get; set; }
+}
+
+/// <summary>
+/// What initiated the basal delivery rate.
+/// Used by the chart system to color and categorize basal delivery spans.
+/// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter<BasalDeliveryOrigin>))]
+public enum BasalDeliveryOrigin
+{
+    /// <summary>
+    /// Closed-loop algorithm adjusted (CamAPS, Control-IQ, Loop)
+    /// </summary>
+    Algorithm,
+
+    /// <summary>
+    /// Pump's programmed basal schedule
+    /// </summary>
+    Scheduled,
+
+    /// <summary>
+    /// User-initiated temporary rate
+    /// </summary>
+    Manual,
+
+    /// <summary>
+    /// Delivery suspended (rate = 0)
+    /// </summary>
+    Suspended,
+
+    /// <summary>
+    /// Derived from profile when no pump data available
+    /// </summary>
+    Inferred
 }

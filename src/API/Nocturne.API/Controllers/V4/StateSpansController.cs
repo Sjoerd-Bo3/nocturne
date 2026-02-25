@@ -97,19 +97,6 @@ public class StateSpansController : ControllerBase
     }
 
     /// <summary>
-    /// Get basal delivery state spans (pump-confirmed basal rates)
-    /// </summary>
-    [HttpGet("basal-delivery")]
-    public async Task<ActionResult<IEnumerable<StateSpan>>> GetBasalDelivery(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
-        CancellationToken cancellationToken = default)
-    {
-        var spans = await _stateSpanService.GetStateSpansAsync(StateSpanCategory.BasalDelivery, from: from, to: to, cancellationToken: cancellationToken);
-        return Ok(spans);
-    }
-
-    /// <summary>
     /// Get sleep state spans (user-annotated sleep periods)
     /// </summary>
     [HttpGet("sleep")]

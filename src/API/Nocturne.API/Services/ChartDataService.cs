@@ -864,54 +864,6 @@ public class ChartDataService : IChartDataService
         }
     }
 
-    internal List<BasalDeliverySpanDto> MapBasalDeliverySpans(
-        List<StateSpan> basalDeliverySpans,
-        double defaultBasalRate
-    )
-    {
-        return basalDeliverySpans
-            .Select(span =>
-            {
-                var (rate, origin) = ExtractBasalDeliveryMetadata(span, defaultBasalRate);
-                return new BasalDeliverySpanDto
-                {
-                    Id = span.Id ?? "",
-                    StartMills = span.StartMills,
-                    EndMills = span.EndMills,
-                    Rate = origin == BasalDeliveryOrigin.Suspended ? 0 : rate,
-                    Origin = origin,
-                    Source = span.Source,
-                    FillColor = ChartColorMapper.FillFromBasalOrigin(origin),
-                    StrokeColor = ChartColorMapper.StrokeFromBasalOrigin(origin),
-                };
-            })
-            .ToList();
-    }
-
-    internal List<ChartStateSpanDto> MapTempBasalSpans(
-        List<StateSpan> basalDeliverySpans,
-        double defaultBasalRate
-    )
-    {
-        return basalDeliverySpans
-            .Where(span =>
-            {
-                var (_, origin) = ExtractBasalDeliveryMetadata(span, defaultBasalRate);
-                return origin == BasalDeliveryOrigin.Manual;
-            })
-            .Select(span => new ChartStateSpanDto
-            {
-                Id = span.Id ?? "",
-                Category = StateSpanCategory.BasalDelivery,
-                State = "TempBasal",
-                StartMills = span.StartMills,
-                EndMills = span.EndMills,
-                Color = ChartColor.InsulinBasal,
-                Metadata = span.Metadata,
-            })
-            .ToList();
-    }
-
     internal static List<BasalDeliverySpanDto> MapBasalDeliverySpans(
         List<TempBasal> tempBasals
     )
@@ -944,7 +896,7 @@ public class ChartDataService : IChartDataService
             .Select(tb => new ChartStateSpanDto
             {
                 Id = tb.LegacyId ?? tb.Id.ToString(),
-                Category = StateSpanCategory.BasalDelivery,
+                Category = StateSpanCategory.PumpMode, // Rendered in dedicated tempBasalSpans list; category is informational
                 State = "TempBasal",
                 StartMills = tb.StartMills,
                 EndMills = tb.EndMills,

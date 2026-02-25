@@ -15346,49 +15346,6 @@ export class StateSpansClient {
     }
 
     /**
-     * Get basal delivery state spans (pump-confirmed basal rates)
-     * @param from (optional) 
-     * @param to (optional) 
-     */
-    getBasalDelivery(from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
-        let url_ = this.baseUrl + "/api/v4/state-spans/basal-delivery?";
-        if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
-        if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetBasalDelivery(_response);
-        });
-    }
-
-    protected processGetBasalDelivery(response: Response): Promise<StateSpan[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as StateSpan[];
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<StateSpan[]>(null as any);
-    }
-
-    /**
      * Get sleep state spans (user-annotated sleep periods)
      * @param from (optional) 
      * @param to (optional) 
@@ -23504,8 +23461,6 @@ export interface EventTypeConfiguration {
 export interface StateSpanTypesMetadata {
     /** Array of all available state span categories */
     availableCategories?: StateSpanCategory[];
-    /** Array of all basal delivery states */
-    basalDeliveryStates?: BasalDeliveryState[];
     /** Array of all basal delivery origin values */
     basalDeliveryOrigins?: BasalDeliveryOrigin[];
     /** Array of all pump mode states */
@@ -23521,16 +23476,11 @@ export enum StateSpanCategory {
     PumpConnectivity = "PumpConnectivity",
     Override = "Override",
     Profile = "Profile",
-    BasalDelivery = "BasalDelivery",
     Sleep = "Sleep",
     Exercise = "Exercise",
     Illness = "Illness",
     Travel = "Travel",
     DataExclusion = "DataExclusion",
-}
-
-export enum BasalDeliveryState {
-    Active = "Active",
 }
 
 export enum BasalDeliveryOrigin {

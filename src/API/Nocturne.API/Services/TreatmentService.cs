@@ -302,7 +302,7 @@ public class TreatmentService : ITreatmentService
     }
 
     /// <summary>
-    /// Merges regular treatments with temp basals from StateSpans and V4-projected treatments
+    /// Merges regular treatments with V4 TempBasal records and V4-projected treatments
     /// for V1-V3 API backwards compatibility.
     /// </summary>
     private async Task<IEnumerable<Treatment>> MergeWithTempBasalsAsync(
@@ -315,7 +315,7 @@ public class TreatmentService : ITreatmentService
     {
         var (fromMills, toMills) = ParseTimeRangeFromFind(findQuery);
 
-        // Get temp basals from V4 TempBasal table (primary path)
+        // Get temp basals from V4 TempBasal table
         var tempBasalTask = _tempBasalRepository.GetAsync(
             from: fromMills,
             to: toMills,
@@ -327,15 +327,6 @@ public class TreatmentService : ITreatmentService
             ct: cancellationToken
         );
 
-        // Get BasalDelivery StateSpans as Treatments (fallback for transition period)
-        var basalDeliveryTask = _stateSpanService.GetBasalDeliveriesAsTreatmentsAsync(
-            from: fromMills,
-            to: toMills,
-            count: count,
-            skip: 0, // We'll handle skip in the merge
-            cancellationToken: cancellationToken
-        );
-
         // Get V4-projected treatments (native V4 connector writes)
         var projectedTask = _projectionService.GetProjectedTreatmentsAsync(
             fromMills,
@@ -344,35 +335,25 @@ public class TreatmentService : ITreatmentService
             cancellationToken
         );
 
-        await Task.WhenAll(tempBasalTask, basalDeliveryTask, projectedTask);
+        await Task.WhenAll(tempBasalTask, projectedTask);
 
         var tempBasals = await tempBasalTask;
         var tempBasalTreatments = TempBasalToTreatmentMapper.ToTreatments(tempBasals).ToList();
-        var basalDeliveryTreatments = (await basalDeliveryTask).ToList();
         var projectedTreatments = await projectedTask;
-
-        // Dedup: TempBasal records take precedence over StateSpan records with the same Mills
-        var tempBasalMillsSet = tempBasalTreatments.Select(t => t.Mills).ToHashSet();
-        var dedupedBasalDeliveries = basalDeliveryTreatments
-            .Where(t => !tempBasalMillsSet.Contains(t.Mills))
-            .ToList();
-
-        // Combine all basal sources
-        var allBasalTreatments = tempBasalTreatments.Concat(dedupedBasalDeliveries).ToList();
 
         // Build a set of legacy treatment IDs for dedup; V4 projection only returns records
         // with LegacyId == null, so there will be no Id overlap with legacy treatments.
         // Dedup by Mills to guard against timestamp collisions.
         var legacyList = treatments.ToList();
         var legacyMillsSet = legacyList.Select(t => t.Mills).ToHashSet();
-        var basalMillsSet = allBasalTreatments.Select(t => t.Mills).ToHashSet();
+        var basalMillsSet = tempBasalTreatments.Select(t => t.Mills).ToHashSet();
 
         var filteredProjected = projectedTreatments
             .Where(p => !legacyMillsSet.Contains(p.Mills) && !basalMillsSet.Contains(p.Mills));
 
         // Merge all sources and sort
         var allTreatments = legacyList
-            .Concat(allBasalTreatments)
+            .Concat(tempBasalTreatments)
             .Concat(filteredProjected)
             .OrderByDescending(t => t.Mills)
             .Skip(skip)
@@ -399,11 +380,6 @@ public class TreatmentService : ITreatmentService
             tempBasal = await _tempBasalRepository.GetByIdAsync(guid, cancellationToken);
         if (tempBasal != null)
             return TempBasalToTreatmentMapper.ToTreatment(tempBasal);
-
-        // Fall back to StateSpans (transition period — data may still be in StateSpans)
-        var stateSpan = await _stateSpanService.GetStateSpanByIdAsync(id, cancellationToken);
-        if (stateSpan != null && stateSpan.Category == StateSpanCategory.BasalDelivery)
-            return TreatmentStateSpanMapper.ToTreatment(stateSpan);
 
         return null;
     }
@@ -464,23 +440,8 @@ public class TreatmentService : ITreatmentService
         );
         var tempBasalTreatments = TempBasalToTreatmentMapper.ToTreatments(tempBasals).ToList();
 
-        // Fallback: get BasalDelivery StateSpans (transition period)
-        var basalTreatments = await _stateSpanService.GetBasalDeliveriesAsTreatmentsAsync(
-            from: lastModifiedMills,
-            to: null,
-            count: limit,
-            skip: 0,
-            cancellationToken: cancellationToken
-        );
-
-        // Dedup: TempBasal records take precedence over StateSpan records
-        var tempBasalMillsSet = tempBasalTreatments.Select(t => t.Mills).ToHashSet();
-        var dedupedBasalTreatments = basalTreatments
-            .Where(t => !tempBasalMillsSet.Contains(t.Mills));
-
         return treatments
             .Concat(tempBasalTreatments)
-            .Concat(dedupedBasalTreatments)
             .OrderBy(t => t.SrvModified ?? t.Mills)
             .Take(limit);
     }
@@ -518,22 +479,22 @@ public class TreatmentService : ITreatmentService
 
         var results = new List<Treatment>();
 
-        // Process StateSpan-backed treatments through the decomposer (not written to legacy table)
-        foreach (var stateSpanTreatment in stateSpanTreatments)
+        // Process temp basal treatments through the decomposer (written to V4 TempBasal table, not legacy table)
+        foreach (var tempBasalTreatment in stateSpanTreatments)
         {
             try
             {
                 var decompositionResult = await _treatmentDecomposer.DecomposeAsync(
-                    stateSpanTreatment,
+                    tempBasalTreatment,
                     cancellationToken
                 );
 
-                // Extract the created StateSpan from the decomposition result to build the treatment response
-                var createdStateSpan = decompositionResult.CreatedRecords
-                    .OfType<StateSpan>()
+                // Extract the created TempBasal from the decomposition result to build the treatment response
+                var createdTempBasal = decompositionResult.CreatedRecords
+                    .OfType<Core.Models.V4.TempBasal>()
                     .FirstOrDefault();
-                var createdTreatment = createdStateSpan != null
-                    ? TreatmentStateSpanMapper.ToTreatment(createdStateSpan)
+                var createdTreatment = createdTempBasal != null
+                    ? TempBasalToTreatmentMapper.ToTreatment(createdTempBasal)
                     : null;
 
                 if (createdTreatment != null)
@@ -561,8 +522,8 @@ public class TreatmentService : ITreatmentService
             {
                 _logger.LogError(
                     ex,
-                    "Failed to decompose StateSpan-backed treatment {Id}",
-                    stateSpanTreatment.Id
+                    "Failed to decompose temp basal treatment {Id}",
+                    tempBasalTreatment.Id
                 );
             }
         }
@@ -741,60 +702,6 @@ public class TreatmentService : ITreatmentService
             }
         }
 
-        // Fallback: Check if this is a basal delivery in StateSpans (transition period)
-        var existingStateSpan = await _stateSpanService.GetStateSpanByIdAsync(
-            id,
-            cancellationToken
-        );
-
-        if (
-            existingStateSpan != null
-            && existingStateSpan.Category == StateSpanCategory.BasalDelivery
-        )
-        {
-            // Update as StateSpan
-            var updatedSpan = TreatmentStateSpanMapper.ToBasalDeliveryStateSpan(treatment);
-            if (updatedSpan != null)
-            {
-                updatedSpan.Id = existingStateSpan.Id;
-                updatedSpan.OriginalId = existingStateSpan.OriginalId ?? id;
-
-                var result = await _stateSpanService.UpdateStateSpanAsync(
-                    id,
-                    updatedSpan,
-                    cancellationToken
-                );
-                if (result != null)
-                {
-                    var updatedTreatment = TreatmentStateSpanMapper.ToTreatment(result);
-                    if (updatedTreatment != null)
-                    {
-                        try
-                        {
-                            await _broadcastService.BroadcastStorageUpdateAsync(
-                                CollectionName,
-                                new { colName = CollectionName, doc = updatedTreatment }
-                            );
-                            _logger.LogDebug(
-                                "Broadcasted storage update event for temp basal treatment {TreatmentId}",
-                                updatedTreatment.Id
-                            );
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(
-                                ex,
-                                "Failed to broadcast storage update event for temp basal {TreatmentId}",
-                                updatedTreatment.Id
-                            );
-                        }
-                    }
-                    return updatedTreatment;
-                }
-            }
-            return null;
-        }
-
         // Fall back to regular treatment update
         var regularUpdatedTreatment = await _postgreSqlService.UpdateTreatmentAsync(
             id,
@@ -881,37 +788,11 @@ public class TreatmentService : ITreatmentService
         );
         if (patched != null)
         {
-            // If this is a temp basal that also has a StateSpan, update that too
-            if (TreatmentStateSpanMapper.IsTempBasalTreatment(patched))
-                await UpdateStateSpanFromTreatmentAsync(id, patched, cancellationToken);
-
             await BroadcastAndInvalidateAsync(patched, cancellationToken);
             return patched;
         }
 
-        // Not found in treatments table - check if it's a StateSpan-only temp basal
-        var stateSpan = await _stateSpanService.GetStateSpanByIdAsync(id, cancellationToken);
-        if (stateSpan == null || stateSpan.Category != StateSpanCategory.BasalDelivery)
-            return null;
-
-        // Convert StateSpan to Treatment, apply patch, convert back
-        var treatment = TreatmentStateSpanMapper.ToTreatment(stateSpan);
-        if (treatment == null)
-            return null;
-
-        ApplyJsonMergePatch(treatment, patchData);
-
-        var updatedSpan = TreatmentStateSpanMapper.ToBasalDeliveryStateSpan(treatment);
-        if (updatedSpan != null)
-        {
-            updatedSpan.Id = stateSpan.Id;
-            updatedSpan.OriginalId = stateSpan.OriginalId ?? id;
-            await _stateSpanService.UpdateStateSpanAsync(id, updatedSpan, cancellationToken);
-            _logger.LogDebug("Updated StateSpan for patched temp basal {TreatmentId}", id);
-        }
-
-        await BroadcastAndInvalidateAsync(treatment, cancellationToken);
-        return treatment;
+        return null;
     }
 
     private static void ApplyJsonMergePatch(Treatment treatment, JsonElement patchData)
@@ -965,32 +846,6 @@ public class TreatmentService : ITreatmentService
                 case "isBasalInsulin":
                     treatment.IsBasalInsulin = isNull ? null : prop.Value.GetBoolean();
                     break;
-            }
-        }
-    }
-
-    private async Task UpdateStateSpanFromTreatmentAsync(
-        string id,
-        Treatment treatment,
-        CancellationToken cancellationToken
-    )
-    {
-        var existingStateSpan = await _stateSpanService.GetStateSpanByIdAsync(
-            id,
-            cancellationToken
-        );
-        if (
-            existingStateSpan != null
-            && existingStateSpan.Category == StateSpanCategory.BasalDelivery
-        )
-        {
-            var updatedSpan = TreatmentStateSpanMapper.ToBasalDeliveryStateSpan(treatment);
-            if (updatedSpan != null)
-            {
-                updatedSpan.Id = existingStateSpan.Id;
-                updatedSpan.OriginalId = existingStateSpan.OriginalId ?? id;
-                await _stateSpanService.UpdateStateSpanAsync(id, updatedSpan, cancellationToken);
-                _logger.LogDebug("Updated StateSpan for patched temp basal {TreatmentId}", id);
             }
         }
     }
@@ -1089,49 +944,6 @@ public class TreatmentService : ITreatmentService
             }
 
             return true;
-        }
-
-        // Fallback: Check if this is a basal delivery in StateSpans (transition period)
-        var existingStateSpan = await _stateSpanService.GetStateSpanByIdAsync(
-            id,
-            cancellationToken
-        );
-
-        if (
-            existingStateSpan != null
-            && existingStateSpan.Category == StateSpanCategory.BasalDelivery
-        )
-        {
-            var deleted = await _stateSpanService.DeleteStateSpanAsync(id, cancellationToken);
-
-            if (deleted)
-            {
-                var stateSpanTreatmentForBroadcast = TreatmentStateSpanMapper.ToTreatment(existingStateSpan);
-                if (stateSpanTreatmentForBroadcast != null)
-                {
-                    try
-                    {
-                        await _broadcastService.BroadcastStorageDeleteAsync(
-                            CollectionName,
-                            new { colName = CollectionName, doc = stateSpanTreatmentForBroadcast }
-                        );
-                        _logger.LogDebug(
-                            "Broadcasted storage delete event for temp basal treatment {TreatmentId}",
-                            stateSpanTreatmentForBroadcast.Id
-                        );
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(
-                            ex,
-                            "Failed to broadcast storage delete event for temp basal {TreatmentId}",
-                            stateSpanTreatmentForBroadcast.Id
-                        );
-                    }
-                }
-            }
-
-            return deleted;
         }
 
         // Fall back to regular treatment delete

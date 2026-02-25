@@ -95,7 +95,6 @@ public class MetadataController : ControllerBase
             new StateSpanTypesMetadata
             {
                 AvailableCategories = Enum.GetValues<StateSpanCategory>(),
-                BasalDeliveryStates = Enum.GetValues<BasalDeliveryState>(),
                 BasalDeliveryOrigins = Enum.GetValues<BasalDeliveryOrigin>(),
                 PumpModeStates = Enum.GetValues<PumpModeState>(),
                 PumpConnectivityStates = Enum.GetValues<PumpConnectivityState>(),
@@ -407,11 +406,6 @@ public class StateSpanTypesMetadata
     /// Array of all available state span categories
     /// </summary>
     public StateSpanCategory[] AvailableCategories { get; set; } = [];
-
-    /// <summary>
-    /// Array of all basal delivery states
-    /// </summary>
-    public BasalDeliveryState[] BasalDeliveryStates { get; set; } = [];
 
     /// <summary>
     /// Array of all basal delivery origin values
