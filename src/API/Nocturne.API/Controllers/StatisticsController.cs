@@ -26,7 +26,6 @@ public class StatisticsController : ControllerBase
     private readonly IBolusRepository _bolusRepository;
     private readonly ICarbIntakeRepository _carbIntakeRepository;
     private readonly ITempBasalRepository _tempBasalRepository;
-    private readonly IMicroBolusRepository _microBolusRepository;
 
     public StatisticsController(
         IStatisticsService statisticsService,
@@ -36,8 +35,7 @@ public class StatisticsController : ControllerBase
         ISensorGlucoseRepository sensorGlucoseRepository,
         IBolusRepository bolusRepository,
         ICarbIntakeRepository carbIntakeRepository,
-        ITempBasalRepository tempBasalRepository,
-        IMicroBolusRepository microBolusRepository
+        ITempBasalRepository tempBasalRepository
     )
     {
         _statisticsService = statisticsService;
@@ -48,7 +46,6 @@ public class StatisticsController : ControllerBase
         _bolusRepository = bolusRepository;
         _carbIntakeRepository = carbIntakeRepository;
         _tempBasalRepository = tempBasalRepository;
-        _microBolusRepository = microBolusRepository;
     }
 
     /// <summary>
@@ -587,6 +584,7 @@ public class StatisticsController : ControllerBase
                     source: null,
                     limit: 10000,
                     descending: false,
+                    kind: BolusKind.Manual,
                     ct: cancellationToken
                 );
                 var filteredBoluses = bolusData.ToList();
@@ -621,7 +619,7 @@ public class StatisticsController : ControllerBase
                         filteredCarbs
                     );
 
-                    // Fetch TempBasals and MicroBoluses for basal data
+                    // Fetch TempBasals and algorithm boluses for basal data
                     var tempBasals = (await _tempBasalRepository.GetAsync(
                         from: startTimestamp,
                         to: endTimestamp,
@@ -632,27 +630,28 @@ public class StatisticsController : ControllerBase
                         ct: cancellationToken
                     )).ToList();
 
-                    var microBoluses = (await _microBolusRepository.GetAsync(
+                    var algorithmBoluses = (await _bolusRepository.GetAsync(
                         from: startTimestamp,
                         to: endTimestamp,
                         device: null,
                         source: null,
                         limit: 10000,
                         descending: false,
+                        kind: BolusKind.Algorithm,
                         ct: cancellationToken
                     )).ToList();
 
                     insulinDelivery = _statisticsService.CalculateInsulinDeliveryStatistics(
                         filteredBoluses,
-                        microBoluses,
+                        algorithmBoluses,
                         tempBasals,
                         filteredCarbs,
                         startDate,
                         endDate
                     );
 
-                    // If no TempBasals/MicroBoluses but we have profile data, augment with scheduled basal
-                    if (tempBasals.Count == 0 && microBoluses.Count == 0 && _profileService.HasData())
+                    // If no TempBasals/algorithm boluses but we have profile data, augment with scheduled basal
+                    if (tempBasals.Count == 0 && algorithmBoluses.Count == 0 && _profileService.HasData())
                     {
                         var profileBasal = CalculateScheduledBasalForPeriod(
                             startTimestamp,
@@ -840,7 +839,7 @@ public class StatisticsController : ControllerBase
             var startMills = new DateTimeOffset(startDate).ToUnixTimeMilliseconds();
             var endMills = new DateTimeOffset(endDate).ToUnixTimeMilliseconds();
 
-            // Fetch boluses and basal StateSpans sequentially
+            // Fetch manual boluses and basal data sequentially
             // (DbContext is not thread-safe, can't use Task.WhenAll)
             var boluses = await _bolusRepository.GetAsync(
                 from: startMills,
@@ -848,7 +847,8 @@ public class StatisticsController : ControllerBase
                 device: null,
                 source: null,
                 limit: 10000,
-                descending: false
+                descending: false,
+                kind: BolusKind.Manual
             );
 
             var tempBasals = await _tempBasalRepository.GetAsync(
@@ -860,18 +860,19 @@ public class StatisticsController : ControllerBase
                 descending: false
             );
 
-            var microBoluses = await _microBolusRepository.GetAsync(
+            var algorithmBoluses = await _bolusRepository.GetAsync(
                 from: startMills,
                 to: endMills,
                 device: null,
                 source: null,
                 limit: 10000,
-                descending: false
+                descending: false,
+                kind: BolusKind.Algorithm
             );
 
             var result = _statisticsService.CalculateDailyBasalBolusRatios(
                 boluses,
-                microBoluses,
+                algorithmBoluses,
                 tempBasals
             );
             return Ok(result);
@@ -900,14 +901,15 @@ public class StatisticsController : ControllerBase
             var startMills = new DateTimeOffset(startDate).ToUnixTimeMilliseconds();
             var endMills = new DateTimeOffset(endDate).ToUnixTimeMilliseconds();
 
-            // Fetch boluses, TempBasals, MicroBoluses, and carbs
+            // Fetch manual boluses, TempBasals, algorithm boluses, and carbs
             var boluses = await _bolusRepository.GetAsync(
                 from: startMills,
                 to: endMills,
                 device: null,
                 source: null,
                 limit: 10000,
-                descending: false
+                descending: false,
+                kind: BolusKind.Manual
             );
 
             var tempBasals = await _tempBasalRepository.GetAsync(
@@ -919,13 +921,14 @@ public class StatisticsController : ControllerBase
                 descending: false
             );
 
-            var microBoluses = await _microBolusRepository.GetAsync(
+            var algorithmBoluses = await _bolusRepository.GetAsync(
                 from: startMills,
                 to: endMills,
                 device: null,
                 source: null,
                 limit: 10000,
-                descending: false
+                descending: false,
+                kind: BolusKind.Algorithm
             );
 
             var carbs = await _carbIntakeRepository.GetAsync(
@@ -938,7 +941,7 @@ public class StatisticsController : ControllerBase
             );
 
             var result = _statisticsService.CalculateInsulinDeliveryStatistics(
-                boluses, microBoluses, tempBasals, carbs, startDate, endDate);
+                boluses, algorithmBoluses, tempBasals, carbs, startDate, endDate);
             return Ok(result);
         }
         catch (Exception ex)
@@ -973,7 +976,7 @@ public class StatisticsController : ControllerBase
             var startMills = new DateTimeOffset(startUtc).ToUnixTimeMilliseconds();
             var endMills = new DateTimeOffset(endUtc).ToUnixTimeMilliseconds();
 
-            // Fetch TempBasals and MicroBoluses
+            // Fetch TempBasals and algorithm boluses
             var tempBasals = (await _tempBasalRepository.GetAsync(
                 from: startMills,
                 to: endMills,
@@ -983,13 +986,14 @@ public class StatisticsController : ControllerBase
                 descending: false
             )).ToList();
 
-            var microBoluses = await _microBolusRepository.GetAsync(
+            var algorithmBoluses = await _bolusRepository.GetAsync(
                 from: startMills,
                 to: endMills,
                 device: null,
                 source: null,
                 limit: 10000,
-                descending: false
+                descending: false,
+                kind: BolusKind.Algorithm
             );
 
             // Fall back to profile-based scheduled rates when no TempBasals exist.
@@ -1020,7 +1024,7 @@ public class StatisticsController : ControllerBase
 
             var result = _statisticsService.CalculateBasalAnalysis(
                 tempBasals,
-                microBoluses,
+                algorithmBoluses,
                 startUtc,
                 endUtc
             );

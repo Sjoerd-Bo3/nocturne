@@ -13,6 +13,7 @@ public interface IBolusRepository
         int offset = 0,
         bool descending = true,
         bool nativeOnly = false,
+        BolusKind? kind = null,
         CancellationToken ct = default
     );
     Task<Bolus?> GetByIdAsync(Guid id, CancellationToken ct = default);

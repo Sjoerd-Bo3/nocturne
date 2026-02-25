@@ -19,7 +19,6 @@ public class TreatmentDecomposerTests : IDisposable
     private readonly NocturneDbContext _context;
     private readonly Mock<IStateSpanService> _stateSpanServiceMock;
     private readonly Mock<ITreatmentFoodService> _treatmentFoodServiceMock;
-    private readonly Mock<IMicroBolusRepository> _microBolusRepoMock;
     private readonly Mock<ITempBasalRepository> _tempBasalRepoMock;
     private readonly Mock<IPumpDeviceService> _pumpDeviceServiceMock;
     private readonly TreatmentDecomposer _decomposer;
@@ -36,7 +35,6 @@ public class TreatmentDecomposerTests : IDisposable
         var bolusCalcRepo = new BolusCalculationRepository(_context, mockDedup.Object, NullLogger<BolusCalculationRepository>.Instance);
         _stateSpanServiceMock = new Mock<IStateSpanService>();
         _treatmentFoodServiceMock = new Mock<ITreatmentFoodService>();
-        _microBolusRepoMock = new Mock<IMicroBolusRepository>();
         _tempBasalRepoMock = new Mock<ITempBasalRepository>();
         _pumpDeviceServiceMock = new Mock<IPumpDeviceService>();
 
@@ -46,7 +44,7 @@ public class TreatmentDecomposerTests : IDisposable
             .ReturnsAsync((Guid?)null);
 
         _decomposer = new TreatmentDecomposer(
-            bolusRepo, _microBolusRepoMock.Object, _tempBasalRepoMock.Object,
+            bolusRepo, _tempBasalRepoMock.Object,
             carbIntakeRepo, bgCheckRepo, noteRepo, deviceEventRepo, bolusCalcRepo,
             _stateSpanServiceMock.Object,
             _treatmentFoodServiceMock.Object,

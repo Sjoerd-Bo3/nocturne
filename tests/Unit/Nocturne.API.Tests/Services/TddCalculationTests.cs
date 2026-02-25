@@ -146,7 +146,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -195,7 +195,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -227,7 +227,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             boluses,
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -257,7 +257,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -279,7 +279,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -300,7 +300,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -326,7 +326,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -351,7 +351,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -391,7 +391,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -425,7 +425,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -459,7 +459,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -532,7 +532,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             boluses,
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -579,7 +579,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -613,7 +613,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateDailyBasalBolusRatios(
             boluses,
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals
         );
 
@@ -649,7 +649,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateDailyBasalBolusRatios(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals
         );
 
@@ -699,7 +699,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateDailyBasalBolusRatios(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals
         );
 
@@ -736,7 +736,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateBasalAnalysis(
             tempBasals,
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             StartDate,
             EndDate
         );
@@ -761,7 +761,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateBasalAnalysis(
             tempBasals,
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             StartDate,
             EndDate
         );
@@ -784,7 +784,7 @@ public class TddCalculationTests
     {
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             Array.Empty<TempBasal>(),
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -808,7 +808,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             boluses,
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             Array.Empty<TempBasal>(),
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -841,7 +841,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             start,
@@ -866,7 +866,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             StartDate,
@@ -888,7 +888,7 @@ public class TddCalculationTests
 
         var result = _statisticsService.CalculateInsulinDeliveryStatistics(
             boluses,
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             Array.Empty<TempBasal>(),
             Array.Empty<CarbIntake>(),
             StartDate,

@@ -552,7 +552,7 @@ public class StatisticsServiceClinicalAccuracyTests
             new Bolus { Insulin = 1.5, Automatic = false, Mills = DateTimeOffset.Parse("2024-01-02T20:00:00Z").ToUnixTimeMilliseconds() },
         };
 
-        var result = _sut.CalculateInsulinDeliveryStatistics(boluses, Array.Empty<MicroBolus>(), Array.Empty<TempBasal>(), Array.Empty<CarbIntake>(), startDate, endDate);
+        var result = _sut.CalculateInsulinDeliveryStatistics(boluses, Array.Empty<Bolus>(), Array.Empty<TempBasal>(), Array.Empty<CarbIntake>(), startDate, endDate);
 
         // Bolus = 5 + 7 + 2 + 1.5 = 15.5
         result.TotalBolus.Should().Be(15.5);
@@ -573,7 +573,7 @@ public class StatisticsServiceClinicalAccuracyTests
     {
         var result = _sut.CalculateInsulinDeliveryStatistics(
             Array.Empty<Bolus>(),
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             Array.Empty<TempBasal>(),
             Array.Empty<CarbIntake>(),
             new DateTime(2024, 1, 1),
@@ -610,7 +610,7 @@ public class StatisticsServiceClinicalAccuracyTests
 
         var result = _sut.CalculateInsulinDeliveryStatistics(
             boluses,
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             tempBasals,
             Array.Empty<CarbIntake>(),
             new DateTime(2024, 1, 1),
@@ -633,7 +633,7 @@ public class StatisticsServiceClinicalAccuracyTests
 
         var result = _sut.CalculateInsulinDeliveryStatistics(
             boluses,
-            Array.Empty<MicroBolus>(),
+            Array.Empty<Bolus>(),
             Array.Empty<TempBasal>(),
             Array.Empty<CarbIntake>(),
             new DateTime(2024, 1, 1),

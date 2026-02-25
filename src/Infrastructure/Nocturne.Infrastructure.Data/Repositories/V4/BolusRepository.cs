@@ -33,6 +33,7 @@ public class BolusRepository : IBolusRepository
         int offset = 0,
         bool descending = true,
         bool nativeOnly = false,
+        BolusKind? kind = null,
         CancellationToken ct = default
     )
     {
@@ -47,6 +48,8 @@ public class BolusRepository : IBolusRepository
             query = query.Where(e => e.DataSource == source);
         if (nativeOnly)
             query = query.Where(e => e.LegacyId == null);
+        if (kind.HasValue)
+            query = query.Where(e => e.BolusKind == kind.Value.ToString());
         query = descending ? query.OrderByDescending(e => e.Mills) : query.OrderBy(e => e.Mills);
         var entities = await query.Skip(offset).Take(limit).ToListAsync(ct);
         return entities.Select(BolusMapper.ToDomainModel);

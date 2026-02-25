@@ -106,6 +106,13 @@ public class BolusEntity
     public bool Automatic { get; set; }
 
     /// <summary>
+    /// Discriminator: Manual (user-initiated) or Algorithm (SMB)
+    /// </summary>
+    [Column("bolus_kind")]
+    [MaxLength(32)]
+    public string BolusKind { get; set; } = "Manual";
+
+    /// <summary>
     /// Duration in minutes for extended/square boluses
     /// </summary>
     [Column("duration")]

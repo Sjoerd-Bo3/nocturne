@@ -118,11 +118,11 @@ public interface IStatisticsService
 
     /// <summary>
     /// Calculate comprehensive insulin delivery statistics.
-    /// Basal data comes from TempBasals and MicroBoluses; pass empty collections if none are available.
+    /// Basal data comes from TempBasals and algorithmBoluses; pass empty collections if none are available.
     /// </summary>
     InsulinDeliveryStatistics CalculateInsulinDeliveryStatistics(
         IEnumerable<Bolus> boluses,
-        IEnumerable<MicroBolus> microBoluses,
+        IEnumerable<Bolus> algorithmBoluses,
         IEnumerable<TempBasal> tempBasals,
         IEnumerable<CarbIntake> carbIntakes,
         DateTime startDate,
@@ -173,11 +173,11 @@ public interface IStatisticsService
 
     /// <summary>
     /// Calculate daily basal/bolus ratio breakdown.
-    /// Basal data comes from TempBasals and MicroBoluses; pass empty collections if none are available.
+    /// Basal data comes from TempBasals and algorithm boluses; pass empty collections if none are available.
     /// </summary>
     DailyBasalBolusRatioResponse CalculateDailyBasalBolusRatios(
         IEnumerable<Bolus> boluses,
-        IEnumerable<MicroBolus> microBoluses,
+        IEnumerable<Bolus> algorithmBoluses,
         IEnumerable<TempBasal> tempBasals);
 
     /// <summary>
@@ -186,7 +186,7 @@ public interface IStatisticsService
     /// </summary>
     BasalAnalysisResponse CalculateBasalAnalysis(
         IEnumerable<TempBasal> tempBasals,
-        IEnumerable<MicroBolus> microBoluses,
+        IEnumerable<Bolus> algorithmBoluses,
         DateTime startDate,
         DateTime endDate);
 }

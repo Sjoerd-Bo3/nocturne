@@ -455,11 +455,11 @@ public class TreatmentService : ITreatmentService
         var treatmentList = treatments.ToList();
         var regularTreatments = new List<Treatment>();
         var stateSpanTreatments = new List<Treatment>();
-        var microBolusTreatments = new List<Treatment>();
+        var algorithmBolusTreatments = new List<Treatment>();
 
         // Separate treatments into buckets:
         // 1. Temp basals → skip legacy table, go to decomposer (StateSpan/TempBasal path)
-        // 2. Micro-boluses (IsBasalInsulin == true with insulin) → skip legacy table, go to decomposer
+        // 2. Algorithm boluses / SMBs (IsBasalInsulin == true with insulin) → skip legacy table, go to decomposer
         // 3. Regular → write to legacy table, then decompose
         foreach (var treatment in treatmentList)
         {
@@ -469,7 +469,7 @@ public class TreatmentService : ITreatmentService
             }
             else if (treatment.IsBasalInsulin == true && treatment.Insulin > 0)
             {
-                microBolusTreatments.Add(treatment);
+                algorithmBolusTreatments.Add(treatment);
             }
             else
             {
@@ -528,33 +528,33 @@ public class TreatmentService : ITreatmentService
             }
         }
 
-        // Process micro-bolus treatments through the decomposer (not written to legacy table)
-        foreach (var microBolus in microBolusTreatments)
+        // Process algorithm bolus (SMB) treatments through the decomposer (not written to legacy table)
+        foreach (var algorithmBolus in algorithmBolusTreatments)
         {
             try
             {
                 var decompositionResult = await _treatmentDecomposer.DecomposeAsync(
-                    microBolus,
+                    algorithmBolus,
                     cancellationToken
                 );
 
-                // For micro-boluses the decomposer writes to the MicroBolus repo;
+                // For algorithm boluses the decomposer writes to the Bolus repo with Kind=Algorithm;
                 // return the original treatment shape so callers see what was accepted.
-                results.Add(microBolus);
+                results.Add(algorithmBolus);
 
                 try
                 {
                     await _broadcastService.BroadcastStorageCreateAsync(
                         CollectionName,
-                        new { colName = CollectionName, doc = microBolus }
+                        new { colName = CollectionName, doc = algorithmBolus }
                     );
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(
                         ex,
-                        "Failed to broadcast storage create event for micro-bolus {TreatmentId}",
-                        microBolus.Id
+                        "Failed to broadcast storage create event for algorithm bolus {TreatmentId}",
+                        algorithmBolus.Id
                     );
                 }
             }
@@ -562,8 +562,8 @@ public class TreatmentService : ITreatmentService
             {
                 _logger.LogError(
                     ex,
-                    "Failed to decompose micro-bolus treatment {Id}",
-                    microBolus.Id
+                    "Failed to decompose algorithm bolus treatment {Id}",
+                    algorithmBolus.Id
                 );
             }
         }

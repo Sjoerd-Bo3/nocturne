@@ -261,10 +261,6 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<BolusEntity> Boluses { get; set; }
 
-    /// <summary>
-    /// Gets or sets the MicroBoluses table for algorithm-delivered micro-dose insulin records (v4 granular model)
-    /// </summary>
-    public DbSet<MicroBolusEntity> MicroBoluses { get; set; }
 
     /// <summary>
     /// Gets or sets the CarbIntakes table for carbohydrate intake records (v4 granular model)
@@ -1434,24 +1430,6 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => e.LegacyId)
             .HasDatabaseName("ix_uploader_snapshots_legacy_id");
 
-        // MicroBoluses indexes
-        modelBuilder
-            .Entity<MicroBolusEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_micro_boluses_mills")
-            .IsDescending();
-
-        modelBuilder
-            .Entity<MicroBolusEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_micro_boluses_legacy_id")
-            .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
-
-        modelBuilder
-            .Entity<MicroBolusEntity>()
-            .HasIndex(e => e.CorrelationId)
-            .HasDatabaseName("ix_micro_boluses_correlation_id");
 
         // TempBasals indexes
         modelBuilder

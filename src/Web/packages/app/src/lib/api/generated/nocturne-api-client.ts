@@ -24102,6 +24102,7 @@ export interface Bolus {
     delivered?: number | undefined;
     bolusType?: BolusType | undefined;
     automatic?: boolean;
+    kind?: BolusKind;
     duration?: number | undefined;
     syncIdentifier?: string | undefined;
     insulinType?: string | undefined;
@@ -24114,6 +24115,11 @@ export enum BolusType {
     Normal = "Normal",
     Square = "Square",
     Dual = "Dual",
+}
+
+export enum BolusKind {
+    Manual = "Manual",
+    Algorithm = "Algorithm",
 }
 
 export interface CarbIntake {

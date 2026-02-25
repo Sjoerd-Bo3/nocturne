@@ -18,7 +18,6 @@ namespace Nocturne.API.Services.V4;
 public class TreatmentDecomposer : ITreatmentDecomposer
 {
     private readonly IBolusRepository _bolusRepository;
-    private readonly IMicroBolusRepository _microBolusRepository;
     private readonly ITempBasalRepository _tempBasalRepository;
     private readonly ICarbIntakeRepository _carbIntakeRepository;
     private readonly IBGCheckRepository _bgCheckRepository;
@@ -42,7 +41,6 @@ public class TreatmentDecomposer : ITreatmentDecomposer
 
     public TreatmentDecomposer(
         IBolusRepository bolusRepository,
-        IMicroBolusRepository microBolusRepository,
         ITempBasalRepository tempBasalRepository,
         ICarbIntakeRepository carbIntakeRepository,
         IBGCheckRepository bgCheckRepository,
@@ -55,7 +53,6 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         ILogger<TreatmentDecomposer> logger)
     {
         _bolusRepository = bolusRepository;
-        _microBolusRepository = microBolusRepository;
         _tempBasalRepository = tempBasalRepository;
         _carbIntakeRepository = carbIntakeRepository;
         _bgCheckRepository = bgCheckRepository;
@@ -252,25 +249,27 @@ public class TreatmentDecomposer : ITreatmentDecomposer
     private async Task DecomposeMicroBolusAsync(Treatment treatment, V4Models.DecompositionResult result, CancellationToken ct)
     {
         var existing = treatment.Id != null
-            ? await _microBolusRepository.GetByLegacyIdAsync(treatment.Id, ct)
+            ? await _bolusRepository.GetByLegacyIdAsync(treatment.Id, ct)
             : null;
 
-        var model = MapToMicroBolus(treatment, result.CorrelationId);
+        var model = MapToBolus(treatment, result.CorrelationId);
+        model.Kind = V4Models.BolusKind.Algorithm;
+        model.Automatic = true;
         model.PumpDeviceId = await _pumpDeviceService.ResolveAsync(
             treatment.PumpType, treatment.PumpSerial, treatment.Mills, ct);
 
         if (existing != null)
         {
             model.Id = existing.Id;
-            var updated = await _microBolusRepository.UpdateAsync(existing.Id, model, ct);
+            var updated = await _bolusRepository.UpdateAsync(existing.Id, model, ct);
             result.UpdatedRecords.Add(updated);
-            _logger.LogDebug("Updated existing MicroBolus {Id} from legacy treatment {LegacyId}", existing.Id, treatment.Id);
+            _logger.LogDebug("Updated existing algorithm Bolus {Id} from legacy treatment {LegacyId}", existing.Id, treatment.Id);
         }
         else
         {
-            var created = await _microBolusRepository.CreateAsync(model, ct);
+            var created = await _bolusRepository.CreateAsync(model, ct);
             result.CreatedRecords.Add(created);
-            _logger.LogDebug("Created MicroBolus from legacy treatment {LegacyId}", treatment.Id);
+            _logger.LogDebug("Created algorithm Bolus from legacy treatment {LegacyId}", treatment.Id);
         }
     }
 
@@ -473,24 +472,6 @@ public class TreatmentDecomposer : ITreatmentDecomposer
     #endregion
 
     #region Mapping Methods
-
-    internal static V4Models.MicroBolus MapToMicroBolus(Treatment treatment, Guid? correlationId)
-    {
-        return new V4Models.MicroBolus
-        {
-            Id = Guid.CreateVersion7(),
-            LegacyId = treatment.Id,
-            Mills = treatment.Mills,
-            UtcOffset = treatment.UtcOffset,
-            Device = treatment.EnteredBy,
-            App = treatment.EnteredBy,
-            DataSource = treatment.DataSource,
-            CorrelationId = correlationId,
-            Insulin = treatment.Insulin ?? 0,
-            SyncIdentifier = treatment.SyncIdentifier,
-            PumpRecordId = treatment.PumpId?.ToString(),
-        };
-    }
 
     internal static V4Models.TempBasal MapToTempBasal(Treatment treatment, Guid? correlationId)
     {
@@ -766,7 +747,6 @@ public class TreatmentDecomposer : ITreatmentDecomposer
     {
         var deleted = 0;
         deleted += await _bolusRepository.DeleteByLegacyIdAsync(legacyId, ct);
-        deleted += await _microBolusRepository.DeleteByLegacyIdAsync(legacyId, ct);
         deleted += await _tempBasalRepository.DeleteByLegacyIdAsync(legacyId, ct);
         deleted += await _carbIntakeRepository.DeleteByLegacyIdAsync(legacyId, ct);
         deleted += await _bgCheckRepository.DeleteByLegacyIdAsync(legacyId, ct);

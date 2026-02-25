@@ -879,21 +879,25 @@ public class DataOverviewServiceTests : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_BasalFromMicroBoluses_CalculatedCorrectly()
+    public async Task GetDailySummaryAsync_BasalFromAlgorithmBoluses_CalculatedCorrectly()
     {
-        // Two micro-boluses: 0.3U + 0.5U = 0.8U total basal
-        _dbContext.MicroBoluses.Add(new MicroBolusEntity
+        // Two algorithm boluses: 0.3U + 0.5U = 0.8U total basal
+        _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon,
             Insulin = 0.3,
+            BolusKind = "Algorithm",
+            Automatic = true,
             DataSource = "glooko"
         });
-        _dbContext.MicroBoluses.Add(new MicroBolusEntity
+        _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon + 300000,
             Insulin = 0.5,
+            BolusKind = "Algorithm",
+            Automatic = true,
             DataSource = "glooko"
         });
         await _dbContext.SaveChangesAsync();
@@ -966,14 +970,16 @@ public class DataOverviewServiceTests : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_MicroBolusAndTempBasal_CombinedForTotalBasal()
+    public async Task GetDailySummaryAsync_AlgorithmBolusAndTempBasal_CombinedForTotalBasal()
     {
-        // MicroBolus: 0.5U + TempBasal: 1.0 U/hr for 1hr = 1.0U -> Total basal = 1.5U
-        _dbContext.MicroBoluses.Add(new MicroBolusEntity
+        // Algorithm Bolus: 0.5U + TempBasal: 1.0 U/hr for 1hr = 1.0U -> Total basal = 1.5U
+        _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon,
             Insulin = 0.5,
+            BolusKind = "Algorithm",
+            Automatic = true,
             DataSource = "glooko"
         });
         _dbContext.TempBasals.Add(new TempBasalEntity
@@ -1075,9 +1081,9 @@ public class DataOverviewServiceTests : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_BasalFromMicroBoluses_CombinedWithBolusForTdd()
+    public async Task GetDailySummaryAsync_BasalFromAlgorithmBoluses_CombinedWithBolusForTdd()
     {
-        // Bolus: 5U, MicroBolus basal: 2.5U -> TDD = 7.5U
+        // Bolus: 5U, Algorithm Bolus basal: 2.5U -> TDD = 7.5U
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
@@ -1085,11 +1091,13 @@ public class DataOverviewServiceTests : IDisposable
             Insulin = 5.0,
             DataSource = "glooko"
         });
-        _dbContext.MicroBoluses.Add(new MicroBolusEntity
+        _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon + 300000,
             Insulin = 2.5,
+            BolusKind = "Algorithm",
+            Automatic = true,
             DataSource = "glooko"
         });
         await _dbContext.SaveChangesAsync();
@@ -1137,20 +1145,24 @@ public class DataOverviewServiceTests : IDisposable
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetDailySummaryAsync_BasalMicroBoluses_FilteredByDataSource()
+    public async Task GetDailySummaryAsync_BasalAlgorithmBoluses_FilteredByDataSource()
     {
-        _dbContext.MicroBoluses.Add(new MicroBolusEntity
+        _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon,
             Insulin = 0.5,
+            BolusKind = "Algorithm",
+            Automatic = true,
             DataSource = "glooko"
         });
-        _dbContext.MicroBoluses.Add(new MicroBolusEntity
+        _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
             Mills = June15_2024_Noon + 300000,
             Insulin = 0.3,
+            BolusKind = "Algorithm",
+            Automatic = true,
             DataSource = "medtronic"
         });
         await _dbContext.SaveChangesAsync();

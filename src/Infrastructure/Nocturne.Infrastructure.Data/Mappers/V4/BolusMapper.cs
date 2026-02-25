@@ -30,6 +30,7 @@ public static class BolusMapper
             Delivered = model.Delivered,
             BolusType = model.BolusType?.ToString(),
             Automatic = model.Automatic,
+            BolusKind = model.Kind.ToString(),
             Duration = model.Duration,
             SyncIdentifier = model.SyncIdentifier,
             InsulinType = model.InsulinType,
@@ -61,6 +62,7 @@ public static class BolusMapper
             Delivered = entity.Delivered,
             BolusType = Enum.TryParse<BolusType>(entity.BolusType, out var bt) ? bt : null,
             Automatic = entity.Automatic,
+            Kind = Enum.TryParse<BolusKind>(entity.BolusKind, out var kind) ? kind : BolusKind.Manual,
             Duration = entity.Duration,
             SyncIdentifier = entity.SyncIdentifier,
             InsulinType = entity.InsulinType,
@@ -88,6 +90,7 @@ public static class BolusMapper
         entity.Delivered = model.Delivered;
         entity.BolusType = model.BolusType?.ToString();
         entity.Automatic = model.Automatic;
+        entity.BolusKind = model.Kind.ToString();
         entity.Duration = model.Duration;
         entity.SyncIdentifier = model.SyncIdentifier;
         entity.InsulinType = model.InsulinType;

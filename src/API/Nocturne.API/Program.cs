@@ -462,7 +462,6 @@ builder.Services.AddScoped<IMeterGlucoseRepository, MeterGlucoseRepository>();
 builder.Services.AddScoped<ICalibrationRepository, CalibrationRepository>();
 builder.Services.AddScoped<IBolusRepository, BolusRepository>();
 builder.Services.AddScoped<ITempBasalRepository, TempBasalRepository>();
-builder.Services.AddScoped<IMicroBolusRepository, MicroBolusRepository>();
 builder.Services.AddScoped<ICarbIntakeRepository, CarbIntakeRepository>();
 builder.Services.AddScoped<IBGCheckRepository, BGCheckRepository>();
 builder.Services.AddScoped<INoteRepository, NoteRepository>();

@@ -1853,11 +1853,11 @@ public class StatisticsService : IStatisticsService
     }
 
     /// <summary>
-    /// Calculate comprehensive insulin delivery statistics using TempBasals and MicroBoluses for basal data.
+    /// Calculate comprehensive insulin delivery statistics using TempBasals and algorithm boluses for basal data.
     /// </summary>
     public InsulinDeliveryStatistics CalculateInsulinDeliveryStatistics(
         IEnumerable<Bolus> boluses,
-        IEnumerable<MicroBolus> microBoluses,
+        IEnumerable<Bolus> algorithmBoluses,
         IEnumerable<TempBasal> tempBasals,
         IEnumerable<CarbIntake> carbIntakes,
         DateTime startDate,
@@ -1867,7 +1867,7 @@ public class StatisticsService : IStatisticsService
         // Start with bolus-based calculation (includes carb stats)
         var stats = CalculateBolusDeliveryStatistics(boluses, carbIntakes, startDate, endDate);
 
-        // Sum basal from TempBasals + MicroBoluses
+        // Sum basal from TempBasals + algorithm boluses
         var tempBasalInsulin = 0.0;
         foreach (var tb in tempBasals)
         {
@@ -1876,10 +1876,10 @@ public class StatisticsService : IStatisticsService
                 tempBasalInsulin += insulin;
         }
 
-        var microBolusList = microBoluses.ToList();
-        var microBolusInsulin = microBolusList.Sum(mb => mb.Insulin);
+        var algorithmBolusList = algorithmBoluses.ToList();
+        var algorithmBolusInsulin = algorithmBolusList.Sum(ab => ab.Insulin);
 
-        var totalBasal = tempBasalInsulin + microBolusInsulin;
+        var totalBasal = tempBasalInsulin + algorithmBolusInsulin;
         var totalInsulin = stats.TotalBolus + totalBasal;
 
         stats.TotalBasal = Math.Round(totalBasal * 100) / 100;
@@ -1889,18 +1889,18 @@ public class StatisticsService : IStatisticsService
             totalInsulin > 0 ? Math.Round(totalBasal / totalInsulin * 100 * 10) / 10 : 0;
         stats.BolusPercent =
             totalInsulin > 0 ? Math.Round(stats.TotalBolus / totalInsulin * 100 * 10) / 10 : 0;
-        stats.MicroBolusCount = microBolusList.Count;
-        stats.MicroBolusInsulin = Math.Round(microBolusInsulin * 100) / 100;
+        stats.MicroBolusCount = algorithmBolusList.Count;
+        stats.MicroBolusInsulin = Math.Round(algorithmBolusInsulin * 100) / 100;
 
         return stats;
     }
 
     /// <summary>
-    /// Calculate daily basal/bolus ratio breakdown using TempBasals and MicroBoluses for basal data
+    /// Calculate daily basal/bolus ratio breakdown using TempBasals and algorithm boluses for basal data
     /// </summary>
     public DailyBasalBolusRatioResponse CalculateDailyBasalBolusRatios(
         IEnumerable<Bolus> boluses,
-        IEnumerable<MicroBolus> microBoluses,
+        IEnumerable<Bolus> algorithmBoluses,
         IEnumerable<TempBasal> tempBasals
     )
     {
@@ -1938,19 +1938,19 @@ public class StatisticsService : IStatisticsService
             dailyData[dateKey] = (currentBasal + basalInsulin, currentBolus);
         }
 
-        // Process MicroBoluses (basal side)
-        foreach (var mb in microBoluses)
+        // Process algorithm boluses (basal side)
+        foreach (var ab in algorithmBoluses)
         {
-            if (mb.Insulin <= 0 || mb.Mills <= 0)
+            if (ab.Insulin <= 0 || ab.Mills <= 0)
                 continue;
 
-            var mbDate = DateTimeOffset.FromUnixTimeMilliseconds(mb.Mills).DateTime;
-            var dateKey = mbDate.ToString("yyyy-MM-dd");
+            var abDate = DateTimeOffset.FromUnixTimeMilliseconds(ab.Mills).DateTime;
+            var dateKey = abDate.ToString("yyyy-MM-dd");
             if (!dailyData.ContainsKey(dateKey))
                 dailyData[dateKey] = (0, 0);
 
             var (currentBasal, currentBolus) = dailyData[dateKey];
-            dailyData[dateKey] = (currentBasal + mb.Insulin, currentBolus);
+            dailyData[dateKey] = (currentBasal + ab.Insulin, currentBolus);
         }
 
         // Build response
@@ -2003,11 +2003,11 @@ public class StatisticsService : IStatisticsService
     }
 
     /// <summary>
-    /// Calculate comprehensive basal analysis statistics using TempBasals and MicroBoluses
+    /// Calculate comprehensive basal analysis statistics using TempBasals and algorithm boluses
     /// </summary>
     public BasalAnalysisResponse CalculateBasalAnalysis(
         IEnumerable<TempBasal> tempBasals,
-        IEnumerable<MicroBolus> microBoluses,
+        IEnumerable<Bolus> algorithmBoluses,
         DateTime startDate,
         DateTime endDate
     )
@@ -2062,10 +2062,10 @@ public class StatisticsService : IStatisticsService
             }
         }
 
-        // Add MicroBolus insulin to total delivered
-        foreach (var mb in microBoluses)
+        // Add algorithm bolus insulin to total delivered
+        foreach (var ab in algorithmBoluses)
         {
-            totalDelivered += mb.Insulin;
+            totalDelivered += ab.Insulin;
         }
 
         var basalStats = new BasalStats

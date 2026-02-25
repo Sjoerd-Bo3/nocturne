@@ -81,6 +81,11 @@ public class Bolus : IV4Record
     public bool Automatic { get; set; }
 
     /// <summary>
+    /// How this bolus was initiated (Manual or Algorithm/SMB)
+    /// </summary>
+    public BolusKind Kind { get; set; } = BolusKind.Manual;
+
+    /// <summary>
     /// Duration in minutes for extended/square boluses
     /// </summary>
     public double? Duration { get; set; }

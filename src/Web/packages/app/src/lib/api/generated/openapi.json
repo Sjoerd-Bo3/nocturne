@@ -23858,6 +23858,9 @@
           "automatic": {
             "type": "boolean"
           },
+          "kind": {
+            "$ref": "#/components/schemas/BolusKind"
+          },
           "duration": {
             "type": "number",
             "format": "double",
@@ -23899,6 +23902,18 @@
           "Normal",
           "Square",
           "Dual"
+        ]
+      },
+      "BolusKind": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "Manual",
+          "Algorithm"
+        ],
+        "enum": [
+          "Manual",
+          "Algorithm"
         ]
       },
       "CarbIntake": {

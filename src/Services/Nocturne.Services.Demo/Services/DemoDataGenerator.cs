@@ -597,19 +597,19 @@ public class DemoDataGenerator : IDemoDataGenerator
                     }
                     else if (glucose > targetGlucose + 10 && insulinToDeliver > 0.05)
                     {
-                        var microBolus = NormalizeBolus(
+                        var algorithmBolus = NormalizeBolus(
                             Math.Clamp(insulinToDeliver * 0.25, 0.05, 1.2)
                         );
-                        if (microBolus >= PumpBolusIncrementUnits)
+                        if (algorithmBolus >= PumpBolusIncrementUnits)
                         {
-                            yield return CreateMicroBolusTreatment(
+                            yield return CreateAlgorithmBolusTreatment(
                                 currentTime,
-                                microBolus
+                                algorithmBolus
                             );
                             totalTreatments++;
                         }
-                        simulator.AddInsulinDose(currentTime, microBolus);
-                        estimatedIob += microBolus;
+                        simulator.AddInsulinDose(currentTime, algorithmBolus);
+                        estimatedIob += algorithmBolus;
                     }
                 }
                 else if (glucose < 90 || (glucose < 100 && glucoseMomentum < -0.3))
@@ -887,18 +887,18 @@ public class DemoDataGenerator : IDemoDataGenerator
                 // SMBs every 5 minutes for fine-tuning when moderately high
                 else if (glucose > targetGlucose + 10 && insulinToDeliver > 0.05)
                 {
-                    var microBolus = NormalizeBolus(
+                    var algorithmBolus = NormalizeBolus(
                         Math.Clamp(insulinToDeliver * 0.25, 0.05, 1.2)
                     );
 
-                    if (microBolus >= PumpBolusIncrementUnits)
+                    if (algorithmBolus >= PumpBolusIncrementUnits)
                     {
                         treatments.Add(
-                            CreateMicroBolusTreatment(currentTime, microBolus)
+                            CreateAlgorithmBolusTreatment(currentTime, algorithmBolus)
                         );
                     }
-                    simulator.AddInsulinDose(currentTime, microBolus);
-                    estimatedIob += microBolus;
+                    simulator.AddInsulinDose(currentTime, algorithmBolus);
+                    estimatedIob += algorithmBolus;
                 }
             }
             // Reduce basal when trending low or already low (predictive low glucose suspend)
@@ -1464,11 +1464,11 @@ public class DemoDataGenerator : IDemoDataGenerator
         };
     }
 
-    private Treatment CreateMicroBolusTreatment(DateTime time, double insulin)
+    private Treatment CreateAlgorithmBolusTreatment(DateTime time, double insulin)
     {
         return new Treatment
         {
-            EventType = "SMB", // Super Micro Bolus - standard AID terminology
+            EventType = "SMB", // Super Micro Bolus - algorithm-delivered bolus
             Insulin = insulin,
             Mills = new DateTimeOffset(time).ToUnixTimeMilliseconds(),
             Created_at = time.ToString("o"),

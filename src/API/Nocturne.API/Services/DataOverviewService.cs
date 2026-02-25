@@ -255,7 +255,7 @@ public class DataOverviewService : IDataOverviewService
         // Glucose averages (SensorGlucose + MeterGlucose + legacy Entries)
         await CollectGlucoseAverages(startMills, endMills, dataSources, hasFilter, dayMap, cancellationToken);
 
-        // Insulin totals (Bolus from Boluses table + Basal from MicroBoluses & TempBasals)
+        // Insulin totals (Bolus from Boluses table + Basal from algorithm boluses & TempBasals)
         await CollectInsulinTotals(startMills, endMills, dataSources, hasFilter, dayMap, cancellationToken);
 
         // Carb totals
@@ -462,7 +462,7 @@ public class DataOverviewService : IDataOverviewService
 
     /// <summary>
     /// Collects insulin totals from the Boluses table (bolus insulin) and from
-    /// MicroBoluses + TempBasals tables (basal insulin delivery).
+    /// algorithm boluses + TempBasals tables (basal insulin delivery).
     /// </summary>
     private async Task CollectInsulinTotals(
         long startMills,
@@ -472,11 +472,12 @@ public class DataOverviewService : IDataOverviewService
         Dictionary<string, DailySummaryDay> dayMap,
         CancellationToken cancellationToken)
     {
-        // Bolus records — all boluses are summed into TotalBolusUnits
+        // Manual bolus records — only user-initiated boluses count as bolus insulin
         try
         {
             var bolusRecords = await _context.Boluses
                 .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Insulin > 0)
+                .Where(e => e.BolusKind != "Algorithm")
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => new { e.Mills, e.Insulin })
                 .ToListAsync(cancellationToken);
@@ -509,18 +510,19 @@ public class DataOverviewService : IDataOverviewService
             _logger.LogWarning(ex, "Failed to collect bolus insulin totals");
         }
 
-        // MicroBolus records (APS micro-boluses that contribute to basal insulin)
+        // Algorithm bolus records (APS-delivered SMBs that contribute to basal insulin)
         try
         {
-            var microBolusRecords = await _context.MicroBoluses
+            var algorithmBolusRecords = await _context.Boluses
                 .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Insulin > 0)
+                .Where(e => e.BolusKind == "Algorithm")
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
                 .Select(e => new { e.Mills, e.Insulin })
                 .ToListAsync(cancellationToken);
 
-            if (microBolusRecords.Count > 0)
+            if (algorithmBolusRecords.Count > 0)
             {
-                var grouped = microBolusRecords
+                var grouped = algorithmBolusRecords
                     .GroupBy(r => MillsToDateString(r.Mills))
                     .Select(g => new { Date = g.Key, TotalBasal = g.Sum(r => r.Insulin) });
 
@@ -538,7 +540,7 @@ public class DataOverviewService : IDataOverviewService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to collect basal insulin from MicroBoluses");
+            _logger.LogWarning(ex, "Failed to collect basal insulin from algorithm boluses");
         }
 
         // TempBasal records (pump basal delivery with rate x duration)
