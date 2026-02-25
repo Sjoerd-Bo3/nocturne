@@ -1434,6 +1434,51 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => e.LegacyId)
             .HasDatabaseName("ix_uploader_snapshots_legacy_id");
 
+        // MicroBoluses indexes
+        modelBuilder
+            .Entity<MicroBolusEntity>()
+            .HasIndex(e => e.Mills)
+            .HasDatabaseName("ix_micro_boluses_mills")
+            .IsDescending();
+
+        modelBuilder
+            .Entity<MicroBolusEntity>()
+            .HasIndex(e => e.LegacyId)
+            .HasDatabaseName("ix_micro_boluses_legacy_id")
+            .IsUnique()
+            .HasFilter("legacy_id IS NOT NULL");
+
+        modelBuilder
+            .Entity<MicroBolusEntity>()
+            .HasIndex(e => e.CorrelationId)
+            .HasDatabaseName("ix_micro_boluses_correlation_id");
+
+        // TempBasals indexes
+        modelBuilder
+            .Entity<TempBasalEntity>()
+            .HasIndex(e => e.StartMills)
+            .HasDatabaseName("ix_temp_basals_start_mills")
+            .IsDescending();
+
+        modelBuilder
+            .Entity<TempBasalEntity>()
+            .HasIndex(e => e.EndMills)
+            .HasDatabaseName("ix_temp_basals_end_mills");
+
+        modelBuilder
+            .Entity<TempBasalEntity>()
+            .HasIndex(e => e.LegacyId)
+            .HasDatabaseName("ix_temp_basals_legacy_id")
+            .IsUnique()
+            .HasFilter("legacy_id IS NOT NULL");
+
+        modelBuilder
+            .Entity<TempBasalEntity>()
+            .HasIndex(e => e.CorrelationId)
+            .HasDatabaseName("ix_temp_basals_correlation_id");
+
+        // PumpDevices unique index is handled by [Index] attribute on entity
+
         // V4 Profile Decomposition indexes
 
         // TherapySettings indexes
