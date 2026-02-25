@@ -260,4 +260,21 @@ public class ApsSnapshotMapperTests
 
         model.ApsSystem.Should().Be(ApsSystem.Loop);
     }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData(ApsSystem.OpenAps, "OpenAps")]
+    [InlineData(ApsSystem.AndroidAps, "AndroidAps")]
+    [InlineData(ApsSystem.Loop, "Loop")]
+    [InlineData(ApsSystem.Trio, "Trio")]
+    public void ToEntity_AllApsSystemValues_RoundTripCorrectly(ApsSystem system, string expected)
+    {
+        var model = new ApsSnapshot { Mills = 1700000000000, ApsSystem = system };
+
+        var entity = ApsSnapshotMapper.ToEntity(model);
+        entity.ApsSystem.Should().Be(expected);
+
+        var roundTripped = ApsSnapshotMapper.ToDomainModel(entity);
+        roundTripped.ApsSystem.Should().Be(system);
+    }
 }

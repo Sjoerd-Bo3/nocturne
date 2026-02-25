@@ -92,7 +92,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
             UtcOffset = ds.UtcOffset,
             Device = ds.Device,
             LegacyId = legacyId,
-            ApsSystem = V4Models.ApsSystem.OpenAps,
+            ApsSystem = DetectOpenApsVariant(ds),
             Iob = ds.OpenAps.Iob?.Iob,
             BasalIob = ds.OpenAps.Iob?.BasalIob,
             BolusIob = ds.OpenAps.Iob?.BolusIob,
@@ -285,6 +285,24 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
     #endregion
 
     #region Helpers
+
+    /// <summary>
+    /// Distinguishes between vanilla OpenAPS, AAPS, and Trio based on payload heuristics.
+    /// All three post under the "openaps" devicestatus key.
+    /// - AAPS: uploader name contains "AndroidAPS"
+    /// - Trio: openaps block includes a version field
+    /// - Vanilla OpenAPS: neither of the above
+    /// </summary>
+    internal static V4Models.ApsSystem DetectOpenApsVariant(DeviceStatus ds)
+    {
+        if (ds.Uploader?.Name?.Contains("AndroidAPS", StringComparison.OrdinalIgnoreCase) == true)
+            return V4Models.ApsSystem.AndroidAps;
+
+        if (!string.IsNullOrEmpty(ds.OpenAps?.Version))
+            return V4Models.ApsSystem.Trio;
+
+        return V4Models.ApsSystem.OpenAps;
+    }
 
     private static string? SerializeOrNull<T>(T? obj) where T : class
     {

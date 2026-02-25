@@ -344,6 +344,12 @@ public class OpenApsStatus
     /// </summary>
     [JsonPropertyName("cob")]
     public double? Cob { get; set; }
+
+    /// <summary>
+    /// Gets or sets the version string (present in Trio/FreeAPS X payloads, absent in vanilla OpenAPS and AAPS)
+    /// </summary>
+    [JsonPropertyName("version")]
+    public string? Version { get; set; }
 }
 
 /// <summary>

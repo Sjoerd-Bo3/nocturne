@@ -9,12 +9,22 @@ namespace Nocturne.Core.Models.V4;
 public enum ApsSystem
 {
     /// <summary>
-    /// OpenAPS, AAPS, or Trio/FreeAPS X (all use the "openaps" key in devicestatus)
+    /// Vanilla OpenAPS (oref0/oref1 running on a dedicated rig)
     /// </summary>
     OpenAps,
 
     /// <summary>
+    /// AndroidAPS (AAPS) — Android-based closed-loop system using oref algorithm
+    /// </summary>
+    AndroidAps,
+
+    /// <summary>
     /// Loop for iOS
     /// </summary>
-    Loop
+    Loop,
+
+    /// <summary>
+    /// Trio (formerly FreeAPS X) — iOS-based closed-loop system using oref algorithm
+    /// </summary>
+    Trio
 }

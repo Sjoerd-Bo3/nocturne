@@ -1272,4 +1272,153 @@ public class DeviceStatusDecomposerTests : IDisposable
     }
 
     #endregion
+
+    #region APS System Detection
+
+    [Fact]
+    public async Task DecomposeAsync_AapsDeviceStatus_DetectsAndroidAps()
+    {
+        var ds = new DeviceStatus
+        {
+            Id = "aaps-device",
+            Mills = 1700000000000,
+            Device = "openaps://samsung SM-G975F",
+            OpenAps = new OpenApsStatus
+            {
+                Iob = new OpenApsIobData { Iob = 1.5 },
+                Suggested = new OpenApsSuggested
+                {
+                    Bg = 110.0,
+                    EventualBG = 100.0,
+                    Timestamp = "2023-11-14T12:00:00Z"
+                }
+            },
+            Uploader = new UploaderStatus { Name = "AndroidAPS", Battery = 85 }
+        };
+
+        var result = await _decomposer.DecomposeAsync(ds);
+
+        var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
+        aps.ApsSystem.Should().Be(V4Models.ApsSystem.AndroidAps);
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_AapsDeviceStatus_CaseInsensitiveDetection()
+    {
+        var ds = new DeviceStatus
+        {
+            Id = "aaps-case",
+            Mills = 1700000000000,
+            Device = "openaps://samsung",
+            OpenAps = new OpenApsStatus
+            {
+                Suggested = new OpenApsSuggested
+                {
+                    Bg = 120.0,
+                    Timestamp = "2023-11-14T12:00:00Z"
+                }
+            },
+            Uploader = new UploaderStatus { Name = "androidaps 3.2.0" }
+        };
+
+        var result = await _decomposer.DecomposeAsync(ds);
+
+        var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
+        aps.ApsSystem.Should().Be(V4Models.ApsSystem.AndroidAps);
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_TrioDeviceStatus_DetectsTrio()
+    {
+        var ds = new DeviceStatus
+        {
+            Id = "trio-device",
+            Mills = 1700000000000,
+            Device = "trio://iPhone",
+            OpenAps = new OpenApsStatus
+            {
+                Version = "0.2.1",
+                Iob = new OpenApsIobData { Iob = 0.8 },
+                Suggested = new OpenApsSuggested
+                {
+                    Bg = 105.0,
+                    EventualBG = 98.0,
+                    Timestamp = "2023-11-14T12:00:00Z"
+                }
+            }
+        };
+
+        var result = await _decomposer.DecomposeAsync(ds);
+
+        var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
+        aps.ApsSystem.Should().Be(V4Models.ApsSystem.Trio);
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_VanillaOpenAps_NoUploaderNoVersion_DetectsOpenAps()
+    {
+        var ds = new DeviceStatus
+        {
+            Id = "vanilla-oref0",
+            Mills = 1700000000000,
+            Device = "openaps://myrig",
+            OpenAps = new OpenApsStatus
+            {
+                Suggested = new OpenApsSuggested
+                {
+                    Bg = 130.0,
+                    Timestamp = "2023-11-14T12:00:00Z"
+                }
+            }
+        };
+
+        var result = await _decomposer.DecomposeAsync(ds);
+
+        var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
+        aps.ApsSystem.Should().Be(V4Models.ApsSystem.OpenAps);
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_AapsWithVersion_AapsTakesPriorityOverTrio()
+    {
+        // If both uploader contains "AndroidAPS" AND version is present,
+        // AAPS detection wins (checked first)
+        var ds = new DeviceStatus
+        {
+            Id = "aaps-with-version",
+            Mills = 1700000000000,
+            Device = "openaps://samsung",
+            OpenAps = new OpenApsStatus
+            {
+                Version = "some-version",
+                Suggested = new OpenApsSuggested
+                {
+                    Bg = 115.0,
+                    Timestamp = "2023-11-14T12:00:00Z"
+                }
+            },
+            Uploader = new UploaderStatus { Name = "AndroidAPS 3.2.0" }
+        };
+
+        var result = await _decomposer.DecomposeAsync(ds);
+
+        var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
+        aps.ApsSystem.Should().Be(V4Models.ApsSystem.AndroidAps);
+    }
+
+    [Fact]
+    public void DetectOpenApsVariant_UploaderWithNonAapsName_DoesNotMatchAndroidAps()
+    {
+        var ds = new DeviceStatus
+        {
+            OpenAps = new OpenApsStatus(),
+            Uploader = new UploaderStatus { Name = "xDrip+" }
+        };
+
+        var result = DeviceStatusDecomposer.DetectOpenApsVariant(ds);
+
+        result.Should().Be(V4Models.ApsSystem.OpenAps);
+    }
+
+    #endregion
 }

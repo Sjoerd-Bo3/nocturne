@@ -29787,11 +29787,15 @@
         "description": "",
         "x-enumNames": [
           "OpenAps",
-          "Loop"
+          "AndroidAps",
+          "Loop",
+          "Trio"
         ],
         "enum": [
           "OpenAps",
-          "Loop"
+          "AndroidAps",
+          "Loop",
+          "Trio"
         ]
       },
       "PaginationInfo": {
@@ -35435,6 +35439,10 @@
           "cob": {
             "type": "number",
             "format": "double",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
             "nullable": true
           }
         }

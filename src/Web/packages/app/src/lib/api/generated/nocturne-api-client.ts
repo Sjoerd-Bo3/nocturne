@@ -25913,7 +25913,9 @@ export interface ApsSnapshot {
 
 export enum ApsSystem {
     OpenAps = "OpenAps",
+    AndroidAps = "AndroidAps",
     Loop = "Loop",
+    Trio = "Trio",
 }
 
 export interface PaginationInfo {
@@ -27638,6 +27640,7 @@ export interface OpenApsStatus {
     enacted?: OpenApsEnacted | undefined;
     iob?: OpenApsIobData | undefined;
     cob?: number | undefined;
+    version?: string | undefined;
 }
 
 export interface OpenApsSuggested {
