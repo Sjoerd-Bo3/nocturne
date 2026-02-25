@@ -85,6 +85,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
     {
         var command = ds.OpenAps!.Enacted ?? ds.OpenAps.Suggested;
         var predBGs = command?.PredBGs;
+        var apsSystem = DetectOpenApsVariant(ds);
 
         var model = new V4Models.ApsSnapshot
         {
@@ -92,7 +93,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
             UtcOffset = ds.UtcOffset,
             Device = ds.Device,
             LegacyId = legacyId,
-            ApsSystem = DetectOpenApsVariant(ds),
+            ApsSystem = apsSystem,
             Iob = ds.OpenAps.Iob?.Iob,
             BasalIob = ds.OpenAps.Iob?.BasalIob,
             BolusIob = ds.OpenAps.Iob?.BolusIob,
@@ -109,8 +110,12 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
             EnactedBolusVolume = ds.OpenAps.Enacted?.Smb,
             SuggestedJson = SerializeOrNull(ds.OpenAps.Suggested),
             EnactedJson = SerializeOrNull(ds.OpenAps.Enacted),
-            // For OpenAPS, the default prediction IS the IOB curve (they are intentionally the same)
-            PredictedDefaultJson = SerializeOrNull(predBGs?.IOB),
+            // Trio uses oref multi-curve predictions exclusively; PredictedDefaultJson
+            // is reserved for Loop's single combined curve. OpenAPS/AAPS duplicate IOB
+            // into the default slot for backwards compatibility.
+            PredictedDefaultJson = apsSystem == V4Models.ApsSystem.Trio
+                ? null
+                : SerializeOrNull(predBGs?.IOB),
             PredictedIobJson = SerializeOrNull(predBGs?.IOB),
             PredictedZtJson = SerializeOrNull(predBGs?.ZT),
             PredictedCobJson = SerializeOrNull(predBGs?.COB),

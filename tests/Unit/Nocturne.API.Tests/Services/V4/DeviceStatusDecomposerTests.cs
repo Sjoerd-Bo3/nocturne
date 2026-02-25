@@ -1421,4 +1421,81 @@ public class DeviceStatusDecomposerTests : IDisposable
     }
 
     #endregion
+
+    #region Trio Prediction Mapping
+
+    [Fact]
+    public async Task DecomposeAsync_TrioWithOrefPredictions_MapsIndividualCurvesAndNullDefault()
+    {
+        var ds = new DeviceStatus
+        {
+            Id = "trio-oref-predictions",
+            Mills = 1700000000000,
+            Device = "trio://iPhone",
+            OpenAps = new OpenApsStatus
+            {
+                Version = "0.2.1",
+                Iob = new OpenApsIobData { Iob = 1.5 },
+                Suggested = new OpenApsSuggested
+                {
+                    Bg = 120.0,
+                    EventualBG = 95.0,
+                    Timestamp = "2023-11-14T12:00:00Z",
+                    PredBGs = new OpenApsPredBGs
+                    {
+                        IOB = new List<double> { 120, 115, 110, 105, 100 },
+                        ZT = new List<double> { 120, 118, 115 },
+                        COB = new List<double> { 120, 125, 130, 125, 120 },
+                        UAM = new List<double> { 120, 130, 135, 130 }
+                    }
+                }
+            }
+        };
+
+        var result = await _decomposer.DecomposeAsync(ds);
+
+        var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
+        aps.ApsSystem.Should().Be(V4Models.ApsSystem.Trio);
+        aps.PredictedDefaultJson.Should().BeNull("Trio uses oref multi-curve format; PredictedDefaultJson is for Loop's single curve");
+        aps.PredictedIobJson.Should().NotBeNull();
+        aps.PredictedZtJson.Should().NotBeNull();
+        aps.PredictedCobJson.Should().NotBeNull();
+        aps.PredictedUamJson.Should().NotBeNull();
+        aps.PredictedStartMills.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_TrioWithNoPredictions_AllPredictionFieldsNull()
+    {
+        var ds = new DeviceStatus
+        {
+            Id = "trio-no-predictions",
+            Mills = 1700000000000,
+            Device = "trio://iPhone",
+            OpenAps = new OpenApsStatus
+            {
+                Version = "0.2.1",
+                Iob = new OpenApsIobData { Iob = 0.5 },
+                Suggested = new OpenApsSuggested
+                {
+                    Bg = 110.0,
+                    EventualBG = 100.0,
+                    Timestamp = "2023-11-14T12:00:00Z"
+                    // No PredBGs
+                }
+            }
+        };
+
+        var result = await _decomposer.DecomposeAsync(ds);
+
+        var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
+        aps.ApsSystem.Should().Be(V4Models.ApsSystem.Trio);
+        aps.PredictedDefaultJson.Should().BeNull();
+        aps.PredictedIobJson.Should().BeNull();
+        aps.PredictedZtJson.Should().BeNull();
+        aps.PredictedCobJson.Should().BeNull();
+        aps.PredictedUamJson.Should().BeNull();
+    }
+
+    #endregion
 }
