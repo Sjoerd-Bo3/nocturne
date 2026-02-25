@@ -28,6 +28,7 @@ public class InProcessConnectorPublisher : IConnectorPublisher
     private readonly IBolusCalculationRepository _bolusCalculationRepository;
     private readonly INoteRepository _noteRepository;
     private readonly IDeviceEventRepository _deviceEventRepository;
+    private readonly ITempBasalRepository _tempBasalRepository;
     private readonly IAlertOrchestrator _alertOrchestrator;
     private readonly ILogger<InProcessConnectorPublisher> _logger;
 
@@ -48,6 +49,7 @@ public class InProcessConnectorPublisher : IConnectorPublisher
         IBolusCalculationRepository bolusCalculationRepository,
         INoteRepository noteRepository,
         IDeviceEventRepository deviceEventRepository,
+        ITempBasalRepository tempBasalRepository,
         IAlertOrchestrator alertOrchestrator,
         ILogger<InProcessConnectorPublisher> logger
     )
@@ -84,6 +86,8 @@ public class InProcessConnectorPublisher : IConnectorPublisher
         _noteRepository = noteRepository ?? throw new ArgumentNullException(nameof(noteRepository));
         _deviceEventRepository =
             deviceEventRepository ?? throw new ArgumentNullException(nameof(deviceEventRepository));
+        _tempBasalRepository =
+            tempBasalRepository ?? throw new ArgumentNullException(nameof(tempBasalRepository));
         _alertOrchestrator =
             alertOrchestrator ?? throw new ArgumentNullException(nameof(alertOrchestrator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -592,6 +596,37 @@ public class InProcessConnectorPublisher : IConnectorPublisher
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to publish DeviceEvent records for {Source}", source);
+            return false;
+        }
+    }
+
+    public async Task<bool> PublishTempBasalsAsync(
+        IEnumerable<TempBasal> records,
+        string source,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var recordList = records.ToList();
+            if (recordList.Count == 0)
+                return true;
+
+            await _tempBasalRepository.BulkCreateAsync(recordList, cancellationToken);
+            _logger.LogDebug(
+                "Published {Count} TempBasal records for {Source}",
+                recordList.Count,
+                source
+            );
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish TempBasal records for {Source}", source);
             return false;
         }
     }

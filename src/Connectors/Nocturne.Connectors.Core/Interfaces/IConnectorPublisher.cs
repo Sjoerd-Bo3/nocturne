@@ -115,6 +115,12 @@ public interface IConnectorPublisher
         CancellationToken cancellationToken = default
     );
 
+    Task<bool> PublishTempBasalsAsync(
+        IEnumerable<TempBasal> records,
+        string source,
+        CancellationToken cancellationToken = default
+    );
+
     Task<DateTime?> GetLatestSensorGlucoseTimestampAsync(
         string source,
         CancellationToken cancellationToken = default

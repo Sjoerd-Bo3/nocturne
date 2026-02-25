@@ -652,6 +652,28 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
         );
     }
 
+    /// <summary>
+    ///     Submits V4 TempBasal data directly to the API
+    /// </summary>
+    protected virtual async Task<bool> PublishTempBasalDataAsync(
+        IEnumerable<TempBasal> records,
+        TConfig config,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (_publisher == null || !_publisher.IsAvailable)
+        {
+            _logger?.LogWarning("Publisher not available for TempBasal submission");
+            return false;
+        }
+
+        return await _publisher.PublishTempBasalsAsync(
+            records,
+            ConnectorSource,
+            cancellationToken
+        );
+    }
+
     #endregion
 
     /// <summary>

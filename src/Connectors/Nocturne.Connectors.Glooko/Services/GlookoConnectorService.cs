@@ -29,6 +29,7 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
     private readonly GlookoSensorGlucoseMapper _sensorGlucoseMapper;
     private readonly GlookoStateSpanMapper _stateSpanMapper;
     private readonly GlookoSystemEventMapper _systemEventMapper;
+    private readonly GlookoTempBasalMapper _tempBasalMapper;
     private readonly GlookoTimeMapper _timeMapper;
     private readonly GlookoAuthTokenProvider _tokenProvider;
     private readonly GlookoV4TreatmentMapper _v4TreatmentMapper;
@@ -56,6 +57,7 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
         _sensorGlucoseMapper = new GlookoSensorGlucoseMapper(_config, ConnectorSource, _timeMapper, logger);
         _v4TreatmentMapper = new GlookoV4TreatmentMapper(ConnectorSource, _timeMapper, logger);
         _stateSpanMapper = new GlookoStateSpanMapper(ConnectorSource, _timeMapper, logger);
+        _tempBasalMapper = new GlookoTempBasalMapper(ConnectorSource, _timeMapper, logger);
         _systemEventMapper = new GlookoSystemEventMapper(ConnectorSource, _timeMapper, logger);
         _profileMapper = new GlookoProfileMapper(ConnectorSource, logger);
     }
@@ -271,10 +273,12 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
                     result.ItemsSynced[SyncDataType.DeviceEvents] = deviceEventCount;
             }
 
-            // 4. Process StateSpans
+            // 4. Process StateSpans (pump modes, profiles) and TempBasals
             if (activeTypes.Contains(SyncDataType.StateSpans))
             {
-                // V3 state spans (pump modes, connectivity, profiles)
+                var tempBasalCount = 0;
+
+                // V3 state spans (pump modes, profiles)
                 if (v3Data != null)
                 {
                     var stateSpans = _stateSpanMapper.TransformV3ToStateSpans(v3Data);
@@ -286,9 +290,23 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
                                 "[{ConnectorSource}] Published {Count} state spans from v3",
                                 ConnectorSource, stateSpans.Count);
                     }
+
+                    // V3 temp basals
+                    var v3TempBasals = _tempBasalMapper.TransformV3ToTempBasals(v3Data);
+                    if (v3TempBasals.Any())
+                    {
+                        var tbSuccess = await PublishTempBasalDataAsync(v3TempBasals, config, cancellationToken);
+                        if (tbSuccess)
+                        {
+                            tempBasalCount += v3TempBasals.Count;
+                            _logger.LogInformation(
+                                "[{ConnectorSource}] Published {Count} temp basals from v3",
+                                ConnectorSource, v3TempBasals.Count);
+                        }
+                    }
                 }
 
-                // V2 state spans (temp basals, suspend basals)
+                // V2 state spans (suspend pump modes)
                 var v2StateSpans = _stateSpanMapper.TransformV2ToStateSpans(batchData);
                 if (v2StateSpans.Any())
                 {
@@ -298,6 +316,23 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
                             "[{ConnectorSource}] Published {Count} state spans from v2",
                             ConnectorSource, v2StateSpans.Count);
                 }
+
+                // V2 temp basals
+                var v2TempBasals = _tempBasalMapper.TransformV2ToTempBasals(batchData);
+                if (v2TempBasals.Any())
+                {
+                    var v2TbSuccess = await PublishTempBasalDataAsync(v2TempBasals, config, cancellationToken);
+                    if (v2TbSuccess)
+                    {
+                        tempBasalCount += v2TempBasals.Count;
+                        _logger.LogInformation(
+                            "[{ConnectorSource}] Published {Count} temp basals from v2",
+                            ConnectorSource, v2TempBasals.Count);
+                    }
+                }
+
+                if (tempBasalCount > 0)
+                    result.ItemsSynced[SyncDataType.StateSpans] = tempBasalCount;
             }
 
             // 5. Process Profiles (from V3 devices_and_settings)

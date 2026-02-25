@@ -30,6 +30,7 @@ public class GlookoStateSpanMapper
 
         var series = graphData.Series;
 
+        // SuspendBasal -> PumpMode StateSpan only (BasalDelivery now handled by GlookoTempBasalMapper)
         if (series.SuspendBasal != null)
             foreach (var suspend in series.SuspendBasal)
             {
@@ -57,26 +58,9 @@ public class GlookoStateSpanMapper
                         }
                     }
                 );
-
-                stateSpans.Add(
-                    new StateSpan
-                    {
-                        OriginalId = $"glooko_suspend_basal_{suspend.X}",
-                        Category = StateSpanCategory.BasalDelivery,
-                        State = BasalDeliveryState.Active.ToString(),
-                        StartMills = startMills,
-                        EndMills = endMills,
-                        Source = _connectorSource,
-                        Metadata = new Dictionary<string, object>
-                        {
-                            { "rate", 0.0 },
-                            { "origin", BasalDeliveryOrigin.Suspended.ToString() },
-                            { "durationSeconds", durationSeconds }
-                        }
-                    }
-                );
             }
 
+        // LgsPlgs -> PumpMode StateSpan only (BasalDelivery now handled by GlookoTempBasalMapper)
         if (series.LgsPlgs != null)
             foreach (var lgsEvent in series.LgsPlgs)
             {
@@ -113,31 +97,9 @@ public class GlookoStateSpanMapper
                         }
                     }
                 );
-
-                var basalOrigin = lgsEvent.EventType?.ToUpperInvariant() == "SUSPEND"
-                    ? BasalDeliveryOrigin.Suspended
-                    : BasalDeliveryOrigin.Algorithm;
-
-                stateSpans.Add(
-                    new StateSpan
-                    {
-                        OriginalId = $"glooko_lgsplgs_basal_{lgsEvent.X}",
-                        Category = StateSpanCategory.BasalDelivery,
-                        State = BasalDeliveryState.Active.ToString(),
-                        StartMills = startMills,
-                        EndMills = endMills,
-                        Source = _connectorSource,
-                        Metadata = new Dictionary<string, object>
-                        {
-                            { "rate", 0.0 },
-                            { "origin", basalOrigin.ToString() },
-                            { "eventType", lgsEvent.EventType ?? "unknown" },
-                            { "durationSeconds", durationSeconds }
-                        }
-                    }
-                );
             }
 
+        // ProfileChange -> Profile StateSpan (unchanged)
         if (series.ProfileChange != null)
         {
             var profileChanges = series.ProfileChange.OrderBy(p => p.X).ToList();
@@ -170,73 +132,8 @@ public class GlookoStateSpanMapper
             }
         }
 
-        if (series.TemporaryBasal != null)
-            foreach (var tempBasal in series.TemporaryBasal)
-            {
-                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(tempBasal.X);
-                var durationSeconds = tempBasal.Duration ?? 0;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
-                    durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
-
-                var rate = tempBasal.Y ?? 0;
-                var calculatedInsulin = rate * durationSeconds / 3600.0;
-
-                stateSpans.Add(
-                    new StateSpan
-                    {
-                        OriginalId = $"glooko_tempbasal_{tempBasal.X}",
-                        Category = StateSpanCategory.BasalDelivery,
-                        State = BasalDeliveryState.Active.ToString(),
-                        StartMills = startMills,
-                        EndMills = endMills,
-                        Source = _connectorSource,
-                        Metadata = new Dictionary<string, object>
-                        {
-                            { "rate", rate },
-                            { "origin", BasalDeliveryOrigin.Manual.ToString() },
-                            { "durationSeconds", durationSeconds },
-                            { "calculatedInsulin", calculatedInsulin }
-                        }
-                    }
-                );
-            }
-
-        if (series.ScheduledBasal != null)
-            foreach (var basal in series.ScheduledBasal.Where(b => !b.Interpolated))
-            {
-                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(basal.X);
-                var durationSeconds = basal.Duration ?? 0;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
-                    durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
-
-                var rate = basal.Y ?? 0;
-                var calculatedInsulin = rate * durationSeconds / 3600.0;
-
-                stateSpans.Add(
-                    new StateSpan
-                    {
-                        OriginalId = $"glooko_scheduledbasal_{basal.X}",
-                        Category = StateSpanCategory.BasalDelivery,
-                        State = BasalDeliveryState.Active.ToString(),
-                        StartMills = startMills,
-                        EndMills = endMills,
-                        Source = _connectorSource,
-                        Metadata = new Dictionary<string, object>
-                        {
-                            { "rate", rate },
-                            { "origin", BasalDeliveryOrigin.Scheduled.ToString() },
-                            { "durationSeconds", durationSeconds },
-                            { "calculatedInsulin", calculatedInsulin }
-                        }
-                    }
-                );
-            }
+        // TemporaryBasal and ScheduledBasal BasalDelivery spans removed -
+        // now produced as TempBasal records by GlookoTempBasalMapper
 
         _logger.LogInformation(
             "[{ConnectorSource}] Transformed {Count} state spans from v3 data",
@@ -254,104 +151,10 @@ public class GlookoStateSpanMapper
         if (batchData == null)
             return stateSpans;
 
-        if (batchData.TempBasals != null)
-            foreach (var tempBasal in batchData.TempBasals)
-            {
-                if (string.IsNullOrWhiteSpace(tempBasal.Timestamp))
-                {
-                    _logger.LogWarning("Skipping TempBasal with empty timestamp");
-                    continue;
-                }
+        // TempBasals and ScheduledBasals BasalDelivery spans removed -
+        // now produced as TempBasal records by GlookoTempBasalMapper
 
-                if (!DateTime.TryParse(
-                        tempBasal.Timestamp,
-                        CultureInfo.InvariantCulture,
-                        DateTimeStyles.RoundtripKind,
-                        out var rawTimestamp))
-                {
-                    _logger.LogWarning("Failed to parse TempBasal timestamp: '{Timestamp}'", tempBasal.Timestamp);
-                    continue;
-                }
-                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
-                var durationSeconds = tempBasal.Duration;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
-                    durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
-
-                var rate = tempBasal.Rate;
-                var calculatedInsulin = rate * durationSeconds / 3600.0;
-
-                stateSpans.Add(
-                    new StateSpan
-                    {
-                        OriginalId = $"glooko_v2_tempbasal_{rawTimestamp.Ticks}",
-                        Category = StateSpanCategory.BasalDelivery,
-                        State = BasalDeliveryState.Active.ToString(),
-                        StartMills = startMills,
-                        EndMills = endMills,
-                        Source = _connectorSource,
-                        Metadata = new Dictionary<string, object>
-                        {
-                            { "rate", rate },
-                            { "origin", BasalDeliveryOrigin.Manual.ToString() },
-                            { "durationSeconds", durationSeconds },
-                            { "calculatedInsulin", calculatedInsulin }
-                        }
-                    }
-                );
-            }
-
-        if (batchData.ScheduledBasals != null)
-            foreach (var basal in batchData.ScheduledBasals)
-            {
-                if (string.IsNullOrWhiteSpace(basal.Timestamp))
-                {
-                    _logger.LogWarning("Skipping ScheduledBasal with empty timestamp");
-                    continue;
-                }
-
-                if (!DateTime.TryParse(
-                        basal.Timestamp,
-                        CultureInfo.InvariantCulture,
-                        DateTimeStyles.RoundtripKind,
-                        out var rawTimestamp))
-                {
-                    _logger.LogWarning("Failed to parse ScheduledBasal timestamp: '{Timestamp}'", basal.Timestamp);
-                    continue;
-                }
-                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
-                var durationSeconds = basal.Duration;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
-                    durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
-
-                var rate = basal.Rate;
-                var calculatedInsulin = rate * durationSeconds / 3600.0;
-
-                stateSpans.Add(
-                    new StateSpan
-                    {
-                        OriginalId = $"glooko_v2_scheduledbasal_{rawTimestamp.Ticks}",
-                        Category = StateSpanCategory.BasalDelivery,
-                        State = BasalDeliveryState.Active.ToString(),
-                        StartMills = startMills,
-                        EndMills = endMills,
-                        Source = _connectorSource,
-                        Metadata = new Dictionary<string, object>
-                        {
-                            { "rate", rate },
-                            { "origin", BasalDeliveryOrigin.Scheduled.ToString() },
-                            { "durationSeconds", durationSeconds },
-                            { "calculatedInsulin", calculatedInsulin }
-                        }
-                    }
-                );
-            }
-
+        // SuspendBasals -> PumpMode StateSpan only (BasalDelivery now handled by GlookoTempBasalMapper)
         if (batchData.SuspendBasals != null)
             foreach (var suspend in batchData.SuspendBasals)
             {
@@ -370,6 +173,7 @@ public class GlookoStateSpanMapper
                     _logger.LogWarning("Failed to parse SuspendBasal timestamp: '{Timestamp}'", suspend.Timestamp);
                     continue;
                 }
+
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
                 var durationSeconds = suspend.Duration;
                 var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
@@ -394,33 +198,12 @@ public class GlookoStateSpanMapper
                         }
                     }
                 );
-
-                stateSpans.Add(
-                    new StateSpan
-                    {
-                        OriginalId = $"glooko_v2_suspend_basal_{rawTimestamp.Ticks}",
-                        Category = StateSpanCategory.BasalDelivery,
-                        State = BasalDeliveryState.Active.ToString(),
-                        StartMills = startMills,
-                        EndMills = endMills,
-                        Source = _connectorSource,
-                        Metadata = new Dictionary<string, object>
-                        {
-                            { "rate", 0.0 },
-                            { "origin", BasalDeliveryOrigin.Suspended.ToString() },
-                            { "suspendReason", suspend.SuspendReason ?? "unknown" },
-                            { "durationSeconds", durationSeconds }
-                        }
-                    }
-                );
             }
 
         _logger.LogInformation(
-            "[{ConnectorSource}] Transformed {Count} state spans from v2 data (ScheduledBasals={ScheduledBasalCount}, TempBasals={TempBasalCount}, Suspends={SuspendCount})",
+            "[{ConnectorSource}] Transformed {Count} state spans from v2 data (Suspends={SuspendCount})",
             _connectorSource,
             stateSpans.Count,
-            batchData.ScheduledBasals?.Length ?? 0,
-            batchData.TempBasals?.Length ?? 0,
             batchData.SuspendBasals?.Length ?? 0
         );
 

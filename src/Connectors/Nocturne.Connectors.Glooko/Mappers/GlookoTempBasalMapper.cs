@@ -1,0 +1,337 @@
+using System.Globalization;
+using Microsoft.Extensions.Logging;
+using Nocturne.Connectors.Glooko.Models;
+using Nocturne.Core.Models.V4;
+
+namespace Nocturne.Connectors.Glooko.Mappers;
+
+public class GlookoTempBasalMapper
+{
+    private readonly string _connectorSource;
+    private readonly ILogger _logger;
+    private readonly GlookoTimeMapper _timeMapper;
+
+    public GlookoTempBasalMapper(
+        string connectorSource,
+        GlookoTimeMapper timeMapper,
+        ILogger logger)
+    {
+        _connectorSource = connectorSource ?? throw new ArgumentNullException(nameof(connectorSource));
+        _timeMapper = timeMapper ?? throw new ArgumentNullException(nameof(timeMapper));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public List<TempBasal> TransformV3ToTempBasals(GlookoV3GraphResponse graphData)
+    {
+        var tempBasals = new List<TempBasal>();
+
+        if (graphData?.Series == null)
+            return tempBasals;
+
+        var series = graphData.Series;
+
+        // SuspendBasal -> TempBasal with rate=0, origin=Suspended
+        if (series.SuspendBasal != null)
+            foreach (var suspend in series.SuspendBasal)
+            {
+                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(suspend.X);
+                var durationSeconds = suspend.Duration ?? 0;
+                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
+                var endMills =
+                    durationSeconds > 0
+                        ? startMills + durationSeconds * 1000
+                        : (long?)null;
+
+                tempBasals.Add(
+                    new TempBasal
+                    {
+                        Id = Guid.CreateVersion7(),
+                        StartMills = startMills,
+                        EndMills = endMills,
+                        Rate = 0.0,
+                        ScheduledRate = null,
+                        Origin = TempBasalOrigin.Suspended,
+                        Device = null,
+                        App = null,
+                        DataSource = _connectorSource,
+                        LegacyId = $"glooko_suspend_basal_{suspend.X}",
+                        CreatedAt = DateTime.UtcNow,
+                        ModifiedAt = DateTime.UtcNow,
+                    }
+                );
+            }
+
+        // LgsPlgs -> TempBasal with rate=0, origin=Algorithm or Suspended
+        if (series.LgsPlgs != null)
+            foreach (var lgsEvent in series.LgsPlgs)
+            {
+                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(lgsEvent.X);
+                var durationSeconds = lgsEvent.Duration ?? 0;
+                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
+                var endMills =
+                    durationSeconds > 0
+                        ? startMills + durationSeconds * 1000
+                        : (long?)null;
+
+                var origin = lgsEvent.EventType?.ToUpperInvariant() == "SUSPEND"
+                    ? TempBasalOrigin.Suspended
+                    : TempBasalOrigin.Algorithm;
+
+                tempBasals.Add(
+                    new TempBasal
+                    {
+                        Id = Guid.CreateVersion7(),
+                        StartMills = startMills,
+                        EndMills = endMills,
+                        Rate = 0.0,
+                        ScheduledRate = null,
+                        Origin = origin,
+                        Device = null,
+                        App = null,
+                        DataSource = _connectorSource,
+                        LegacyId = $"glooko_lgsplgs_basal_{lgsEvent.X}",
+                        CreatedAt = DateTime.UtcNow,
+                        ModifiedAt = DateTime.UtcNow,
+                    }
+                );
+            }
+
+        // TemporaryBasal -> TempBasal with actual rate, origin=Manual
+        if (series.TemporaryBasal != null)
+            foreach (var tempBasal in series.TemporaryBasal)
+            {
+                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(tempBasal.X);
+                var durationSeconds = tempBasal.Duration ?? 0;
+                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
+                var endMills =
+                    durationSeconds > 0
+                        ? startMills + durationSeconds * 1000
+                        : (long?)null;
+
+                var rate = tempBasal.Y ?? 0;
+
+                tempBasals.Add(
+                    new TempBasal
+                    {
+                        Id = Guid.CreateVersion7(),
+                        StartMills = startMills,
+                        EndMills = endMills,
+                        Rate = rate,
+                        ScheduledRate = null,
+                        Origin = TempBasalOrigin.Manual,
+                        Device = null,
+                        App = null,
+                        DataSource = _connectorSource,
+                        LegacyId = $"glooko_tempbasal_{tempBasal.X}",
+                        CreatedAt = DateTime.UtcNow,
+                        ModifiedAt = DateTime.UtcNow,
+                    }
+                );
+            }
+
+        // ScheduledBasal -> TempBasal with actual rate, origin=Scheduled
+        if (series.ScheduledBasal != null)
+            foreach (var basal in series.ScheduledBasal.Where(b => !b.Interpolated))
+            {
+                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(basal.X);
+                var durationSeconds = basal.Duration ?? 0;
+                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
+                var endMills =
+                    durationSeconds > 0
+                        ? startMills + durationSeconds * 1000
+                        : (long?)null;
+
+                var rate = basal.Y ?? 0;
+
+                tempBasals.Add(
+                    new TempBasal
+                    {
+                        Id = Guid.CreateVersion7(),
+                        StartMills = startMills,
+                        EndMills = endMills,
+                        Rate = rate,
+                        ScheduledRate = rate,
+                        Origin = TempBasalOrigin.Scheduled,
+                        Device = null,
+                        App = null,
+                        DataSource = _connectorSource,
+                        LegacyId = $"glooko_scheduledbasal_{basal.X}",
+                        CreatedAt = DateTime.UtcNow,
+                        ModifiedAt = DateTime.UtcNow,
+                    }
+                );
+            }
+
+        _logger.LogInformation(
+            "[{ConnectorSource}] Transformed {Count} temp basals from v3 data",
+            _connectorSource,
+            tempBasals.Count
+        );
+
+        return tempBasals;
+    }
+
+    public List<TempBasal> TransformV2ToTempBasals(GlookoBatchData batchData)
+    {
+        var tempBasals = new List<TempBasal>();
+
+        if (batchData == null)
+            return tempBasals;
+
+        // TempBasals -> origin=Manual
+        if (batchData.TempBasals != null)
+            foreach (var tempBasal in batchData.TempBasals)
+            {
+                if (string.IsNullOrWhiteSpace(tempBasal.Timestamp))
+                {
+                    _logger.LogWarning("Skipping TempBasal with empty timestamp");
+                    continue;
+                }
+
+                if (!DateTime.TryParse(
+                        tempBasal.Timestamp,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind,
+                        out var rawTimestamp))
+                {
+                    _logger.LogWarning("Failed to parse TempBasal timestamp: '{Timestamp}'", tempBasal.Timestamp);
+                    continue;
+                }
+
+                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
+                var durationSeconds = tempBasal.Duration;
+                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
+                var endMills =
+                    durationSeconds > 0
+                        ? startMills + durationSeconds * 1000
+                        : (long?)null;
+
+                var rate = tempBasal.Rate;
+
+                tempBasals.Add(
+                    new TempBasal
+                    {
+                        Id = Guid.CreateVersion7(),
+                        StartMills = startMills,
+                        EndMills = endMills,
+                        Rate = rate,
+                        ScheduledRate = null,
+                        Origin = TempBasalOrigin.Manual,
+                        Device = null,
+                        App = null,
+                        DataSource = _connectorSource,
+                        LegacyId = $"glooko_v2_tempbasal_{rawTimestamp.Ticks}",
+                        CreatedAt = DateTime.UtcNow,
+                        ModifiedAt = DateTime.UtcNow,
+                    }
+                );
+            }
+
+        // ScheduledBasals -> origin=Scheduled
+        if (batchData.ScheduledBasals != null)
+            foreach (var basal in batchData.ScheduledBasals)
+            {
+                if (string.IsNullOrWhiteSpace(basal.Timestamp))
+                {
+                    _logger.LogWarning("Skipping ScheduledBasal with empty timestamp");
+                    continue;
+                }
+
+                if (!DateTime.TryParse(
+                        basal.Timestamp,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind,
+                        out var rawTimestamp))
+                {
+                    _logger.LogWarning("Failed to parse ScheduledBasal timestamp: '{Timestamp}'", basal.Timestamp);
+                    continue;
+                }
+
+                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
+                var durationSeconds = basal.Duration;
+                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
+                var endMills =
+                    durationSeconds > 0
+                        ? startMills + durationSeconds * 1000
+                        : (long?)null;
+
+                var rate = basal.Rate;
+
+                tempBasals.Add(
+                    new TempBasal
+                    {
+                        Id = Guid.CreateVersion7(),
+                        StartMills = startMills,
+                        EndMills = endMills,
+                        Rate = rate,
+                        ScheduledRate = rate,
+                        Origin = TempBasalOrigin.Scheduled,
+                        Device = null,
+                        App = null,
+                        DataSource = _connectorSource,
+                        LegacyId = $"glooko_v2_scheduledbasal_{rawTimestamp.Ticks}",
+                        CreatedAt = DateTime.UtcNow,
+                        ModifiedAt = DateTime.UtcNow,
+                    }
+                );
+            }
+
+        // SuspendBasals -> rate=0, origin=Suspended
+        if (batchData.SuspendBasals != null)
+            foreach (var suspend in batchData.SuspendBasals)
+            {
+                if (string.IsNullOrWhiteSpace(suspend.Timestamp))
+                {
+                    _logger.LogWarning("Skipping SuspendBasal with empty timestamp");
+                    continue;
+                }
+
+                if (!DateTime.TryParse(
+                        suspend.Timestamp,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind,
+                        out var rawTimestamp))
+                {
+                    _logger.LogWarning("Failed to parse SuspendBasal timestamp: '{Timestamp}'", suspend.Timestamp);
+                    continue;
+                }
+
+                var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
+                var durationSeconds = suspend.Duration;
+                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
+                var endMills =
+                    durationSeconds > 0
+                        ? startMills + durationSeconds * 1000
+                        : (long?)null;
+
+                tempBasals.Add(
+                    new TempBasal
+                    {
+                        Id = Guid.CreateVersion7(),
+                        StartMills = startMills,
+                        EndMills = endMills,
+                        Rate = 0.0,
+                        ScheduledRate = null,
+                        Origin = TempBasalOrigin.Suspended,
+                        Device = null,
+                        App = null,
+                        DataSource = _connectorSource,
+                        LegacyId = $"glooko_v2_suspend_basal_{rawTimestamp.Ticks}",
+                        CreatedAt = DateTime.UtcNow,
+                        ModifiedAt = DateTime.UtcNow,
+                    }
+                );
+            }
+
+        _logger.LogInformation(
+            "[{ConnectorSource}] Transformed {Count} temp basals from v2 data (ScheduledBasals={ScheduledBasalCount}, TempBasals={TempBasalCount}, Suspends={SuspendCount})",
+            _connectorSource,
+            tempBasals.Count,
+            batchData.ScheduledBasals?.Length ?? 0,
+            batchData.TempBasals?.Length ?? 0,
+            batchData.SuspendBasals?.Length ?? 0
+        );
+
+        return tempBasals;
+    }
+}
