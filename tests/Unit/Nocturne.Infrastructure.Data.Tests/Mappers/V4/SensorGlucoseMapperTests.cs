@@ -17,7 +17,6 @@ public class SensorGlucoseMapperTests
             Id = id,
             Mills = 1700000000000,
             Mgdl = 120,
-            Mmol = 6.7,
             Direction = GlucoseDirection.Flat,
             Trend = GlucoseTrend.Flat,
             TrendRate = 0.5,
@@ -35,7 +34,6 @@ public class SensorGlucoseMapperTests
         entity.Id.Should().Be(id);
         entity.Mills.Should().Be(1700000000000);
         entity.Mgdl.Should().Be(120);
-        entity.Mmol.Should().Be(6.7);
         entity.Direction.Should().Be("Flat");
         entity.Trend.Should().Be(4); // GlucoseTrend.Flat = 4
         entity.TrendRate.Should().Be(0.5);
@@ -120,7 +118,6 @@ public class SensorGlucoseMapperTests
             Id = id,
             Mills = 1700000000000,
             Mgdl = 120,
-            Mmol = 6.7,
             Direction = "Flat",
             Trend = 4,
             TrendRate = 0.5,
@@ -140,7 +137,7 @@ public class SensorGlucoseMapperTests
         model.Id.Should().Be(id);
         model.Mills.Should().Be(1700000000000);
         model.Mgdl.Should().Be(120);
-        model.Mmol.Should().Be(6.7);
+        model.Mmol.Should().BeApproximately(120 / 18.0182, 0.01);
         model.Direction.Should().Be(GlucoseDirection.Flat);
         model.Trend.Should().Be(GlucoseTrend.Flat);
         model.TrendRate.Should().Be(0.5);
@@ -239,7 +236,6 @@ public class SensorGlucoseMapperTests
         var model = new SensorGlucose
         {
             Mgdl = 150,
-            Mmol = 8.3,
             Direction = GlucoseDirection.SingleUp,
             Trend = GlucoseTrend.SingleUp,
             TrendRate = 2.0,
@@ -258,7 +254,6 @@ public class SensorGlucoseMapperTests
         entity.Id.Should().Be(originalId);
         entity.SysCreatedAt.Should().Be(originalCreatedAt);
         entity.Mgdl.Should().Be(150);
-        entity.Mmol.Should().Be(8.3);
         entity.Direction.Should().Be("SingleUp");
         entity.Trend.Should().Be(2); // GlucoseTrend.SingleUp = 2
         entity.TrendRate.Should().Be(2.0);
@@ -302,7 +297,6 @@ public class SensorGlucoseMapperTests
             Id = id,
             Mills = 1700000000000,
             Mgdl = 120,
-            Mmol = 6.7,
             Direction = GlucoseDirection.FortyFiveDown,
             Trend = GlucoseTrend.FortyFiveDown,
             TrendRate = -0.8,
@@ -321,7 +315,7 @@ public class SensorGlucoseMapperTests
         roundTripped.Id.Should().Be(original.Id);
         roundTripped.Mills.Should().Be(original.Mills);
         roundTripped.Mgdl.Should().Be(original.Mgdl);
-        roundTripped.Mmol.Should().Be(original.Mmol);
+        roundTripped.Mmol.Should().BeApproximately(original.Mmol, 0.001);
         roundTripped.Direction.Should().Be(original.Direction);
         roundTripped.Trend.Should().Be(original.Trend);
         roundTripped.TrendRate.Should().Be(original.TrendRate);

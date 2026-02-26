@@ -81,12 +81,6 @@ public class SensorGlucoseEntity
     public double Mgdl { get; set; }
 
     /// <summary>
-    /// Glucose value in mmol/L (computed from Mgdl)
-    /// </summary>
-    [Column("mmol")]
-    public double? Mmol { get; set; }
-
-    /// <summary>
     /// CGM trend arrow direction (enum stored as string)
     /// </summary>
     [Column("direction")]

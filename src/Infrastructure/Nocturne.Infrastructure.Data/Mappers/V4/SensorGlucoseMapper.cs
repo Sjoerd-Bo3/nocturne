@@ -26,7 +26,6 @@ public static class SensorGlucoseMapper
             SysCreatedAt = DateTime.UtcNow,
             SysUpdatedAt = DateTime.UtcNow,
             Mgdl = model.Mgdl,
-            Mmol = model.Mmol,
             Direction = model.Direction?.ToString(),
             Trend = model.Trend.HasValue ? (int)model.Trend.Value : null,
             TrendRate = model.TrendRate,
@@ -52,7 +51,6 @@ public static class SensorGlucoseMapper
             CreatedAt = entity.SysCreatedAt,
             ModifiedAt = entity.SysUpdatedAt,
             Mgdl = entity.Mgdl,
-            Mmol = entity.Mmol,
             Direction = Enum.TryParse<GlucoseDirection>(entity.Direction, out var dir) ? dir : null,
             Trend = entity.Trend.HasValue ? (GlucoseTrend)entity.Trend.Value : null,
             TrendRate = entity.TrendRate,
@@ -74,7 +72,6 @@ public static class SensorGlucoseMapper
         entity.LegacyId = model.LegacyId;
         entity.SysUpdatedAt = DateTime.UtcNow;
         entity.Mgdl = model.Mgdl;
-        entity.Mmol = model.Mmol;
         entity.Direction = model.Direction?.ToString();
         entity.Trend = model.Trend.HasValue ? (int)model.Trend.Value : null;
         entity.TrendRate = model.TrendRate;

@@ -63,7 +63,7 @@ public class SensorGlucose : IV4Record
     /// <summary>
     /// Glucose value in mmol/L (computed from Mgdl)
     /// </summary>
-    public double? Mmol { get; set; }
+    public double Mmol => Mgdl / 18.0182;
 
     /// <summary>
     /// CGM trend arrow direction

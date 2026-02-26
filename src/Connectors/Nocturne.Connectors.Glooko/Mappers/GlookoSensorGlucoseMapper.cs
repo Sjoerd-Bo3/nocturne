@@ -65,7 +65,6 @@ public class GlookoSensorGlucoseMapper
                 Device = _connectorSource,
                 DataSource = _connectorSource,
                 Mgdl = mgdl,
-                Mmol = Math.Round(mgdl / 18.0182, 1),
                 Direction = GlucoseDirection.Flat,
                 CreatedAt = now,
                 ModifiedAt = now
@@ -106,7 +105,6 @@ public class GlookoSensorGlucoseMapper
                 Device = _connectorSource,
                 DataSource = _connectorSource,
                 Mgdl = reading.Value,
-                Mmol = Math.Round(reading.Value / 18.0182, 1),
                 Direction = ParseTrendToDirection(reading.Trend),
                 CreatedAt = now,
                 ModifiedAt = now

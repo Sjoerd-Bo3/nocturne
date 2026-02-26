@@ -41,7 +41,6 @@ public class TidepoolSensorGlucoseMapper(ILogger logger, string connectorSource)
                 Device = _connectorSource,
                 DataSource = _connectorSource,
                 Mgdl = mgdl,
-                Mmol = Math.Round(mgdl / 18.0182, 1),
                 CreatedAt = now,
                 ModifiedAt = now
             };

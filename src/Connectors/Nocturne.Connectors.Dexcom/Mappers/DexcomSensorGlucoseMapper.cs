@@ -59,7 +59,6 @@ public class DexcomSensorGlucoseMapper(ILogger logger)
                 Device = DataSources.DexcomConnector,
                 DataSource = DataSources.DexcomConnector,
                 Mgdl = mgdl,
-                Mmol = Math.Round(mgdl / 18.0182, 1),
                 Direction = direction,
                 CreatedAt = now,
                 ModifiedAt = now

@@ -69,7 +69,7 @@ public class EntryDecomposerTests : IDisposable
         sg.LegacyId.Should().Be("abc123");
         sg.Mills.Should().Be(1700000000000);
         sg.Mgdl.Should().Be(120.0);
-        sg.Mmol.Should().Be(6.7);
+        sg.Mmol.Should().BeApproximately(120.0 / 18.0182, 0.01);
         sg.Direction.Should().Be(GlucoseDirection.Flat);
         sg.Trend.Should().Be(GlucoseTrend.Flat);
         sg.TrendRate.Should().Be(0.5);
@@ -156,7 +156,7 @@ public class EntryDecomposerTests : IDisposable
         mg.LegacyId.Should().Be("mbg123");
         mg.Mills.Should().Be(1700000000000);
         mg.Mgdl.Should().Be(145.0, "Mbg should take priority over Mgdl for MBG entries");
-        mg.Mmol.Should().Be(8.1);
+        mg.Mmol.Should().BeApproximately(145.0 / 18.0182, 0.01);
         mg.Device.Should().Be("contour-next");
         mg.App.Should().Be("xDrip");
         mg.DataSource.Should().Be("manual");

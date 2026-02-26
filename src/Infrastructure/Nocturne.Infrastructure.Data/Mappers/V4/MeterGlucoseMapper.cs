@@ -26,7 +26,6 @@ public static class MeterGlucoseMapper
             SysCreatedAt = DateTime.UtcNow,
             SysUpdatedAt = DateTime.UtcNow,
             Mgdl = model.Mgdl,
-            Mmol = model.Mmol,
         };
     }
 
@@ -48,7 +47,6 @@ public static class MeterGlucoseMapper
             CreatedAt = entity.SysCreatedAt,
             ModifiedAt = entity.SysUpdatedAt,
             Mgdl = entity.Mgdl,
-            Mmol = entity.Mmol,
         };
     }
 
@@ -66,6 +64,5 @@ public static class MeterGlucoseMapper
         entity.LegacyId = model.LegacyId;
         entity.SysUpdatedAt = DateTime.UtcNow;
         entity.Mgdl = model.Mgdl;
-        entity.Mmol = model.Mmol;
     }
 }

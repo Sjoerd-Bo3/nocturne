@@ -35,7 +35,6 @@ public class LibreSensorGlucoseMapper(ILogger? logger = null)
                 Device = LibreLinkUpConstants.Configuration.DeviceIdentifier,
                 DataSource = DataSources.LibreConnector,
                 Mgdl = mgdl,
-                Mmol = Math.Round(mgdl / 18.0182, 1),
                 Direction = direction,
                 CreatedAt = now,
                 ModifiedAt = now

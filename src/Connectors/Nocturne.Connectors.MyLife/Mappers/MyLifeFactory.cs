@@ -53,7 +53,6 @@ internal static class MyLifeFactory
             CreatedAt = now,
             ModifiedAt = now,
             Mgdl = mgdl,
-            Mmol = Math.Round(mgdl / 18.0182, 1),
         };
     }
 
