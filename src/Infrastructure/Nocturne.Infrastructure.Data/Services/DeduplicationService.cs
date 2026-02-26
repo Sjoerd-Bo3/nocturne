@@ -272,7 +272,7 @@ public class DeduplicationService : IDeduplicationService
 
                 foreach (var bg in bgChecks)
                 {
-                    if (Math.Abs(bg.Mgdl - criteria.GlucoseValue.Value) <= criteria.GlucoseTolerance)
+                    if (Math.Abs(bg.Glucose - criteria.GlucoseValue.Value) <= criteria.GlucoseTolerance)
                     {
                         return canonicalId;
                     }
@@ -1465,10 +1465,10 @@ public class DeduplicationService : IDeduplicationService
 
         var bgChecks = await _context.BGChecks
             .OrderBy(bg => bg.Mills)
-            .Select(bg => new { bg.Id, bg.Mills, bg.Mgdl, bg.DataSource })
+            .Select(bg => new { bg.Id, bg.Mills, bg.Glucose, bg.DataSource })
             .ToListAsync(cancellationToken);
 
-        var groupedByTime = new Dictionary<long, List<(Guid Id, double Mgdl, string? DataSource)>>();
+        var groupedByTime = new Dictionary<long, List<(Guid Id, double Glucose, string? DataSource)>>();
 
         foreach (var bg in bgChecks)
         {
@@ -1478,7 +1478,7 @@ public class DeduplicationService : IDeduplicationService
             if (!groupedByTime.ContainsKey(windowKey))
                 groupedByTime[windowKey] = new();
 
-            groupedByTime[windowKey].Add((bg.Id, bg.Mgdl, bg.DataSource));
+            groupedByTime[windowKey].Add((bg.Id, bg.Glucose, bg.DataSource));
         }
 
         foreach (var (windowKey, windowBGs) in groupedByTime)
@@ -1486,7 +1486,7 @@ public class DeduplicationService : IDeduplicationService
             cancellationToken.ThrowIfCancellationRequested();
 
             var glucoseGroups = windowBGs
-                .GroupBy(bg => Math.Round(bg.Mgdl))
+                .GroupBy(bg => Math.Round(bg.Glucose))
                 .Where(g => g.Count() > 0);
 
             foreach (var glucoseGroup in glucoseGroups)

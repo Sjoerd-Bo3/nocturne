@@ -88,8 +88,6 @@ internal static class MyLifeFactory
     {
         var bgCheck = CreateBase<BGCheck>(ev);
         bgCheck.Glucose = glucose;
-        bgCheck.Mgdl = glucose;
-        bgCheck.Mmol = Math.Round(glucose / 18.0182, 1);
         bgCheck.GlucoseType = GlucoseType.Finger;
         bgCheck.Units = GlucoseUnit.MgDl;
         return bgCheck;

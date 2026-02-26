@@ -88,18 +88,6 @@ public class BGCheckEntity
     public string? GlucoseType { get; set; }
 
     /// <summary>
-    /// Glucose value in mg/dL
-    /// </summary>
-    [Column("mgdl")]
-    public double Mgdl { get; set; }
-
-    /// <summary>
-    /// Glucose value in mmol/L (computed from Mgdl)
-    /// </summary>
-    [Column("mmol")]
-    public double? Mmol { get; set; }
-
-    /// <summary>
     /// Unit of measurement for the glucose value (enum stored as string: MgDl, Mmol)
     /// </summary>
     [Column("units")]

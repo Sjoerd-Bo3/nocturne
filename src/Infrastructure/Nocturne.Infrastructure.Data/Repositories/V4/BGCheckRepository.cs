@@ -171,7 +171,7 @@ public class BGCheckRepository : IBGCheckRepository
             {
                 var criteria = new MatchCriteria
                 {
-                    GlucoseValue = entity.Mgdl,
+                    GlucoseValue = entity.Glucose,
                     GlucoseTolerance = 1.0
                 };
 

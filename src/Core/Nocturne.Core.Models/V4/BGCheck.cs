@@ -56,7 +56,7 @@ public class BGCheck : IV4Record
     public DateTime ModifiedAt { get; set; }
 
     /// <summary>
-    /// Glucose value as entered by the user
+    /// Glucose value as entered by the user (source of truth)
     /// </summary>
     public double Glucose { get; set; }
 
@@ -66,19 +66,19 @@ public class BGCheck : IV4Record
     public GlucoseType? GlucoseType { get; set; }
 
     /// <summary>
-    /// Glucose value in mg/dL
-    /// </summary>
-    public double Mgdl { get; set; }
-
-    /// <summary>
-    /// Glucose value in mmol/L (computed from Mgdl)
-    /// </summary>
-    public double? Mmol { get; set; }
-
-    /// <summary>
-    /// Unit of measurement for the glucose value
+    /// Unit of measurement for the Glucose value (source of truth)
     /// </summary>
     public GlucoseUnit? Units { get; set; }
+
+    /// <summary>
+    /// Glucose in mg/dL (computed from Glucose + Units)
+    /// </summary>
+    public double Mgdl => Units == GlucoseUnit.Mmol ? Glucose * 18.0182 : Glucose;
+
+    /// <summary>
+    /// Glucose in mmol/L (computed from Glucose + Units)
+    /// </summary>
+    public double Mmol => Units == GlucoseUnit.Mmol ? Glucose : Glucose / 18.0182;
 
     /// <summary>
     /// APS system sync/deduplication identifier (used by Loop and AAPS)

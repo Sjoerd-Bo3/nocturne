@@ -554,7 +554,8 @@ public class ChartDataServiceTests
                 {
                     Id = checkId,
                     LegacyId = "treat-bg-1",
-                    Mgdl = 120.0,
+                    Glucose = 120.0,
+                    Units = GlucoseUnit.MgDl,
                     Mills = TestMills,
                     GlucoseType = GlucoseType.Finger,
                 },
@@ -577,7 +578,8 @@ public class ChartDataServiceTests
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Mgdl = 0.0,
+                    Glucose = 0.0,
+                    Units = GlucoseUnit.MgDl,
                     Mills = TestMills,
                 },
             };
@@ -597,7 +599,8 @@ public class ChartDataServiceTests
                 {
                     Id = checkId,
                     LegacyId = null,
-                    Mgdl = 95.0,
+                    Glucose = 95.0,
+                    Units = GlucoseUnit.MgDl,
                     Mills = TestMills,
                 },
             };
@@ -615,7 +618,8 @@ public class ChartDataServiceTests
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Mgdl = 110.0,
+                    Glucose = 110.0,
+                    Units = GlucoseUnit.MgDl,
                     Mills = TestMills,
                     GlucoseType = null,
                 },

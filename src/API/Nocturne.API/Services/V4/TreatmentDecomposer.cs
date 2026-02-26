@@ -545,8 +545,6 @@ public class TreatmentDecomposer : ITreatmentDecomposer
             Mills = treatment.Mills,
             Glucose = treatment.Glucose ?? 0,
             GlucoseType = ParseGlucoseType(treatment.GlucoseType),
-            Mgdl = treatment.Mgdl ?? treatment.Glucose ?? 0,
-            Mmol = treatment.Mmol,
             Units = ParseGlucoseUnit(treatment.Units),
             Device = treatment.EnteredBy,
             DataSource = treatment.DataSource,

@@ -223,9 +223,9 @@ public class TreatmentDecomposerTests : IDisposable
         bgCheck.Mills.Should().Be(1700000000000);
         bgCheck.Glucose.Should().Be(120);
         bgCheck.GlucoseType.Should().Be(V4Models.GlucoseType.Finger);
-        bgCheck.Mgdl.Should().Be(120);
-        bgCheck.Mmol.Should().Be(6.7);
         bgCheck.Units.Should().Be(V4Models.GlucoseUnit.MgDl);
+        bgCheck.Mgdl.Should().Be(120, "mg/dL glucose should pass through as-is");
+        bgCheck.Mmol.Should().BeApproximately(120 / 18.0182, 0.01, "mmol should be computed from glucose");
         bgCheck.Device.Should().Be("contour-next");
         bgCheck.UtcOffset.Should().Be(60);
     }
@@ -783,16 +783,15 @@ public class TreatmentDecomposerTests : IDisposable
     #region BGCheck Fallback Values
 
     [Fact]
-    public async Task DecomposeAsync_BGCheckWithGlucoseButNoMgdl_UseGlucoseForMgdl()
+    public async Task DecomposeAsync_BGCheckWithMmolUnits_ComputesMgdlFromGlucose()
     {
         // Arrange
         var treatment = new Treatment
         {
-            Id = "bgcheck-fallback",
+            Id = "bgcheck-mmol",
             EventType = "BG Check",
             Mills = 1700000000000,
-            Glucose = 130,
-            // Mgdl is null
+            Glucose = 7.2,
             GlucoseType = "Sensor",
             Units = "mmol/l"
         };
@@ -802,10 +801,11 @@ public class TreatmentDecomposerTests : IDisposable
 
         // Assert
         var bgCheck = result.CreatedRecords[0].Should().BeOfType<V4Models.BGCheck>().Subject;
-        bgCheck.Glucose.Should().Be(130);
-        bgCheck.Mgdl.Should().Be(130, "should fall back to Glucose when Mgdl is null");
+        bgCheck.Glucose.Should().Be(7.2);
         bgCheck.GlucoseType.Should().Be(V4Models.GlucoseType.Sensor);
         bgCheck.Units.Should().Be(V4Models.GlucoseUnit.Mmol);
+        bgCheck.Mmol.Should().Be(7.2, "mmol should equal Glucose when Units is Mmol");
+        bgCheck.Mgdl.Should().BeApproximately(7.2 * 18.0182, 0.01, "mgdl should be computed from glucose * 18.0182");
     }
 
     #endregion
