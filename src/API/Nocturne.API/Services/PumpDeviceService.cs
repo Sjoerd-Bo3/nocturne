@@ -25,11 +25,12 @@ public class PumpDeviceService : IPumpDeviceService
             return cachedId;
 
         var existing = await _repository.FindByTypeAndSerialAsync(pumpType, pumpSerial, ct);
+        var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(mills).UtcDateTime;
         if (existing is not null)
         {
-            if (mills > existing.LastSeenMills)
+            if (timestamp > existing.LastSeenTimestamp)
             {
-                existing.LastSeenMills = mills;
+                existing.LastSeenTimestamp = timestamp;
                 await _repository.UpdateAsync(existing.Id, existing, ct);
             }
             _cache[key] = existing.Id;
@@ -41,8 +42,8 @@ public class PumpDeviceService : IPumpDeviceService
             Id = Guid.CreateVersion7(),
             PumpType = pumpType,
             PumpSerial = pumpSerial,
-            FirstSeenMills = mills,
-            LastSeenMills = mills
+            FirstSeenTimestamp = timestamp,
+            LastSeenTimestamp = timestamp
         };
         var created = await _repository.CreateAsync(device, ct);
         _cache[key] = created.Id;

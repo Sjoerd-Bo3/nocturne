@@ -52,8 +52,8 @@ public class TreatmentServiceTests
         _mockTempBasalRepository
             .Setup(x =>
                 x.GetAsync(
-                    It.IsAny<long?>(),
-                    It.IsAny<long?>(),
+                    It.IsAny<DateTime?>(),
+                    It.IsAny<DateTime?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<int>(),
@@ -469,8 +469,8 @@ public class TreatmentServiceTests
         var createdTempBasal = new TempBasal
         {
             Id = Guid.NewGuid(),
-            StartMills = 1700000000000,
-            EndMills = 1700000000000 + (30 * 60 * 1000),
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000 + (30 * 60 * 1000)).UtcDateTime,
             Rate = 1.5,
             DataSource = "nightscout",
         };
@@ -534,8 +534,8 @@ public class TreatmentServiceTests
         var createdTempBasal = new TempBasal
         {
             Id = Guid.NewGuid(),
-            StartMills = 1700000000000,
-            EndMills = 1700000000000 + (30 * 60 * 1000),
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000 + (30 * 60 * 1000)).UtcDateTime,
             Rate = 1.5,
             DataSource = "nightscout",
         };
@@ -669,8 +669,8 @@ public class TreatmentServiceTests
         {
             Id = Guid.NewGuid(),
             LegacyId = legacyId,
-            StartMills = 1700000000000,
-            EndMills = 1700001800000, // +30 min
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001800000).UtcDateTime, // +30 min
             Rate = 1.5,
             DataSource = "AAPS",
         };
@@ -772,8 +772,8 @@ public class TreatmentServiceTests
             {
                 Id = Guid.NewGuid(),
                 LegacyId = "s1",
-                StartMills = 1700000150000,
-                EndMills = 1700000150000 + (30 * 60 * 1000),
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000150000).UtcDateTime,
+                EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000150000 + (30 * 60 * 1000)).UtcDateTime,
                 Rate = 1.5,
                 DataSource = "AAPS",
             },
@@ -782,8 +782,8 @@ public class TreatmentServiceTests
         _mockTempBasalRepository
             .Setup(x =>
                 x.GetAsync(
-                    It.IsAny<long?>(),
-                    It.IsAny<long?>(),
+                    It.IsAny<DateTime?>(),
+                    It.IsAny<DateTime?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<int>(),
@@ -842,8 +842,8 @@ public class TreatmentServiceTests
             {
                 Id = Guid.NewGuid(),
                 LegacyId = "s1",
-                StartMills = 1700000200000,
-                EndMills = 1700000200000 + (30 * 60 * 1000),
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000200000).UtcDateTime,
+                EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000200000 + (30 * 60 * 1000)).UtcDateTime,
                 Rate = 1.5,
                 DataSource = "AAPS",
             },
@@ -852,8 +852,8 @@ public class TreatmentServiceTests
         _mockTempBasalRepository
             .Setup(x =>
                 x.GetAsync(
-                    It.IsAny<long?>(),
-                    It.IsAny<long?>(),
+                    It.IsAny<DateTime?>(),
+                    It.IsAny<DateTime?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<int>(),
@@ -890,8 +890,8 @@ public class TreatmentServiceTests
         {
             Id = tempBasalId,
             LegacyId = legacyId,
-            StartMills = 1700000000000,
-            EndMills = 1700001800000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001800000).UtcDateTime,
             Rate = 1.5,
             DataSource = "AAPS",
         };
@@ -943,8 +943,8 @@ public class TreatmentServiceTests
         {
             Id = tempBasalId,
             LegacyId = legacyId,
-            StartMills = 1700000000000,
-            EndMills = 1700001800000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001800000).UtcDateTime,
             Rate = 1.5,
             DataSource = "AAPS",
         };
@@ -961,8 +961,8 @@ public class TreatmentServiceTests
         {
             Id = tempBasalId,
             LegacyId = legacyId,
-            StartMills = 1700000000000,
-            EndMills = 1700000000000 + (45 * 60 * 1000),
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000 + (45 * 60 * 1000)).UtcDateTime,
             Rate = 2.0,
             DataSource = "AAPS",
         };

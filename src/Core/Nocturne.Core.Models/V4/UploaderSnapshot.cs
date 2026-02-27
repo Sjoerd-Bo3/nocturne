@@ -7,7 +7,8 @@ namespace Nocturne.Core.Models.V4;
 public class UploaderSnapshot : IV4Record
 {
     public Guid Id { get; set; }
-    public long Mills { get; set; }
+    public DateTime Timestamp { get; set; }
+    public long Mills => new DateTimeOffset(Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
     public int? UtcOffset { get; set; }
     public string? Device { get; set; }
     public string? App { get; set; }
@@ -23,4 +24,9 @@ public class UploaderSnapshot : IV4Record
     public bool? IsCharging { get; set; }
     public double? Temperature { get; set; }
     public string? Type { get; set; }
+
+    /// <summary>
+    /// Catch-all for fields not mapped to dedicated columns
+    /// </summary>
+    public Dictionary<string, object?>? AdditionalProperties { get; set; }
 }

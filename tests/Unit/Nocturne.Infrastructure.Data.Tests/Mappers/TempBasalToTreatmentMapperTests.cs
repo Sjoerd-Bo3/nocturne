@@ -19,8 +19,8 @@ public class TempBasalToTreatmentMapperTests
         var tempBasal = new TempBasal
         {
             Id = Guid.Parse("01234567-89ab-cdef-0123-456789abcdef"),
-            StartMills = 1700000000000,
-            EndMills = 1700000000000 + (30 * 60 * 1000), // 30 minutes later
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000 + (30 * 60 * 1000)).UtcDateTime, // 30 minutes later
             Rate = 1.5,
             ScheduledRate = 0.8,
             Origin = TempBasalOrigin.Algorithm,
@@ -150,7 +150,7 @@ public class TempBasalToTreatmentMapperTests
     {
         // Arrange
         var tempBasal = CreateTempBasal(TempBasalOrigin.Algorithm, 1.0);
-        tempBasal.EndMills = null;
+        tempBasal.EndTimestamp = null;
 
         // Act
         var result = TempBasalToTreatmentMapper.ToTreatment(tempBasal);
@@ -206,9 +206,9 @@ public class TempBasalToTreatmentMapperTests
             CreateTempBasal(TempBasalOrigin.Suspended, 0.5),
             CreateTempBasal(TempBasalOrigin.Manual, 2.0),
         };
-        tempBasals[0].StartMills = 1700000000000;
-        tempBasals[1].StartMills = 1700001000000;
-        tempBasals[2].StartMills = 1700002000000;
+        tempBasals[0].StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime;
+        tempBasals[1].StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001000000).UtcDateTime;
+        tempBasals[2].StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700002000000).UtcDateTime;
 
         // Act
         var result = TempBasalToTreatmentMapper.ToTreatments(tempBasals).ToList();
@@ -234,8 +234,8 @@ public class TempBasalToTreatmentMapperTests
         return new TempBasal
         {
             Id = Guid.NewGuid(),
-            StartMills = 1700000000000,
-            EndMills = 1700001800000, // 30 minutes later
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001800000).UtcDateTime, // 30 minutes later
             Rate = rate,
             Origin = origin,
             App = "openaps",

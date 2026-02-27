@@ -30,7 +30,7 @@ public class LibreSensorGlucoseMapper(ILogger? logger = null)
             return new SensorGlucose
             {
                 Id = Guid.CreateVersion7(),
-                Mills = new DateTimeOffset(timestamp).ToUnixTimeMilliseconds(),
+                Timestamp = timestamp,
                 LegacyId = $"libre_{measurement.FactoryTimestamp}",
                 Device = LibreLinkUpConstants.Configuration.DeviceIdentifier,
                 DataSource = DataSources.LibreConnector,

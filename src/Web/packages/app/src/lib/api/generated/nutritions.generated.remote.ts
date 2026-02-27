@@ -9,7 +9,7 @@ import { CarbIntakeSchema, CarbIntakeFoodRequestSchema } from '$lib/api/generate
 import { type CarbIntake, type CarbIntakeFoodRequest } from '$api';
 
 /** Get carb intakes with optional filtering */
-export const getCarbIntakes = query(z.object({ from: z.number().optional(), to: z.number().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
+export const getCarbIntakes = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -169,7 +169,7 @@ export const deleteCarbIntakeFood = command(z.object({ id: z.string(), foodEntry
 });
 
 /** Get carb intake records with food attribution status for the meals view. */
-export const getMeals = query(z.object({ from: z.number().optional(), to: z.number().optional(), attributed: z.boolean().optional() }).optional(), async (params) => {
+export const getMeals = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), attributed: z.boolean().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

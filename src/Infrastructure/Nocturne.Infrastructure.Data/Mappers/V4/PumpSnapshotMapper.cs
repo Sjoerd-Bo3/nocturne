@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
 
@@ -16,7 +17,7 @@ public static class PumpSnapshotMapper
         return new PumpSnapshotEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             LegacyId = model.LegacyId,
@@ -32,6 +33,9 @@ public static class PumpSnapshotMapper
             Suspended = model.Suspended,
             PumpStatus = model.PumpStatus,
             Clock = model.Clock,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -43,7 +47,7 @@ public static class PumpSnapshotMapper
         return new PumpSnapshot
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             LegacyId = entity.LegacyId,
@@ -59,6 +63,9 @@ public static class PumpSnapshotMapper
             Suspended = entity.Suspended,
             PumpStatus = entity.PumpStatus,
             Clock = entity.Clock,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -67,7 +74,7 @@ public static class PumpSnapshotMapper
     /// </summary>
     public static void UpdateEntity(PumpSnapshotEntity entity, PumpSnapshot model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.LegacyId = model.LegacyId;
@@ -82,5 +89,8 @@ public static class PumpSnapshotMapper
         entity.Suspended = model.Suspended;
         entity.PumpStatus = model.PumpStatus;
         entity.Clock = model.Clock;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

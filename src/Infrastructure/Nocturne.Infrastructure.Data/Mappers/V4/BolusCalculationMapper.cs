@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
 
@@ -16,7 +17,7 @@ public static class BolusCalculationMapper
         return new BolusCalculationEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             App = model.App,
@@ -38,6 +39,9 @@ public static class BolusCalculationMapper
             SplitNow = model.SplitNow,
             SplitExt = model.SplitExt,
             PreBolus = model.PreBolus,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -49,7 +53,7 @@ public static class BolusCalculationMapper
         return new BolusCalculation
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             App = entity.App,
@@ -71,6 +75,9 @@ public static class BolusCalculationMapper
             SplitNow = entity.SplitNow,
             SplitExt = entity.SplitExt,
             PreBolus = entity.PreBolus,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -79,7 +86,7 @@ public static class BolusCalculationMapper
     /// </summary>
     public static void UpdateEntity(BolusCalculationEntity entity, BolusCalculation model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.App = model.App;
@@ -100,5 +107,8 @@ public static class BolusCalculationMapper
         entity.SplitNow = model.SplitNow;
         entity.SplitExt = model.SplitExt;
         entity.PreBolus = model.PreBolus;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

@@ -369,7 +369,7 @@ public class NocturneDbContext : DbContext
         modelBuilder
             .Entity<EntryEntity>()
             .HasIndex(e => new { e.Type, e.Mills })
-            .HasDatabaseName("ix_entries_type_mills")
+            .HasDatabaseName("ix_entries_type_timestamp")
             .IsDescending(false, true); // Type asc, Mills desc
 
         // Composite index for duplicate detection
@@ -399,14 +399,14 @@ public class NocturneDbContext : DbContext
         modelBuilder
             .Entity<TreatmentEntity>()
             .HasIndex(t => new { t.EventType, t.Mills })
-            .HasDatabaseName("ix_treatments_event_type_mills")
+            .HasDatabaseName("ix_treatments_event_type_timestamp")
             .IsDescending(false, true); // EventType asc, Mills desc
 
         // DeviceStatus indexes
         modelBuilder
             .Entity<DeviceStatusEntity>()
             .HasIndex(d => d.Mills)
-            .HasDatabaseName("ix_devicestatus_mills")
+            .HasDatabaseName("ix_devicestatus_timestamp")
             .IsDescending(); // Most recent first
 
         modelBuilder
@@ -417,7 +417,7 @@ public class NocturneDbContext : DbContext
         modelBuilder
             .Entity<DeviceStatusEntity>()
             .HasIndex(d => new { d.Device, d.Mills })
-            .HasDatabaseName("ix_devicestatus_device_mills")
+            .HasDatabaseName("ix_devicestatus_device_timestamp")
             .IsDescending(false, true); // Device asc, Mills desc
 
         // System tracking indexes for maintenance operations
@@ -588,7 +588,7 @@ public class NocturneDbContext : DbContext
         modelBuilder
             .Entity<ActivityEntity>()
             .HasIndex(a => new { a.Type, a.Mills })
-            .HasDatabaseName("ix_activities_type_mills")
+            .HasDatabaseName("ix_activities_type_timestamp")
             .IsDescending(false, true); // Type asc, Mills desc
 
         modelBuilder
@@ -1015,8 +1015,8 @@ public class NocturneDbContext : DbContext
         // StateSpan indexes - optimized for time range and category queries
         modelBuilder
             .Entity<StateSpanEntity>()
-            .HasIndex(s => s.StartMills)
-            .HasDatabaseName("ix_state_spans_start_mills")
+            .HasIndex(s => s.StartTimestamp)
+            .HasDatabaseName("ix_state_spans_start_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1026,13 +1026,13 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<StateSpanEntity>()
-            .HasIndex(s => s.EndMills)
-            .HasDatabaseName("ix_state_spans_end_mills")
-            .HasFilter("end_mills IS NULL"); // Partial index for active spans
+            .HasIndex(s => s.EndTimestamp)
+            .HasDatabaseName("ix_state_spans_end_timestamp")
+            .HasFilter("end_timestamp IS NULL"); // Partial index for active spans
 
         modelBuilder
             .Entity<StateSpanEntity>()
-            .HasIndex(s => new { s.Category, s.StartMills })
+            .HasIndex(s => new { s.Category, s.StartTimestamp })
             .HasDatabaseName("ix_state_spans_category_start")
             .IsDescending(false, true);
 
@@ -1066,7 +1066,7 @@ public class NocturneDbContext : DbContext
         modelBuilder
             .Entity<SystemEventEntity>()
             .HasIndex(e => new { e.Category, e.Mills })
-            .HasDatabaseName("ix_system_events_category_mills")
+            .HasDatabaseName("ix_system_events_category_timestamp")
             .IsDescending(false, true);
 
         modelBuilder
@@ -1230,8 +1230,8 @@ public class NocturneDbContext : DbContext
         // SensorGlucose indexes
         modelBuilder
             .Entity<SensorGlucoseEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_sensor_glucose_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_sensor_glucose_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1249,8 +1249,8 @@ public class NocturneDbContext : DbContext
         // MeterGlucose indexes
         modelBuilder
             .Entity<MeterGlucoseEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_meter_glucose_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_meter_glucose_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1266,8 +1266,8 @@ public class NocturneDbContext : DbContext
         // Calibrations indexes
         modelBuilder
             .Entity<CalibrationEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_calibrations_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_calibrations_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1283,8 +1283,8 @@ public class NocturneDbContext : DbContext
         // Boluses indexes
         modelBuilder
             .Entity<BolusEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_boluses_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_boluses_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1302,8 +1302,8 @@ public class NocturneDbContext : DbContext
         // CarbIntakes indexes
         modelBuilder
             .Entity<CarbIntakeEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_carb_intakes_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_carb_intakes_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1321,8 +1321,8 @@ public class NocturneDbContext : DbContext
         // BGChecks indexes
         modelBuilder
             .Entity<BGCheckEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_bg_checks_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_bg_checks_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1340,8 +1340,8 @@ public class NocturneDbContext : DbContext
         // Notes indexes
         modelBuilder
             .Entity<NoteEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_notes_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_notes_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1359,8 +1359,8 @@ public class NocturneDbContext : DbContext
         // DeviceEvents indexes
         modelBuilder
             .Entity<DeviceEventEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_device_events_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_device_events_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1378,8 +1378,8 @@ public class NocturneDbContext : DbContext
         // BolusCalculations indexes
         modelBuilder
             .Entity<BolusCalculationEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_bolus_calculations_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_bolus_calculations_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1397,8 +1397,8 @@ public class NocturneDbContext : DbContext
         // ApsSnapshot indexes
         modelBuilder
             .Entity<ApsSnapshotEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_aps_snapshots_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_aps_snapshots_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1409,8 +1409,8 @@ public class NocturneDbContext : DbContext
         // PumpSnapshot indexes
         modelBuilder
             .Entity<PumpSnapshotEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_pump_snapshots_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_pump_snapshots_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1421,8 +1421,8 @@ public class NocturneDbContext : DbContext
         // UploaderSnapshot indexes
         modelBuilder
             .Entity<UploaderSnapshotEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_uploader_snapshots_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_uploader_snapshots_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1434,14 +1434,14 @@ public class NocturneDbContext : DbContext
         // TempBasals indexes
         modelBuilder
             .Entity<TempBasalEntity>()
-            .HasIndex(e => e.StartMills)
-            .HasDatabaseName("ix_temp_basals_start_mills")
+            .HasIndex(e => e.StartTimestamp)
+            .HasDatabaseName("ix_temp_basals_start_timestamp")
             .IsDescending();
 
         modelBuilder
             .Entity<TempBasalEntity>()
-            .HasIndex(e => e.EndMills)
-            .HasDatabaseName("ix_temp_basals_end_mills");
+            .HasIndex(e => e.EndTimestamp)
+            .HasDatabaseName("ix_temp_basals_end_timestamp");
 
         modelBuilder
             .Entity<TempBasalEntity>()
@@ -1462,8 +1462,8 @@ public class NocturneDbContext : DbContext
         // TherapySettings indexes
         modelBuilder
             .Entity<TherapySettingsEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_therapy_settings_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_therapy_settings_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1486,8 +1486,8 @@ public class NocturneDbContext : DbContext
         // BasalSchedule indexes
         modelBuilder
             .Entity<BasalScheduleEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_basal_schedules_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_basal_schedules_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1510,8 +1510,8 @@ public class NocturneDbContext : DbContext
         // CarbRatioSchedule indexes
         modelBuilder
             .Entity<CarbRatioScheduleEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_carb_ratio_schedules_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_carb_ratio_schedules_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1534,8 +1534,8 @@ public class NocturneDbContext : DbContext
         // SensitivitySchedule indexes
         modelBuilder
             .Entity<SensitivityScheduleEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_sensitivity_schedules_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_sensitivity_schedules_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1558,8 +1558,8 @@ public class NocturneDbContext : DbContext
         // TargetRangeSchedule indexes
         modelBuilder
             .Entity<TargetRangeScheduleEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_target_range_schedules_mills")
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_target_range_schedules_timestamp")
             .IsDescending();
 
         modelBuilder

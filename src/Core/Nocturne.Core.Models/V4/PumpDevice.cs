@@ -21,12 +21,27 @@ public class PumpDevice
     public string PumpSerial { get; set; } = string.Empty;
 
     /// <summary>
-    /// When this pump was first seen in Unix milliseconds
+    /// When this pump was first seen as UTC DateTime
     /// </summary>
-    public long FirstSeenMills { get; set; }
+    public DateTime FirstSeenTimestamp { get; set; }
 
     /// <summary>
-    /// When this pump was last seen in Unix milliseconds
+    /// When this pump was last seen as UTC DateTime
     /// </summary>
-    public long LastSeenMills { get; set; }
+    public DateTime LastSeenTimestamp { get; set; }
+
+    /// <summary>
+    /// When this pump was first seen in Unix milliseconds (computed)
+    /// </summary>
+    public long FirstSeenMills => new DateTimeOffset(FirstSeenTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
+
+    /// <summary>
+    /// When this pump was last seen in Unix milliseconds (computed)
+    /// </summary>
+    public long LastSeenMills => new DateTimeOffset(LastSeenTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
+
+    /// <summary>
+    /// Catch-all for fields not mapped to dedicated columns
+    /// </summary>
+    public Dictionary<string, object?>? AdditionalProperties { get; set; }
 }

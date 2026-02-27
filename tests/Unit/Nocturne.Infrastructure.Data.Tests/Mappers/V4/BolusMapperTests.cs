@@ -16,7 +16,7 @@ public class BolusMapperTests
         var model = new Bolus
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 5.5,
             Programmed = 6.0,
             Delivered = 5.5,
@@ -34,7 +34,7 @@ public class BolusMapperTests
         var entity = BolusMapper.ToEntity(model);
 
         entity.Id.Should().Be(id);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.Insulin.Should().Be(5.5);
         entity.Programmed.Should().Be(6.0);
         entity.Delivered.Should().Be(5.5);
@@ -53,7 +53,7 @@ public class BolusMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_EmptyGuid_GeneratesNewId()
     {
-        var model = new Bolus { Mills = 1700000000000, Insulin = 1.0 };
+        var model = new Bolus { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, Insulin = 1.0 };
 
         var entity = BolusMapper.ToEntity(model);
 
@@ -64,7 +64,7 @@ public class BolusMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_NullBolusType_MapsToNull()
     {
-        var model = new Bolus { Mills = 1700000000000, Insulin = 1.0, BolusType = null };
+        var model = new Bolus { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, Insulin = 1.0, BolusType = null };
 
         var entity = BolusMapper.ToEntity(model);
 
@@ -77,7 +77,7 @@ public class BolusMapperTests
     {
         foreach (var bolusType in Enum.GetValues<BolusType>())
         {
-            var model = new Bolus { Mills = 1700000000000, Insulin = 1.0, BolusType = bolusType };
+            var model = new Bolus { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, Insulin = 1.0, BolusType = bolusType };
             var entity = BolusMapper.ToEntity(model);
             entity.BolusType.Should().Be(bolusType.ToString());
         }
@@ -87,7 +87,7 @@ public class BolusMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_AutomaticTrue_MapsCorrectly()
     {
-        var model = new Bolus { Mills = 1700000000000, Insulin = 0.1, Automatic = true };
+        var model = new Bolus { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, Insulin = 0.1, Automatic = true };
 
         var entity = BolusMapper.ToEntity(model);
 
@@ -100,7 +100,7 @@ public class BolusMapperTests
     {
         var model = new Bolus
         {
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 2.0,
             Programmed = null,
             Delivered = null
@@ -118,7 +118,7 @@ public class BolusMapperTests
     {
         var model = new Bolus
         {
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 3.0,
             BolusType = BolusType.Square,
             Duration = 120
@@ -141,7 +141,7 @@ public class BolusMapperTests
         var entity = new BolusEntity
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 5.5,
             Programmed = 6.0,
             Delivered = 5.5,
@@ -185,7 +185,7 @@ public class BolusMapperTests
         var entity = new BolusEntity
         {
             Id = Guid.CreateVersion7(),
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 1.0,
             BolusType = "InvalidType"
         };
@@ -202,7 +202,7 @@ public class BolusMapperTests
         var entity = new BolusEntity
         {
             Id = Guid.CreateVersion7(),
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 1.0,
             BolusType = null
         };
@@ -219,7 +219,7 @@ public class BolusMapperTests
         var entity = new BolusEntity
         {
             Id = Guid.CreateVersion7(),
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 0.1,
             Automatic = true
         };
@@ -236,7 +236,7 @@ public class BolusMapperTests
         var entity = new BolusEntity
         {
             Id = Guid.CreateVersion7(),
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 4.0,
             BolusType = "Dual",
             Duration = 60
@@ -258,7 +258,7 @@ public class BolusMapperTests
         {
             Id = originalId,
             SysCreatedAt = originalCreatedAt,
-            Mills = 1000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1000).UtcDateTime,
             Insulin = 1.0
         };
 
@@ -270,7 +270,7 @@ public class BolusMapperTests
             BolusType = BolusType.Square,
             Automatic = true,
             Duration = 90,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Device = "tandem",
             App = "controliq",
             UtcOffset = 60,
@@ -289,7 +289,7 @@ public class BolusMapperTests
         entity.BolusType.Should().Be("Square");
         entity.Automatic.Should().BeTrue();
         entity.Duration.Should().Be(90);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.Device.Should().Be("tandem");
         entity.App.Should().Be("controliq");
         entity.UtcOffset.Should().Be(60);
@@ -324,7 +324,7 @@ public class BolusMapperTests
         var pumpDeviceId = Guid.CreateVersion7();
         var model = new Bolus
         {
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 3.0,
             SyncIdentifier = "loop-sync-abc123",
             InsulinType = "Humalog",
@@ -350,7 +350,7 @@ public class BolusMapperTests
         var entity = new BolusEntity
         {
             Id = Guid.CreateVersion7(),
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 3.0,
             SyncIdentifier = "loop-sync-abc123",
             InsulinType = "Humalog",
@@ -377,7 +377,7 @@ public class BolusMapperTests
         var original = new Bolus
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Insulin = 3.5,
             Programmed = 4.0,
             Delivered = 3.5,

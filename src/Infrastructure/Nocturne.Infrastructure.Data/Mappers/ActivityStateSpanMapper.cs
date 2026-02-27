@@ -104,8 +104,8 @@ public static class ActivityStateSpanMapper
         {
             Category = category,
             State = activity.Type ?? category.ToString().ToLowerInvariant(),
-            StartMills = activity.Mills,
-            EndMills = CalculateEndMills(activity),
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(activity.Mills).UtcDateTime,
+            EndTimestamp = CalculateEndTimestamp(activity),
             Source = activity.EnteredBy ?? "nightscout",
             OriginalId = activity.Id,
             Metadata = BuildMetadata(activity)
@@ -161,28 +161,27 @@ public static class ActivityStateSpanMapper
     }
 
     /// <summary>
-    /// Calculates the end time in milliseconds based on duration
+    /// Calculates the end timestamp based on duration
     /// </summary>
-    private static long? CalculateEndMills(Activity activity)
+    private static DateTime? CalculateEndTimestamp(Activity activity)
     {
         if (activity.Duration.HasValue && activity.Duration.Value > 0)
         {
-            // Duration is in minutes, convert to milliseconds
-            return activity.Mills + (long)(activity.Duration.Value * 60 * 1000);
+            var start = DateTimeOffset.FromUnixTimeMilliseconds(activity.Mills).UtcDateTime;
+            return start.AddMinutes(activity.Duration.Value);
         }
 
         return null;
     }
 
     /// <summary>
-    /// Calculates the duration in minutes from start and end mills
+    /// Calculates the duration in minutes from start and end timestamps
     /// </summary>
     private static double? CalculateDuration(StateSpan stateSpan)
     {
-        if (stateSpan.EndMills.HasValue)
+        if (stateSpan.EndTimestamp.HasValue)
         {
-            // Convert milliseconds to minutes
-            return (stateSpan.EndMills.Value - stateSpan.StartMills) / 60000.0;
+            return (stateSpan.EndTimestamp.Value - stateSpan.StartTimestamp).TotalMinutes;
         }
 
         return null;

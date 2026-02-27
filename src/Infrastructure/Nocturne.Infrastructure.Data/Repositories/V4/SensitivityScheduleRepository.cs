@@ -18,8 +18,8 @@ public class SensitivityScheduleRepository : ISensitivityScheduleRepository
     }
 
     public async Task<IEnumerable<SensitivitySchedule>> GetAsync(
-        long? from,
-        long? to,
+        DateTime? from,
+        DateTime? to,
         string? device,
         string? source,
         int limit = 100,
@@ -30,14 +30,14 @@ public class SensitivityScheduleRepository : ISensitivityScheduleRepository
     {
         var query = _context.SensitivitySchedules.AsNoTracking().AsQueryable();
         if (from.HasValue)
-            query = query.Where(e => e.Mills >= from.Value);
+            query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue)
-            query = query.Where(e => e.Mills <= to.Value);
+            query = query.Where(e => e.Timestamp <= to.Value);
         if (device != null)
             query = query.Where(e => e.Device == device);
         if (source != null)
             query = query.Where(e => e.DataSource == source);
-        query = descending ? query.OrderByDescending(e => e.Mills) : query.OrderBy(e => e.Mills);
+        query = descending ? query.OrderByDescending(e => e.Timestamp) : query.OrderBy(e => e.Timestamp);
         var entities = await query.Skip(offset).Take(limit).ToListAsync(ct);
         return entities.Select(SensitivityScheduleMapper.ToDomainModel);
     }
@@ -62,7 +62,7 @@ public class SensitivityScheduleRepository : ISensitivityScheduleRepository
         var entities = await _context
             .SensitivitySchedules.AsNoTracking()
             .Where(e => e.ProfileName == profileName)
-            .OrderByDescending(e => e.Mills)
+            .OrderByDescending(e => e.Timestamp)
             .ToListAsync(ct);
         return entities.Select(SensitivityScheduleMapper.ToDomainModel);
     }
@@ -110,13 +110,13 @@ public class SensitivityScheduleRepository : ISensitivityScheduleRepository
             .ExecuteDeleteAsync(ct);
     }
 
-    public async Task<int> CountAsync(long? from, long? to, CancellationToken ct = default)
+    public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.SensitivitySchedules.AsNoTracking().AsQueryable();
         if (from.HasValue)
-            query = query.Where(e => e.Mills >= from.Value);
+            query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue)
-            query = query.Where(e => e.Mills <= to.Value);
+            query = query.Where(e => e.Timestamp <= to.Value);
         return await query.CountAsync(ct);
     }
 

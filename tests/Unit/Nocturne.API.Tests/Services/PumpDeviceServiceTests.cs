@@ -90,8 +90,8 @@ public class PumpDeviceServiceTests
                 It.Is<PumpDevice>(d =>
                     d.PumpType == pumpType &&
                     d.PumpSerial == pumpSerial &&
-                    d.FirstSeenMills == mills &&
-                    d.LastSeenMills == mills),
+                    d.FirstSeenTimestamp == DateTimeOffset.FromUnixTimeMilliseconds(mills).UtcDateTime &&
+                    d.LastSeenTimestamp == DateTimeOffset.FromUnixTimeMilliseconds(mills).UtcDateTime),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -111,8 +111,8 @@ public class PumpDeviceServiceTests
             Id = existingId,
             PumpType = pumpType,
             PumpSerial = pumpSerial,
-            FirstSeenMills = 1699000000000L,
-            LastSeenMills = 1700000000000L
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1699000000000L).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000L).UtcDateTime
         };
 
         _mockRepository
@@ -145,8 +145,8 @@ public class PumpDeviceServiceTests
             Id = existingId,
             PumpType = pumpType,
             PumpSerial = pumpSerial,
-            FirstSeenMills = 1698000000000L,
-            LastSeenMills = olderMills
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1698000000000L).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(olderMills).UtcDateTime
         };
 
         _mockRepository
@@ -165,7 +165,7 @@ public class PumpDeviceServiceTests
         _mockRepository.Verify(
             r => r.UpdateAsync(
                 existingId,
-                It.Is<PumpDevice>(d => d.LastSeenMills == newerMills),
+                It.Is<PumpDevice>(d => d.LastSeenTimestamp == DateTimeOffset.FromUnixTimeMilliseconds(newerMills).UtcDateTime),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -186,8 +186,8 @@ public class PumpDeviceServiceTests
             Id = existingId,
             PumpType = pumpType,
             PumpSerial = pumpSerial,
-            FirstSeenMills = 1698000000000L,
-            LastSeenMills = newerMills
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1698000000000L).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(newerMills).UtcDateTime
         };
 
         _mockRepository
@@ -219,8 +219,8 @@ public class PumpDeviceServiceTests
             Id = existingId,
             PumpType = pumpType,
             PumpSerial = pumpSerial,
-            FirstSeenMills = 1699000000000L,
-            LastSeenMills = 1700000000000L
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1699000000000L).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000L).UtcDateTime
         };
 
         _mockRepository

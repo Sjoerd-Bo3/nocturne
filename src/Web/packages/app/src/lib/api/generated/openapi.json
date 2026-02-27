@@ -2875,8 +2875,8 @@
             "in": "query",
             "description": "Start time in milliseconds since Unix epoch",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -2886,8 +2886,8 @@
             "in": "query",
             "description": "End time in milliseconds since Unix epoch",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 3
@@ -2937,8 +2937,8 @@
             "in": "query",
             "description": "Start time in milliseconds since Unix epoch (default: 7 days ago)",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -2948,8 +2948,8 @@
             "in": "query",
             "description": "End time in milliseconds since Unix epoch (default: now)",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 3
@@ -2999,8 +2999,8 @@
             "in": "query",
             "description": "Start time in milliseconds since Unix epoch",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -3010,8 +3010,8 @@
             "in": "query",
             "description": "End time in milliseconds since Unix epoch",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 3
@@ -5387,8 +5387,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -5397,8 +5397,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -5428,7 +5428,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -5532,8 +5532,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -5542,8 +5542,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -5573,7 +5573,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -5677,8 +5677,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -5687,8 +5687,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -5718,7 +5718,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -6343,8 +6343,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -6353,8 +6353,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -6384,7 +6384,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -6639,8 +6639,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -6649,8 +6649,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -6680,7 +6680,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -6935,8 +6935,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -6945,8 +6945,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -6976,7 +6976,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -7466,8 +7466,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -7476,8 +7476,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -7507,7 +7507,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -7762,8 +7762,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -7772,8 +7772,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -7803,7 +7803,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -8659,8 +8659,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -8669,8 +8669,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -8700,7 +8700,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -9190,8 +9190,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -9200,8 +9200,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -9246,8 +9246,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -9256,8 +9256,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -9287,7 +9287,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -9542,8 +9542,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -9552,8 +9552,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -9583,7 +9583,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -9838,8 +9838,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -9848,8 +9848,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -9879,7 +9879,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -10361,8 +10361,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -10371,8 +10371,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -10402,7 +10402,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "default": "mills_desc"
+              "default": "timestamp_desc"
             },
             "x-position": 5
           },
@@ -12369,8 +12369,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 3
@@ -12379,8 +12379,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 4
@@ -12489,8 +12489,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -12499,8 +12499,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -12535,8 +12535,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -12545,8 +12545,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -12581,8 +12581,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -12591,8 +12591,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -12627,8 +12627,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -12637,8 +12637,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -12673,8 +12673,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -12683,8 +12683,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -12719,8 +12719,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -12729,8 +12729,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -12765,8 +12765,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -12775,8 +12775,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -12811,8 +12811,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -12821,8 +12821,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -12857,8 +12857,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 1
@@ -12867,8 +12867,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 2
@@ -13319,8 +13319,8 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 3
@@ -13329,8 +13329,8 @@
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64",
+              "type": "string",
+              "format": "date-time",
               "nullable": true
             },
             "x-position": 4
@@ -23217,6 +23217,10 @@
             "type": "string",
             "format": "guid"
           },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
           "mills": {
             "type": "integer",
             "format": "int64"
@@ -23261,8 +23265,7 @@
           },
           "mmol": {
             "type": "number",
-            "format": "double",
-            "nullable": true
+            "format": "double"
           },
           "direction": {
             "nullable": true,
@@ -23289,6 +23292,11 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -23795,6 +23803,10 @@
             "type": "string",
             "format": "guid"
           },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
           "mills": {
             "type": "integer",
             "format": "int64"
@@ -23887,6 +23899,21 @@
           "pumpRecordId": {
             "type": "string",
             "nullable": true
+          },
+          "bolusCalculationId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "apsSnapshotId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -23923,6 +23950,10 @@
           "id": {
             "type": "string",
             "format": "guid"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
           },
           "mills": {
             "type": "integer",
@@ -23979,6 +24010,16 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "bolusId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -25869,6 +25910,10 @@
             "type": "string",
             "format": "guid"
           },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
           "mills": {
             "type": "integer",
             "format": "int64"
@@ -25917,6 +25962,11 @@
           "syncIdentifier": {
             "type": "string",
             "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -28161,6 +28211,15 @@
             "type": "string",
             "nullable": true
           },
+          "startTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTimestamp": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "startMills": {
             "type": "integer",
             "format": "int64"
@@ -29658,6 +29717,10 @@
             "type": "string",
             "format": "guid"
           },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
           "mills": {
             "type": "integer",
             "format": "int64"
@@ -29790,10 +29853,20 @@
             "type": "string",
             "nullable": true
           },
+          "predictedStartTimestamp": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "predictedStartMills": {
             "type": "integer",
             "format": "int64",
             "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -29853,6 +29926,10 @@
           "id": {
             "type": "string",
             "format": "guid"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
           },
           "mills": {
             "type": "integer",
@@ -29934,6 +30011,11 @@
           "clock": {
             "type": "string",
             "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -29959,6 +30041,10 @@
           "id": {
             "type": "string",
             "format": "guid"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
           },
           "mills": {
             "type": "integer",
@@ -30024,6 +30110,11 @@
           "type": {
             "type": "string",
             "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -30223,6 +30314,10 @@
             "type": "string",
             "format": "guid"
           },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
           "mills": {
             "type": "integer",
             "format": "int64"
@@ -30267,8 +30362,12 @@
           },
           "mmol": {
             "type": "number",
-            "format": "double",
-            "nullable": true
+            "format": "double"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -30294,6 +30393,10 @@
           "id": {
             "type": "string",
             "format": "guid"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
           },
           "mills": {
             "type": "integer",
@@ -30347,6 +30450,11 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -30437,6 +30545,10 @@
           "id": {
             "type": "string",
             "format": "guid"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
           },
           "mills": {
             "type": "integer",
@@ -30542,6 +30654,11 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -31205,6 +31322,10 @@
             "type": "string",
             "format": "guid"
           },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
           "mills": {
             "type": "integer",
             "format": "int64"
@@ -31255,15 +31376,6 @@
               }
             ]
           },
-          "mgdl": {
-            "type": "number",
-            "format": "double"
-          },
-          "mmol": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
           "units": {
             "nullable": true,
             "oneOf": [
@@ -31272,9 +31384,22 @@
               }
             ]
           },
+          "mgdl": {
+            "type": "number",
+            "format": "double"
+          },
+          "mmol": {
+            "type": "number",
+            "format": "double"
+          },
           "syncIdentifier": {
             "type": "string",
             "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -31324,6 +31449,10 @@
           "id": {
             "type": "string",
             "format": "guid"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
           },
           "mills": {
             "type": "integer",
@@ -31376,6 +31505,11 @@
           "syncIdentifier": {
             "type": "string",
             "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -31625,6 +31759,10 @@
             "type": "string",
             "format": "guid"
           },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
           "mills": {
             "type": "integer",
             "format": "int64"
@@ -31741,6 +31879,11 @@
           "startDate": {
             "type": "string",
             "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -31868,6 +32011,10 @@
             "type": "string",
             "format": "guid"
           },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
           "mills": {
             "type": "integer",
             "format": "int64"
@@ -31914,6 +32061,11 @@
             "items": {
               "$ref": "#/components/schemas/ScheduleEntry"
             }
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -31943,6 +32095,10 @@
             "type": "string",
             "format": "guid"
           },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
           "mills": {
             "type": "integer",
             "format": "int64"
@@ -31989,6 +32145,11 @@
             "items": {
               "$ref": "#/components/schemas/ScheduleEntry"
             }
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -32000,6 +32161,10 @@
             "type": "string",
             "format": "guid"
           },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
           "mills": {
             "type": "integer",
             "format": "int64"
@@ -32046,6 +32211,11 @@
             "items": {
               "$ref": "#/components/schemas/ScheduleEntry"
             }
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },
@@ -32056,6 +32226,10 @@
           "id": {
             "type": "string",
             "format": "guid"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
           },
           "mills": {
             "type": "integer",
@@ -32103,6 +32277,11 @@
             "items": {
               "$ref": "#/components/schemas/TargetRangeEntry"
             }
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
           }
         }
       },

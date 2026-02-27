@@ -48,15 +48,15 @@ public class GlucoseController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<SensorGlucose>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<SensorGlucose>>> GetSensorGlucose(
-        [FromQuery] long? from, [FromQuery] long? to,
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to,
         [FromQuery] int limit = 100, [FromQuery] int offset = 0,
-        [FromQuery] string sort = "mills_desc",
+        [FromQuery] string sort = "timestamp_desc",
         [FromQuery] string? device = null, [FromQuery] string? source = null,
         CancellationToken ct = default)
     {
-        if (sort is not "mills_desc" and not "mills_asc")
-            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
-        var descending = sort == "mills_desc";
+        if (sort is not "timestamp_desc" and not "timestamp_asc")
+            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." });
+        var descending = sort == "timestamp_desc";
         var data = await _sensorRepo.GetAsync(from, to, device, source, limit, offset, descending, ct: ct);
         var total = await _sensorRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<SensorGlucose> { Data = data, Pagination = new(limit, offset, total) });
@@ -84,8 +84,8 @@ public class GlucoseController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<SensorGlucose>> CreateSensorGlucose([FromBody] SensorGlucose model, CancellationToken ct = default)
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _sensorRepo.CreateAsync(model, ct);
         try
         {
@@ -110,8 +110,8 @@ public class GlucoseController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SensorGlucose>> UpdateSensorGlucose(Guid id, [FromBody] SensorGlucose model, CancellationToken ct = default)
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _sensorRepo.UpdateAsync(id, model, ct);
@@ -156,15 +156,15 @@ public class GlucoseController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<MeterGlucose>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<MeterGlucose>>> GetMeterGlucose(
-        [FromQuery] long? from, [FromQuery] long? to,
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to,
         [FromQuery] int limit = 100, [FromQuery] int offset = 0,
-        [FromQuery] string sort = "mills_desc",
+        [FromQuery] string sort = "timestamp_desc",
         [FromQuery] string? device = null, [FromQuery] string? source = null,
         CancellationToken ct = default)
     {
-        if (sort is not "mills_desc" and not "mills_asc")
-            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
-        var descending = sort == "mills_desc";
+        if (sort is not "timestamp_desc" and not "timestamp_asc")
+            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." });
+        var descending = sort == "timestamp_desc";
         var data = await _meterRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
         var total = await _meterRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<MeterGlucose> { Data = data, Pagination = new(limit, offset, total) });
@@ -192,8 +192,8 @@ public class GlucoseController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MeterGlucose>> CreateMeterGlucose([FromBody] MeterGlucose model, CancellationToken ct = default)
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _meterRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetMeterGlucoseById), new { id = created.Id }, created);
     }
@@ -208,8 +208,8 @@ public class GlucoseController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MeterGlucose>> UpdateMeterGlucose(Guid id, [FromBody] MeterGlucose model, CancellationToken ct = default)
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _meterRepo.UpdateAsync(id, model, ct);
@@ -254,15 +254,15 @@ public class GlucoseController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<Calibration>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<Calibration>>> GetCalibrations(
-        [FromQuery] long? from, [FromQuery] long? to,
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to,
         [FromQuery] int limit = 100, [FromQuery] int offset = 0,
-        [FromQuery] string sort = "mills_desc",
+        [FromQuery] string sort = "timestamp_desc",
         [FromQuery] string? device = null, [FromQuery] string? source = null,
         CancellationToken ct = default)
     {
-        if (sort is not "mills_desc" and not "mills_asc")
-            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
-        var descending = sort == "mills_desc";
+        if (sort is not "timestamp_desc" and not "timestamp_asc")
+            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." });
+        var descending = sort == "timestamp_desc";
         var data = await _calibrationRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
         var total = await _calibrationRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<Calibration> { Data = data, Pagination = new(limit, offset, total) });
@@ -290,8 +290,8 @@ public class GlucoseController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Calibration>> CreateCalibration([FromBody] Calibration model, CancellationToken ct = default)
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _calibrationRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetCalibrationById), new { id = created.Id }, created);
     }
@@ -306,8 +306,8 @@ public class GlucoseController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Calibration>> UpdateCalibration(Guid id, [FromBody] Calibration model, CancellationToken ct = default)
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _calibrationRepo.UpdateAsync(id, model, ct);

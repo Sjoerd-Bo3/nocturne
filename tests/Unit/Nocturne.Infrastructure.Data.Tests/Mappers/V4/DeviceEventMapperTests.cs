@@ -16,7 +16,7 @@ public class DeviceEventMapperTests
         var model = new DeviceEvent
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             EventType = DeviceEventType.SiteChange,
             Notes = "Left arm",
             Device = "omnipod",
@@ -30,7 +30,7 @@ public class DeviceEventMapperTests
         var entity = DeviceEventMapper.ToEntity(model);
 
         entity.Id.Should().Be(id);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.EventType.Should().Be("SiteChange");
         entity.Notes.Should().Be("Left arm");
         entity.Device.Should().Be("omnipod");
@@ -45,7 +45,7 @@ public class DeviceEventMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_EmptyGuid_GeneratesNewId()
     {
-        var model = new DeviceEvent { Mills = 1700000000000, EventType = DeviceEventType.SensorStart };
+        var model = new DeviceEvent { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, EventType = DeviceEventType.SensorStart };
 
         var entity = DeviceEventMapper.ToEntity(model);
 
@@ -58,7 +58,7 @@ public class DeviceEventMapperTests
     {
         foreach (var eventType in Enum.GetValues<DeviceEventType>())
         {
-            var model = new DeviceEvent { Mills = 1700000000000, EventType = eventType };
+            var model = new DeviceEvent { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, EventType = eventType };
             var entity = DeviceEventMapper.ToEntity(model);
             entity.EventType.Should().Be(eventType.ToString());
         }
@@ -70,7 +70,7 @@ public class DeviceEventMapperTests
     {
         var model = new DeviceEvent
         {
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             EventType = DeviceEventType.SensorStart,
             Notes = null
         };
@@ -91,7 +91,7 @@ public class DeviceEventMapperTests
         var entity = new DeviceEventEntity
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             EventType = "SiteChange",
             Notes = "Left arm",
             Device = "omnipod",
@@ -127,7 +127,7 @@ public class DeviceEventMapperTests
         var entity = new DeviceEventEntity
         {
             Id = Guid.CreateVersion7(),
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             EventType = "InvalidType"
         };
 
@@ -145,7 +145,7 @@ public class DeviceEventMapperTests
             var entity = new DeviceEventEntity
             {
                 Id = Guid.CreateVersion7(),
-                Mills = 1700000000000,
+                Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
                 EventType = eventType.ToString()
             };
 
@@ -165,7 +165,7 @@ public class DeviceEventMapperTests
         {
             Id = originalId,
             SysCreatedAt = originalCreatedAt,
-            Mills = 1000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1000).UtcDateTime,
             EventType = "SensorStart"
         };
 
@@ -173,7 +173,7 @@ public class DeviceEventMapperTests
         {
             EventType = DeviceEventType.PumpBatteryChange,
             Notes = "Updated notes",
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Device = "tandem",
             App = "controliq",
             UtcOffset = 60,
@@ -188,7 +188,7 @@ public class DeviceEventMapperTests
         entity.SysCreatedAt.Should().Be(originalCreatedAt);
         entity.EventType.Should().Be("PumpBatteryChange");
         entity.Notes.Should().Be("Updated notes");
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.Device.Should().Be("tandem");
         entity.App.Should().Be("controliq");
         entity.UtcOffset.Should().Be(60);
@@ -207,7 +207,7 @@ public class DeviceEventMapperTests
         var original = new DeviceEvent
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             EventType = DeviceEventType.PodChange,
             Notes = "Changed pod",
             Device = "omnipod",

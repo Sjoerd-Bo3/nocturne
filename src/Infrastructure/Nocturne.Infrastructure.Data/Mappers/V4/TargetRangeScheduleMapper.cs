@@ -17,7 +17,7 @@ public static class TargetRangeScheduleMapper
         return new TargetRangeScheduleEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             App = model.App,
@@ -28,6 +28,9 @@ public static class TargetRangeScheduleMapper
             SysUpdatedAt = DateTime.UtcNow,
             ProfileName = model.ProfileName,
             EntriesJson = JsonSerializer.Serialize(model.Entries),
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -39,7 +42,7 @@ public static class TargetRangeScheduleMapper
         return new TargetRangeSchedule
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             App = entity.App,
@@ -50,6 +53,9 @@ public static class TargetRangeScheduleMapper
             ModifiedAt = entity.SysUpdatedAt,
             ProfileName = entity.ProfileName,
             Entries = JsonSerializer.Deserialize<List<TargetRangeEntry>>(entity.EntriesJson) ?? [],
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -58,7 +64,7 @@ public static class TargetRangeScheduleMapper
     /// </summary>
     public static void UpdateEntity(TargetRangeScheduleEntity entity, TargetRangeSchedule model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.App = model.App;
@@ -68,5 +74,8 @@ public static class TargetRangeScheduleMapper
         entity.SysUpdatedAt = DateTime.UtcNow;
         entity.ProfileName = model.ProfileName;
         entity.EntriesJson = JsonSerializer.Serialize(model.Entries);
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

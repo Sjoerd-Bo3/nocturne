@@ -36,21 +36,21 @@ public class InsulinController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<Bolus>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<Bolus>>> GetBoluses(
-        [FromQuery] long? from,
-        [FromQuery] long? to,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
         [FromQuery] int limit = 100,
         [FromQuery] int offset = 0,
-        [FromQuery] string sort = "mills_desc",
+        [FromQuery] string sort = "timestamp_desc",
         [FromQuery] string? device = null,
         [FromQuery] string? source = null,
         CancellationToken ct = default
     )
     {
-        if (sort is not "mills_desc" and not "mills_asc")
+        if (sort is not "timestamp_desc" and not "timestamp_asc")
             return BadRequest(
-                new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." }
+                new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." }
             );
-        var descending = sort == "mills_desc";
+        var descending = sort == "timestamp_desc";
         var data = await _bolusRepo.GetAsync(
             from,
             to,
@@ -92,8 +92,8 @@ public class InsulinController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _bolusRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetBolusById), new { id = created.Id }, created);
     }
@@ -112,8 +112,8 @@ public class InsulinController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _bolusRepo.UpdateAsync(id, model, ct);
@@ -157,21 +157,21 @@ public class InsulinController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<BolusCalculation>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<BolusCalculation>>> GetBolusCalculations(
-        [FromQuery] long? from,
-        [FromQuery] long? to,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
         [FromQuery] int limit = 100,
         [FromQuery] int offset = 0,
-        [FromQuery] string sort = "mills_desc",
+        [FromQuery] string sort = "timestamp_desc",
         [FromQuery] string? device = null,
         [FromQuery] string? source = null,
         CancellationToken ct = default
     )
     {
-        if (sort is not "mills_desc" and not "mills_asc")
+        if (sort is not "timestamp_desc" and not "timestamp_asc")
             return BadRequest(
-                new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." }
+                new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." }
             );
-        var descending = sort == "mills_desc";
+        var descending = sort == "timestamp_desc";
         var data = await _bolusCalcRepo.GetAsync(
             from,
             to,
@@ -220,8 +220,8 @@ public class InsulinController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _bolusCalcRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetBolusCalculationById), new { id = created.Id }, created);
     }
@@ -240,8 +240,8 @@ public class InsulinController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _bolusCalcRepo.UpdateAsync(id, model, ct);

@@ -9,7 +9,7 @@ import { BolusSchema, BolusCalculationSchema } from '$lib/api/generated/schemas'
 import { type Bolus, type BolusCalculation } from '$api';
 
 /** Get boluses with optional filtering */
-export const getBoluses = query(z.object({ from: z.number().optional(), to: z.number().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
+export const getBoluses = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -97,7 +97,7 @@ export const deleteBolus = command(z.string(), async (id) => {
 });
 
 /** Get bolus calculations with optional filtering */
-export const getBolusCalculations = query(z.object({ from: z.number().optional(), to: z.number().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
+export const getBolusCalculations = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

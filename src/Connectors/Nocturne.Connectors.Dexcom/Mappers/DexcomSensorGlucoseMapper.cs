@@ -54,7 +54,7 @@ public class DexcomSensorGlucoseMapper(ILogger logger)
             return new SensorGlucose
             {
                 Id = Guid.CreateVersion7(),
-                Mills = new DateTimeOffset(timestamp).ToUnixTimeMilliseconds(),
+                Timestamp = timestamp,
                 LegacyId = $"dexcom_{dexcomEntry.Wt}",
                 Device = DataSources.DexcomConnector,
                 DataSource = DataSources.DexcomConnector,

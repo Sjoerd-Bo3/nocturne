@@ -317,8 +317,8 @@ public class TreatmentService : ITreatmentService
 
         // Get temp basals from V4 TempBasal table
         var tempBasalTask = _tempBasalRepository.GetAsync(
-            from: fromMills,
-            to: toMills,
+            from: fromMills.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(fromMills.Value).UtcDateTime : null,
+            to: toMills.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(toMills.Value).UtcDateTime : null,
             device: null,
             source: null,
             limit: count,
@@ -429,8 +429,8 @@ public class TreatmentService : ITreatmentService
 
         // Get temp basals from V4 TempBasal table (primary path)
         var tempBasals = await _tempBasalRepository.GetAsync(
-            from: lastModifiedMills,
-            to: null,
+            from: DateTimeOffset.FromUnixTimeMilliseconds(lastModifiedMills).UtcDateTime,
+            to: (DateTime?)null,
             device: null,
             source: null,
             limit: limit,

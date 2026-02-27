@@ -45,7 +45,6 @@ public class TidepoolV4TreatmentMapper(ILogger logger, string connectorSource)
                     if (!carbs.HasValue || carbs.Value <= 0) continue;
 
                     var timestamp = food.Time!.Value.ToUniversalTime();
-                    var mills = new DateTimeOffset(timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
                     var now = DateTime.UtcNow;
 
                     if (mappedBoluses.TryGetValue(food.Time!.Value, out var existingBolus))
@@ -57,7 +56,7 @@ public class TidepoolV4TreatmentMapper(ILogger logger, string connectorSource)
                         mappedCarbs.Add(new CarbIntake
                         {
                             Id = Guid.CreateVersion7(),
-                            Mills = mills,
+                            Timestamp = timestamp,
                             LegacyId = $"tidepool_{food.Id}",
                             Device = _connectorSource,
                             DataSource = _connectorSource,
@@ -73,7 +72,7 @@ public class TidepoolV4TreatmentMapper(ILogger logger, string connectorSource)
                         mappedCarbs.Add(new CarbIntake
                         {
                             Id = Guid.CreateVersion7(),
-                            Mills = mills,
+                            Timestamp = timestamp,
                             LegacyId = $"tidepool_{food.Id}",
                             Device = _connectorSource,
                             DataSource = _connectorSource,
@@ -101,7 +100,6 @@ public class TidepoolV4TreatmentMapper(ILogger logger, string connectorSource)
         if (totalInsulin <= 0) return null;
 
         var timestamp = bolus.Time!.Value.ToUniversalTime();
-        var mills = new DateTimeOffset(timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
         var now = DateTime.UtcNow;
 
         BolusType bolusType;
@@ -127,7 +125,7 @@ public class TidepoolV4TreatmentMapper(ILogger logger, string connectorSource)
         return new Bolus
         {
             Id = Guid.CreateVersion7(),
-            Mills = mills,
+            Timestamp = timestamp,
             LegacyId = $"tidepool_{bolus.Id}",
             Device = _connectorSource,
             DataSource = _connectorSource,

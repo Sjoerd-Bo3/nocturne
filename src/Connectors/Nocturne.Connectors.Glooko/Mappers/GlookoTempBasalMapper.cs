@@ -36,18 +36,17 @@ public class GlookoTempBasalMapper
             {
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(suspend.X);
                 var durationSeconds = suspend.Duration ?? 0;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
+                var endTimestamp =
                     durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
+                        ? startTimestamp.AddSeconds(durationSeconds)
+                        : (DateTime?)null;
 
                 tempBasals.Add(
                     new TempBasal
                     {
                         Id = Guid.CreateVersion7(),
-                        StartMills = startMills,
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Rate = 0.0,
                         ScheduledRate = null,
                         Origin = TempBasalOrigin.Suspended,
@@ -67,11 +66,10 @@ public class GlookoTempBasalMapper
             {
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(lgsEvent.X);
                 var durationSeconds = lgsEvent.Duration ?? 0;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
+                var endTimestamp =
                     durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
+                        ? startTimestamp.AddSeconds(durationSeconds)
+                        : (DateTime?)null;
 
                 var origin = lgsEvent.EventType?.ToUpperInvariant() == "SUSPEND"
                     ? TempBasalOrigin.Suspended
@@ -81,8 +79,8 @@ public class GlookoTempBasalMapper
                     new TempBasal
                     {
                         Id = Guid.CreateVersion7(),
-                        StartMills = startMills,
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Rate = 0.0,
                         ScheduledRate = null,
                         Origin = origin,
@@ -102,11 +100,10 @@ public class GlookoTempBasalMapper
             {
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(tempBasal.X);
                 var durationSeconds = tempBasal.Duration ?? 0;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
+                var endTimestamp =
                     durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
+                        ? startTimestamp.AddSeconds(durationSeconds)
+                        : (DateTime?)null;
 
                 var rate = tempBasal.Y ?? 0;
 
@@ -114,8 +111,8 @@ public class GlookoTempBasalMapper
                     new TempBasal
                     {
                         Id = Guid.CreateVersion7(),
-                        StartMills = startMills,
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Rate = rate,
                         ScheduledRate = null,
                         Origin = TempBasalOrigin.Manual,
@@ -135,11 +132,10 @@ public class GlookoTempBasalMapper
             {
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(basal.X);
                 var durationSeconds = basal.Duration ?? 0;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
+                var endTimestamp =
                     durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
+                        ? startTimestamp.AddSeconds(durationSeconds)
+                        : (DateTime?)null;
 
                 var rate = basal.Y ?? 0;
 
@@ -147,8 +143,8 @@ public class GlookoTempBasalMapper
                     new TempBasal
                     {
                         Id = Guid.CreateVersion7(),
-                        StartMills = startMills,
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Rate = rate,
                         ScheduledRate = rate,
                         Origin = TempBasalOrigin.Scheduled,
@@ -200,11 +196,10 @@ public class GlookoTempBasalMapper
 
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
                 var durationSeconds = tempBasal.Duration;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
+                var endTimestamp =
                     durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
+                        ? startTimestamp.AddSeconds(durationSeconds)
+                        : (DateTime?)null;
 
                 var rate = tempBasal.Rate;
 
@@ -212,8 +207,8 @@ public class GlookoTempBasalMapper
                     new TempBasal
                     {
                         Id = Guid.CreateVersion7(),
-                        StartMills = startMills,
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Rate = rate,
                         ScheduledRate = null,
                         Origin = TempBasalOrigin.Manual,
@@ -249,11 +244,10 @@ public class GlookoTempBasalMapper
 
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
                 var durationSeconds = basal.Duration;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
+                var endTimestamp =
                     durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
+                        ? startTimestamp.AddSeconds(durationSeconds)
+                        : (DateTime?)null;
 
                 var rate = basal.Rate;
 
@@ -261,8 +255,8 @@ public class GlookoTempBasalMapper
                     new TempBasal
                     {
                         Id = Guid.CreateVersion7(),
-                        StartMills = startMills,
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Rate = rate,
                         ScheduledRate = rate,
                         Origin = TempBasalOrigin.Scheduled,
@@ -298,18 +292,17 @@ public class GlookoTempBasalMapper
 
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
                 var durationSeconds = suspend.Duration;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
+                var endTimestamp =
                     durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
+                        ? startTimestamp.AddSeconds(durationSeconds)
+                        : (DateTime?)null;
 
                 tempBasals.Add(
                     new TempBasal
                     {
                         Id = Guid.CreateVersion7(),
-                        StartMills = startMills,
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Rate = 0.0,
                         ScheduledRate = null,
                         Origin = TempBasalOrigin.Suspended,

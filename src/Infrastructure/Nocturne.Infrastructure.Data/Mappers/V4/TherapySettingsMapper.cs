@@ -18,7 +18,7 @@ public static class TherapySettingsMapper
         return new TherapySettingsEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             App = model.App,
@@ -47,6 +47,9 @@ public static class TherapySettingsMapper
             EnteredBy = model.EnteredBy,
             IsExternallyManaged = model.IsExternallyManaged,
             StartDate = model.StartDate,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -58,7 +61,7 @@ public static class TherapySettingsMapper
         return new TherapySettings
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             App = entity.App,
@@ -87,6 +90,9 @@ public static class TherapySettingsMapper
             EnteredBy = entity.EnteredBy,
             IsExternallyManaged = entity.IsExternallyManaged,
             StartDate = entity.StartDate,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -95,7 +101,7 @@ public static class TherapySettingsMapper
     /// </summary>
     public static void UpdateEntity(TherapySettingsEntity entity, TherapySettings model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.App = model.App;
@@ -123,5 +129,8 @@ public static class TherapySettingsMapper
         entity.EnteredBy = model.EnteredBy;
         entity.IsExternallyManaged = model.IsExternallyManaged;
         entity.StartDate = model.StartDate;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

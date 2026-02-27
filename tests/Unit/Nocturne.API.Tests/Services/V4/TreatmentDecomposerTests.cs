@@ -355,7 +355,7 @@ public class TreatmentDecomposerTests : IDisposable
         {
             Id = "state-span-456",
             Category = StateSpanCategory.Profile,
-            StartMills = 1700000000000
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime
         };
 
         _stateSpanServiceMock
@@ -873,7 +873,7 @@ public class TreatmentDecomposerTests : IDisposable
         {
             Id = "state-span-789",
             Category = StateSpanCategory.Override,
-            StartMills = 1700000000000
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime
         };
 
         _stateSpanServiceMock
@@ -1410,7 +1410,7 @@ public class TreatmentDecomposerTests : IDisposable
         {
             Id = "ss-1",
             Category = StateSpanCategory.Profile,
-            StartMills = 1700000000000
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime
         };
         _stateSpanServiceMock
             .Setup(s => s.UpsertStateSpanAsync(It.IsAny<StateSpan>(), It.IsAny<CancellationToken>()))

@@ -214,7 +214,7 @@ public class ProfileDecomposer : IProfileDecomposer
         return new V4Models.TherapySettings
         {
             LegacyId = legacyId,
-            Mills = profile.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(profile.Mills).UtcDateTime,
             ProfileName = storeName,
             Timezone = profileData.Timezone,
             Units = profileData.Units ?? profile.Units,
@@ -248,7 +248,7 @@ public class ProfileDecomposer : IProfileDecomposer
         return new V4Models.BasalSchedule
         {
             LegacyId = legacyId,
-            Mills = profile.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(profile.Mills).UtcDateTime,
             ProfileName = storeName,
             Entries = ConvertTimeValues(profileData.Basal),
             Device = profile.EnteredBy,
@@ -266,7 +266,7 @@ public class ProfileDecomposer : IProfileDecomposer
         return new V4Models.CarbRatioSchedule
         {
             LegacyId = legacyId,
-            Mills = profile.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(profile.Mills).UtcDateTime,
             ProfileName = storeName,
             Entries = ConvertTimeValues(profileData.CarbRatio),
             Device = profile.EnteredBy,
@@ -284,7 +284,7 @@ public class ProfileDecomposer : IProfileDecomposer
         return new V4Models.SensitivitySchedule
         {
             LegacyId = legacyId,
-            Mills = profile.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(profile.Mills).UtcDateTime,
             ProfileName = storeName,
             Entries = ConvertTimeValues(profileData.Sens),
             Device = profile.EnteredBy,
@@ -302,7 +302,7 @@ public class ProfileDecomposer : IProfileDecomposer
         return new V4Models.TargetRangeSchedule
         {
             LegacyId = legacyId,
-            Mills = profile.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(profile.Mills).UtcDateTime,
             ProfileName = storeName,
             Entries = MergeTargets(profileData.TargetLow, profileData.TargetHigh),
             Device = profile.EnteredBy,

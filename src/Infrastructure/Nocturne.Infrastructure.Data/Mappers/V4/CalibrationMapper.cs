@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
 
@@ -16,7 +17,7 @@ public static class CalibrationMapper
         return new CalibrationEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             App = model.App,
@@ -28,6 +29,9 @@ public static class CalibrationMapper
             Slope = model.Slope,
             Intercept = model.Intercept,
             Scale = model.Scale,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -39,7 +43,7 @@ public static class CalibrationMapper
         return new Calibration
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             App = entity.App,
@@ -51,6 +55,9 @@ public static class CalibrationMapper
             Slope = entity.Slope,
             Intercept = entity.Intercept,
             Scale = entity.Scale,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -59,7 +66,7 @@ public static class CalibrationMapper
     /// </summary>
     public static void UpdateEntity(CalibrationEntity entity, Calibration model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.App = model.App;
@@ -70,5 +77,8 @@ public static class CalibrationMapper
         entity.Slope = model.Slope;
         entity.Intercept = model.Intercept;
         entity.Scale = model.Scale;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

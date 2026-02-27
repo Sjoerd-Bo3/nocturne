@@ -111,12 +111,12 @@ public class StatisticsServiceTests
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var entries = new[]
         {
-            new SensorGlucose { Mgdl = 100, Mills = now },
-            new SensorGlucose { Mgdl = 120, Mills = now + 1 },
-            new SensorGlucose { Mgdl = 0, Mills = now + 2 },
-            new SensorGlucose { Mgdl = 0, Mills = now + 3 },
-            new SensorGlucose { Mgdl = 700, Mills = now + 4 }, // Should be filtered out
-            new SensorGlucose { Mgdl = 80, Mills = now + 5 },
+            new SensorGlucose { Mgdl = 100, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now).UtcDateTime },
+            new SensorGlucose { Mgdl = 120, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 1).UtcDateTime },
+            new SensorGlucose { Mgdl = 0, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 2).UtcDateTime },
+            new SensorGlucose { Mgdl = 0, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 3).UtcDateTime },
+            new SensorGlucose { Mgdl = 700, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 4).UtcDateTime }, // Should be filtered out
+            new SensorGlucose { Mgdl = 80, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 5).UtcDateTime },
         };
 
         // Act
@@ -141,7 +141,7 @@ public class StatisticsServiceTests
                 new SensorGlucose
                 {
                     Mgdl = v,
-                    Mills = DateTimeOffset.UtcNow.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+                    Timestamp = DateTimeOffset.UtcNow.AddMinutes(i * 5).UtcDateTime,
                 }
         );
 
@@ -165,7 +165,7 @@ public class StatisticsServiceTests
             new SensorGlucose
             {
                 Mgdl = 100,
-                Mills = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                Timestamp = DateTimeOffset.UtcNow.UtcDateTime,
             },
         };
 
@@ -239,12 +239,12 @@ public class StatisticsServiceTests
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var entries = new[]
         {
-            new SensorGlucose { Mgdl = 50, Mills = now }, // Very low
-            new SensorGlucose { Mgdl = 65, Mills = now + 1 }, // Low
-            new SensorGlucose { Mgdl = 100, Mills = now + 2 }, // Target
-            new SensorGlucose { Mgdl = 150, Mills = now + 3 }, // Target
-            new SensorGlucose { Mgdl = 200, Mills = now + 4 }, // High
-            new SensorGlucose { Mgdl = 300, Mills = now + 5 }, // Very high
+            new SensorGlucose { Mgdl = 50, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now).UtcDateTime }, // Very low
+            new SensorGlucose { Mgdl = 65, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 1).UtcDateTime }, // Low
+            new SensorGlucose { Mgdl = 100, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 2).UtcDateTime }, // Target
+            new SensorGlucose { Mgdl = 150, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 3).UtcDateTime }, // Target
+            new SensorGlucose { Mgdl = 200, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 4).UtcDateTime }, // High
+            new SensorGlucose { Mgdl = 300, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 5).UtcDateTime }, // Very high
         };
 
         // Act
@@ -266,9 +266,9 @@ public class StatisticsServiceTests
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var entries = new[]
         {
-            new SensorGlucose { Mgdl = 100, Mills = now },
-            new SensorGlucose { Mgdl = 120, Mills = now + 1 },
-            new SensorGlucose { Mgdl = 140, Mills = now + 2 },
+            new SensorGlucose { Mgdl = 100, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now).UtcDateTime },
+            new SensorGlucose { Mgdl = 120, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 1).UtcDateTime },
+            new SensorGlucose { Mgdl = 140, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 2).UtcDateTime },
         };
         var customThresholds = new GlycemicThresholds { TargetBottom = 90, TargetTop = 130 };
 
@@ -306,10 +306,10 @@ public class StatisticsServiceTests
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var entries = new[]
         {
-            new SensorGlucose { Mgdl = 75, Mills = now }, // 70-80 range
-            new SensorGlucose { Mgdl = 95, Mills = now + 1 }, // 90-100 range
-            new SensorGlucose { Mgdl = 125, Mills = now + 2 }, // 120-130 range
-            new SensorGlucose { Mgdl = 175, Mills = now + 3 }, // 150-180 range
+            new SensorGlucose { Mgdl = 75, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now).UtcDateTime }, // 70-80 range
+            new SensorGlucose { Mgdl = 95, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 1).UtcDateTime }, // 90-100 range
+            new SensorGlucose { Mgdl = 125, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 2).UtcDateTime }, // 120-130 range
+            new SensorGlucose { Mgdl = 175, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 3).UtcDateTime }, // 150-180 range
         };
 
         // Act
@@ -333,7 +333,7 @@ public class StatisticsServiceTests
             .Select(hour => new SensorGlucose
             {
                 Mgdl = 100 + hour * 2, // Gradually increasing glucose
-                Mills = baseTime.AddHours(hour).ToUnixTimeMilliseconds(),
+                Timestamp = baseTime.AddHours(hour).UtcDateTime,
             });
 
         // Act
@@ -374,13 +374,13 @@ public class StatisticsServiceTests
             new Bolus
             {
                 Insulin = 5.0,
-                Mills = now,
+                Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now).UtcDateTime,
                 Automatic = false,
             }, // Meal bolus
             new Bolus
             {
                 Insulin = 2.0,
-                Mills = now + 1,
+                Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 1).UtcDateTime,
                 Automatic = false,
             }, // Correction bolus
         };
@@ -389,9 +389,9 @@ public class StatisticsServiceTests
             new CarbIntake
             {
                 Carbs = 45,
-                Mills = now,
+                Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now).UtcDateTime,
             },
-            new CarbIntake { Carbs = 15, Mills = now + 1 },
+            new CarbIntake { Carbs = 15, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(now + 1).UtcDateTime },
         };
 
         // Act
@@ -660,7 +660,7 @@ public class StatisticsServiceTests
                 new SensorGlucose
                 {
                     Mgdl = v,
-                    Mills = DateTimeOffset.UtcNow.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+                    Timestamp = DateTimeOffset.UtcNow.AddMinutes(i * 5).UtcDateTime,
                 }
         );
 
@@ -687,7 +687,7 @@ public class StatisticsServiceTests
             .Select(i => new SensorGlucose
             {
                 Mgdl = 100 + (i % 50 - 25), // Glucose values ranging from 75-125
-                Mills = DateTimeOffset.UtcNow.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+                Timestamp = DateTimeOffset.UtcNow.AddMinutes(i * 5).UtcDateTime,
             });
 
         var boluses = new[]
@@ -695,14 +695,14 @@ public class StatisticsServiceTests
             new Bolus
             {
                 Insulin = 5.0,
-                Mills = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                Timestamp = DateTimeOffset.UtcNow.UtcDateTime,
                 Automatic = false,
             },
         };
 
         var carbIntakes = new[]
         {
-            new CarbIntake { Carbs = 45, Mills = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() },
+            new CarbIntake { Carbs = 45, Timestamp = DateTimeOffset.UtcNow.UtcDateTime },
         };
 
         // Act

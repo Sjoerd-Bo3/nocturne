@@ -12,14 +12,24 @@ public class TempBasal
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Start timestamp in Unix milliseconds
+    /// Start timestamp as UTC DateTime
     /// </summary>
-    public long StartMills { get; set; }
+    public DateTime StartTimestamp { get; set; }
 
     /// <summary>
-    /// End timestamp in Unix milliseconds (null if still active)
+    /// End timestamp as UTC DateTime (null if still active)
     /// </summary>
-    public long? EndMills { get; set; }
+    public DateTime? EndTimestamp { get; set; }
+
+    /// <summary>
+    /// Start timestamp in Unix milliseconds (computed for v1/v3 compatibility)
+    /// </summary>
+    public long StartMills => new DateTimeOffset(StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
+
+    /// <summary>
+    /// End timestamp in Unix milliseconds (computed for v1/v3 compatibility)
+    /// </summary>
+    public long? EndMills => EndTimestamp.HasValue ? new DateTimeOffset(EndTimestamp.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null;
 
     /// <summary>
     /// UTC offset in minutes
@@ -90,4 +100,9 @@ public class TempBasal
     /// FK to the ApsSnapshot whose algorithm decision set this temp basal
     /// </summary>
     public Guid? ApsSnapshotId { get; set; }
+
+    /// <summary>
+    /// Catch-all for fields not mapped to dedicated columns
+    /// </summary>
+    public Dictionary<string, object?>? AdditionalProperties { get; set; }
 }

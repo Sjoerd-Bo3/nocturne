@@ -545,7 +545,7 @@ public class AlertRulesEngineTests
         {
             Id = Guid.CreateVersion7(),
             Mgdl = glucoseValue,
-            Mills = new DateTimeOffset(timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
+            Timestamp = timestamp,
             Direction = GlucoseDirection.Flat,
         };
     }

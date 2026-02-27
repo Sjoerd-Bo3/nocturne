@@ -7,7 +7,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 
 /** Get APS snapshots with optional filtering */
-export const getApsSnapshots = query(z.object({ from: z.number().optional(), to: z.number().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
+export const getApsSnapshots = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -37,7 +37,7 @@ export const getApsSnapshotById = query(z.string(), async (id) => {
 });
 
 /** Get pump snapshots with optional filtering */
-export const getPumpSnapshots = query(z.object({ from: z.number().optional(), to: z.number().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
+export const getPumpSnapshots = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -67,7 +67,7 @@ export const getPumpSnapshotById = query(z.string(), async (id) => {
 });
 
 /** Get uploader snapshots with optional filtering */
-export const getUploaderSnapshots = query(z.object({ from: z.number().optional(), to: z.number().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
+export const getUploaderSnapshots = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

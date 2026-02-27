@@ -18,16 +18,16 @@ public class MeterGlucoseRepository : IMeterGlucoseRepository
     }
 
     public async Task<IEnumerable<MeterGlucose>> GetAsync(
-        long? from, long? to, string? device, string? source,
+        DateTime? from, DateTime? to, string? device, string? source,
         int limit = 100, int offset = 0, bool descending = true,
         CancellationToken ct = default)
     {
         var query = _context.MeterGlucose.AsNoTracking().AsQueryable();
-        if (from.HasValue) query = query.Where(e => e.Mills >= from.Value);
-        if (to.HasValue) query = query.Where(e => e.Mills <= to.Value);
+        if (from.HasValue) query = query.Where(e => e.Timestamp >= from.Value);
+        if (to.HasValue) query = query.Where(e => e.Timestamp <= to.Value);
         if (device != null) query = query.Where(e => e.Device == device);
         if (source != null) query = query.Where(e => e.DataSource == source);
-        query = descending ? query.OrderByDescending(e => e.Mills) : query.OrderBy(e => e.Mills);
+        query = descending ? query.OrderByDescending(e => e.Timestamp) : query.OrderBy(e => e.Timestamp);
         var entities = await query.Skip(offset).Take(limit).ToListAsync(ct);
         return entities.Select(MeterGlucoseMapper.ToDomainModel);
     }
@@ -69,11 +69,11 @@ public class MeterGlucoseRepository : IMeterGlucoseRepository
         await _context.SaveChangesAsync(ct);
     }
 
-    public async Task<int> CountAsync(long? from, long? to, CancellationToken ct = default)
+    public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.MeterGlucose.AsNoTracking().AsQueryable();
-        if (from.HasValue) query = query.Where(e => e.Mills >= from.Value);
-        if (to.HasValue) query = query.Where(e => e.Mills <= to.Value);
+        if (from.HasValue) query = query.Where(e => e.Timestamp >= from.Value);
+        if (to.HasValue) query = query.Where(e => e.Timestamp <= to.Value);
         return await query.CountAsync(ct);
     }
 

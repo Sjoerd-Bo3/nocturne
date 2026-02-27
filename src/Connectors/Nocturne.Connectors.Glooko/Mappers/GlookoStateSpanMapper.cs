@@ -36,11 +36,10 @@ public class GlookoStateSpanMapper
             {
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(suspend.X);
                 var durationSeconds = suspend.Duration ?? 0;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
+                var endTimestamp =
                     durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
+                        ? startTimestamp.AddSeconds(durationSeconds)
+                        : (DateTime?)null;
 
                 stateSpans.Add(
                     new StateSpan
@@ -48,8 +47,8 @@ public class GlookoStateSpanMapper
                         OriginalId = $"glooko_suspend_{suspend.X}",
                         Category = StateSpanCategory.PumpMode,
                         State = PumpModeState.Suspended.ToString(),
-                        StartMills = startMills,
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Source = _connectorSource,
                         Metadata = new Dictionary<string, object>
                         {
@@ -66,11 +65,10 @@ public class GlookoStateSpanMapper
             {
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(lgsEvent.X);
                 var durationSeconds = lgsEvent.Duration ?? 0;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
+                var endTimestamp =
                     durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
+                        ? startTimestamp.AddSeconds(durationSeconds)
+                        : (DateTime?)null;
 
                 var stateValue = lgsEvent.EventType?.ToUpperInvariant() switch
                 {
@@ -86,8 +84,8 @@ public class GlookoStateSpanMapper
                         OriginalId = $"glooko_lgsplgs_{lgsEvent.X}",
                         Category = StateSpanCategory.PumpMode,
                         State = stateValue,
-                        StartMills = startMills,
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Source = _connectorSource,
                         Metadata = new Dictionary<string, object>
                         {
@@ -108,11 +106,9 @@ public class GlookoStateSpanMapper
                 var change = profileChanges[i];
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(change.X);
 
-                long? endMills = null;
+                DateTime? endTimestamp = null;
                 if (i < profileChanges.Count - 1)
-                    endMills = new DateTimeOffset(
-                        _timeMapper.GetCorrectedGlookoTime(profileChanges[i + 1].X)
-                    ).ToUnixTimeMilliseconds();
+                    endTimestamp = _timeMapper.GetCorrectedGlookoTime(profileChanges[i + 1].X);
 
                 stateSpans.Add(
                     new StateSpan
@@ -120,8 +116,8 @@ public class GlookoStateSpanMapper
                         OriginalId = $"glooko_profile_{change.X}",
                         Category = StateSpanCategory.Profile,
                         State = ProfileState.Active.ToString(),
-                        StartMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds(),
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Source = _connectorSource,
                         Metadata = new Dictionary<string, object>
                         {
@@ -176,11 +172,10 @@ public class GlookoStateSpanMapper
 
                 var startTimestamp = _timeMapper.GetCorrectedGlookoTime(rawTimestamp);
                 var durationSeconds = suspend.Duration;
-                var startMills = new DateTimeOffset(startTimestamp).ToUnixTimeMilliseconds();
-                var endMills =
+                var endTimestamp =
                     durationSeconds > 0
-                        ? startMills + durationSeconds * 1000
-                        : (long?)null;
+                        ? startTimestamp.AddSeconds(durationSeconds)
+                        : (DateTime?)null;
 
                 stateSpans.Add(
                     new StateSpan
@@ -188,8 +183,8 @@ public class GlookoStateSpanMapper
                         OriginalId = $"glooko_v2_suspend_{rawTimestamp.Ticks}",
                         Category = StateSpanCategory.PumpMode,
                         State = PumpModeState.Suspended.ToString(),
-                        StartMills = startMills,
-                        EndMills = endMills,
+                        StartTimestamp = startTimestamp,
+                        EndTimestamp = endTimestamp,
                         Source = _connectorSource,
                         Metadata = new Dictionary<string, object>
                         {

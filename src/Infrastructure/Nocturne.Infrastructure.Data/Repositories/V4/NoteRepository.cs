@@ -25,8 +25,8 @@ public class NoteRepository : INoteRepository
     }
 
     public async Task<IEnumerable<Note>> GetAsync(
-        long? from,
-        long? to,
+        DateTime? from,
+        DateTime? to,
         string? device,
         string? source,
         int limit = 100,
@@ -38,16 +38,16 @@ public class NoteRepository : INoteRepository
     {
         var query = _context.Notes.AsNoTracking().AsQueryable();
         if (from.HasValue)
-            query = query.Where(e => e.Mills >= from.Value);
+            query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue)
-            query = query.Where(e => e.Mills <= to.Value);
+            query = query.Where(e => e.Timestamp <= to.Value);
         if (device != null)
             query = query.Where(e => e.Device == device);
         if (source != null)
             query = query.Where(e => e.DataSource == source);
         if (nativeOnly)
             query = query.Where(e => e.LegacyId == null);
-        query = descending ? query.OrderByDescending(e => e.Mills) : query.OrderBy(e => e.Mills);
+        query = descending ? query.OrderByDescending(e => e.Timestamp) : query.OrderBy(e => e.Timestamp);
         var entities = await query.Skip(offset).Take(limit).ToListAsync(ct);
         return entities.Select(NoteMapper.ToDomainModel);
     }
@@ -91,13 +91,13 @@ public class NoteRepository : INoteRepository
         await _context.SaveChangesAsync(ct);
     }
 
-    public async Task<int> CountAsync(long? from, long? to, CancellationToken ct = default)
+    public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.Notes.AsNoTracking().AsQueryable();
         if (from.HasValue)
-            query = query.Where(e => e.Mills >= from.Value);
+            query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue)
-            query = query.Where(e => e.Mills <= to.Value);
+            query = query.Where(e => e.Timestamp <= to.Value);
         return await query.CountAsync(ct);
     }
 
@@ -173,7 +173,7 @@ public class NoteRepository : INoteRepository
 
                 var canonicalId = await _deduplicationService.GetOrCreateCanonicalIdAsync(
                     RecordType.Note,
-                    entity.Mills,
+                    new DateTimeOffset(entity.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
                     criteria,
                     ct);
 
@@ -181,7 +181,7 @@ public class NoteRepository : INoteRepository
                     canonicalId,
                     RecordType.Note,
                     entity.Id,
-                    entity.Mills,
+                    new DateTimeOffset(entity.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
                     entity.DataSource ?? "unknown",
                     ct);
             }

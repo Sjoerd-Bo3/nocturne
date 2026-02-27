@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
 
@@ -16,7 +17,7 @@ public static class ApsSnapshotMapper
         return new ApsSnapshotEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             LegacyId = model.LegacyId,
@@ -43,7 +44,10 @@ public static class ApsSnapshotMapper
             PredictedZtJson = model.PredictedZtJson,
             PredictedCobJson = model.PredictedCobJson,
             PredictedUamJson = model.PredictedUamJson,
-            PredictedStartMills = model.PredictedStartMills,
+            PredictedStartTimestamp = model.PredictedStartTimestamp,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -55,7 +59,7 @@ public static class ApsSnapshotMapper
         return new ApsSnapshot
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             LegacyId = entity.LegacyId,
@@ -82,7 +86,10 @@ public static class ApsSnapshotMapper
             PredictedZtJson = entity.PredictedZtJson,
             PredictedCobJson = entity.PredictedCobJson,
             PredictedUamJson = entity.PredictedUamJson,
-            PredictedStartMills = entity.PredictedStartMills,
+            PredictedStartTimestamp = entity.PredictedStartTimestamp,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -91,7 +98,7 @@ public static class ApsSnapshotMapper
     /// </summary>
     public static void UpdateEntity(ApsSnapshotEntity entity, ApsSnapshot model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.LegacyId = model.LegacyId;
@@ -117,6 +124,9 @@ public static class ApsSnapshotMapper
         entity.PredictedZtJson = model.PredictedZtJson;
         entity.PredictedCobJson = model.PredictedCobJson;
         entity.PredictedUamJson = model.PredictedUamJson;
-        entity.PredictedStartMills = model.PredictedStartMills;
+        entity.PredictedStartTimestamp = model.PredictedStartTimestamp;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

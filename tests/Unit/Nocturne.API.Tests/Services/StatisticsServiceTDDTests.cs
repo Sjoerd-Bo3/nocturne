@@ -646,7 +646,7 @@ public class StatisticsServiceTDDTests
         return new Bolus
         {
             Insulin = insulin,
-            Mills = mills ?? Day1Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(mills ?? Day1Mills).UtcDateTime,
             Automatic = automatic,
         };
     }
@@ -656,8 +656,8 @@ public class StatisticsServiceTDDTests
         var startMills = mills ?? Day1Mills;
         return new TempBasal
         {
-            StartMills = startMills,
-            EndMills = startMills + (long)(durationMinutes * 60 * 1000),
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(startMills).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(startMills + (long)(durationMinutes * 60 * 1000)).UtcDateTime,
             Rate = rate,
             Origin = TempBasalOrigin.Algorithm,
         };

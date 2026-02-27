@@ -89,7 +89,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
 
         var model = new V4Models.ApsSnapshot
         {
-            Mills = ds.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(ds.Mills).UtcDateTime,
             UtcOffset = ds.UtcOffset,
             Device = ds.Device,
             LegacyId = legacyId,
@@ -120,7 +120,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
             PredictedZtJson = SerializeOrNull(predBGs?.ZT),
             PredictedCobJson = SerializeOrNull(predBGs?.COB),
             PredictedUamJson = SerializeOrNull(predBGs?.UAM),
-            PredictedStartMills = ParseTimestampToMills(command?.Timestamp),
+            PredictedStartTimestamp = ParseTimestampToDateTime(command?.Timestamp),
         };
 
         await UpsertApsSnapshotAsync(legacyId, model, result, ct);
@@ -131,7 +131,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
     {
         var model = new V4Models.ApsSnapshot
         {
-            Mills = ds.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(ds.Mills).UtcDateTime,
             UtcOffset = ds.UtcOffset,
             Device = ds.Device,
             LegacyId = legacyId,
@@ -150,7 +150,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
             SuggestedJson = SerializeOrNull(ds.Loop.Recommended),
             EnactedJson = SerializeOrNull(ds.Loop.Enacted),
             PredictedDefaultJson = SerializeOrNull(ds.Loop.Predicted?.Values),
-            PredictedStartMills = ParseTimestampToMills(ds.Loop.Predicted?.StartDate),
+            PredictedStartTimestamp = ParseTimestampToDateTime(ds.Loop.Predicted?.StartDate),
         };
 
         await UpsertApsSnapshotAsync(legacyId, model, result, ct);
@@ -187,7 +187,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
     {
         var model = new V4Models.PumpSnapshot
         {
-            Mills = ds.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(ds.Mills).UtcDateTime,
             UtcOffset = ds.UtcOffset,
             Device = ds.Device,
             LegacyId = legacyId,
@@ -231,7 +231,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
     {
         var model = new V4Models.UploaderSnapshot
         {
-            Mills = ds.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(ds.Mills).UtcDateTime,
             UtcOffset = ds.UtcOffset,
             Device = ds.Device,
             LegacyId = legacyId,
@@ -273,9 +273,9 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
         {
             Category = StateSpanCategory.Override,
             State = OverrideState.Custom.ToString(),
-            StartMills = ds.Mills,
-            EndMills = ds.Override!.Duration is > 0
-                ? ds.Mills + (long)(ds.Override.Duration.Value * 60000)
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(ds.Mills).UtcDateTime,
+            EndTimestamp = ds.Override!.Duration is > 0
+                ? DateTimeOffset.FromUnixTimeMilliseconds(ds.Mills + (long)(ds.Override.Duration.Value * 60000)).UtcDateTime
                 : null,
             Source = ds.Device,
             OriginalId = legacyId,
@@ -324,11 +324,11 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
         return list is null ? null : JsonSerializer.Serialize(list, JsonOptions);
     }
 
-    private static long? ParseTimestampToMills(string? timestamp)
+    private static DateTime? ParseTimestampToDateTime(string? timestamp)
     {
         if (string.IsNullOrEmpty(timestamp))
             return null;
-        return DateTimeOffset.TryParse(timestamp, out var dto) ? dto.ToUnixTimeMilliseconds() : null;
+        return DateTimeOffset.TryParse(timestamp, out var dto) ? dto.UtcDateTime : null;
     }
 
     private static Dictionary<string, object>? BuildOverrideMetadata(OverrideStatus overrideStatus)

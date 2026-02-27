@@ -16,8 +16,8 @@ public class TempBasalMapperTests
         var model = new TempBasal
         {
             Id = id,
-            StartMills = 1700000000000,
-            EndMills = 1700001800000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001800000).UtcDateTime,
             UtcOffset = -300,
             Device = "omnipod",
             App = "loop",
@@ -34,8 +34,8 @@ public class TempBasalMapperTests
         var entity = TempBasalMapper.ToEntity(model);
 
         entity.Id.Should().Be(id);
-        entity.StartMills.Should().Be(1700000000000);
-        entity.EndMills.Should().Be(1700001800000);
+        entity.StartTimestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
+        entity.EndTimestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700001800000).UtcDateTime);
         entity.UtcOffset.Should().Be(-300);
         entity.Device.Should().Be("omnipod");
         entity.App.Should().Be("loop");
@@ -53,7 +53,7 @@ public class TempBasalMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_EmptyGuid_GeneratesNewId()
     {
-        var model = new TempBasal { StartMills = 1700000000000, Rate = 1.0 };
+        var model = new TempBasal { StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, Rate = 1.0 };
 
         var entity = TempBasalMapper.ToEntity(model);
 
@@ -66,14 +66,14 @@ public class TempBasalMapperTests
     {
         var model = new TempBasal
         {
-            StartMills = 1700000000000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Rate = 1.0,
-            EndMills = null
+            EndTimestamp = null
         };
 
         var entity = TempBasalMapper.ToEntity(model);
 
-        entity.EndMills.Should().BeNull();
+        entity.EndTimestamp.Should().BeNull();
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class TempBasalMapperTests
         {
             var model = new TempBasal
             {
-                StartMills = 1700000000000,
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
                 Rate = 1.0,
                 Origin = origin
             };
@@ -99,7 +99,7 @@ public class TempBasalMapperTests
     {
         var model = new TempBasal
         {
-            StartMills = 1700000000000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Rate = 0.0,
             Origin = TempBasalOrigin.Suspended
         };
@@ -116,9 +116,9 @@ public class TempBasalMapperTests
     {
         var model = new TempBasal
         {
-            StartMills = 1700000000000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Rate = 1.0,
-            EndMills = null,
+            EndTimestamp = null,
             ScheduledRate = null,
             PumpDeviceId = null,
             PumpRecordId = null
@@ -126,7 +126,7 @@ public class TempBasalMapperTests
 
         var entity = TempBasalMapper.ToEntity(model);
 
-        entity.EndMills.Should().BeNull();
+        entity.EndTimestamp.Should().BeNull();
         entity.ScheduledRate.Should().BeNull();
         entity.PumpDeviceId.Should().BeNull();
         entity.PumpRecordId.Should().BeNull();
@@ -144,8 +144,8 @@ public class TempBasalMapperTests
         var entity = new TempBasalEntity
         {
             Id = id,
-            StartMills = 1700000000000,
-            EndMills = 1700001800000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001800000).UtcDateTime,
             UtcOffset = -300,
             Device = "omnipod",
             App = "loop",
@@ -188,7 +188,7 @@ public class TempBasalMapperTests
         var entity = new TempBasalEntity
         {
             Id = Guid.CreateVersion7(),
-            StartMills = 1700000000000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Rate = 1.0,
             Origin = "InvalidOrigin"
         };
@@ -205,10 +205,10 @@ public class TempBasalMapperTests
         var entity = new TempBasalEntity
         {
             Id = Guid.CreateVersion7(),
-            StartMills = 1700000000000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Rate = 1.0,
             Origin = "Manual",
-            EndMills = null
+            EndTimestamp = null
         };
 
         var model = TempBasalMapper.ToDomainModel(entity);
@@ -225,7 +225,7 @@ public class TempBasalMapperTests
             var entity = new TempBasalEntity
             {
                 Id = Guid.CreateVersion7(),
-                StartMills = 1700000000000,
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
                 Rate = 1.0,
                 Origin = origin.ToString()
             };
@@ -246,7 +246,7 @@ public class TempBasalMapperTests
         {
             Id = originalId,
             SysCreatedAt = originalCreatedAt,
-            StartMills = 1000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1000).UtcDateTime,
             Rate = 0.5,
             Origin = "Manual"
         };
@@ -255,8 +255,8 @@ public class TempBasalMapperTests
         var newPumpDeviceId = Guid.NewGuid();
         var model = new TempBasal
         {
-            StartMills = 1700000000000,
-            EndMills = 1700001800000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001800000).UtcDateTime,
             UtcOffset = 60,
             Device = "tandem",
             App = "controliq",
@@ -274,8 +274,8 @@ public class TempBasalMapperTests
 
         entity.Id.Should().Be(originalId);
         entity.SysCreatedAt.Should().Be(originalCreatedAt);
-        entity.StartMills.Should().Be(1700000000000);
-        entity.EndMills.Should().Be(1700001800000);
+        entity.StartTimestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
+        entity.EndTimestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700001800000).UtcDateTime);
         entity.UtcOffset.Should().Be(60);
         entity.Device.Should().Be("tandem");
         entity.App.Should().Be("controliq");
@@ -303,7 +303,7 @@ public class TempBasalMapperTests
         };
         var beforeUpdate = DateTime.UtcNow;
 
-        var model = new TempBasal { StartMills = 1700000000000, Rate = 1.0 };
+        var model = new TempBasal { StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, Rate = 1.0 };
         TempBasalMapper.UpdateEntity(entity, model);
 
         entity.SysUpdatedAt.Should().BeOnOrAfter(beforeUpdate);
@@ -319,8 +319,8 @@ public class TempBasalMapperTests
         var original = new TempBasal
         {
             Id = id,
-            StartMills = 1700000000000,
-            EndMills = 1700001800000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001800000).UtcDateTime,
             UtcOffset = -480,
             Device = "medtronic",
             App = "carelink",
@@ -362,7 +362,7 @@ public class TempBasalMapperTests
             var original = new TempBasal
             {
                 Id = Guid.CreateVersion7(),
-                StartMills = 1700000000000,
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
                 Rate = 1.0,
                 Origin = origin
             };

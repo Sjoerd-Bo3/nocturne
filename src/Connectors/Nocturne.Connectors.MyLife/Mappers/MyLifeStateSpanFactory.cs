@@ -28,8 +28,8 @@ internal static class MyLifeStateSpanFactory
         return new TempBasal
         {
             Id = Guid.CreateVersion7(),
-            StartMills = timestamp.ToUnixTimeMilliseconds(),
-            EndMills = null, // Will be set when the next record arrives
+            StartTimestamp = timestamp.UtcDateTime,
+            EndTimestamp = null, // Will be set when the next record arrives
             Rate = rate,
             ScheduledRate = null,
             Origin = origin,

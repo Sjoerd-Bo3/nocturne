@@ -62,7 +62,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 120.0,
             DataSource = "dexcom"
         });
@@ -81,14 +81,14 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2023_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2023_Noon).UtcDateTime,
             Mgdl = 100.0,
             DataSource = "dexcom"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = Jan1_2025_01h,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(Jan1_2025_01h).UtcDateTime,
             Insulin = 5.0,
             DataSource = "glooko"
         });
@@ -106,21 +106,21 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 120.0,
             DataSource = "dexcom"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 1000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 1000).UtcDateTime,
             Insulin = 3.0,
             DataSource = "glooko"
         });
         _dbContext.CarbIntakes.Add(new CarbIntakeEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 2000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 2000).UtcDateTime,
             Carbs = 30.0,
             DataSource = "dexcom"
         });
@@ -129,7 +129,7 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Category = "PumpMode",
             State = "Automatic",
-            StartMills = June15_2024_Noon + 3000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 3000).UtcDateTime,
             Source = "medtronic"
         });
         await _dbContext.SaveChangesAsync();
@@ -147,7 +147,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 120.0,
             DataSource = null
         });
@@ -173,8 +173,8 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Category = "PumpMode",
             State = "Automatic",
-            StartMills = June15_2023_Noon,
-            EndMills = June15_2023_Noon + 3600000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2023_Noon).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2023_Noon + 3600000).UtcDateTime,
             Source = "glooko"
         });
         await _dbContext.SaveChangesAsync();
@@ -249,7 +249,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 150.0,
             DataSource = "dexcom"
         });
@@ -272,35 +272,35 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 120.0,
             DataSource = "dexcom"
         });
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Mgdl = 130.0,
             DataSource = "dexcom"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 600000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 600000).UtcDateTime,
             Insulin = 5.0,
             DataSource = "dexcom"
         });
         _dbContext.CarbIntakes.Add(new CarbIntakeEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 900000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 900000).UtcDateTime,
             Carbs = 45.0,
             DataSource = "dexcom"
         });
         _dbContext.Notes.Add(new NoteEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 1200000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 1200000).UtcDateTime,
             Text = "Feeling good",
             DataSource = "dexcom"
         });
@@ -326,28 +326,28 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 120.0,
             DataSource = "dexcom"
         });
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Mgdl = 200.0,
             DataSource = "glooko"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 600000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 600000).UtcDateTime,
             Insulin = 3.0,
             DataSource = "dexcom"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 900000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 900000).UtcDateTime,
             Insulin = 7.0,
             DataSource = "glooko"
         });
@@ -371,21 +371,21 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 120.0,
             DataSource = "dexcom"
         });
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Mgdl = 200.0,
             DataSource = "glooko"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 600000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 600000).UtcDateTime,
             Insulin = 3.0,
             DataSource = "medtronic"
         });
@@ -409,7 +409,7 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Category = "PumpMode",
             State = "Automatic",
-            StartMills = June15_2024_Noon,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Source = "glooko"
         });
         await _dbContext.SaveChangesAsync();
@@ -432,7 +432,7 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Category = "PumpMode",
             State = "Automatic",
-            StartMills = June15_2024_Noon,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Source = "glooko"
         });
         _dbContext.StateSpans.Add(new StateSpanEntity
@@ -440,7 +440,7 @@ public class DataOverviewServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Category = "PumpMode",
             State = "Manual",
-            StartMills = June15_2024_Noon + 300000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Source = "medtronic"
         });
         await _dbContext.SaveChangesAsync();
@@ -463,7 +463,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 1000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 1000).UtcDateTime,
             Mgdl = 100.0,
             DataSource = "dexcom"
         });
@@ -491,7 +491,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 1000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 1000).UtcDateTime,
             Mgdl = 100.0,
             DataSource = "dexcom"
         });
@@ -583,7 +583,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 100.0,
             DataSource = "dexcom"
         });
@@ -611,14 +611,14 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2023_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2023_Noon).UtcDateTime,
             Mgdl = 100.0,
             DataSource = "dexcom"
         });
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 200.0,
             DataSource = "dexcom"
         });
@@ -637,7 +637,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 120.0,
             DataSource = "dexcom"
         });
@@ -655,14 +655,14 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = Dec31_2024_23h,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(Dec31_2024_23h).UtcDateTime,
             Mgdl = 110.0,
             DataSource = "dexcom"
         });
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = Jan1_2025_01h,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(Jan1_2025_01h).UtcDateTime,
             Mgdl = 130.0,
             DataSource = "dexcom"
         });
@@ -687,13 +687,13 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 100.0
         });
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = Jan1_2024_Midnight,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(Jan1_2024_Midnight).UtcDateTime,
             Mgdl = 200.0
         });
         await _dbContext.SaveChangesAsync();
@@ -712,19 +712,19 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 100.0
         });
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Mgdl = 133.0
         });
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 600000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 600000).UtcDateTime,
             Mgdl = 150.0
         });
         await _dbContext.SaveChangesAsync();
@@ -742,14 +742,14 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 100.0,
             DataSource = "dexcom"
         });
         _dbContext.MeterGlucose.Add(new MeterGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Mgdl = 200.0,
             DataSource = "dexcom"
         });
@@ -772,13 +772,13 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.BolusCalculations.Add(new BolusCalculationEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             DataSource = "glooko"
         });
         _dbContext.DeviceEvents.Add(new DeviceEventEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 1000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 1000).UtcDateTime,
             EventType = "SiteChange",
             DataSource = "glooko"
         });
@@ -830,7 +830,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Insulin = 5.0,
             DataSource = "glooko"
         });
@@ -855,14 +855,14 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Insulin = 5.5,
             DataSource = "glooko"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Insulin = 3.2,
             DataSource = "glooko"
         });
@@ -885,7 +885,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Insulin = 0.3,
             BolusKind = "Algorithm",
             Automatic = true,
@@ -894,7 +894,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Insulin = 0.5,
             BolusKind = "Algorithm",
             Automatic = true,
@@ -920,8 +920,8 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.TempBasals.Add(new TempBasalEntity
         {
             Id = Guid.NewGuid(),
-            StartMills = June15_2024_Noon,
-            EndMills = June15_2024_Noon + 3600000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 3600000).UtcDateTime,
             Rate = 1.0,
             Origin = "Scheduled",
             DataSource = "glooko"
@@ -929,8 +929,8 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.TempBasals.Add(new TempBasalEntity
         {
             Id = Guid.NewGuid(),
-            StartMills = June15_2024_Noon + 3600000,
-            EndMills = June15_2024_Noon + 5400000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 3600000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 5400000).UtcDateTime,
             Rate = 0.5,
             Origin = "Algorithm",
             DataSource = "glooko"
@@ -953,8 +953,8 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.TempBasals.Add(new TempBasalEntity
         {
             Id = Guid.NewGuid(),
-            StartMills = June15_2024_Noon,
-            EndMills = null,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
+            EndTimestamp = null,
             Rate = 1.2,
             Origin = "Algorithm",
             DataSource = "glooko"
@@ -976,7 +976,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Insulin = 0.5,
             BolusKind = "Algorithm",
             Automatic = true,
@@ -985,8 +985,8 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.TempBasals.Add(new TempBasalEntity
         {
             Id = Guid.NewGuid(),
-            StartMills = June15_2024_Noon,
-            EndMills = June15_2024_Noon + 3600000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 3600000).UtcDateTime,
             Rate = 1.0,
             Origin = "Scheduled",
             DataSource = "glooko"
@@ -1008,14 +1008,14 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Insulin = 5.0,
             DataSource = "glooko"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Insulin = 10.0,
             DataSource = "glooko"
         });
@@ -1036,7 +1036,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 120.0,
             DataSource = "dexcom"
         });
@@ -1058,14 +1058,14 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Insulin = 5.0,
             DataSource = "dexcom"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Insulin = 10.0,
             DataSource = "glooko"
         });
@@ -1087,14 +1087,14 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Insulin = 5.0,
             DataSource = "glooko"
         });
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Insulin = 2.5,
             BolusKind = "Algorithm",
             Automatic = true,
@@ -1119,15 +1119,15 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Insulin = 5.0,
             DataSource = "glooko"
         });
         _dbContext.TempBasals.Add(new TempBasalEntity
         {
             Id = Guid.NewGuid(),
-            StartMills = June15_2024_Noon,
-            EndMills = June15_2024_Noon + 18000000, // 5 hours
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 18000000).UtcDateTime, // 5 hours
             Rate = 2.0,
             Origin = "Scheduled",
             DataSource = "glooko"
@@ -1150,7 +1150,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Insulin = 0.5,
             BolusKind = "Algorithm",
             Automatic = true,
@@ -1159,7 +1159,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.Boluses.Add(new BolusEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Insulin = 0.3,
             BolusKind = "Algorithm",
             Automatic = true,
@@ -1180,8 +1180,8 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.TempBasals.Add(new TempBasalEntity
         {
             Id = Guid.NewGuid(),
-            StartMills = June15_2024_Noon,
-            EndMills = June15_2024_Noon + 3600000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 3600000).UtcDateTime,
             Rate = 1.0,
             Origin = "Scheduled",
             DataSource = "glooko"
@@ -1189,8 +1189,8 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.TempBasals.Add(new TempBasalEntity
         {
             Id = Guid.NewGuid(),
-            StartMills = June15_2024_Noon + 300000,
-            EndMills = June15_2024_Noon + 3900000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 3900000).UtcDateTime,
             Rate = 0.8,
             Origin = "Algorithm",
             DataSource = "medtronic"
@@ -1214,14 +1214,14 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.CarbIntakes.Add(new CarbIntakeEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Carbs = 45.0,
             DataSource = "mylife"
         });
         _dbContext.CarbIntakes.Add(new CarbIntakeEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 3600000, // 1 hour later, same day
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 3600000).UtcDateTime, // 1 hour later, same day
             Carbs = 30.5,
             DataSource = "mylife"
         });
@@ -1241,7 +1241,7 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.SensorGlucose.Add(new SensorGlucoseEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Mgdl = 120,
             DataSource = "dexcom"
         });
@@ -1260,14 +1260,14 @@ public class DataOverviewServiceTests : IDisposable
         _dbContext.CarbIntakes.Add(new CarbIntakeEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
             Carbs = 50.0,
             DataSource = "mylife"
         });
         _dbContext.CarbIntakes.Add(new CarbIntakeEntity
         {
             Id = Guid.NewGuid(),
-            Mills = June15_2024_Noon + 300000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon + 300000).UtcDateTime,
             Carbs = 25.0,
             DataSource = "glooko"
         });

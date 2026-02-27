@@ -55,11 +55,11 @@ internal sealed class MyLifeStateSpanMapper
             }
         }
 
-        // Post-process to set endMills on consecutive TempBasal records
+        // Post-process to set EndTimestamp on consecutive TempBasal records
         CalculateTempBasalEndTimes(tempBasals);
 
-        // Return sorted by StartMills for consistent ordering
-        return tempBasals.OrderBy(t => t.StartMills);
+        // Return sorted by StartTimestamp for consistent ordering
+        return tempBasals.OrderBy(t => t.StartTimestamp);
     }
 
     /// <summary>
@@ -70,8 +70,8 @@ internal sealed class MyLifeStateSpanMapper
     {
         // Get all TempBasal records without an end time, sorted by start time
         var openRecords = tempBasals
-            .Where(t => !t.EndMills.HasValue && t.StartMills > 0)
-            .OrderBy(t => t.StartMills)
+            .Where(t => !t.EndTimestamp.HasValue && t.StartTimestamp > DateTime.MinValue)
+            .OrderBy(t => t.StartTimestamp)
             .ToList();
 
         if (openRecords.Count == 0)
@@ -83,7 +83,7 @@ internal sealed class MyLifeStateSpanMapper
             var current = openRecords[i];
             var next = openRecords[i + 1];
 
-            current.EndMills = next.StartMills;
+            current.EndTimestamp = next.StartTimestamp;
         }
 
         // The last record remains open (no end time) - it's the current active state

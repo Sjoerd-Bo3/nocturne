@@ -101,7 +101,7 @@ public class ChartDataServiceTests
             {
                 new()
                 {
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     Mgdl = 120.0,
                     Direction = GlucoseDirection.Flat,
                 },
@@ -124,13 +124,13 @@ public class ChartDataServiceTests
             {
                 new()
                 {
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     Mgdl = 120.0,
                     Direction = GlucoseDirection.Flat,
                 },
                 new()
                 {
-                    Mills = TestMills + 2000,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 2000).UtcDateTime,
                     Mgdl = 150.0,
                     Direction = GlucoseDirection.FortyFiveUp,
                 },
@@ -147,9 +147,9 @@ public class ChartDataServiceTests
         {
             var readings = new List<SensorGlucose>
             {
-                new() { Mills = TestMills + 2000, Mgdl = 150.0 },
-                new() { Mills = TestMills, Mgdl = 120.0 },
-                new() { Mills = TestMills + 1000, Mgdl = 130.0 },
+                new() { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 2000).UtcDateTime, Mgdl = 150.0 },
+                new() { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime, Mgdl = 120.0 },
+                new() { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 1000).UtcDateTime, Mgdl = 130.0 },
             };
 
             var (data, _) = ChartDataService.BuildGlucoseData(readings);
@@ -165,7 +165,7 @@ public class ChartDataServiceTests
         {
             var readings = new List<SensorGlucose>
             {
-                new() { Mills = TestMills, Mgdl = 120.0, Direction = null },
+                new() { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime, Mgdl = 120.0, Direction = null },
             };
 
             var (data, _) = ChartDataService.BuildGlucoseData(readings);
@@ -183,7 +183,7 @@ public class ChartDataServiceTests
         {
             var readings = new List<SensorGlucose>
             {
-                new() { Mills = TestMills, Mgdl = mgdl },
+                new() { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime, Mgdl = mgdl },
             };
 
             var (_, yMax) = ChartDataService.BuildGlucoseData(readings);
@@ -217,7 +217,7 @@ public class ChartDataServiceTests
                     Id = bolusId,
                     LegacyId = "treat-1",
                     Insulin = 5.0,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     BolusType = Nocturne.Core.Models.V4.BolusType.Normal,
                     Automatic = false,
                 },
@@ -241,7 +241,7 @@ public class ChartDataServiceTests
                 {
                     Id = Guid.NewGuid(),
                     Insulin = 0.3,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     Automatic = true,
                 },
             };
@@ -261,7 +261,7 @@ public class ChartDataServiceTests
                 {
                     Id = Guid.NewGuid(),
                     Insulin = 3.0,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     BolusType = Nocturne.Core.Models.V4.BolusType.Square,
                     Automatic = false,
                 },
@@ -282,7 +282,7 @@ public class ChartDataServiceTests
                 {
                     Id = Guid.NewGuid(),
                     Insulin = 0.0,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                 },
             };
 
@@ -302,7 +302,7 @@ public class ChartDataServiceTests
                     Id = bolusId,
                     LegacyId = null,
                     Insulin = 5.0,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                 },
             };
 
@@ -320,7 +320,7 @@ public class ChartDataServiceTests
                 {
                     Id = Guid.NewGuid(),
                     Insulin = 5.0,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                 },
             };
 
@@ -355,7 +355,7 @@ public class ChartDataServiceTests
                     Id = carbId,
                     LegacyId = "treat-1",
                     Carbs = 30.0,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                 },
             };
 
@@ -382,7 +382,7 @@ public class ChartDataServiceTests
                 {
                     Id = Guid.NewGuid(),
                     Carbs = 20.0,
-                    Mills = noonUtcMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(noonUtcMills).UtcDateTime,
                 },
             };
 
@@ -401,7 +401,7 @@ public class ChartDataServiceTests
                 {
                     Id = Guid.NewGuid(),
                     Carbs = 0.0,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                 },
             };
 
@@ -421,7 +421,7 @@ public class ChartDataServiceTests
                     Id = carbId,
                     LegacyId = null,
                     Carbs = 30.0,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                 },
             };
 
@@ -453,7 +453,7 @@ public class ChartDataServiceTests
                 new()
                 {
                     EventType = DeviceEventType.SiteChange,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     Notes = "Left arm",
                 },
             };
@@ -471,7 +471,7 @@ public class ChartDataServiceTests
         {
             var deviceEvents = new List<DeviceEvent>
             {
-                new() { EventType = DeviceEventType.SensorStart, Mills = TestMills },
+                new() { EventType = DeviceEventType.SensorStart, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime},
             };
 
             var result = ChartDataService.BuildDeviceEventMarkers(deviceEvents);
@@ -486,12 +486,12 @@ public class ChartDataServiceTests
         {
             var deviceEvents = new List<DeviceEvent>
             {
-                new() { EventType = DeviceEventType.SensorStart, Mills = TestMills },
-                new() { EventType = DeviceEventType.SensorChange, Mills = TestMills + 1000 },
-                new() { EventType = DeviceEventType.SensorStop, Mills = TestMills + 2000 },
-                new() { EventType = DeviceEventType.SiteChange, Mills = TestMills + 3000 },
-                new() { EventType = DeviceEventType.InsulinChange, Mills = TestMills + 4000 },
-                new() { EventType = DeviceEventType.PumpBatteryChange, Mills = TestMills + 5000 },
+                new() { EventType = DeviceEventType.SensorStart, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime},
+                new() { EventType = DeviceEventType.SensorChange, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 1000).UtcDateTime},
+                new() { EventType = DeviceEventType.SensorStop, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 2000).UtcDateTime},
+                new() { EventType = DeviceEventType.SiteChange, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 3000).UtcDateTime},
+                new() { EventType = DeviceEventType.InsulinChange, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 4000).UtcDateTime},
+                new() { EventType = DeviceEventType.PumpBatteryChange, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 5000).UtcDateTime},
             };
 
             var result = ChartDataService.BuildDeviceEventMarkers(deviceEvents);
@@ -510,10 +510,10 @@ public class ChartDataServiceTests
         {
             var deviceEvents = new List<DeviceEvent>
             {
-                new() { EventType = DeviceEventType.PodChange, Mills = TestMills },
-                new() { EventType = DeviceEventType.ReservoirChange, Mills = TestMills + 1000 },
-                new() { EventType = DeviceEventType.CannulaChange, Mills = TestMills + 2000 },
-                new() { EventType = DeviceEventType.TransmitterSensorInsert, Mills = TestMills + 3000 },
+                new() { EventType = DeviceEventType.PodChange, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime},
+                new() { EventType = DeviceEventType.ReservoirChange, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 1000).UtcDateTime},
+                new() { EventType = DeviceEventType.CannulaChange, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 2000).UtcDateTime},
+                new() { EventType = DeviceEventType.TransmitterSensorInsert, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 3000).UtcDateTime},
             };
 
             var result = ChartDataService.BuildDeviceEventMarkers(deviceEvents);
@@ -556,7 +556,7 @@ public class ChartDataServiceTests
                     LegacyId = "treat-bg-1",
                     Glucose = 120.0,
                     Units = GlucoseUnit.MgDl,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     GlucoseType = GlucoseType.Finger,
                 },
             };
@@ -580,7 +580,7 @@ public class ChartDataServiceTests
                     Id = Guid.NewGuid(),
                     Glucose = 0.0,
                     Units = GlucoseUnit.MgDl,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                 },
             };
 
@@ -601,7 +601,7 @@ public class ChartDataServiceTests
                     LegacyId = null,
                     Glucose = 95.0,
                     Units = GlucoseUnit.MgDl,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                 },
             };
 
@@ -620,7 +620,7 @@ public class ChartDataServiceTests
                     Id = Guid.NewGuid(),
                     Glucose = 110.0,
                     Units = GlucoseUnit.MgDl,
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     GlucoseType = null,
                 },
             };
@@ -662,7 +662,7 @@ public class ChartDataServiceTests
                 {
                     Id = bolusId,
                     LegacyId = "legacy-1",
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     Insulin = 5.0,
                 },
             };
@@ -684,7 +684,7 @@ public class ChartDataServiceTests
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     Insulin = 0.0,
                 },
             };
@@ -704,7 +704,7 @@ public class ChartDataServiceTests
                 {
                     Id = carbId,
                     LegacyId = "legacy-2",
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     Carbs = 30.0,
                 },
             };
@@ -726,7 +726,7 @@ public class ChartDataServiceTests
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     Carbs = 0.0,
                 },
             };
@@ -741,11 +741,11 @@ public class ChartDataServiceTests
         {
             var boluses = new List<Bolus>
             {
-                new() { Id = Guid.NewGuid(), Mills = TestMills, Insulin = 3.0 },
+                new() { Id = Guid.NewGuid(), Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime, Insulin = 3.0 },
             };
             var carbs = new List<CarbIntake>
             {
-                new() { Id = Guid.NewGuid(), Mills = TestMills + 1000, Carbs = 20.0 },
+                new() { Id = Guid.NewGuid(), Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 1000).UtcDateTime, Carbs = 20.0 },
             };
 
             var result = ChartDataService.BuildTreatmentsFromV4Data(boluses, carbs, NoFoods);
@@ -761,7 +761,7 @@ public class ChartDataServiceTests
             var bolusId = Guid.NewGuid();
             var boluses = new List<Bolus>
             {
-                new() { Id = bolusId, LegacyId = null, Mills = TestMills, Insulin = 2.0 },
+                new() { Id = bolusId, LegacyId = null, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime, Insulin = 2.0 },
             };
 
             var result = ChartDataService.BuildTreatmentsFromV4Data(boluses, new List<CarbIntake>(), NoFoods);
@@ -777,7 +777,7 @@ public class ChartDataServiceTests
                 new()
                 {
                     Id = Guid.NewGuid(),
-                    Mills = TestMills,
+                    Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
                     Carbs = 25.0,
                 },
             };
@@ -794,7 +794,7 @@ public class ChartDataServiceTests
             var carbId = Guid.NewGuid();
             var carbs = new List<CarbIntake>
             {
-                new() { Id = carbId, Mills = TestMills, Carbs = 40.0 },
+                new() { Id = carbId, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime, Carbs = 40.0 },
             };
             var foodData = new Dictionary<Guid, List<TreatmentFood>>
             {
@@ -816,7 +816,7 @@ public class ChartDataServiceTests
             var carbId = Guid.NewGuid();
             var carbs = new List<CarbIntake>
             {
-                new() { Id = carbId, Mills = TestMills, Carbs = 30.0 },
+                new() { Id = carbId, Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime, Carbs = 30.0 },
             };
             var foodData = new Dictionary<Guid, List<TreatmentFood>>
             {
@@ -1516,8 +1516,8 @@ public class ChartDataServiceTests
             {
                 Id = "span-1",
                 State = "Automatic",
-                StartMills = TestMills,
-                EndMills = TestMills + 3600000,
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
+                EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 3600000).UtcDateTime,
             },
         };
 
@@ -1541,8 +1541,8 @@ public class ChartDataServiceTests
             {
                 Id = "span-2",
                 State = "Active",
-                StartMills = TestMills,
-                EndMills = TestMills + 3600000,
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
+                EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 3600000).UtcDateTime,
             },
         };
 
@@ -1560,8 +1560,8 @@ public class ChartDataServiceTests
             {
                 Id = "span-3",
                 State = "Boost",
-                StartMills = TestMills,
-                EndMills = TestMills + 3600000,
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
+                EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 3600000).UtcDateTime,
             },
         };
 
@@ -1577,16 +1577,16 @@ public class ChartDataServiceTests
         {
             Id = "sleep-1",
             State = "Sleeping",
-            StartMills = TestMills,
-            EndMills = TestMills + 28800000, // 8 hours
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 28800000).UtcDateTime, // 8 hours
         };
 
         var exerciseSpan = new StateSpan
         {
             Id = "exercise-1",
             State = "Running",
-            StartMills = TestMills,
-            EndMills = TestMills + 3600000,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 3600000).UtcDateTime,
         };
 
         var sleepResult = _service.MapStateSpans(new[] { sleepSpan }, StateSpanCategory.Sleep);
@@ -1608,8 +1608,8 @@ public class ChartDataServiceTests
             {
                 Id = "span-null",
                 State = null,
-                StartMills = TestMills,
-                EndMills = TestMills + 3600000,
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
+                EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 3600000).UtcDateTime,
             },
         };
 
@@ -1627,8 +1627,8 @@ public class ChartDataServiceTests
             {
                 Id = null,
                 State = "Active",
-                StartMills = TestMills,
-                EndMills = TestMills + 3600000,
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
+                EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 3600000).UtcDateTime,
             },
         };
 
@@ -1647,8 +1647,8 @@ public class ChartDataServiceTests
             {
                 Id = "span-meta",
                 State = "Active",
-                StartMills = TestMills,
-                EndMills = TestMills + 3600000,
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
+                EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 3600000).UtcDateTime,
                 Metadata = metadata,
             },
         };

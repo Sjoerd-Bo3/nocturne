@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
 
@@ -16,7 +17,7 @@ public static class BolusMapper
         return new BolusEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             App = model.App,
@@ -39,6 +40,9 @@ public static class BolusMapper
             PumpRecordId = model.PumpRecordId,
             BolusCalculationId = model.BolusCalculationId,
             ApsSnapshotId = model.ApsSnapshotId,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -50,7 +54,7 @@ public static class BolusMapper
         return new Bolus
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             App = entity.App,
@@ -73,6 +77,9 @@ public static class BolusMapper
             PumpRecordId = entity.PumpRecordId,
             BolusCalculationId = entity.BolusCalculationId,
             ApsSnapshotId = entity.ApsSnapshotId,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -81,7 +88,7 @@ public static class BolusMapper
     /// </summary>
     public static void UpdateEntity(BolusEntity entity, Bolus model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.App = model.App;
@@ -103,5 +110,8 @@ public static class BolusMapper
         entity.PumpRecordId = model.PumpRecordId;
         entity.BolusCalculationId = model.BolusCalculationId;
         entity.ApsSnapshotId = model.ApsSnapshotId;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

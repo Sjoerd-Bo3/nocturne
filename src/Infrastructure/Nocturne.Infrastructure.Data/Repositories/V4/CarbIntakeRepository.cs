@@ -25,8 +25,8 @@ public class CarbIntakeRepository : ICarbIntakeRepository
     }
 
     public async Task<IEnumerable<CarbIntake>> GetAsync(
-        long? from,
-        long? to,
+        DateTime? from,
+        DateTime? to,
         string? device,
         string? source,
         int limit = 100,
@@ -38,16 +38,16 @@ public class CarbIntakeRepository : ICarbIntakeRepository
     {
         var query = _context.CarbIntakes.AsNoTracking().AsQueryable();
         if (from.HasValue)
-            query = query.Where(e => e.Mills >= from.Value);
+            query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue)
-            query = query.Where(e => e.Mills <= to.Value);
+            query = query.Where(e => e.Timestamp <= to.Value);
         if (device != null)
             query = query.Where(e => e.Device == device);
         if (source != null)
             query = query.Where(e => e.DataSource == source);
         if (nativeOnly)
             query = query.Where(e => e.LegacyId == null);
-        query = descending ? query.OrderByDescending(e => e.Mills) : query.OrderBy(e => e.Mills);
+        query = descending ? query.OrderByDescending(e => e.Timestamp) : query.OrderBy(e => e.Timestamp);
         var entities = await query.Skip(offset).Take(limit).ToListAsync(ct);
         return entities.Select(CarbIntakeMapper.ToDomainModel);
     }
@@ -101,13 +101,13 @@ public class CarbIntakeRepository : ICarbIntakeRepository
         await _context.SaveChangesAsync(ct);
     }
 
-    public async Task<int> CountAsync(long? from, long? to, CancellationToken ct = default)
+    public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.CarbIntakes.AsNoTracking().AsQueryable();
         if (from.HasValue)
-            query = query.Where(e => e.Mills >= from.Value);
+            query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue)
-            query = query.Where(e => e.Mills <= to.Value);
+            query = query.Where(e => e.Timestamp <= to.Value);
         return await query.CountAsync(ct);
     }
 
@@ -187,7 +187,7 @@ public class CarbIntakeRepository : ICarbIntakeRepository
 
                 var canonicalId = await _deduplicationService.GetOrCreateCanonicalIdAsync(
                     RecordType.CarbIntake,
-                    entity.Mills,
+                    new DateTimeOffset(entity.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
                     criteria,
                     ct);
 
@@ -195,7 +195,7 @@ public class CarbIntakeRepository : ICarbIntakeRepository
                     canonicalId,
                     RecordType.CarbIntake,
                     entity.Id,
-                    entity.Mills,
+                    new DateTimeOffset(entity.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
                     entity.DataSource ?? "unknown",
                     ct);
             }

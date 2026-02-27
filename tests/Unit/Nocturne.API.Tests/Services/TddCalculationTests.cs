@@ -44,8 +44,8 @@ public class TddCalculationTests
         return new TempBasal
         {
             Id = Guid.NewGuid(),
-            StartMills = startMills,
-            EndMills = endMills,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(startMills).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(endMills).UtcDateTime,
             Rate = rateUPerHr,
             Origin = origin,
             ScheduledRate = scheduledRate,
@@ -100,7 +100,7 @@ public class TddCalculationTests
         {
             Id = Guid.NewGuid(),
             Insulin = units,
-            Mills = mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(mills).UtcDateTime,
             Automatic = automatic,
         };
     }
@@ -123,8 +123,8 @@ public class TddCalculationTests
         return new TempBasal
         {
             Id = Guid.NewGuid(),
-            StartMills = startMills,
-            EndMills = endMills,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(startMills).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(endMills).UtcDateTime,
             Rate = rateUPerHr,
             Origin = origin,
         };

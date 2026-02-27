@@ -562,13 +562,13 @@ public class StatisticsController : ControllerBase
                 var startDate = now.AddDays(-days);
                 var endDate = now;
 
-                var startTimestamp = ((DateTimeOffset)startDate).ToUnixTimeMilliseconds();
-                var endTimestamp = ((DateTimeOffset)endDate).ToUnixTimeMilliseconds();
+                var startTimestamp = startDate;
+                var endTimestamp = endDate;
 
                 // Fetch v4 data for this period (sequential — DbContext is not thread-safe)
                 var sensorGlucoseData = await _sensorGlucoseRepository.GetAsync(
-                    from: startTimestamp,
-                    to: endTimestamp,
+                    from: (DateTime?)startTimestamp,
+                    to: (DateTime?)endTimestamp,
                     device: null,
                     source: null,
                     limit: 10000,
@@ -578,8 +578,8 @@ public class StatisticsController : ControllerBase
                 var filteredEntries = sensorGlucoseData.ToList();
 
                 var bolusData = await _bolusRepository.GetAsync(
-                    from: startTimestamp,
-                    to: endTimestamp,
+                    from: (DateTime?)startTimestamp,
+                    to: (DateTime?)endTimestamp,
                     device: null,
                     source: null,
                     limit: 10000,
@@ -590,8 +590,8 @@ public class StatisticsController : ControllerBase
                 var filteredBoluses = bolusData.ToList();
 
                 var carbData = await _carbIntakeRepository.GetAsync(
-                    from: startTimestamp,
-                    to: endTimestamp,
+                    from: (DateTime?)startTimestamp,
+                    to: (DateTime?)endTimestamp,
                     device: null,
                     source: null,
                     limit: 10000,
@@ -766,12 +766,12 @@ public class StatisticsController : ControllerBase
     /// Calculate total scheduled basal delivery for a time period based on profile basal schedule,
     /// accounting for any temporary basal treatments that override the scheduled rate.
     /// </summary>
-    /// <param name="startTimestamp">Start time in Unix milliseconds</param>
-    /// <param name="endTimestamp">End time in Unix milliseconds</param>
+    /// <param name="startTimestamp">Start time as DateTime (UTC)</param>
+    /// <param name="endTimestamp">End time as DateTime (UTC)</param>
     /// <returns>Total scheduled basal insulin in units</returns>
     private double CalculateScheduledBasalForPeriod(
-        long startTimestamp,
-        long endTimestamp
+        DateTime startTimestamp,
+        DateTime endTimestamp
     )
     {
         double totalBasal = 0.0;
@@ -780,9 +780,11 @@ public class StatisticsController : ControllerBase
         // In v4, temp basal adjustments come from StateSpans (handled by the primary code path).
         // This fallback uses only the profile schedule when no StateSpans exist.
         const long intervalMs = 5 * 60 * 1000; // 5 minutes in milliseconds
-        var currentTime = startTimestamp;
+        var startMills = new DateTimeOffset(startTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
+        var endMills = new DateTimeOffset(endTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
+        var currentTime = startMills;
 
-        while (currentTime < endTimestamp)
+        while (currentTime < endMills)
         {
             var scheduledRate = _profileService.GetBasalRate(currentTime);
             var insulinDelivered = scheduledRate * (5.0 / 60.0); // 5 minutes = 5/60 hours
@@ -836,14 +838,14 @@ public class StatisticsController : ControllerBase
     {
         try
         {
-            var startMills = new DateTimeOffset(startDate).ToUnixTimeMilliseconds();
-            var endMills = new DateTimeOffset(endDate).ToUnixTimeMilliseconds();
+            var startDt = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
+            var endDt = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
 
             // Fetch manual boluses and basal data sequentially
             // (DbContext is not thread-safe, can't use Task.WhenAll)
             var boluses = await _bolusRepository.GetAsync(
-                from: startMills,
-                to: endMills,
+                from: startDt,
+                to: endDt,
                 device: null,
                 source: null,
                 limit: 10000,
@@ -852,8 +854,8 @@ public class StatisticsController : ControllerBase
             );
 
             var tempBasals = await _tempBasalRepository.GetAsync(
-                from: startMills,
-                to: endMills,
+                from: startDt,
+                to: endDt,
                 device: null,
                 source: null,
                 limit: 10000,
@@ -861,8 +863,8 @@ public class StatisticsController : ControllerBase
             );
 
             var algorithmBoluses = await _bolusRepository.GetAsync(
-                from: startMills,
-                to: endMills,
+                from: startDt,
+                to: endDt,
                 device: null,
                 source: null,
                 limit: 10000,
@@ -898,13 +900,13 @@ public class StatisticsController : ControllerBase
     {
         try
         {
-            var startMills = new DateTimeOffset(startDate).ToUnixTimeMilliseconds();
-            var endMills = new DateTimeOffset(endDate).ToUnixTimeMilliseconds();
+            var startDt = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
+            var endDt = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
 
             // Fetch manual boluses, TempBasals, algorithm boluses, and carbs
             var boluses = await _bolusRepository.GetAsync(
-                from: startMills,
-                to: endMills,
+                from: startDt,
+                to: endDt,
                 device: null,
                 source: null,
                 limit: 10000,
@@ -913,8 +915,8 @@ public class StatisticsController : ControllerBase
             );
 
             var tempBasals = await _tempBasalRepository.GetAsync(
-                from: startMills,
-                to: endMills,
+                from: startDt,
+                to: endDt,
                 device: null,
                 source: null,
                 limit: 10000,
@@ -922,8 +924,8 @@ public class StatisticsController : ControllerBase
             );
 
             var algorithmBoluses = await _bolusRepository.GetAsync(
-                from: startMills,
-                to: endMills,
+                from: startDt,
+                to: endDt,
                 device: null,
                 source: null,
                 limit: 10000,
@@ -932,8 +934,8 @@ public class StatisticsController : ControllerBase
             );
 
             var carbs = await _carbIntakeRepository.GetAsync(
-                from: startMills,
-                to: endMills,
+                from: startDt,
+                to: endDt,
                 device: null,
                 source: null,
                 limit: 10000,
@@ -973,13 +975,10 @@ public class StatisticsController : ControllerBase
             var startUtc = DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc);
             var endUtc = DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc);
 
-            var startMills = new DateTimeOffset(startUtc).ToUnixTimeMilliseconds();
-            var endMills = new DateTimeOffset(endUtc).ToUnixTimeMilliseconds();
-
             // Fetch TempBasals and algorithm boluses
             var tempBasals = (await _tempBasalRepository.GetAsync(
-                from: startMills,
-                to: endMills,
+                from: (DateTime?)startUtc,
+                to: (DateTime?)endUtc,
                 device: null,
                 source: null,
                 limit: 10000,
@@ -987,8 +986,8 @@ public class StatisticsController : ControllerBase
             )).ToList();
 
             var algorithmBoluses = await _bolusRepository.GetAsync(
-                from: startMills,
-                to: endMills,
+                from: (DateTime?)startUtc,
+                to: (DateTime?)endUtc,
                 device: null,
                 source: null,
                 limit: 10000,
@@ -1005,16 +1004,16 @@ public class StatisticsController : ControllerBase
                 {
                     for (int hour = 0; hour < 24; hour++)
                     {
-                        var hourStart = new DateTimeOffset(day.AddHours(hour), TimeSpan.Zero);
-                        var hourMills = hourStart.ToUnixTimeMilliseconds();
-                        if (hourMills < startMills || hourMills >= endMills)
+                        var hourStart = day.AddHours(hour);
+                        if (hourStart < startUtc || hourStart >= endUtc)
                             continue;
 
+                        var hourMills = new DateTimeOffset(hourStart, TimeSpan.Zero).ToUnixTimeMilliseconds();
                         var rate = _profileService.GetBasalRate(hourMills);
                         tempBasals.Add(new TempBasal
                         {
-                            StartMills = hourMills,
-                            EndMills = hourMills + 3_600_000,
+                            StartTimestamp = hourStart,
+                            EndTimestamp = hourStart.AddHours(1),
                             Rate = rate,
                             Origin = TempBasalOrigin.Scheduled,
                         });

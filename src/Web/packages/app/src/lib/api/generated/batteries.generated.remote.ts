@@ -22,7 +22,7 @@ export const getCurrentBatteryStatus = query(z.object({ recentMinutes: z.number(
 });
 
 /** Get battery readings for a device over a time period */
-export const getBatteryReadings = query(z.object({ device: z.string().optional(), from: z.number().optional(), to: z.number().optional() }).optional(), async (params) => {
+export const getBatteryReadings = query(z.object({ device: z.string().optional(), from: z.coerce.date().optional(), to: z.coerce.date().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -37,7 +37,7 @@ export const getBatteryReadings = query(z.object({ device: z.string().optional()
 });
 
 /** Get battery statistics for a device or all devices */
-export const getBatteryStatistics = query(z.object({ device: z.string().optional(), from: z.number().optional(), to: z.number().optional() }).optional(), async (params) => {
+export const getBatteryStatistics = query(z.object({ device: z.string().optional(), from: z.coerce.date().optional(), to: z.coerce.date().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -52,7 +52,7 @@ export const getBatteryStatistics = query(z.object({ device: z.string().optional
 });
 
 /** Get charge cycle history for a device */
-export const getChargeCycles = query(z.object({ device: z.string().optional(), from: z.number().optional(), to: z.number().optional(), limit: z.number().optional() }).optional(), async (params) => {
+export const getChargeCycles = query(z.object({ device: z.string().optional(), from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

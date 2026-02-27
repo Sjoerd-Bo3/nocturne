@@ -11,9 +11,14 @@ public class CarbIntake : IV4Record
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Canonical timestamp in Unix milliseconds
+    /// Canonical timestamp as UTC DateTime
     /// </summary>
-    public long Mills { get; set; }
+    public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Unix milliseconds (computed from Timestamp for v1/v3 compatibility)
+    /// </summary>
+    public long Mills => new DateTimeOffset(Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
 
     /// <summary>
     /// UTC offset in minutes
@@ -80,4 +85,9 @@ public class CarbIntake : IV4Record
     /// FK to the Bolus that covered this carb intake (null for carb corrections without bolus)
     /// </summary>
     public Guid? BolusId { get; set; }
+
+    /// <summary>
+    /// Catch-all for fields not mapped to dedicated columns
+    /// </summary>
+    public Dictionary<string, object?>? AdditionalProperties { get; set; }
 }

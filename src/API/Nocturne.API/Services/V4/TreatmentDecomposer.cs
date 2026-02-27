@@ -457,9 +457,9 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         {
             Category = StateSpanCategory.Profile,
             State = ProfileState.Active.ToString(),
-            StartMills = treatment.Mills,
-            EndMills = treatment.Duration is > 0
-                ? treatment.Mills + (long)(treatment.Duration.Value * 60 * 1000)
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills).UtcDateTime,
+            EndTimestamp = treatment.Duration is > 0
+                ? DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills + (long)(treatment.Duration.Value * 60 * 1000)).UtcDateTime
                 : null,
             Source = treatment.DataSource ?? treatment.EnteredBy ?? "nightscout",
             OriginalId = treatment.Id,
@@ -477,9 +477,9 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         {
             Category = StateSpanCategory.Override,
             State = OverrideState.Custom.ToString(),
-            StartMills = treatment.Mills,
-            EndMills = treatment.Duration is > 0
-                ? treatment.Mills + (long)(treatment.Duration.Value * 60 * 1000)
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills).UtcDateTime,
+            EndTimestamp = treatment.Duration is > 0
+                ? DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills + (long)(treatment.Duration.Value * 60 * 1000)).UtcDateTime
                 : null,
             Source = treatment.DataSource ?? treatment.EnteredBy ?? "nightscout",
             OriginalId = treatment.Id,
@@ -497,15 +497,15 @@ public class TreatmentDecomposer : ITreatmentDecomposer
 
     internal static V4Models.TempBasal MapToTempBasal(Treatment treatment, Guid? correlationId)
     {
-        var startMills = treatment.Mills;
+        var startTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills).UtcDateTime;
         var durationMs = (treatment.DurationInMilliseconds ?? (long?)((treatment.Duration ?? 0) * 60 * 1000)) ?? 0;
 
         return new V4Models.TempBasal
         {
             Id = Guid.CreateVersion7(),
             LegacyId = treatment.Id,
-            StartMills = startMills,
-            EndMills = durationMs > 0 ? startMills + durationMs : null,
+            StartTimestamp = startTimestamp,
+            EndTimestamp = durationMs > 0 ? DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills + durationMs).UtcDateTime : null,
             UtcOffset = treatment.UtcOffset,
             Device = treatment.EnteredBy,
             App = treatment.EnteredBy,
@@ -523,7 +523,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         return new V4Models.Bolus
         {
             LegacyId = treatment.Id,
-            Mills = treatment.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills).UtcDateTime,
             Insulin = treatment.Insulin ?? 0,
             Programmed = treatment.Programmed,
             Delivered = treatment.InsulinDelivered,
@@ -547,7 +547,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         return new V4Models.CarbIntake
         {
             LegacyId = treatment.Id,
-            Mills = treatment.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills).UtcDateTime,
             Carbs = treatment.Carbs ?? 0,
             Device = treatment.EnteredBy,
             DataSource = treatment.DataSource,
@@ -564,7 +564,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         return new V4Models.BGCheck
         {
             LegacyId = treatment.Id,
-            Mills = treatment.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills).UtcDateTime,
             Glucose = treatment.Glucose ?? 0,
             GlucoseType = ParseGlucoseType(treatment.GlucoseType),
             Units = ParseGlucoseUnit(treatment.Units),
@@ -581,7 +581,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         return new V4Models.Note
         {
             LegacyId = treatment.Id,
-            Mills = treatment.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills).UtcDateTime,
             Text = treatment.Notes ?? string.Empty,
             EventType = treatment.EventType,
             IsAnnouncement = isAnnouncement || (treatment.IsAnnouncement ?? false),
@@ -598,7 +598,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         return new V4Models.DeviceEvent
         {
             LegacyId = treatment.Id,
-            Mills = treatment.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills).UtcDateTime,
             EventType = deviceEventType,
             Notes = treatment.Notes,
             Device = treatment.EnteredBy,
@@ -614,7 +614,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         return new V4Models.BolusCalculation
         {
             LegacyId = treatment.Id,
-            Mills = treatment.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills).UtcDateTime,
             BloodGlucoseInput = treatment.BloodGlucoseInput,
             BloodGlucoseInputSource = treatment.BloodGlucoseInputSource,
             CarbInput = treatment.Carbs,

@@ -30,13 +30,12 @@ public class TidepoolSensorGlucoseMapper(ILogger logger, string connectorSource)
             if (mgdl <= 0) return null;
 
             var timestamp = bgValue.Time!.Value.ToUniversalTime();
-            var mills = new DateTimeOffset(timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
             var now = DateTime.UtcNow;
 
             return new SensorGlucose
             {
                 Id = Guid.CreateVersion7(),
-                Mills = mills,
+                Timestamp = timestamp,
                 LegacyId = $"tidepool_{bgValue.Id}",
                 Device = _connectorSource,
                 DataSource = _connectorSource,

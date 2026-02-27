@@ -147,7 +147,7 @@ public class EntryDecomposer : IEntryDecomposer
         return new SensorGlucose
         {
             LegacyId = entry.Id,
-            Mills = entry.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(entry.Mills).UtcDateTime,
             Mgdl = entry.Sgv ?? entry.Mgdl,
             Direction = MapDirection(entry.Direction),
             TrendRate = entry.TrendRate,
@@ -165,7 +165,7 @@ public class EntryDecomposer : IEntryDecomposer
         return new MeterGlucose
         {
             LegacyId = entry.Id,
-            Mills = entry.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(entry.Mills).UtcDateTime,
             Mgdl = entry.Mbg ?? entry.Mgdl,
             Device = entry.Device,
             App = entry.App,
@@ -180,7 +180,7 @@ public class EntryDecomposer : IEntryDecomposer
         return new Calibration
         {
             LegacyId = entry.Id,
-            Mills = entry.Mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(entry.Mills).UtcDateTime,
             Slope = entry.Slope,
             Intercept = entry.Intercept,
             Scale = entry.Scale,

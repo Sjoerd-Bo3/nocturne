@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
 
@@ -16,7 +17,7 @@ public static class SensorGlucoseMapper
         return new SensorGlucoseEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             App = model.App,
@@ -29,6 +30,9 @@ public static class SensorGlucoseMapper
             Direction = model.Direction?.ToString(),
             TrendRate = model.TrendRate,
             Noise = model.Noise,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -40,7 +44,7 @@ public static class SensorGlucoseMapper
         return new SensorGlucose
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             App = entity.App,
@@ -53,6 +57,9 @@ public static class SensorGlucoseMapper
             Direction = Enum.TryParse<GlucoseDirection>(entity.Direction, out var dir) ? dir : null,
             TrendRate = entity.TrendRate,
             Noise = entity.Noise,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -61,7 +68,7 @@ public static class SensorGlucoseMapper
     /// </summary>
     public static void UpdateEntity(SensorGlucoseEntity entity, SensorGlucose model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.App = model.App;
@@ -73,5 +80,8 @@ public static class SensorGlucoseMapper
         entity.Direction = model.Direction?.ToString();
         entity.TrendRate = model.TrendRate;
         entity.Noise = model.Noise;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

@@ -534,7 +534,7 @@ public class DeduplicationService : IDeduplicationService
 
         // Sort by timestamp to get primary first
         var sortedStateSpans = stateSpans
-            .OrderBy(s => s.StartMills)
+            .OrderBy(s => s.StartTimestamp)
             .Select(StateSpanMapper.ToDomainModel)
             .ToList();
 
@@ -1101,8 +1101,8 @@ public class DeduplicationService : IDeduplicationService
         var duplicateGroups = 0;
 
         var stateSpans = await _context.StateSpans
-            .OrderBy(s => s.StartMills)
-            .Select(s => new { s.Id, s.StartMills, s.Category, s.State, s.Source })
+            .OrderBy(s => s.StartTimestamp)
+            .Select(s => new { s.Id, s.StartTimestamp, s.Category, s.State, s.Source })
             .ToListAsync(cancellationToken);
 
         // Track which spans have been processed to avoid duplicates
@@ -1117,12 +1117,12 @@ public class DeduplicationService : IDeduplicationService
             cancellationToken.ThrowIfCancellationRequested();
 
             // Find all spans within the matching window that have the same category and state
-            var windowStart = span.StartMills - MatchingWindowMillis;
-            var windowEnd = span.StartMills + MatchingWindowMillis;
+            var windowStart = new DateTimeOffset(span.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() - MatchingWindowMillis;
+            var windowEnd = new DateTimeOffset(span.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() + MatchingWindowMillis;
 
             var matches = stateSpans
                 .Where(s => !processedSpans.Contains(s.Id))
-                .Where(s => s.StartMills >= windowStart && s.StartMills <= windowEnd)
+                .Where(s => new DateTimeOffset(s.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() >= windowStart && new DateTimeOffset(s.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() <= windowEnd)
                 .Where(s => string.Equals(s.Category, span.Category, StringComparison.OrdinalIgnoreCase))
                 .Where(s => string.Equals(s.State, span.State, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -1152,7 +1152,7 @@ public class DeduplicationService : IDeduplicationService
                         CanonicalId = canonicalId,
                         RecordType = "statespan",
                         RecordId = match.Id,
-                        SourceTimestamp = match.StartMills,
+                        SourceTimestamp = new DateTimeOffset(match.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
                         DataSource = match.Source ?? "unknown",
                         IsPrimary = match == matches.First()
                     };
@@ -1194,8 +1194,8 @@ public class DeduplicationService : IDeduplicationService
         var duplicateGroups = 0;
 
         var readings = await _context.SensorGlucose
-            .OrderBy(r => r.Mills)
-            .Select(r => new { r.Id, r.Mills, r.Mgdl, r.DataSource })
+            .OrderBy(r => r.Timestamp)
+            .Select(r => new { r.Id, r.Timestamp, r.Mgdl, r.DataSource })
             .ToListAsync(cancellationToken);
 
         var groupedByTime = new Dictionary<long, List<(Guid Id, double Mgdl, string? DataSource)>>();
@@ -1203,7 +1203,7 @@ public class DeduplicationService : IDeduplicationService
         foreach (var reading in readings)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var windowKey = reading.Mills / MatchingWindowMillis;
+            var windowKey = new DateTimeOffset(reading.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() / MatchingWindowMillis;
 
             if (!groupedByTime.ContainsKey(windowKey))
                 groupedByTime[windowKey] = new();
@@ -1284,8 +1284,8 @@ public class DeduplicationService : IDeduplicationService
         var duplicateGroups = 0;
 
         var boluses = await _context.Boluses
-            .OrderBy(b => b.Mills)
-            .Select(b => new { b.Id, b.Mills, b.Insulin, b.DataSource })
+            .OrderBy(b => b.Timestamp)
+            .Select(b => new { b.Id, b.Timestamp, b.Insulin, b.DataSource })
             .ToListAsync(cancellationToken);
 
         var groupedByTime = new Dictionary<long, List<(Guid Id, double Insulin, string? DataSource)>>();
@@ -1293,7 +1293,7 @@ public class DeduplicationService : IDeduplicationService
         foreach (var bolus in boluses)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var windowKey = bolus.Mills / MatchingWindowMillis;
+            var windowKey = new DateTimeOffset(bolus.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() / MatchingWindowMillis;
 
             if (!groupedByTime.ContainsKey(windowKey))
                 groupedByTime[windowKey] = new();
@@ -1374,8 +1374,8 @@ public class DeduplicationService : IDeduplicationService
         var duplicateGroups = 0;
 
         var carbIntakes = await _context.CarbIntakes
-            .OrderBy(c => c.Mills)
-            .Select(c => new { c.Id, c.Mills, c.Carbs, c.DataSource })
+            .OrderBy(c => c.Timestamp)
+            .Select(c => new { c.Id, c.Timestamp, c.Carbs, c.DataSource })
             .ToListAsync(cancellationToken);
 
         var groupedByTime = new Dictionary<long, List<(Guid Id, double Carbs, string? DataSource)>>();
@@ -1383,7 +1383,7 @@ public class DeduplicationService : IDeduplicationService
         foreach (var carb in carbIntakes)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var windowKey = carb.Mills / MatchingWindowMillis;
+            var windowKey = new DateTimeOffset(carb.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() / MatchingWindowMillis;
 
             if (!groupedByTime.ContainsKey(windowKey))
                 groupedByTime[windowKey] = new();
@@ -1464,8 +1464,8 @@ public class DeduplicationService : IDeduplicationService
         var duplicateGroups = 0;
 
         var bgChecks = await _context.BGChecks
-            .OrderBy(bg => bg.Mills)
-            .Select(bg => new { bg.Id, bg.Mills, bg.Glucose, bg.DataSource })
+            .OrderBy(bg => bg.Timestamp)
+            .Select(bg => new { bg.Id, bg.Timestamp, bg.Glucose, bg.DataSource })
             .ToListAsync(cancellationToken);
 
         var groupedByTime = new Dictionary<long, List<(Guid Id, double Glucose, string? DataSource)>>();
@@ -1473,7 +1473,7 @@ public class DeduplicationService : IDeduplicationService
         foreach (var bg in bgChecks)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var windowKey = bg.Mills / MatchingWindowMillis;
+            var windowKey = new DateTimeOffset(bg.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() / MatchingWindowMillis;
 
             if (!groupedByTime.ContainsKey(windowKey))
                 groupedByTime[windowKey] = new();
@@ -1554,8 +1554,8 @@ public class DeduplicationService : IDeduplicationService
         var duplicateGroups = 0;
 
         var deviceEvents = await _context.DeviceEvents
-            .OrderBy(e => e.Mills)
-            .Select(e => new { e.Id, e.Mills, e.EventType, e.DataSource })
+            .OrderBy(e => e.Timestamp)
+            .Select(e => new { e.Id, e.Timestamp, e.EventType, e.DataSource })
             .ToListAsync(cancellationToken);
 
         var groupedByTime = new Dictionary<long, List<(Guid Id, string EventType, string? DataSource)>>();
@@ -1563,7 +1563,7 @@ public class DeduplicationService : IDeduplicationService
         foreach (var evt in deviceEvents)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var windowKey = evt.Mills / MatchingWindowMillis;
+            var windowKey = new DateTimeOffset(evt.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() / MatchingWindowMillis;
 
             if (!groupedByTime.ContainsKey(windowKey))
                 groupedByTime[windowKey] = new();
@@ -1644,8 +1644,8 @@ public class DeduplicationService : IDeduplicationService
         var duplicateGroups = 0;
 
         var notes = await _context.Notes
-            .OrderBy(n => n.Mills)
-            .Select(n => new { n.Id, n.Mills, n.DataSource })
+            .OrderBy(n => n.Timestamp)
+            .Select(n => new { n.Id, n.Timestamp, n.DataSource })
             .ToListAsync(cancellationToken);
 
         var groupedByTime = new Dictionary<long, List<(Guid Id, string? DataSource)>>();
@@ -1653,7 +1653,7 @@ public class DeduplicationService : IDeduplicationService
         foreach (var note in notes)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var windowKey = note.Mills / MatchingWindowMillis;
+            var windowKey = new DateTimeOffset(note.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() / MatchingWindowMillis;
 
             if (!groupedByTime.ContainsKey(windowKey))
                 groupedByTime[windowKey] = new();
@@ -1728,8 +1728,8 @@ public class DeduplicationService : IDeduplicationService
         var duplicateGroups = 0;
 
         var calcs = await _context.BolusCalculations
-            .OrderBy(bc => bc.Mills)
-            .Select(bc => new { bc.Id, bc.Mills, bc.CarbInput, bc.DataSource })
+            .OrderBy(bc => bc.Timestamp)
+            .Select(bc => new { bc.Id, bc.Timestamp, bc.CarbInput, bc.DataSource })
             .ToListAsync(cancellationToken);
 
         var groupedByTime = new Dictionary<long, List<(Guid Id, double CarbInput, string? DataSource)>>();
@@ -1737,7 +1737,7 @@ public class DeduplicationService : IDeduplicationService
         foreach (var calc in calcs)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var windowKey = calc.Mills / MatchingWindowMillis;
+            var windowKey = new DateTimeOffset(calc.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds() / MatchingWindowMillis;
 
             if (!groupedByTime.ContainsKey(windowKey))
                 groupedByTime[windowKey] = new();
@@ -1956,8 +1956,8 @@ public class DeduplicationService : IDeduplicationService
             Id = primary.Id,
             Category = primary.Category,
             State = primary.State,
-            StartMills = primary.StartMills,
-            EndMills = primary.EndMills,
+            StartTimestamp = primary.StartTimestamp,
+            EndTimestamp = primary.EndTimestamp,
             Source = primary.Source,
             OriginalId = primary.OriginalId,
             Metadata = primary.Metadata != null
@@ -1971,9 +1971,9 @@ public class DeduplicationService : IDeduplicationService
         foreach (var span in stateSpans.Skip(1))
         {
             // If one source has end time and merged doesn't, take the end time
-            if (!merged.EndMills.HasValue && span.EndMills.HasValue)
+            if (!merged.EndTimestamp.HasValue && span.EndTimestamp.HasValue)
             {
-                merged.EndMills = span.EndMills;
+                merged.EndTimestamp = span.EndTimestamp;
             }
 
             // Merge metadata

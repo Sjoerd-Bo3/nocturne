@@ -96,7 +96,7 @@ public class AlertOrchestrator(
         return new SensorGlucose
         {
             Id = Guid.TryParse(entry.Id, out var id) ? id : Guid.CreateVersion7(),
-            Mills = mills,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(mills).UtcDateTime,
             Mgdl = mgdl,
             Direction = direction,
             TrendRate = entry.Delta,

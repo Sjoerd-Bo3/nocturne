@@ -296,7 +296,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         {
             Id = "state-span-override",
             Category = StateSpanCategory.Override,
-            StartMills = 1700000000000
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime
         };
 
         _stateSpanServiceMock

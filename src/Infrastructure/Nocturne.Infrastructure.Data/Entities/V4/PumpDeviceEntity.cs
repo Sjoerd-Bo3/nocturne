@@ -33,14 +33,20 @@ public class PumpDeviceEntity
     public string PumpSerial { get; set; } = string.Empty;
 
     /// <summary>
-    /// When this pump was first seen in Unix milliseconds
+    /// When this pump was first seen as UTC DateTime (timestamptz)
     /// </summary>
-    [Column("first_seen_mills")]
-    public long FirstSeenMills { get; set; }
+    [Column("first_seen_timestamp")]
+    public DateTime FirstSeenTimestamp { get; set; }
 
     /// <summary>
-    /// When this pump was last seen in Unix milliseconds
+    /// When this pump was last seen as UTC DateTime (timestamptz)
     /// </summary>
-    [Column("last_seen_mills")]
-    public long LastSeenMills { get; set; }
+    [Column("last_seen_timestamp")]
+    public DateTime LastSeenTimestamp { get; set; }
+
+    /// <summary>
+    /// Catch-all JSONB column for fields not mapped to dedicated columns
+    /// </summary>
+    [Column("additional_properties", TypeName = "jsonb")]
+    public string? AdditionalPropertiesJson { get; set; }
 }

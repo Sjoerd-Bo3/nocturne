@@ -5,8 +5,8 @@ namespace Nocturne.Core.Contracts.V4.Repositories;
 public interface IBolusCalculationRepository
 {
     Task<IEnumerable<BolusCalculation>> GetAsync(
-        long? from,
-        long? to,
+        DateTime? from,
+        DateTime? to,
         string? device,
         string? source,
         int limit = 100,
@@ -24,7 +24,7 @@ public interface IBolusCalculationRepository
     );
     Task DeleteAsync(Guid id, CancellationToken ct = default);
     Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default);
-    Task<int> CountAsync(long? from, long? to, CancellationToken ct = default);
+    Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default);
     Task<IEnumerable<BolusCalculation>> GetByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken ct = default

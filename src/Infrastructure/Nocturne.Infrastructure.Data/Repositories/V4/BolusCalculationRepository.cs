@@ -26,8 +26,8 @@ public class BolusCalculationRepository : IBolusCalculationRepository
     }
 
     public async Task<IEnumerable<BolusCalculation>> GetAsync(
-        long? from,
-        long? to,
+        DateTime? from,
+        DateTime? to,
         string? device,
         string? source,
         int limit = 100,
@@ -38,14 +38,14 @@ public class BolusCalculationRepository : IBolusCalculationRepository
     {
         var query = _context.BolusCalculations.AsNoTracking().AsQueryable();
         if (from.HasValue)
-            query = query.Where(e => e.Mills >= from.Value);
+            query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue)
-            query = query.Where(e => e.Mills <= to.Value);
+            query = query.Where(e => e.Timestamp <= to.Value);
         if (device != null)
             query = query.Where(e => e.Device == device);
         if (source != null)
             query = query.Where(e => e.DataSource == source);
-        query = descending ? query.OrderByDescending(e => e.Mills) : query.OrderBy(e => e.Mills);
+        query = descending ? query.OrderByDescending(e => e.Timestamp) : query.OrderBy(e => e.Timestamp);
         var entities = await query.Skip(offset).Take(limit).ToListAsync(ct);
         return entities.Select(BolusCalculationMapper.ToDomainModel);
     }
@@ -102,13 +102,13 @@ public class BolusCalculationRepository : IBolusCalculationRepository
         await _context.SaveChangesAsync(ct);
     }
 
-    public async Task<int> CountAsync(long? from, long? to, CancellationToken ct = default)
+    public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.BolusCalculations.AsNoTracking().AsQueryable();
         if (from.HasValue)
-            query = query.Where(e => e.Mills >= from.Value);
+            query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue)
-            query = query.Where(e => e.Mills <= to.Value);
+            query = query.Where(e => e.Timestamp <= to.Value);
         return await query.CountAsync(ct);
     }
 
@@ -190,7 +190,7 @@ public class BolusCalculationRepository : IBolusCalculationRepository
 
                 var canonicalId = await _deduplicationService.GetOrCreateCanonicalIdAsync(
                     RecordType.BolusCalculation,
-                    entity.Mills,
+                    new DateTimeOffset(entity.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
                     criteria,
                     ct);
 
@@ -198,7 +198,7 @@ public class BolusCalculationRepository : IBolusCalculationRepository
                     canonicalId,
                     RecordType.BolusCalculation,
                     entity.Id,
-                    entity.Mills,
+                    new DateTimeOffset(entity.Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
                     entity.DataSource ?? "unknown",
                     ct);
             }

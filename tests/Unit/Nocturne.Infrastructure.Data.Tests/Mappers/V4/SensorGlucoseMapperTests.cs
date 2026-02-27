@@ -15,7 +15,7 @@ public class SensorGlucoseMapperTests
         var model = new SensorGlucose
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Mgdl = 120,
             Direction = GlucoseDirection.Flat,
             TrendRate = 0.5,
@@ -31,7 +31,7 @@ public class SensorGlucoseMapperTests
         var entity = SensorGlucoseMapper.ToEntity(model);
 
         entity.Id.Should().Be(id);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.Mgdl.Should().Be(120);
         entity.Direction.Should().Be("Flat");
         entity.TrendRate.Should().Be(0.5);
@@ -48,7 +48,7 @@ public class SensorGlucoseMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_EmptyGuid_GeneratesNewId()
     {
-        var model = new SensorGlucose { Mills = 1700000000000, Mgdl = 100 };
+        var model = new SensorGlucose { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, Mgdl = 100 };
 
         var entity = SensorGlucoseMapper.ToEntity(model);
 
@@ -59,7 +59,7 @@ public class SensorGlucoseMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_NullDirection_MapsToNull()
     {
-        var model = new SensorGlucose { Mills = 1700000000000, Mgdl = 100, Direction = null };
+        var model = new SensorGlucose { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, Mgdl = 100, Direction = null };
 
         var entity = SensorGlucoseMapper.ToEntity(model);
 
@@ -73,7 +73,7 @@ public class SensorGlucoseMapperTests
         var directions = Enum.GetValues<GlucoseDirection>();
         foreach (var direction in directions)
         {
-            var model = new SensorGlucose { Mills = 1700000000000, Mgdl = 100, Direction = direction };
+            var model = new SensorGlucose { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, Mgdl = 100, Direction = direction };
             var entity = SensorGlucoseMapper.ToEntity(model);
             entity.Direction.Should().Be(direction.ToString());
         }
@@ -90,7 +90,7 @@ public class SensorGlucoseMapperTests
         var entity = new SensorGlucoseEntity
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Mgdl = 120,
             Direction = "Flat",
             TrendRate = 0.5,
@@ -132,7 +132,7 @@ public class SensorGlucoseMapperTests
         var entity = new SensorGlucoseEntity
         {
             Id = Guid.CreateVersion7(),
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Direction = "InvalidValue"
         };
 
@@ -148,7 +148,7 @@ public class SensorGlucoseMapperTests
         var entity = new SensorGlucoseEntity
         {
             Id = Guid.CreateVersion7(),
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Direction = null
         };
 
@@ -164,7 +164,7 @@ public class SensorGlucoseMapperTests
         var entity = new SensorGlucoseEntity
         {
             Id = Guid.CreateVersion7(),
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Direction = null
         };
 
@@ -182,7 +182,7 @@ public class SensorGlucoseMapperTests
             var entity = new SensorGlucoseEntity
             {
                 Id = Guid.CreateVersion7(),
-                Mills = 1700000000000,
+                Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
                 Direction = direction.ToString()
             };
 
@@ -203,7 +203,7 @@ public class SensorGlucoseMapperTests
         {
             Id = originalId,
             SysCreatedAt = originalCreatedAt,
-            Mills = 1000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1000).UtcDateTime,
             Mgdl = 80
         };
 
@@ -213,7 +213,7 @@ public class SensorGlucoseMapperTests
             Direction = GlucoseDirection.SingleUp,
             TrendRate = 2.0,
             Noise = 2,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Device = "libre",
             App = "librelink",
             UtcOffset = 60,
@@ -230,7 +230,7 @@ public class SensorGlucoseMapperTests
         entity.Direction.Should().Be("SingleUp");
         entity.TrendRate.Should().Be(2.0);
         entity.Noise.Should().Be(2);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.Device.Should().Be("libre");
         entity.App.Should().Be("librelink");
         entity.UtcOffset.Should().Be(60);
@@ -267,7 +267,7 @@ public class SensorGlucoseMapperTests
         var original = new SensorGlucose
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             Mgdl = 120,
             Direction = GlucoseDirection.FortyFiveDown,
             TrendRate = -0.8,

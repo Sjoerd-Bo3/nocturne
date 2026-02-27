@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
 
@@ -16,8 +17,8 @@ public static class TempBasalMapper
         return new TempBasalEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            StartMills = model.StartMills,
-            EndMills = model.EndMills,
+            StartTimestamp = model.StartTimestamp,
+            EndTimestamp = model.EndTimestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             App = model.App,
@@ -32,6 +33,9 @@ public static class TempBasalMapper
             PumpDeviceId = model.PumpDeviceId,
             PumpRecordId = model.PumpRecordId,
             ApsSnapshotId = model.ApsSnapshotId,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -43,8 +47,8 @@ public static class TempBasalMapper
         return new TempBasal
         {
             Id = entity.Id,
-            StartMills = entity.StartMills,
-            EndMills = entity.EndMills,
+            StartTimestamp = entity.StartTimestamp,
+            EndTimestamp = entity.EndTimestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             App = entity.App,
@@ -61,6 +65,9 @@ public static class TempBasalMapper
             PumpDeviceId = entity.PumpDeviceId,
             PumpRecordId = entity.PumpRecordId,
             ApsSnapshotId = entity.ApsSnapshotId,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -69,8 +76,8 @@ public static class TempBasalMapper
     /// </summary>
     public static void UpdateEntity(TempBasalEntity entity, TempBasal model)
     {
-        entity.StartMills = model.StartMills;
-        entity.EndMills = model.EndMills;
+        entity.StartTimestamp = model.StartTimestamp;
+        entity.EndTimestamp = model.EndTimestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.App = model.App;
@@ -84,5 +91,8 @@ public static class TempBasalMapper
         entity.PumpDeviceId = model.PumpDeviceId;
         entity.PumpRecordId = model.PumpRecordId;
         entity.ApsSnapshotId = model.ApsSnapshotId;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

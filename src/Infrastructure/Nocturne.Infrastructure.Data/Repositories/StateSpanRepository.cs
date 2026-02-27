@@ -39,8 +39,8 @@ public class StateSpanRepository
     public async Task<IEnumerable<StateSpan>> GetStateSpansAsync(
         StateSpanCategory? category = null,
         string? state = null,
-        long? from = null,
-        long? to = null,
+        DateTime? from = null,
+        DateTime? to = null,
         string? source = null,
         bool? active = null,
         int count = 100,
@@ -60,21 +60,21 @@ public class StateSpanRepository
             query = query.Where(s => s.Source == source);
 
         if (from.HasValue)
-            query = query.Where(s => s.EndMills == null || s.EndMills >= from.Value);
+            query = query.Where(s => s.EndTimestamp == null || s.EndTimestamp >= from.Value);
 
         if (to.HasValue)
-            query = query.Where(s => s.StartMills <= to.Value);
+            query = query.Where(s => s.StartTimestamp <= to.Value);
 
         if (active.HasValue)
         {
             if (active.Value)
-                query = query.Where(s => s.EndMills == null);
+                query = query.Where(s => s.EndTimestamp == null);
             else
-                query = query.Where(s => s.EndMills != null);
+                query = query.Where(s => s.EndTimestamp != null);
         }
 
         var entities = await query
-            .OrderByDescending(s => s.StartMills)
+            .OrderByDescending(s => s.StartTimestamp)
             .Skip(skip)
             .Take(count)
             .ToListAsync(cancellationToken);
@@ -154,7 +154,7 @@ public class StateSpanRepository
 
                 var canonicalId = await _deduplicationService.GetOrCreateCanonicalIdAsync(
                     RecordType.StateSpan,
-                    entity.StartMills,
+                    new DateTimeOffset(entity.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
                     criteria,
                     cancellationToken
                 );
@@ -163,7 +163,7 @@ public class StateSpanRepository
                     canonicalId,
                     RecordType.StateSpan,
                     entity.Id,
-                    entity.StartMills,
+                    new DateTimeOffset(entity.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
                     entity.Source ?? "unknown",
                     cancellationToken
                 );
@@ -273,8 +273,8 @@ public class StateSpanRepository
     /// </summary>
     public async Task<IEnumerable<StateSpan>> GetByCategory(
         StateSpanCategory category,
-        long? from = null,
-        long? to = null,
+        DateTime? from = null,
+        DateTime? to = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -291,8 +291,8 @@ public class StateSpanRepository
     /// </summary>
     public async Task<Dictionary<StateSpanCategory, List<StateSpan>>> GetByCategories(
         IEnumerable<StateSpanCategory> categories,
-        long? from = null,
-        long? to = null,
+        DateTime? from = null,
+        DateTime? to = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -301,13 +301,13 @@ public class StateSpanRepository
         var query = _context.StateSpans.Where(s => categoryStrings.Contains(s.Category));
 
         if (from.HasValue)
-            query = query.Where(s => s.EndMills == null || s.EndMills >= from.Value);
+            query = query.Where(s => s.EndTimestamp == null || s.EndTimestamp >= from.Value);
 
         if (to.HasValue)
-            query = query.Where(s => s.StartMills <= to.Value);
+            query = query.Where(s => s.StartTimestamp <= to.Value);
 
         var entities = await query
-            .OrderByDescending(s => s.StartMills)
+            .OrderByDescending(s => s.StartTimestamp)
             .ToListAsync(cancellationToken);
 
         // Group results by category
@@ -350,7 +350,7 @@ public class StateSpanRepository
             query = query.Where(s => s.State == type);
 
         var entities = await query
-            .OrderByDescending(s => s.StartMills)
+            .OrderByDescending(s => s.StartTimestamp)
             .Skip(skip)
             .Take(count)
             .ToListAsync(cancellationToken);

@@ -52,15 +52,15 @@ public class NutritionController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<CarbIntake>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<CarbIntake>>> GetCarbIntakes(
-        [FromQuery] long? from, [FromQuery] long? to,
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to,
         [FromQuery] int limit = 100, [FromQuery] int offset = 0,
-        [FromQuery] string sort = "mills_desc",
+        [FromQuery] string sort = "timestamp_desc",
         [FromQuery] string? device = null, [FromQuery] string? source = null,
         CancellationToken ct = default)
     {
-        if (sort is not "mills_desc" and not "mills_asc")
-            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
-        var descending = sort == "mills_desc";
+        if (sort is not "timestamp_desc" and not "timestamp_asc")
+            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." });
+        var descending = sort == "timestamp_desc";
         var data = await _carbIntakeRepo.GetAsync(from, to, device, source, limit, offset, descending, ct: ct);
         var total = await _carbIntakeRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<CarbIntake> { Data = data, Pagination = new(limit, offset, total) });
@@ -88,8 +88,8 @@ public class NutritionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CarbIntake>> CreateCarbIntake([FromBody] CarbIntake model, CancellationToken ct = default)
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _carbIntakeRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetCarbIntakeById), new { id = created.Id }, created);
     }
@@ -104,8 +104,8 @@ public class NutritionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CarbIntake>> UpdateCarbIntake(Guid id, [FromBody] CarbIntake model, CancellationToken ct = default)
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _carbIntakeRepo.UpdateAsync(id, model, ct);
@@ -253,17 +253,17 @@ public class NutritionController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(MealCarbIntake[]), StatusCodes.Status200OK)]
     public async Task<ActionResult<MealCarbIntake[]>> GetMeals(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         [FromQuery] bool? attributed = null,
         CancellationToken ct = default)
     {
-        var fromMills = from ?? new DateTimeOffset(DateTime.UtcNow.Date).ToUnixTimeMilliseconds();
-        var toMills = to ?? new DateTimeOffset(DateTime.UtcNow.Date.AddDays(1)).ToUnixTimeMilliseconds();
+        var fromTimestamp = from ?? DateTime.UtcNow.Date;
+        var toTimestamp = to ?? DateTime.UtcNow.Date.AddDays(1);
 
         var query = _context.Set<CarbIntakeEntity>()
             .AsNoTracking()
-            .Where(c => c.Mills >= fromMills && c.Mills <= toMills && c.Carbs > 0);
+            .Where(c => c.Timestamp >= fromTimestamp && c.Timestamp <= toTimestamp && c.Carbs > 0);
 
         if (_demoModeService.IsEnabled)
             query = query.Where(c => c.DataSource == DataSources.DemoService);
@@ -271,7 +271,7 @@ public class NutritionController : ControllerBase
             query = query.Where(c => c.DataSource != DataSources.DemoService);
 
         var carbIntakeEntities = await query
-            .OrderByDescending(c => c.Mills)
+            .OrderByDescending(c => c.Timestamp)
             .ToListAsync(ct);
 
         if (carbIntakeEntities.Count == 0)

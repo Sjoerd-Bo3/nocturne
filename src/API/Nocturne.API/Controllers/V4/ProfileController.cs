@@ -117,21 +117,21 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<TherapySettings>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<TherapySettings>>> GetTherapySettings(
-        [FromQuery] long? from,
-        [FromQuery] long? to,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
         [FromQuery] int limit = 100,
         [FromQuery] int offset = 0,
-        [FromQuery] string sort = "mills_desc",
+        [FromQuery] string sort = "timestamp_desc",
         [FromQuery] string? device = null,
         [FromQuery] string? source = null,
         CancellationToken ct = default
     )
     {
-        if (sort is not "mills_desc" and not "mills_asc")
+        if (sort is not "timestamp_desc" and not "timestamp_asc")
             return BadRequest(
-                new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." }
+                new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." }
             );
-        var descending = sort == "mills_desc";
+        var descending = sort == "timestamp_desc";
         var data = await _therapyRepo.GetAsync(
             from,
             to,
@@ -195,8 +195,8 @@ public class ProfileController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _therapyRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetTherapySettingsById), new { id = created.Id }, created);
     }
@@ -217,8 +217,8 @@ public class ProfileController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _therapyRepo.UpdateAsync(id, model, ct);
@@ -297,8 +297,8 @@ public class ProfileController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _basalRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetBasalScheduleById), new { id = created.Id }, created);
     }
@@ -319,8 +319,8 @@ public class ProfileController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _basalRepo.UpdateAsync(id, model, ct);
@@ -399,8 +399,8 @@ public class ProfileController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _carbRatioRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetCarbRatioScheduleById), new { id = created.Id }, created);
     }
@@ -425,8 +425,8 @@ public class ProfileController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _carbRatioRepo.UpdateAsync(id, model, ct);
@@ -505,8 +505,8 @@ public class ProfileController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _sensitivityRepo.CreateAsync(model, ct);
         return CreatedAtAction(
             nameof(GetSensitivityScheduleById),
@@ -535,8 +535,8 @@ public class ProfileController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _sensitivityRepo.UpdateAsync(id, model, ct);
@@ -618,8 +618,8 @@ public class ProfileController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         var created = await _targetRangeRepo.CreateAsync(model, ct);
         return CreatedAtAction(
             nameof(GetTargetRangeScheduleById),
@@ -648,8 +648,8 @@ public class ProfileController : ControllerBase
         CancellationToken ct = default
     )
     {
-        if (model.Mills <= 0)
-            return BadRequest(new { error = "Mills must be a positive value" });
+        if (model.Timestamp == default)
+            return BadRequest(new { error = "Timestamp must be set" });
         try
         {
             var updated = await _targetRangeRepo.UpdateAsync(id, model, ct);

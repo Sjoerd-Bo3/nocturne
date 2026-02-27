@@ -11,9 +11,14 @@ public class SensitivitySchedule : IV4Record
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Canonical timestamp in Unix milliseconds
+    /// Canonical timestamp as UTC DateTime
     /// </summary>
-    public long Mills { get; set; }
+    public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Unix milliseconds (computed from Timestamp for v1/v3 compatibility)
+    /// </summary>
+    public long Mills => new DateTimeOffset(Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
 
     /// <summary>
     /// UTC offset in minutes
@@ -64,4 +69,9 @@ public class SensitivitySchedule : IV4Record
     /// ISF entries throughout the day (time + mg/dL per U value)
     /// </summary>
     public List<ScheduleEntry> Entries { get; set; } = [];
+
+    /// <summary>
+    /// Catch-all for fields not mapped to dedicated columns
+    /// </summary>
+    public Dictionary<string, object?>? AdditionalProperties { get; set; }
 }

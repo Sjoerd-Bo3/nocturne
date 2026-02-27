@@ -14,7 +14,7 @@ public class PumpSnapshotMapperTests
         var model = new PumpSnapshot
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             UtcOffset = -300,
             Device = "omnipod-dash",
             LegacyId = "pump123",
@@ -33,7 +33,7 @@ public class PumpSnapshotMapperTests
         var entity = PumpSnapshotMapper.ToEntity(model);
 
         entity.Id.Should().Be(id);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.UtcOffset.Should().Be(-300);
         entity.Device.Should().Be("omnipod-dash");
         entity.LegacyId.Should().Be("pump123");
@@ -53,7 +53,7 @@ public class PumpSnapshotMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_EmptyGuid_GeneratesNewId()
     {
-        var model = new PumpSnapshot { Mills = 1700000000000 };
+        var model = new PumpSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime };
 
         var entity = PumpSnapshotMapper.ToEntity(model);
 
@@ -70,7 +70,7 @@ public class PumpSnapshotMapperTests
         var entity = new PumpSnapshotEntity
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             UtcOffset = -300,
             Device = "omnipod-dash",
             LegacyId = "pump123",
@@ -119,12 +119,12 @@ public class PumpSnapshotMapperTests
         {
             Id = originalId,
             SysCreatedAt = originalCreatedAt,
-            Mills = 1000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1000).UtcDateTime,
         };
 
         var model = new PumpSnapshot
         {
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             UtcOffset = 60,
             Device = "tandem-tslim",
             LegacyId = "upd789",
@@ -144,7 +144,7 @@ public class PumpSnapshotMapperTests
 
         entity.Id.Should().Be(originalId);
         entity.SysCreatedAt.Should().Be(originalCreatedAt);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.UtcOffset.Should().Be(60);
         entity.Device.Should().Be("tandem-tslim");
         entity.LegacyId.Should().Be("upd789");

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Nocturne.Infrastructure.Data;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Nocturne.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(NocturneDbContext))]
-    partial class NocturneDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260227031405_SwitchV4TimestampsToTimestamptz")]
+    partial class SwitchV4TimestampsToTimestamptz
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3703,10 +3706,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
-
                     b.Property<string>("ApsSystem")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -3841,10 +3840,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
-
                     b.Property<string>("App")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -3927,10 +3922,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
-
                     b.Property<string>("App")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -4007,10 +3998,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
 
                     b.Property<string>("App")
                         .HasMaxLength(256)
@@ -4128,10 +4115,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
 
                     b.Property<string>("App")
                         .HasMaxLength(256)
@@ -4258,10 +4241,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
-
                     b.Property<string>("App")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -4338,10 +4317,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<int?>("AbsorptionTime")
                         .HasColumnType("integer")
                         .HasColumnName("absorption_time");
-
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
 
                     b.Property<string>("App")
                         .HasMaxLength(256)
@@ -4423,10 +4398,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
-
                     b.Property<string>("App")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -4503,10 +4474,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
 
                     b.Property<string>("App")
                         .HasMaxLength(256)
@@ -4587,10 +4554,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
-
                     b.Property<string>("App")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -4655,10 +4618,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
 
                     b.Property<string>("App")
                         .HasMaxLength(256)
@@ -4743,10 +4702,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
-
                     b.Property<DateTime>("FirstSeenTimestamp")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("first_seen_timestamp");
@@ -4780,10 +4735,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
 
                     b.Property<int?>("BatteryPercent")
                         .HasColumnType("integer")
@@ -4874,10 +4825,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
-
                     b.Property<string>("App")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -4954,10 +4901,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
 
                     b.Property<string>("App")
                         .HasMaxLength(256)
@@ -5039,10 +4982,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
-
                     b.Property<string>("App")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -5119,10 +5058,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
 
                     b.Property<string>("App")
                         .HasMaxLength(256)
@@ -5220,10 +5155,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
 
                     b.Property<string>("App")
                         .HasMaxLength(256)
@@ -5368,10 +5299,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<string>("AdditionalPropertiesJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("additional_properties");
 
                     b.Property<int?>("Battery")
                         .HasColumnType("integer")

@@ -17,16 +17,16 @@ public class TempBasalEntity
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Start timestamp in Unix milliseconds
+    /// Start timestamp as UTC DateTime (timestamptz)
     /// </summary>
-    [Column("start_mills")]
-    public long StartMills { get; set; }
+    [Column("start_timestamp")]
+    public DateTime StartTimestamp { get; set; }
 
     /// <summary>
-    /// End timestamp in Unix milliseconds (null if still active)
+    /// End timestamp as UTC DateTime (timestamptz, null if still active)
     /// </summary>
-    [Column("end_mills")]
-    public long? EndMills { get; set; }
+    [Column("end_timestamp")]
+    public DateTime? EndTimestamp { get; set; }
 
     /// <summary>
     /// UTC offset in minutes
@@ -114,4 +114,10 @@ public class TempBasalEntity
 
     [Column("aps_snapshot_id")]
     public Guid? ApsSnapshotId { get; set; }
+
+    /// <summary>
+    /// Catch-all JSONB column for fields not mapped to dedicated columns
+    /// </summary>
+    [Column("additional_properties", TypeName = "jsonb")]
+    public string? AdditionalPropertiesJson { get; set; }
 }

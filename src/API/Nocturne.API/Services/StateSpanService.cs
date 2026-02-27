@@ -25,8 +25,8 @@ public class StateSpanService : IStateSpanService
     public async Task<IEnumerable<StateSpan>> GetStateSpansAsync(
         StateSpanCategory? category = null,
         string? state = null,
-        long? from = null,
-        long? to = null,
+        DateTime? from = null,
+        DateTime? to = null,
         string? source = null,
         bool? active = null,
         int count = 100,

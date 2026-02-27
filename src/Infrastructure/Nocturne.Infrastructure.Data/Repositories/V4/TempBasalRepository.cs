@@ -20,8 +20,8 @@ public class TempBasalRepository : ITempBasalRepository
     }
 
     public async Task<IEnumerable<TempBasal>> GetAsync(
-        long? from,
-        long? to,
+        DateTime? from,
+        DateTime? to,
         string? device,
         string? source,
         int limit = 100,
@@ -32,16 +32,16 @@ public class TempBasalRepository : ITempBasalRepository
     {
         var query = _context.TempBasals.AsNoTracking().AsQueryable();
         if (from.HasValue)
-            query = query.Where(e => e.StartMills >= from.Value);
+            query = query.Where(e => e.StartTimestamp >= from.Value);
         if (to.HasValue)
-            query = query.Where(e => e.StartMills <= to.Value);
+            query = query.Where(e => e.StartTimestamp <= to.Value);
         if (device != null)
             query = query.Where(e => e.Device == device);
         if (source != null)
             query = query.Where(e => e.DataSource == source);
         query = descending
-            ? query.OrderByDescending(e => e.StartMills)
-            : query.OrderBy(e => e.StartMills);
+            ? query.OrderByDescending(e => e.StartTimestamp)
+            : query.OrderBy(e => e.StartTimestamp);
         var entities = await query.Skip(offset).Take(limit).ToListAsync(ct);
         return entities.Select(TempBasalMapper.ToDomainModel);
     }
@@ -90,13 +90,13 @@ public class TempBasalRepository : ITempBasalRepository
         return await _context.TempBasals.Where(e => e.LegacyId == legacyId).ExecuteDeleteAsync(ct);
     }
 
-    public async Task<int> CountAsync(long? from, long? to, CancellationToken ct = default)
+    public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.TempBasals.AsNoTracking().AsQueryable();
         if (from.HasValue)
-            query = query.Where(e => e.StartMills >= from.Value);
+            query = query.Where(e => e.StartTimestamp >= from.Value);
         if (to.HasValue)
-            query = query.Where(e => e.StartMills <= to.Value);
+            query = query.Where(e => e.StartTimestamp <= to.Value);
         return await query.CountAsync(ct);
     }
 

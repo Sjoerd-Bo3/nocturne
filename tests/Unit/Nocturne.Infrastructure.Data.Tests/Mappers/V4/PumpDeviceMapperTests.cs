@@ -16,8 +16,8 @@ public class PumpDeviceMapperTests
             Id = id,
             PumpType = "Omnipod DASH",
             PumpSerial = "SN-12345",
-            FirstSeenMills = 1700000000000,
-            LastSeenMills = 1700001000000,
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001000000).UtcDateTime,
         };
 
         var entity = PumpDeviceMapper.ToEntity(model);
@@ -25,8 +25,8 @@ public class PumpDeviceMapperTests
         entity.Id.Should().Be(id);
         entity.PumpType.Should().Be("Omnipod DASH");
         entity.PumpSerial.Should().Be("SN-12345");
-        entity.FirstSeenMills.Should().Be(1700000000000);
-        entity.LastSeenMills.Should().Be(1700001000000);
+        entity.FirstSeenTimestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
+        entity.LastSeenTimestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700001000000).UtcDateTime);
     }
 
     [Fact]
@@ -37,8 +37,8 @@ public class PumpDeviceMapperTests
         {
             PumpType = "Medtronic 780G",
             PumpSerial = "ABC-999",
-            FirstSeenMills = 1700000000000,
-            LastSeenMills = 1700000000000,
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
         };
 
         var entity = PumpDeviceMapper.ToEntity(model);
@@ -52,8 +52,8 @@ public class PumpDeviceMapperTests
     {
         var model = new PumpDevice
         {
-            FirstSeenMills = 1700000000000,
-            LastSeenMills = 1700000000000,
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
         };
 
         var entity = PumpDeviceMapper.ToEntity(model);
@@ -72,8 +72,8 @@ public class PumpDeviceMapperTests
             Id = id,
             PumpType = "Omnipod DASH",
             PumpSerial = "SN-12345",
-            FirstSeenMills = 1700000000000,
-            LastSeenMills = 1700001000000,
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001000000).UtcDateTime,
         };
 
         var model = PumpDeviceMapper.ToDomainModel(entity);
@@ -95,16 +95,16 @@ public class PumpDeviceMapperTests
             Id = originalId,
             PumpType = "OldType",
             PumpSerial = "OldSerial",
-            FirstSeenMills = 1000,
-            LastSeenMills = 2000,
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1000).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(2000).UtcDateTime,
         };
 
         var model = new PumpDevice
         {
             PumpType = "Omnipod DASH",
             PumpSerial = "SN-99999",
-            FirstSeenMills = 1700000000000,
-            LastSeenMills = 1700001000000,
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700001000000).UtcDateTime,
         };
 
         PumpDeviceMapper.UpdateEntity(entity, model);
@@ -112,8 +112,8 @@ public class PumpDeviceMapperTests
         entity.Id.Should().Be(originalId);
         entity.PumpType.Should().Be("Omnipod DASH");
         entity.PumpSerial.Should().Be("SN-99999");
-        entity.FirstSeenMills.Should().Be(1700000000000);
-        entity.LastSeenMills.Should().Be(1700001000000);
+        entity.FirstSeenTimestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
+        entity.LastSeenTimestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700001000000).UtcDateTime);
     }
 
     [Fact]
@@ -126,8 +126,8 @@ public class PumpDeviceMapperTests
             Id = originalId,
             PumpType = "OldType",
             PumpSerial = "OldSerial",
-            FirstSeenMills = 1000,
-            LastSeenMills = 2000,
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1000).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(2000).UtcDateTime,
         };
 
         var model = new PumpDevice
@@ -135,8 +135,8 @@ public class PumpDeviceMapperTests
             Id = Guid.CreateVersion7(),
             PumpType = "NewType",
             PumpSerial = "NewSerial",
-            FirstSeenMills = 3000,
-            LastSeenMills = 4000,
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(3000).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(4000).UtcDateTime,
         };
 
         PumpDeviceMapper.UpdateEntity(entity, model);
@@ -154,8 +154,8 @@ public class PumpDeviceMapperTests
             Id = id,
             PumpType = "Medtronic 780G",
             PumpSerial = "MED-54321",
-            FirstSeenMills = 1700000000000,
-            LastSeenMills = 1700005000000,
+            FirstSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
+            LastSeenTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700005000000).UtcDateTime,
         };
 
         var entity = PumpDeviceMapper.ToEntity(original);

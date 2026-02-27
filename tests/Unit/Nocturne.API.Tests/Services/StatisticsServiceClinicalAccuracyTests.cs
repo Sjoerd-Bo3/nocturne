@@ -544,12 +544,12 @@ public class StatisticsServiceClinicalAccuracyTests
         var boluses = new[]
         {
             // Meal boluses (non-automatic, have corresponding carb intakes)
-            new Bolus { Insulin = 5.0, Automatic = false, Mills = DateTimeOffset.Parse("2024-01-02T08:00:00Z").ToUnixTimeMilliseconds() },
-            new Bolus { Insulin = 7.0, Automatic = false, Mills = DateTimeOffset.Parse("2024-01-02T12:00:00Z").ToUnixTimeMilliseconds() },
-            new Bolus { Insulin = 2.0, Automatic = false, Mills = DateTimeOffset.Parse("2024-01-02T15:00:00Z").ToUnixTimeMilliseconds() },
+            new Bolus { Insulin = 5.0, Automatic = false, Timestamp = DateTimeOffset.Parse("2024-01-02T08:00:00Z").UtcDateTime },
+            new Bolus { Insulin = 7.0, Automatic = false, Timestamp = DateTimeOffset.Parse("2024-01-02T12:00:00Z").UtcDateTime },
+            new Bolus { Insulin = 2.0, Automatic = false, Timestamp = DateTimeOffset.Parse("2024-01-02T15:00:00Z").UtcDateTime },
 
             // Correction bolus (no carbs at this time)
-            new Bolus { Insulin = 1.5, Automatic = false, Mills = DateTimeOffset.Parse("2024-01-02T20:00:00Z").ToUnixTimeMilliseconds() },
+            new Bolus { Insulin = 1.5, Automatic = false, Timestamp = DateTimeOffset.Parse("2024-01-02T20:00:00Z").UtcDateTime },
         };
 
         var result = _sut.CalculateInsulinDeliveryStatistics(boluses, Array.Empty<Bolus>(), Array.Empty<TempBasal>(), Array.Empty<CarbIntake>(), startDate, endDate);
@@ -593,7 +593,7 @@ public class StatisticsServiceClinicalAccuracyTests
     {
         var boluses = new[]
         {
-            new Bolus { Insulin = 8.0, Automatic = false, Mills = DateTimeOffset.Parse("2024-01-02T12:00:00Z").ToUnixTimeMilliseconds() },
+            new Bolus { Insulin = 8.0, Automatic = false, Timestamp = DateTimeOffset.Parse("2024-01-02T12:00:00Z").UtcDateTime },
         };
 
         // Basal delivered via TempBasal: 12 units over 24 hours (rate=0.5 U/hr)
@@ -601,8 +601,8 @@ public class StatisticsServiceClinicalAccuracyTests
         {
             new TempBasal
             {
-                StartMills = DateTimeOffset.Parse("2024-01-01T00:00:00Z").ToUnixTimeMilliseconds(),
-                EndMills = DateTimeOffset.Parse("2024-01-02T00:00:00Z").ToUnixTimeMilliseconds(),
+                StartTimestamp = DateTimeOffset.Parse("2024-01-01T00:00:00Z").UtcDateTime,
+                EndTimestamp = DateTimeOffset.Parse("2024-01-02T00:00:00Z").UtcDateTime,
                 Rate = 0.5,
                 Origin = TempBasalOrigin.Scheduled,
             },
@@ -628,7 +628,7 @@ public class StatisticsServiceClinicalAccuracyTests
         {
             Insulin = 1.0,
             Automatic = false,
-            Mills = DateTimeOffset.Parse("2024-01-02T12:00:00Z").ToUnixTimeMilliseconds() + i * 60000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(DateTimeOffset.Parse("2024-01-02T12:00:00Z").ToUnixTimeMilliseconds() + i * 60000).UtcDateTime,
         }).ToArray();
 
         var result = _sut.CalculateInsulinDeliveryStatistics(
@@ -777,7 +777,7 @@ public class StatisticsServiceClinicalAccuracyTests
         var entries = Enumerable.Range(0, 3000).Select(i => new SensorGlucose
         {
             Mgdl = 120,
-            Mills = baseTime.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+            Timestamp = baseTime.AddMinutes(i * 5).UtcDateTime,
         });
 
         var result = _sut.AssessDataSufficiency(entries, days: 14);
@@ -794,7 +794,7 @@ public class StatisticsServiceClinicalAccuracyTests
         var entries = Enumerable.Range(0, 100).Select(i => new SensorGlucose
         {
             Mgdl = 120,
-            Mills = baseTime.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+            Timestamp = baseTime.AddMinutes(i * 5).UtcDateTime,
         });
 
         var result = _sut.AssessDataSufficiency(entries, days: 14);
@@ -826,7 +826,7 @@ public class StatisticsServiceClinicalAccuracyTests
         entries.AddRange(Enumerable.Range(0, 2000).Select(i => new SensorGlucose
         {
             Mgdl = 120,
-            Mills = baseTime.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+            Timestamp = baseTime.AddMinutes(i * 5).UtcDateTime,
         }));
 
         // Then a 13-hour gap, then more readings
@@ -834,7 +834,7 @@ public class StatisticsServiceClinicalAccuracyTests
         entries.AddRange(Enumerable.Range(0, 1500).Select(i => new SensorGlucose
         {
             Mgdl = 120,
-            Mills = afterGap.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+            Timestamp = afterGap.AddMinutes(i * 5).UtcDateTime,
         }));
 
         var result = _sut.AssessDataSufficiency(entries, days: 14);
@@ -893,7 +893,7 @@ public class StatisticsServiceClinicalAccuracyTests
         var entries = Enumerable.Range(0, 288).Select(i => new SensorGlucose
         {
             Mgdl = 100 + (int)(30 * Math.Sin(i * 2 * Math.PI / 288)), // Sinusoidal 70-130
-            Mills = baseTime.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+            Timestamp = baseTime.AddMinutes(i * 5).UtcDateTime,
         }).ToArray();
 
         var boluses = new[]
@@ -1003,7 +1003,7 @@ public class StatisticsServiceClinicalAccuracyTests
         var entries = values.Select((v, i) => new SensorGlucose
         {
             Mgdl = v,
-            Mills = DateTimeOffset.UtcNow.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+            Timestamp = DateTimeOffset.UtcNow.AddMinutes(i * 5).UtcDateTime,
         });
 
         var result = _sut.CalculateGlycemicVariability(values, entries);
@@ -1021,7 +1021,7 @@ public class StatisticsServiceClinicalAccuracyTests
         var entries = values.Select((v, i) => new SensorGlucose
         {
             Mgdl = v,
-            Mills = DateTimeOffset.UtcNow.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+            Timestamp = DateTimeOffset.UtcNow.AddMinutes(i * 5).UtcDateTime,
         });
 
         var result = _sut.CalculateGlycemicVariability(values, entries);
@@ -1040,7 +1040,7 @@ public class StatisticsServiceClinicalAccuracyTests
         var entries = Enumerable.Range(0, 48).Select(i => new SensorGlucose
         {
             Mgdl = 100 + (i % 24) * 2,
-            Mills = baseTime.AddMinutes(i * 30).ToUnixTimeMilliseconds(), // 2 readings per hour
+            Timestamp = baseTime.AddMinutes(i * 30).UtcDateTime, // 2 readings per hour
         });
 
         var result = _sut.CalculateAveragedStats(entries).ToList();
@@ -1055,9 +1055,9 @@ public class StatisticsServiceClinicalAccuracyTests
         var baseTime = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
         var entries = new[]
         {
-            new SensorGlucose { Mgdl = 100, Mills = baseTime.AddHours(8).AddMinutes(0).ToUnixTimeMilliseconds() },
-            new SensorGlucose { Mgdl = 120, Mills = baseTime.AddHours(8).AddMinutes(15).ToUnixTimeMilliseconds() },
-            new SensorGlucose { Mgdl = 140, Mills = baseTime.AddHours(8).AddMinutes(30).ToUnixTimeMilliseconds() },
+            new SensorGlucose { Mgdl = 100, Timestamp = baseTime.AddHours(8).AddMinutes(0).UtcDateTime },
+            new SensorGlucose { Mgdl = 120, Timestamp = baseTime.AddHours(8).AddMinutes(15).UtcDateTime },
+            new SensorGlucose { Mgdl = 140, Timestamp = baseTime.AddHours(8).AddMinutes(30).UtcDateTime },
         };
 
         var result = _sut.CalculateAveragedStats(entries).ToList();
@@ -1148,7 +1148,7 @@ public class StatisticsServiceClinicalAccuracyTests
         var entries = values.Select((v, i) => new SensorGlucose
         {
             Mgdl = v,
-            Mills = DateTimeOffset.UtcNow.AddMinutes(i * 5).ToUnixTimeMilliseconds(),
+            Timestamp = DateTimeOffset.UtcNow.AddMinutes(i * 5).UtcDateTime,
         }).ToArray();
 
         var basicStats = _sut.CalculateBasicStats(values);

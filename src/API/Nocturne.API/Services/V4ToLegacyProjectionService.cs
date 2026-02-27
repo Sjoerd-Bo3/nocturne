@@ -60,6 +60,12 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
     }
 
     /// <inheritdoc />
+    /// <summary>
+    /// Converts nullable unix milliseconds to nullable DateTime.
+    /// </summary>
+    private static DateTime? MillsToDateTime(long? mills) =>
+        mills.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(mills.Value).UtcDateTime : null;
+
     public async Task<IEnumerable<Entry>> GetProjectedEntriesAsync(
         long? fromMills,
         long? toMills,
@@ -73,8 +79,8 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
         try
         {
             records = await _sensorGlucoseRepository.GetAsync(
-                from: fromMills,
-                to: toMills,
+                from: MillsToDateTime(fromMills),
+                to: MillsToDateTime(toMills),
                 device: null,
                 source: null,
                 limit: limit,
@@ -132,8 +138,8 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
         // Fetch all V4 treatment record types in parallel (DB-level nativeOnly filter).
         var bolusTask = FetchSafe(() =>
             _bolusRepository.GetAsync(
-                from: fromMills,
-                to: toMills,
+                from: MillsToDateTime(fromMills),
+                to: MillsToDateTime(toMills),
                 device: null,
                 source: null,
                 limit: limit,
@@ -146,8 +152,8 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
 
         var carbTask = FetchSafe(() =>
             _carbIntakeRepository.GetAsync(
-                from: fromMills,
-                to: toMills,
+                from: MillsToDateTime(fromMills),
+                to: MillsToDateTime(toMills),
                 device: null,
                 source: null,
                 limit: limit,
@@ -160,8 +166,8 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
 
         var bgCheckTask = FetchSafe(() =>
             _bgCheckRepository.GetAsync(
-                from: fromMills,
-                to: toMills,
+                from: MillsToDateTime(fromMills),
+                to: MillsToDateTime(toMills),
                 device: null,
                 source: null,
                 limit: limit,
@@ -174,8 +180,8 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
 
         var noteTask = FetchSafe(() =>
             _noteRepository.GetAsync(
-                from: fromMills,
-                to: toMills,
+                from: MillsToDateTime(fromMills),
+                to: MillsToDateTime(toMills),
                 device: null,
                 source: null,
                 limit: limit,
@@ -188,8 +194,8 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
 
         var deviceEventTask = FetchSafe(() =>
             _deviceEventRepository.GetAsync(
-                from: fromMills,
-                to: toMills,
+                from: MillsToDateTime(fromMills),
+                to: MillsToDateTime(toMills),
                 device: null,
                 source: null,
                 limit: limit,

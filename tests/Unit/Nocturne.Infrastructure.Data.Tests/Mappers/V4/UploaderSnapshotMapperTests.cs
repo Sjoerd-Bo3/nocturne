@@ -14,7 +14,7 @@ public class UploaderSnapshotMapperTests
         var model = new UploaderSnapshot
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             UtcOffset = -300,
             Device = "iphone-14",
             LegacyId = "upl123",
@@ -29,7 +29,7 @@ public class UploaderSnapshotMapperTests
         var entity = UploaderSnapshotMapper.ToEntity(model);
 
         entity.Id.Should().Be(id);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.UtcOffset.Should().Be(-300);
         entity.Device.Should().Be("iphone-14");
         entity.LegacyId.Should().Be("upl123");
@@ -45,7 +45,7 @@ public class UploaderSnapshotMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_EmptyGuid_GeneratesNewId()
     {
-        var model = new UploaderSnapshot { Mills = 1700000000000 };
+        var model = new UploaderSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime };
 
         var entity = UploaderSnapshotMapper.ToEntity(model);
 
@@ -62,7 +62,7 @@ public class UploaderSnapshotMapperTests
         var entity = new UploaderSnapshotEntity
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             UtcOffset = -300,
             Device = "iphone-14",
             LegacyId = "upl123",
@@ -103,12 +103,12 @@ public class UploaderSnapshotMapperTests
         {
             Id = originalId,
             SysCreatedAt = originalCreatedAt,
-            Mills = 1000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1000).UtcDateTime,
         };
 
         var model = new UploaderSnapshot
         {
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             UtcOffset = 60,
             Device = "pixel-8",
             LegacyId = "upd456",
@@ -124,7 +124,7 @@ public class UploaderSnapshotMapperTests
 
         entity.Id.Should().Be(originalId);
         entity.SysCreatedAt.Should().Be(originalCreatedAt);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.UtcOffset.Should().Be(60);
         entity.Device.Should().Be("pixel-8");
         entity.LegacyId.Should().Be("upd456");

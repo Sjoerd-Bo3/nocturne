@@ -21,8 +21,8 @@ public static class StateSpanMapper
                 : ParseIdToGuid(stateSpan.Id),
             Category = stateSpan.Category.ToString(),
             State = stateSpan.State ?? string.Empty,
-            StartMills = stateSpan.StartMills,
-            EndMills = stateSpan.EndMills,
+            StartTimestamp = stateSpan.StartTimestamp,
+            EndTimestamp = stateSpan.EndTimestamp,
             Source = stateSpan.Source,
             MetadataJson = stateSpan.Metadata != null
                 ? JsonSerializer.Serialize(stateSpan.Metadata)
@@ -45,8 +45,8 @@ public static class StateSpanMapper
                 ? category
                 : StateSpanCategory.PumpMode,
             State = entity.State,
-            StartMills = entity.StartMills,
-            EndMills = entity.EndMills,
+            StartTimestamp = entity.StartTimestamp,
+            EndTimestamp = entity.EndTimestamp,
             Source = entity.Source,
             Metadata = DeserializeJsonProperty<Dictionary<string, object>>(entity.MetadataJson),
             OriginalId = entity.OriginalId,
@@ -62,8 +62,8 @@ public static class StateSpanMapper
     {
         entity.Category = stateSpan.Category.ToString();
         entity.State = stateSpan.State ?? string.Empty;
-        entity.StartMills = stateSpan.StartMills;
-        entity.EndMills = stateSpan.EndMills;
+        entity.StartTimestamp = stateSpan.StartTimestamp;
+        entity.EndTimestamp = stateSpan.EndTimestamp;
         entity.Source = stateSpan.Source;
         entity.MetadataJson = stateSpan.Metadata != null
             ? JsonSerializer.Serialize(stateSpan.Metadata)

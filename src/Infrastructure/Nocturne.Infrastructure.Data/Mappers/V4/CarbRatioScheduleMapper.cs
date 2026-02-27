@@ -17,7 +17,7 @@ public static class CarbRatioScheduleMapper
         return new CarbRatioScheduleEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             App = model.App,
@@ -28,6 +28,9 @@ public static class CarbRatioScheduleMapper
             SysUpdatedAt = DateTime.UtcNow,
             ProfileName = model.ProfileName,
             EntriesJson = JsonSerializer.Serialize(model.Entries),
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -39,7 +42,7 @@ public static class CarbRatioScheduleMapper
         return new CarbRatioSchedule
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             App = entity.App,
@@ -50,6 +53,9 @@ public static class CarbRatioScheduleMapper
             ModifiedAt = entity.SysUpdatedAt,
             ProfileName = entity.ProfileName,
             Entries = JsonSerializer.Deserialize<List<ScheduleEntry>>(entity.EntriesJson) ?? [],
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -58,7 +64,7 @@ public static class CarbRatioScheduleMapper
     /// </summary>
     public static void UpdateEntity(CarbRatioScheduleEntity entity, CarbRatioSchedule model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.App = model.App;
@@ -68,5 +74,8 @@ public static class CarbRatioScheduleMapper
         entity.SysUpdatedAt = DateTime.UtcNow;
         entity.ProfileName = model.ProfileName;
         entity.EntriesJson = JsonSerializer.Serialize(model.Entries);
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

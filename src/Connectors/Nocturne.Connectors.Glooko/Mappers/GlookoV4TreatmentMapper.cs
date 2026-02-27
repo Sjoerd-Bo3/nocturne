@@ -32,7 +32,6 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
                     {
                         var bolusDate = _timeMapper.GetRawGlookoDate(bolus.Timestamp, bolus.PumpTimestamp);
                         var correctedDate = _timeMapper.GetCorrectedGlookoTime(bolusDate);
-                        var mills = new DateTimeOffset(correctedDate, TimeSpan.Zero).ToUnixTimeMilliseconds();
                         var now = DateTime.UtcNow;
 
                         var hasInsulin = bolus.InsulinDelivered > 0;
@@ -45,7 +44,7 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
                             boluses.Add(new Bolus
                             {
                                 Id = Guid.CreateVersion7(),
-                                Mills = mills,
+                                Timestamp = correctedDate,
                                 LegacyId = GenerateLegacyId("bolus", bolusDate, $"insulin:{bolus.InsulinDelivered}_carbs:{bolus.CarbsInput}"),
                                 Device = _connectorSource,
                                 DataSource = _connectorSource,
@@ -63,7 +62,7 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
                             carbs.Add(new CarbIntake
                             {
                                 Id = Guid.CreateVersion7(),
-                                Mills = mills,
+                                Timestamp = correctedDate,
                                 LegacyId = GenerateLegacyId("carbs", bolusDate, $"insulin:{bolus.InsulinDelivered}_carbs:{bolus.CarbsInput}"),
                                 Device = _connectorSource,
                                 DataSource = _connectorSource,
@@ -89,7 +88,6 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
                     {
                         var foodDate = _timeMapper.GetRawGlookoDate(food.Timestamp, food.PumpTimestamp);
                         var correctedDate = _timeMapper.GetCorrectedGlookoTime(foodDate);
-                        var mills = new DateTimeOffset(correctedDate, TimeSpan.Zero).ToUnixTimeMilliseconds();
                         var carbValue = food.Carbs > 0 ? food.Carbs : food.CarbohydrateGrams;
 
                         if (carbValue <= 0) continue;
@@ -98,7 +96,7 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
                         carbs.Add(new CarbIntake
                         {
                             Id = Guid.CreateVersion7(),
-                            Mills = mills,
+                            Timestamp = correctedDate,
                             LegacyId = GenerateLegacyId("food", foodDate, $"carbs:{carbValue}"),
                             Device = _connectorSource,
                             DataSource = _connectorSource,
@@ -137,7 +135,6 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
             {
                 var foodDate = _timeMapper.GetRawGlookoDate(food.Timestamp, food.PumpTimestamp);
                 var correctedDate = _timeMapper.GetCorrectedGlookoTime(foodDate);
-                var mills = new DateTimeOffset(correctedDate, TimeSpan.Zero).ToUnixTimeMilliseconds();
                 var carbValue = food.Carbs > 0 ? food.Carbs : food.CarbohydrateGrams;
 
                 if (carbValue <= 0) continue;
@@ -146,7 +143,7 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
                 carbs.Add(new CarbIntake
                 {
                     Id = Guid.CreateVersion7(),
-                    Mills = mills,
+                    Timestamp = correctedDate,
                     LegacyId = GenerateLegacyId("food", foodDate, $"carbs:{carbValue}"),
                     Device = _connectorSource,
                     DataSource = _connectorSource,
@@ -189,7 +186,6 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
             {
                 var rawTimestamp = DateTimeOffset.FromUnixTimeSeconds(bolus.X).UtcDateTime;
                 var correctedTimestamp = _timeMapper.GetCorrectedGlookoTime(bolus.X);
-                var mills = new DateTimeOffset(correctedTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
                 var now = DateTime.UtcNow;
 
                 var insulin = bolus.Data?.DeliveredUnits ?? bolus.Data?.ProgrammedUnits ?? bolus.Y;
@@ -205,7 +201,7 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
                     boluses.Add(new Bolus
                     {
                         Id = Guid.CreateVersion7(),
-                        Mills = mills,
+                        Timestamp = correctedTimestamp,
                         LegacyId = GenerateLegacyId("v3_bolus", rawTimestamp, $"carbs:{carbsInput}_insulin:{insulin}"),
                         Device = _connectorSource,
                         DataSource = _connectorSource,
@@ -223,7 +219,7 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
                     carbs.Add(new CarbIntake
                     {
                         Id = Guid.CreateVersion7(),
-                        Mills = mills,
+                        Timestamp = correctedTimestamp,
                         LegacyId = GenerateLegacyId("v3_carbs", rawTimestamp, $"carbs:{carbsInput}_insulin:{insulin}"),
                         Device = _connectorSource,
                         DataSource = _connectorSource,
@@ -268,13 +264,12 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
                 {
                     var rawTimestamp = DateTimeOffset.FromUnixTimeSeconds(change.X).UtcDateTime;
                     var correctedTimestamp = _timeMapper.GetCorrectedGlookoTime(change.X);
-                    var mills = new DateTimeOffset(correctedTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
                     var now = DateTime.UtcNow;
 
                     deviceEvents.Add(new DeviceEvent
                     {
                         Id = Guid.CreateVersion7(),
-                        Mills = mills,
+                        Timestamp = correctedTimestamp,
                         LegacyId = GenerateLegacyId("reservoir_change", rawTimestamp),
                         Device = _connectorSource,
                         DataSource = _connectorSource,
@@ -299,13 +294,12 @@ public class GlookoV4TreatmentMapper(string connectorSource, GlookoTimeMapper ti
                 {
                     var rawTimestamp = DateTimeOffset.FromUnixTimeSeconds(change.X).UtcDateTime;
                     var correctedTimestamp = _timeMapper.GetCorrectedGlookoTime(change.X);
-                    var mills = new DateTimeOffset(correctedTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
                     var now = DateTime.UtcNow;
 
                     deviceEvents.Add(new DeviceEvent
                     {
                         Id = Guid.CreateVersion7(),
-                        Mills = mills,
+                        Timestamp = correctedTimestamp,
                         LegacyId = GenerateLegacyId("site_change", rawTimestamp),
                         Device = _connectorSource,
                         DataSource = _connectorSource,

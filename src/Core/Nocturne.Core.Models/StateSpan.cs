@@ -26,16 +26,28 @@ public class StateSpan
     public string? State { get; set; }
 
     /// <summary>
-    /// Gets or sets when this state began (Unix milliseconds)
+    /// Gets or sets when this state began as UTC DateTime
     /// </summary>
-    [JsonPropertyName("startMills")]
-    public long StartMills { get; set; }
+    [JsonPropertyName("startTimestamp")]
+    public DateTime StartTimestamp { get; set; }
 
     /// <summary>
-    /// Gets or sets when this state ended (Unix milliseconds, null = active)
+    /// Gets or sets when this state ended as UTC DateTime (null = active)
+    /// </summary>
+    [JsonPropertyName("endTimestamp")]
+    public DateTime? EndTimestamp { get; set; }
+
+    /// <summary>
+    /// When this state began in Unix milliseconds (computed for v1/v3 compatibility)
+    /// </summary>
+    [JsonPropertyName("startMills")]
+    public long StartMills => new DateTimeOffset(StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
+
+    /// <summary>
+    /// When this state ended in Unix milliseconds (computed for v1/v3 compatibility)
     /// </summary>
     [JsonPropertyName("endMills")]
-    public long? EndMills { get; set; }
+    public long? EndMills => EndTimestamp.HasValue ? new DateTimeOffset(EndTimestamp.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null;
 
     /// <summary>
     /// Gets or sets the data source identifier
@@ -71,7 +83,7 @@ public class StateSpan
     /// Returns true if this state span is currently active (no end time)
     /// </summary>
     [JsonIgnore]
-    public bool IsActive => !EndMills.HasValue;
+    public bool IsActive => !EndTimestamp.HasValue;
 
     /// <summary>
     /// Gets or sets the canonical group ID for deduplication.

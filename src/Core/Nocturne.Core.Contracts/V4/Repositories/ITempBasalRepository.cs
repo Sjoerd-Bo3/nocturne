@@ -5,8 +5,8 @@ namespace Nocturne.Core.Contracts.V4.Repositories;
 public interface ITempBasalRepository
 {
     Task<IEnumerable<TempBasal>> GetAsync(
-        long? from,
-        long? to,
+        DateTime? from,
+        DateTime? to,
         string? device,
         string? source,
         int limit = 100,
@@ -20,7 +20,7 @@ public interface ITempBasalRepository
     Task<TempBasal> UpdateAsync(Guid id, TempBasal model, CancellationToken ct = default);
     Task DeleteAsync(Guid id, CancellationToken ct = default);
     Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default);
-    Task<int> CountAsync(long? from, long? to, CancellationToken ct = default);
+    Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default);
     Task<IEnumerable<TempBasal>> BulkCreateAsync(
         IEnumerable<TempBasal> records,
         CancellationToken ct = default

@@ -33,16 +33,16 @@ public class StateSpanEntity
     public string State { get; set; } = string.Empty;
 
     /// <summary>
-    /// When this state began (Unix milliseconds)
+    /// When this state began as UTC DateTime (timestamptz)
     /// </summary>
-    [Column("start_mills")]
-    public long StartMills { get; set; }
+    [Column("start_timestamp")]
+    public DateTime StartTimestamp { get; set; }
 
     /// <summary>
-    /// When this state ended (Unix milliseconds, null = active)
+    /// When this state ended as UTC DateTime (timestamptz, null = active)
     /// </summary>
-    [Column("end_mills")]
-    public long? EndMills { get; set; }
+    [Column("end_timestamp")]
+    public DateTime? EndTimestamp { get; set; }
 
     /// <summary>
     /// Data source identifier (e.g., "glooko", "nightscout")

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
@@ -17,7 +18,7 @@ public static class DeviceEventMapper
         return new DeviceEventEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             App = model.App,
@@ -29,6 +30,9 @@ public static class DeviceEventMapper
             EventType = model.EventType.ToString(),
             Notes = model.Notes,
             SyncIdentifier = model.SyncIdentifier,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -40,7 +44,7 @@ public static class DeviceEventMapper
         return new DeviceEvent
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             App = entity.App,
@@ -54,6 +58,9 @@ public static class DeviceEventMapper
                 : DeviceEventType.SiteChange,
             Notes = entity.Notes,
             SyncIdentifier = entity.SyncIdentifier,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -62,7 +69,7 @@ public static class DeviceEventMapper
     /// </summary>
     public static void UpdateEntity(DeviceEventEntity entity, DeviceEvent model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.App = model.App;
@@ -73,5 +80,8 @@ public static class DeviceEventMapper
         entity.EventType = model.EventType.ToString();
         entity.Notes = model.Notes;
         entity.SyncIdentifier = model.SyncIdentifier;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

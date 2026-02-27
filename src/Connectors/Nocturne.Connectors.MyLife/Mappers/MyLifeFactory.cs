@@ -22,7 +22,7 @@ internal static class MyLifeFactory
         return new T
         {
             Id = Guid.CreateVersion7(),
-            Mills = timestamp.ToUnixTimeMilliseconds(),
+            Timestamp = timestamp.UtcDateTime,
             LegacyId = $"{MyLifeIdPrefixes.Treatment}{MyLifeMapperHelpers.BuildEventKey(ev)}",
             DataSource = DataSources.MyLifeConnector,
             CreatedAt = now,
@@ -47,7 +47,7 @@ internal static class MyLifeFactory
         return new SensorGlucose
         {
             Id = Guid.CreateVersion7(),
-            Mills = timestamp.ToUnixTimeMilliseconds(),
+            Timestamp = timestamp.UtcDateTime,
             LegacyId = $"{MyLifeIdPrefixes.Entry}{MyLifeMapperHelpers.BuildEventKey(ev)}",
             DataSource = DataSources.MyLifeConnector,
             CreatedAt = now,

@@ -9,7 +9,7 @@ import { SensorGlucoseSchema, MeterGlucoseSchema, CalibrationSchema } from '$lib
 import { type SensorGlucose, type MeterGlucose, type Calibration } from '$api';
 
 /** Get sensor glucose readings with optional filtering */
-export const getSensorGlucose = query(z.object({ from: z.number().optional(), to: z.number().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
+export const getSensorGlucose = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -97,7 +97,7 @@ export const deleteSensorGlucose = command(z.string(), async (id) => {
 });
 
 /** Get meter glucose readings with optional filtering */
-export const getMeterGlucose = query(z.object({ from: z.number().optional(), to: z.number().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
+export const getMeterGlucose = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -185,7 +185,7 @@ export const deleteMeterGlucose = command(z.string(), async (id) => {
 });
 
 /** Get calibrations with optional filtering */
-export const getCalibrations = query(z.object({ from: z.number().optional(), to: z.number().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
+export const getCalibrations = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

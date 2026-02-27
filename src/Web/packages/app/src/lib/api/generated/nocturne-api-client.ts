@@ -3730,14 +3730,14 @@ export class BatteryClient {
      * @param to (optional) End time in milliseconds since Unix epoch
      * @return Battery readings for the specified period
      */
-    getBatteryReadings(device?: string | null | undefined, from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<BatteryReading[]> {
+    getBatteryReadings(device?: string | null | undefined, from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<BatteryReading[]> {
         let url_ = this.baseUrl + "/api/v4/Battery/readings?";
         if (device !== undefined && device !== null)
             url_ += "device=" + encodeURIComponent("" + device) + "&";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -3781,14 +3781,14 @@ export class BatteryClient {
      * @param to (optional) End time in milliseconds since Unix epoch (default: now)
      * @return Battery statistics for the specified period
      */
-    getBatteryStatistics(device?: string | null | undefined, from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<BatteryStatistics[]> {
+    getBatteryStatistics(device?: string | null | undefined, from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<BatteryStatistics[]> {
         let url_ = this.baseUrl + "/api/v4/Battery/statistics?";
         if (device !== undefined && device !== null)
             url_ += "device=" + encodeURIComponent("" + device) + "&";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -3833,14 +3833,14 @@ export class BatteryClient {
      * @param limit (optional) Maximum number of cycles to return (default: 100)
      * @return Charge cycles for the specified period
      */
-    getChargeCycles(device?: string | null | undefined, from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, signal?: AbortSignal): Promise<ChargeCycle[]> {
+    getChargeCycles(device?: string | null | undefined, from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, signal?: AbortSignal): Promise<ChargeCycle[]> {
         let url_ = this.baseUrl + "/api/v4/Battery/cycles?";
         if (device !== undefined && device !== null)
             url_ += "device=" + encodeURIComponent("" + device) + "&";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -6622,12 +6622,12 @@ export class DeviceStatusClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getApsSnapshots(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfApsSnapshot> {
+    getApsSnapshots(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfApsSnapshot> {
         let url_ = this.baseUrl + "/api/v4/device-status/aps?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -6738,12 +6738,12 @@ export class DeviceStatusClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getPumpSnapshots(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfPumpSnapshot> {
+    getPumpSnapshots(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfPumpSnapshot> {
         let url_ = this.baseUrl + "/api/v4/device-status/pump?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -6854,12 +6854,12 @@ export class DeviceStatusClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getUploaderSnapshots(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfUploaderSnapshot> {
+    getUploaderSnapshots(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfUploaderSnapshot> {
         let url_ = this.baseUrl + "/api/v4/device-status/uploader?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -8135,12 +8135,12 @@ export class GlucoseClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getSensorGlucose(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfSensorGlucose> {
+    getSensorGlucose(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfSensorGlucose> {
         let url_ = this.baseUrl + "/api/v4/glucose/sensor?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -8397,12 +8397,12 @@ export class GlucoseClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getMeterGlucose(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfMeterGlucose> {
+    getMeterGlucose(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfMeterGlucose> {
         let url_ = this.baseUrl + "/api/v4/glucose/meter?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -8659,12 +8659,12 @@ export class GlucoseClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getCalibrations(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfCalibration> {
+    getCalibrations(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfCalibration> {
         let url_ = this.baseUrl + "/api/v4/glucose/calibrations?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -9198,12 +9198,12 @@ export class InsulinClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getBoluses(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfBolus> {
+    getBoluses(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfBolus> {
         let url_ = this.baseUrl + "/api/v4/insulin/boluses?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -9460,12 +9460,12 @@ export class InsulinClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getBolusCalculations(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfBolusCalculation> {
+    getBolusCalculations(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfBolusCalculation> {
         let url_ = this.baseUrl + "/api/v4/insulin/calculations?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -10937,12 +10937,12 @@ export class NutritionClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getCarbIntakes(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfCarbIntake> {
+    getCarbIntakes(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfCarbIntake> {
         let url_ = this.baseUrl + "/api/v4/nutrition/carbs?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -11399,12 +11399,12 @@ export class NutritionClient {
      * @param to (optional) 
      * @param attributed (optional) 
      */
-    getMeals(from?: number | null | undefined, to?: number | null | undefined, attributed?: boolean | null | undefined, signal?: AbortSignal): Promise<MealCarbIntake[]> {
+    getMeals(from?: Date | null | undefined, to?: Date | null | undefined, attributed?: boolean | null | undefined, signal?: AbortSignal): Promise<MealCarbIntake[]> {
         let url_ = this.baseUrl + "/api/v4/nutrition/meals?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (attributed !== undefined && attributed !== null)
             url_ += "attributed=" + encodeURIComponent("" + attributed) + "&";
         url_ = url_.replace(/[?&]$/, "");
@@ -11460,12 +11460,12 @@ export class ObservationsClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getBGChecks(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfBGCheck> {
+    getBGChecks(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfBGCheck> {
         let url_ = this.baseUrl + "/api/v4/observations/bg-checks?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -11722,12 +11722,12 @@ export class ObservationsClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getNotes(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfNote> {
+    getNotes(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfNote> {
         let url_ = this.baseUrl + "/api/v4/observations/notes?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -11984,12 +11984,12 @@ export class ObservationsClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getDeviceEvents(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfDeviceEvent> {
+    getDeviceEvents(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfDeviceEvent> {
         let url_ = this.baseUrl + "/api/v4/observations/device-events?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -12533,12 +12533,12 @@ export class ProfileClient {
      * @param device (optional) 
      * @param source (optional) 
      */
-    getTherapySettings(from?: number | null | undefined, to?: number | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfTherapySettings> {
+    getTherapySettings(from?: Date | null | undefined, to?: Date | null | undefined, limit?: number | undefined, offset?: number | undefined, sort?: string | undefined, device?: string | null | undefined, source?: string | null | undefined, signal?: AbortSignal): Promise<PaginatedResponseOfTherapySettings> {
         let url_ = this.baseUrl + "/api/v4/profile/settings?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
@@ -15078,16 +15078,16 @@ export class StateSpansClient {
      * @param count (optional) 
      * @param skip (optional) 
      */
-    getStateSpans(category?: StateSpanCategory | null | undefined, state?: string | null | undefined, from?: number | null | undefined, to?: number | null | undefined, source?: string | null | undefined, active?: boolean | null | undefined, count?: number | undefined, skip?: number | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
+    getStateSpans(category?: StateSpanCategory | null | undefined, state?: string | null | undefined, from?: Date | null | undefined, to?: Date | null | undefined, source?: string | null | undefined, active?: boolean | null | undefined, count?: number | undefined, skip?: number | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
         let url_ = this.baseUrl + "/api/v4/state-spans?";
         if (category !== undefined && category !== null)
             url_ += "category=" + encodeURIComponent("" + category) + "&";
         if (state !== undefined && state !== null)
             url_ += "state=" + encodeURIComponent("" + state) + "&";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (source !== undefined && source !== null)
             url_ += "source=" + encodeURIComponent("" + source) + "&";
         if (active !== undefined && active !== null)
@@ -15178,12 +15178,12 @@ export class StateSpansClient {
      * @param from (optional) 
      * @param to (optional) 
      */
-    getPumpModes(from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
+    getPumpModes(from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
         let url_ = this.baseUrl + "/api/v4/state-spans/pump-modes?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -15221,12 +15221,12 @@ export class StateSpansClient {
      * @param from (optional) 
      * @param to (optional) 
      */
-    getConnectivity(from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
+    getConnectivity(from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
         let url_ = this.baseUrl + "/api/v4/state-spans/connectivity?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -15264,12 +15264,12 @@ export class StateSpansClient {
      * @param from (optional) 
      * @param to (optional) 
      */
-    getOverrides(from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
+    getOverrides(from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
         let url_ = this.baseUrl + "/api/v4/state-spans/overrides?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -15307,12 +15307,12 @@ export class StateSpansClient {
      * @param from (optional) 
      * @param to (optional) 
      */
-    getProfiles(from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
+    getProfiles(from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
         let url_ = this.baseUrl + "/api/v4/state-spans/profiles?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -15350,12 +15350,12 @@ export class StateSpansClient {
      * @param from (optional) 
      * @param to (optional) 
      */
-    getSleep(from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
+    getSleep(from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
         let url_ = this.baseUrl + "/api/v4/state-spans/sleep?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -15393,12 +15393,12 @@ export class StateSpansClient {
      * @param from (optional) 
      * @param to (optional) 
      */
-    getExercise(from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
+    getExercise(from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
         let url_ = this.baseUrl + "/api/v4/state-spans/exercise?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -15436,12 +15436,12 @@ export class StateSpansClient {
      * @param from (optional) 
      * @param to (optional) 
      */
-    getIllness(from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
+    getIllness(from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
         let url_ = this.baseUrl + "/api/v4/state-spans/illness?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -15479,12 +15479,12 @@ export class StateSpansClient {
      * @param from (optional) 
      * @param to (optional) 
      */
-    getTravel(from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
+    getTravel(from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
         let url_ = this.baseUrl + "/api/v4/state-spans/travel?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -15522,12 +15522,12 @@ export class StateSpansClient {
      * @param from (optional) 
      * @param to (optional) 
      */
-    getActivities(from?: number | null | undefined, to?: number | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
+    getActivities(from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<StateSpan[]> {
         let url_ = this.baseUrl + "/api/v4/state-spans/activities?";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -16182,16 +16182,16 @@ export class SystemEventsClient {
      * @param count (optional) 
      * @param skip (optional) 
      */
-    getSystemEvents(type?: SystemEventType | null | undefined, category?: SystemEventCategory | null | undefined, from?: number | null | undefined, to?: number | null | undefined, source?: string | null | undefined, count?: number | undefined, skip?: number | undefined, signal?: AbortSignal): Promise<SystemEvent[]> {
+    getSystemEvents(type?: SystemEventType | null | undefined, category?: SystemEventCategory | null | undefined, from?: Date | null | undefined, to?: Date | null | undefined, source?: string | null | undefined, count?: number | undefined, skip?: number | undefined, signal?: AbortSignal): Promise<SystemEvent[]> {
         let url_ = this.baseUrl + "/api/v4/system-events?";
         if (type !== undefined && type !== null)
             url_ += "type=" + encodeURIComponent("" + type) + "&";
         if (category !== undefined && category !== null)
             url_ += "category=" + encodeURIComponent("" + category) + "&";
         if (from !== undefined && from !== null)
-            url_ += "from=" + encodeURIComponent("" + from) + "&";
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
         if (to !== undefined && to !== null)
-            url_ += "to=" + encodeURIComponent("" + to) + "&";
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         if (source !== undefined && source !== null)
             url_ += "source=" + encodeURIComponent("" + source) + "&";
         if (count === null)
@@ -23898,6 +23898,7 @@ export interface GlycemicVariabilityRequest {
 
 export interface SensorGlucose {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -23908,11 +23909,12 @@ export interface SensorGlucose {
     createdAt?: Date;
     modifiedAt?: Date;
     mgdl?: number;
-    mmol?: number | undefined;
+    mmol?: number;
     direction?: GlucoseDirection | undefined;
     trend?: GlucoseTrend | undefined;
     trendRate?: number | undefined;
     noise?: number | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export enum GlucoseDirection {
@@ -24088,6 +24090,7 @@ export interface TreatmentSummaryRequest {
 
 export interface Bolus {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -24109,6 +24112,9 @@ export interface Bolus {
     unabsorbed?: number | undefined;
     pumpDeviceId?: string | undefined;
     pumpRecordId?: string | undefined;
+    bolusCalculationId?: string | undefined;
+    apsSnapshotId?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export enum BolusType {
@@ -24124,6 +24130,7 @@ export enum BolusKind {
 
 export interface CarbIntake {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -24137,6 +24144,8 @@ export interface CarbIntake {
     syncIdentifier?: string | undefined;
     carbTime?: number | undefined;
     absorptionTime?: number | undefined;
+    bolusId?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface OverallAverages {
@@ -24691,6 +24700,7 @@ export interface SiteChangeImpactRequest {
 
 export interface DeviceEvent {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -24703,6 +24713,7 @@ export interface DeviceEvent {
     eventType?: DeviceEventType;
     notes?: string | undefined;
     syncIdentifier?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export enum DeviceEventType {
@@ -25408,6 +25419,8 @@ export interface StateSpan {
     id?: string | undefined;
     category?: StateSpanCategory;
     state?: string | undefined;
+    startTimestamp?: Date;
+    endTimestamp?: Date | undefined;
     startMills?: number;
     endMills?: number | undefined;
     source?: string | undefined;
@@ -25884,6 +25897,7 @@ export interface PaginatedResponseOfApsSnapshot {
 
 export interface ApsSnapshot {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -25914,7 +25928,9 @@ export interface ApsSnapshot {
     predictedZtJson?: string | undefined;
     predictedCobJson?: string | undefined;
     predictedUamJson?: string | undefined;
+    predictedStartTimestamp?: Date | undefined;
     predictedStartMills?: number | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export enum ApsSystem {
@@ -25937,6 +25953,7 @@ export interface PaginatedResponseOfPumpSnapshot {
 
 export interface PumpSnapshot {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -25956,6 +25973,7 @@ export interface PumpSnapshot {
     suspended?: boolean | undefined;
     pumpStatus?: string | undefined;
     clock?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface PaginatedResponseOfUploaderSnapshot {
@@ -25965,6 +25983,7 @@ export interface PaginatedResponseOfUploaderSnapshot {
 
 export interface UploaderSnapshot {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -25980,6 +25999,7 @@ export interface UploaderSnapshot {
     isCharging?: boolean | undefined;
     temperature?: number | undefined;
     type?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface DiscrepancyAnalysisDto {
@@ -26041,6 +26061,7 @@ export interface PaginatedResponseOfMeterGlucose {
 
 export interface MeterGlucose {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -26051,7 +26072,8 @@ export interface MeterGlucose {
     createdAt?: Date;
     modifiedAt?: Date;
     mgdl?: number;
-    mmol?: number | undefined;
+    mmol?: number;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface PaginatedResponseOfCalibration {
@@ -26061,6 +26083,7 @@ export interface PaginatedResponseOfCalibration {
 
 export interface Calibration {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -26073,6 +26096,7 @@ export interface Calibration {
     slope?: number | undefined;
     intercept?: number | undefined;
     scale?: number | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface HeartRate extends ProcessableDocumentBase {
@@ -26103,6 +26127,7 @@ export interface PaginatedResponseOfBolusCalculation {
 
 export interface BolusCalculation {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -26125,6 +26150,7 @@ export interface BolusCalculation {
     splitNow?: number | undefined;
     splitExt?: number | undefined;
     preBolus?: number | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export enum CalculationType2 {
@@ -26348,6 +26374,7 @@ export interface PaginatedResponseOfBGCheck {
 
 export interface BGCheck {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -26359,10 +26386,11 @@ export interface BGCheck {
     modifiedAt?: Date;
     glucose?: number;
     glucoseType?: GlucoseType | undefined;
-    mgdl?: number;
-    mmol?: number | undefined;
     units?: GlucoseUnit | undefined;
+    mgdl?: number;
+    mmol?: number;
     syncIdentifier?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export enum GlucoseType {
@@ -26382,6 +26410,7 @@ export interface PaginatedResponseOfNote {
 
 export interface Note {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -26395,6 +26424,7 @@ export interface Note {
     eventType?: string | undefined;
     isAnnouncement?: boolean;
     syncIdentifier?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface PaginatedResponseOfDeviceEvent {
@@ -26481,6 +26511,7 @@ export interface ProfileSummary {
 
 export interface TherapySettings {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -26508,6 +26539,7 @@ export interface TherapySettings {
     enteredBy?: string | undefined;
     isExternallyManaged?: boolean;
     startDate?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface LoopProfileSettings {
@@ -26539,6 +26571,7 @@ export interface LoopTargetRange {
 
 export interface BasalSchedule {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -26550,6 +26583,7 @@ export interface BasalSchedule {
     modifiedAt?: Date;
     profileName?: string;
     entries?: ScheduleEntry[];
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface ScheduleEntry {
@@ -26560,6 +26594,7 @@ export interface ScheduleEntry {
 
 export interface CarbRatioSchedule {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -26571,10 +26606,12 @@ export interface CarbRatioSchedule {
     modifiedAt?: Date;
     profileName?: string;
     entries?: ScheduleEntry[];
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface SensitivitySchedule {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -26586,10 +26623,12 @@ export interface SensitivitySchedule {
     modifiedAt?: Date;
     profileName?: string;
     entries?: ScheduleEntry[];
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface TargetRangeSchedule {
     id?: string;
+    timestamp?: Date;
     mills?: number;
     utcOffset?: number | undefined;
     device?: string | undefined;
@@ -26601,6 +26640,7 @@ export interface TargetRangeSchedule {
     modifiedAt?: Date;
     profileName?: string;
     entries?: TargetRangeEntry[];
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface TargetRangeEntry {

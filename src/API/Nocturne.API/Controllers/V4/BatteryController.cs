@@ -72,8 +72,8 @@ public class BatteryController : ControllerBase
     [ProducesResponseType(500)]
     public async Task<ActionResult<IEnumerable<BatteryReading>>> GetBatteryReadings(
         [FromQuery] string? device = null,
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -88,8 +88,8 @@ public class BatteryController : ControllerBase
         {
             var readings = await _batteryService.GetBatteryReadingsAsync(
                 device,
-                from,
-                to,
+                from.HasValue ? new DateTimeOffset(from.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null,
+                to.HasValue ? new DateTimeOffset(to.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null,
                 cancellationToken
             );
 
@@ -116,8 +116,8 @@ public class BatteryController : ControllerBase
     [ProducesResponseType(500)]
     public async Task<ActionResult<IEnumerable<BatteryStatistics>>> GetBatteryStatistics(
         [FromQuery] string? device = null,
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -132,8 +132,8 @@ public class BatteryController : ControllerBase
         {
             var statistics = await _batteryService.GetBatteryStatisticsAsync(
                 device,
-                from,
-                to,
+                from.HasValue ? new DateTimeOffset(from.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null,
+                to.HasValue ? new DateTimeOffset(to.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null,
                 cancellationToken
             );
 
@@ -161,8 +161,8 @@ public class BatteryController : ControllerBase
     [ProducesResponseType(500)]
     public async Task<ActionResult<IEnumerable<ChargeCycle>>> GetChargeCycles(
         [FromQuery] string? device = null,
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         [FromQuery] int limit = 100,
         CancellationToken cancellationToken = default
     )
@@ -179,8 +179,8 @@ public class BatteryController : ControllerBase
         {
             var cycles = await _batteryService.GetChargeCyclesAsync(
                 device,
-                from,
-                to,
+                from.HasValue ? new DateTimeOffset(from.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null,
+                to.HasValue ? new DateTimeOffset(to.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null,
                 limit,
                 cancellationToken
             );

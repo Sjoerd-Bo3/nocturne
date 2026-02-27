@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
 
@@ -16,7 +17,7 @@ public static class BGCheckMapper
         return new BGCheckEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             App = model.App,
@@ -29,6 +30,9 @@ public static class BGCheckMapper
             GlucoseType = model.GlucoseType?.ToString(),
             Units = model.Units?.ToString(),
             SyncIdentifier = model.SyncIdentifier,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -40,7 +44,7 @@ public static class BGCheckMapper
         return new BGCheck
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             App = entity.App,
@@ -53,6 +57,9 @@ public static class BGCheckMapper
             GlucoseType = Enum.TryParse<GlucoseType>(entity.GlucoseType, out var gt) ? gt : null,
             Units = Enum.TryParse<GlucoseUnit>(entity.Units, out var u) ? u : null,
             SyncIdentifier = entity.SyncIdentifier,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -61,7 +68,7 @@ public static class BGCheckMapper
     /// </summary>
     public static void UpdateEntity(BGCheckEntity entity, BGCheck model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.App = model.App;
@@ -73,5 +80,8 @@ public static class BGCheckMapper
         entity.GlucoseType = model.GlucoseType?.ToString();
         entity.Units = model.Units?.ToString();
         entity.SyncIdentifier = model.SyncIdentifier;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

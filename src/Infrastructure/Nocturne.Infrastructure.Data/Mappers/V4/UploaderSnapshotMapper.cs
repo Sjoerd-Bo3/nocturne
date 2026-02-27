@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
 
@@ -16,7 +17,7 @@ public static class UploaderSnapshotMapper
         return new UploaderSnapshotEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            Mills = model.Mills,
+            Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
             LegacyId = model.LegacyId,
@@ -28,6 +29,9 @@ public static class UploaderSnapshotMapper
             IsCharging = model.IsCharging,
             Temperature = model.Temperature,
             Type = model.Type,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -39,7 +43,7 @@ public static class UploaderSnapshotMapper
         return new UploaderSnapshot
         {
             Id = entity.Id,
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
             LegacyId = entity.LegacyId,
@@ -51,6 +55,9 @@ public static class UploaderSnapshotMapper
             IsCharging = entity.IsCharging,
             Temperature = entity.Temperature,
             Type = entity.Type,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -59,7 +66,7 @@ public static class UploaderSnapshotMapper
     /// </summary>
     public static void UpdateEntity(UploaderSnapshotEntity entity, UploaderSnapshot model)
     {
-        entity.Mills = model.Mills;
+        entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
         entity.LegacyId = model.LegacyId;
@@ -70,5 +77,8 @@ public static class UploaderSnapshotMapper
         entity.IsCharging = model.IsCharging;
         entity.Temperature = model.Temperature;
         entity.Type = model.Type;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

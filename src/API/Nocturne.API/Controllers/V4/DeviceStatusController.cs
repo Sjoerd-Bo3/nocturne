@@ -40,15 +40,15 @@ public class DeviceStatusController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<ApsSnapshot>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<ApsSnapshot>>> GetApsSnapshots(
-        [FromQuery] long? from, [FromQuery] long? to,
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to,
         [FromQuery] int limit = 100, [FromQuery] int offset = 0,
-        [FromQuery] string sort = "mills_desc",
+        [FromQuery] string sort = "timestamp_desc",
         [FromQuery] string? device = null, [FromQuery] string? source = null,
         CancellationToken ct = default)
     {
-        if (sort is not "mills_desc" and not "mills_asc")
-            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
-        var descending = sort == "mills_desc";
+        if (sort is not "timestamp_desc" and not "timestamp_asc")
+            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." });
+        var descending = sort == "timestamp_desc";
         var data = await _apsRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
         var total = await _apsRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<ApsSnapshot> { Data = data, Pagination = new(limit, offset, total) });
@@ -79,15 +79,15 @@ public class DeviceStatusController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<PumpSnapshot>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<PumpSnapshot>>> GetPumpSnapshots(
-        [FromQuery] long? from, [FromQuery] long? to,
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to,
         [FromQuery] int limit = 100, [FromQuery] int offset = 0,
-        [FromQuery] string sort = "mills_desc",
+        [FromQuery] string sort = "timestamp_desc",
         [FromQuery] string? device = null, [FromQuery] string? source = null,
         CancellationToken ct = default)
     {
-        if (sort is not "mills_desc" and not "mills_asc")
-            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
-        var descending = sort == "mills_desc";
+        if (sort is not "timestamp_desc" and not "timestamp_asc")
+            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." });
+        var descending = sort == "timestamp_desc";
         var data = await _pumpRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
         var total = await _pumpRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<PumpSnapshot> { Data = data, Pagination = new(limit, offset, total) });
@@ -118,15 +118,15 @@ public class DeviceStatusController : ControllerBase
     [ProducesResponseType(typeof(PaginatedResponse<UploaderSnapshot>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PaginatedResponse<UploaderSnapshot>>> GetUploaderSnapshots(
-        [FromQuery] long? from, [FromQuery] long? to,
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to,
         [FromQuery] int limit = 100, [FromQuery] int offset = 0,
-        [FromQuery] string sort = "mills_desc",
+        [FromQuery] string sort = "timestamp_desc",
         [FromQuery] string? device = null, [FromQuery] string? source = null,
         CancellationToken ct = default)
     {
-        if (sort is not "mills_desc" and not "mills_asc")
-            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'mills_asc' or 'mills_desc'." });
-        var descending = sort == "mills_desc";
+        if (sort is not "timestamp_desc" and not "timestamp_asc")
+            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." });
+        var descending = sort == "timestamp_desc";
         var data = await _uploaderRepo.GetAsync(from, to, device, source, limit, offset, descending, ct);
         var total = await _uploaderRepo.CountAsync(from, to, ct);
         return Ok(new PaginatedResponse<UploaderSnapshot> { Data = data, Pagination = new(limit, offset, total) });

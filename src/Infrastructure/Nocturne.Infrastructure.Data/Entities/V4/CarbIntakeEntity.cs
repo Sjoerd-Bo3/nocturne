@@ -17,10 +17,10 @@ public class CarbIntakeEntity
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Canonical timestamp in Unix milliseconds
+    /// Canonical timestamp as UTC DateTime (timestamptz)
     /// </summary>
-    [Column("mills")]
-    public long Mills { get; set; }
+    [Column("timestamp")]
+    public DateTime Timestamp { get; set; }
 
     /// <summary>
     /// UTC offset in minutes
@@ -92,4 +92,10 @@ public class CarbIntakeEntity
 
     [Column("bolus_id")]
     public Guid? BolusId { get; set; }
+
+    /// <summary>
+    /// Catch-all JSONB column for fields not mapped to dedicated columns
+    /// </summary>
+    [Column("additional_properties", TypeName = "jsonb")]
+    public string? AdditionalPropertiesJson { get; set; }
 }

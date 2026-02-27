@@ -689,8 +689,8 @@ public class DeduplicationServiceTests : IDisposable
             Id = Guid.NewGuid().ToString(),
             Category = category,
             State = state,
-            StartMills = startMills,
-            EndMills = endMills,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(startMills).UtcDateTime,
+            EndTimestamp = endMills.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(endMills.Value).UtcDateTime : null,
             Source = source,
             OriginalId = $"{source}_{startMills}",
             Metadata = new Dictionary<string, object>

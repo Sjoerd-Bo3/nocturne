@@ -31,8 +31,8 @@ public class StateSpansController : ControllerBase
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetStateSpans(
         [FromQuery] StateSpanCategory? category = null,
         [FromQuery] string? state = null,
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         [FromQuery] string? source = null,
         [FromQuery] bool? active = null,
         [FromQuery] int count = 100,
@@ -49,8 +49,8 @@ public class StateSpansController : ControllerBase
     /// </summary>
     [HttpGet("pump-modes")]
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetPumpModes(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
         var spans = await _stateSpanService.GetStateSpansAsync(StateSpanCategory.PumpMode, from: from, to: to, cancellationToken: cancellationToken);
@@ -62,8 +62,8 @@ public class StateSpansController : ControllerBase
     /// </summary>
     [HttpGet("connectivity")]
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetConnectivity(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
         var spans = await _stateSpanService.GetStateSpansAsync(StateSpanCategory.PumpConnectivity, from: from, to: to, cancellationToken: cancellationToken);
@@ -75,8 +75,8 @@ public class StateSpansController : ControllerBase
     /// </summary>
     [HttpGet("overrides")]
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetOverrides(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
         var spans = await _stateSpanService.GetStateSpansAsync(StateSpanCategory.Override, from: from, to: to, cancellationToken: cancellationToken);
@@ -88,8 +88,8 @@ public class StateSpansController : ControllerBase
     /// </summary>
     [HttpGet("profiles")]
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetProfiles(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
         var spans = await _stateSpanService.GetStateSpansAsync(StateSpanCategory.Profile, from: from, to: to, cancellationToken: cancellationToken);
@@ -101,8 +101,8 @@ public class StateSpansController : ControllerBase
     /// </summary>
     [HttpGet("sleep")]
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetSleep(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
         var spans = await _stateSpanService.GetStateSpansAsync(StateSpanCategory.Sleep, from: from, to: to, cancellationToken: cancellationToken);
@@ -114,8 +114,8 @@ public class StateSpansController : ControllerBase
     /// </summary>
     [HttpGet("exercise")]
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetExercise(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
         var spans = await _stateSpanService.GetStateSpansAsync(StateSpanCategory.Exercise, from: from, to: to, cancellationToken: cancellationToken);
@@ -127,8 +127,8 @@ public class StateSpansController : ControllerBase
     /// </summary>
     [HttpGet("illness")]
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetIllness(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
         var spans = await _stateSpanService.GetStateSpansAsync(StateSpanCategory.Illness, from: from, to: to, cancellationToken: cancellationToken);
@@ -140,8 +140,8 @@ public class StateSpansController : ControllerBase
     /// </summary>
     [HttpGet("travel")]
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetTravel(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
         var spans = await _stateSpanService.GetStateSpansAsync(StateSpanCategory.Travel, from: from, to: to, cancellationToken: cancellationToken);
@@ -153,8 +153,8 @@ public class StateSpansController : ControllerBase
     /// </summary>
     [HttpGet("activities")]
     public async Task<ActionResult<IEnumerable<StateSpan>>> GetActivities(
-        [FromQuery] long? from = null,
-        [FromQuery] long? to = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default)
     {
         var activityCategories = new[] { StateSpanCategory.Sleep, StateSpanCategory.Exercise, StateSpanCategory.Illness, StateSpanCategory.Travel };
@@ -197,8 +197,8 @@ public class StateSpansController : ControllerBase
         {
             Category = request.Category,
             State = request.State,
-            StartMills = request.StartMills,
-            EndMills = request.EndMills,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(request.StartMills).UtcDateTime,
+            EndTimestamp = request.EndMills.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(request.EndMills.Value).UtcDateTime : null,
             Source = request.Source ?? "manual",
             Metadata = request.Metadata,
             OriginalId = request.OriginalId,
@@ -228,8 +228,12 @@ public class StateSpansController : ControllerBase
             Id = existing.Id,
             Category = request.Category ?? existing.Category,
             State = request.State ?? existing.State,
-            StartMills = request.StartMills ?? existing.StartMills,
-            EndMills = request.EndMills ?? existing.EndMills,
+            StartTimestamp = request.StartMills.HasValue
+                ? DateTimeOffset.FromUnixTimeMilliseconds(request.StartMills.Value).UtcDateTime
+                : existing.StartTimestamp,
+            EndTimestamp = request.EndMills.HasValue
+                ? DateTimeOffset.FromUnixTimeMilliseconds(request.EndMills.Value).UtcDateTime
+                : existing.EndTimestamp,
             Source = request.Source ?? existing.Source,
             Metadata = request.Metadata ?? existing.Metadata,
             OriginalId = existing.OriginalId,

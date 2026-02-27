@@ -55,12 +55,11 @@ public class GlookoSensorGlucoseMapper
             var mgdl = ConvertToMgdl(reading.Y, meterUnits);
             if (mgdl <= 0) continue;
 
-            var mills = new DateTimeOffset(timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
             var now = DateTime.UtcNow;
             results.Add(new SensorGlucose
             {
                 Id = Guid.CreateVersion7(),
-                Mills = mills,
+                Timestamp = timestamp,
                 LegacyId = $"glooko_v3_{reading.X}",
                 Device = _connectorSource,
                 DataSource = _connectorSource,
@@ -95,12 +94,11 @@ public class GlookoSensorGlucoseMapper
             if (_config.TimezoneOffset != 0)
                 date = date.AddHours(-_config.TimezoneOffset);
 
-            var mills = new DateTimeOffset(date, TimeSpan.Zero).ToUnixTimeMilliseconds();
             var now = DateTime.UtcNow;
             return new SensorGlucose
             {
                 Id = Guid.CreateVersion7(),
-                Mills = mills,
+                Timestamp = date,
                 LegacyId = $"glooko_{date.Ticks}",
                 Device = _connectorSource,
                 DataSource = _connectorSource,

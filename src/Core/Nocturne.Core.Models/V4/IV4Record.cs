@@ -6,7 +6,8 @@ namespace Nocturne.Core.Models.V4;
 public interface IV4Record
 {
     Guid Id { get; set; }
-    long Mills { get; set; }
+    DateTime Timestamp { get; set; }
+    long Mills { get; }
     int? UtcOffset { get; set; }
     string? Device { get; set; }
     string? App { get; set; }
@@ -15,4 +16,5 @@ public interface IV4Record
     string? LegacyId { get; set; }
     DateTime CreatedAt { get; set; }
     DateTime ModifiedAt { get; set; }
+    Dictionary<string, object?>? AdditionalProperties { get; set; }
 }

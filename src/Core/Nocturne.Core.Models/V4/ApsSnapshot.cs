@@ -8,7 +8,8 @@ namespace Nocturne.Core.Models.V4;
 public class ApsSnapshot : IV4Record
 {
     public Guid Id { get; set; }
-    public long Mills { get; set; }
+    public DateTime Timestamp { get; set; }
+    public long Mills => new DateTimeOffset(Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
     public int? UtcOffset { get; set; }
     public string? Device { get; set; }
     public string? App { get; set; }
@@ -83,6 +84,14 @@ public class ApsSnapshot : IV4Record
     /// <summary>UAM prediction curve (OpenAPS only) as JSON array</summary>
     public string? PredictedUamJson { get; set; }
 
-    /// <summary>Timestamp of prediction start in Unix milliseconds</summary>
-    public long? PredictedStartMills { get; set; }
+    /// <summary>Timestamp of prediction start as UTC DateTime</summary>
+    public DateTime? PredictedStartTimestamp { get; set; }
+
+    /// <summary>Timestamp of prediction start in Unix milliseconds (computed)</summary>
+    public long? PredictedStartMills => PredictedStartTimestamp.HasValue ? new DateTimeOffset(PredictedStartTimestamp.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null;
+
+    /// <summary>
+    /// Catch-all for fields not mapped to dedicated columns
+    /// </summary>
+    public Dictionary<string, object?>? AdditionalProperties { get; set; }
 }

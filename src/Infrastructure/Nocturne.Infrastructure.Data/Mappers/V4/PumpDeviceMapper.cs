@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities.V4;
 
@@ -18,8 +19,11 @@ public static class PumpDeviceMapper
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
             PumpType = model.PumpType,
             PumpSerial = model.PumpSerial,
-            FirstSeenMills = model.FirstSeenMills,
-            LastSeenMills = model.LastSeenMills,
+            FirstSeenTimestamp = model.FirstSeenTimestamp,
+            LastSeenTimestamp = model.LastSeenTimestamp,
+            AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+                ? JsonSerializer.Serialize(model.AdditionalProperties)
+                : null,
         };
     }
 
@@ -33,8 +37,11 @@ public static class PumpDeviceMapper
             Id = entity.Id,
             PumpType = entity.PumpType,
             PumpSerial = entity.PumpSerial,
-            FirstSeenMills = entity.FirstSeenMills,
-            LastSeenMills = entity.LastSeenMills,
+            FirstSeenTimestamp = entity.FirstSeenTimestamp,
+            LastSeenTimestamp = entity.LastSeenTimestamp,
+            AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
+                : null,
         };
     }
 
@@ -45,7 +52,10 @@ public static class PumpDeviceMapper
     {
         entity.PumpType = model.PumpType;
         entity.PumpSerial = model.PumpSerial;
-        entity.FirstSeenMills = model.FirstSeenMills;
-        entity.LastSeenMills = model.LastSeenMills;
+        entity.FirstSeenTimestamp = model.FirstSeenTimestamp;
+        entity.LastSeenTimestamp = model.LastSeenTimestamp;
+        entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
+            ? JsonSerializer.Serialize(model.AdditionalProperties)
+            : null;
     }
 }

@@ -106,8 +106,8 @@ public class CompressionLowService : ICompressionLowService
         {
             Category = StateSpanCategory.DataExclusion,
             State = "CompressionLow",
-            StartMills = startMills,
-            EndMills = endMills,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(startMills).UtcDateTime,
+            EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(endMills).UtcDateTime,
             Source = "compression-low-detection",
             Metadata = new Dictionary<string, object>
             {

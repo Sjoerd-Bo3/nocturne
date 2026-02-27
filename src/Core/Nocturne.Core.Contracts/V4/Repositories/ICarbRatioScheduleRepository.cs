@@ -5,8 +5,8 @@ namespace Nocturne.Core.Contracts.V4.Repositories;
 public interface ICarbRatioScheduleRepository
 {
     Task<IEnumerable<CarbRatioSchedule>> GetAsync(
-        long? from,
-        long? to,
+        DateTime? from,
+        DateTime? to,
         string? device,
         string? source,
         int limit = 100,
@@ -22,7 +22,7 @@ public interface ICarbRatioScheduleRepository
     Task DeleteAsync(Guid id, CancellationToken ct = default);
     Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default);
     Task<int> DeleteByLegacyIdPrefixAsync(string prefix, CancellationToken ct = default);
-    Task<int> CountAsync(long? from, long? to, CancellationToken ct = default);
+    Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default);
     Task<IEnumerable<CarbRatioSchedule>> GetByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken ct = default

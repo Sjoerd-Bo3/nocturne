@@ -35,25 +35,25 @@ public class DataOverviewService : IDataOverviewService
         // Run all queries sequentially — DbContext is not thread-safe
         var minMaxResults = new List<(long? Min, long? Max)>();
 
-        // V4 tables with Mills + DataSource
-        minMaxResults.Add(await GetMinMaxMills(
-            _context.SensorGlucose.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxResults.Add(await GetMinMaxMills(
-            _context.MeterGlucose.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxResults.Add(await GetMinMaxMills(
-            _context.Boluses.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxResults.Add(await GetMinMaxMills(
-            _context.CarbIntakes.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxResults.Add(await GetMinMaxMills(
-            _context.BolusCalculations.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxResults.Add(await GetMinMaxMills(
-            _context.Notes.Select(e => (long?)e.Mills), cancellationToken));
-        minMaxResults.Add(await GetMinMaxMills(
-            _context.DeviceEvents.Select(e => (long?)e.Mills), cancellationToken));
+        // V4 tables with Timestamp + DataSource
+        minMaxResults.Add(await GetMinMaxTimestamp(
+            _context.SensorGlucose.Select(e => (DateTime?)e.Timestamp), cancellationToken));
+        minMaxResults.Add(await GetMinMaxTimestamp(
+            _context.MeterGlucose.Select(e => (DateTime?)e.Timestamp), cancellationToken));
+        minMaxResults.Add(await GetMinMaxTimestamp(
+            _context.Boluses.Select(e => (DateTime?)e.Timestamp), cancellationToken));
+        minMaxResults.Add(await GetMinMaxTimestamp(
+            _context.CarbIntakes.Select(e => (DateTime?)e.Timestamp), cancellationToken));
+        minMaxResults.Add(await GetMinMaxTimestamp(
+            _context.BolusCalculations.Select(e => (DateTime?)e.Timestamp), cancellationToken));
+        minMaxResults.Add(await GetMinMaxTimestamp(
+            _context.Notes.Select(e => (DateTime?)e.Timestamp), cancellationToken));
+        minMaxResults.Add(await GetMinMaxTimestamp(
+            _context.DeviceEvents.Select(e => (DateTime?)e.Timestamp), cancellationToken));
 
-        // StateSpans uses StartMills
-        minMaxResults.Add(await GetMinMaxMills(
-            _context.StateSpans.Select(e => (long?)e.StartMills), cancellationToken));
+        // StateSpans uses StartTimestamp
+        minMaxResults.Add(await GetMinMaxTimestamp(
+            _context.StateSpans.Select(e => (DateTime?)e.StartTimestamp), cancellationToken));
 
         // Tables without DataSource
         minMaxResults.Add(await GetMinMaxMills(
@@ -139,6 +139,8 @@ public class DataOverviewService : IDataOverviewService
         var startOfNextYear = new DateTimeOffset(year + 1, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var startMills = startOfYear.ToUnixTimeMilliseconds();
         var endMills = startOfNextYear.ToUnixTimeMilliseconds();
+        var startUtc = startOfYear.UtcDateTime;
+        var endUtc = startOfNextYear.UtcDateTime;
 
         var hasFilter = dataSources is { Length: > 0 };
 
@@ -147,70 +149,70 @@ public class DataOverviewService : IDataOverviewService
 
         // Run all queries sequentially — DbContext is not thread-safe
 
-        // V4 tables with Mills + DataSource
-        await CollectCountsFromMillsTable(
+        // V4 tables with Timestamp + DataSource
+        await CollectCountsFromTimestampTable(
             "Glucose",
             _context.SensorGlucose
-                .Where(e => e.Mills >= startMills && e.Mills < endMills)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => e.Mills),
+                .Select(e => e.Timestamp),
             dayMap, cancellationToken);
 
-        await CollectCountsFromMillsTable(
+        await CollectCountsFromTimestampTable(
             "ManualBG",
             _context.MeterGlucose
-                .Where(e => e.Mills >= startMills && e.Mills < endMills)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => e.Mills),
+                .Select(e => e.Timestamp),
             dayMap, cancellationToken);
 
-        await CollectCountsFromMillsTable(
+        await CollectCountsFromTimestampTable(
             "Boluses",
             _context.Boluses
-                .Where(e => e.Mills >= startMills && e.Mills < endMills)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => e.Mills),
+                .Select(e => e.Timestamp),
             dayMap, cancellationToken);
 
-        await CollectCountsFromMillsTable(
+        await CollectCountsFromTimestampTable(
             "CarbIntake",
             _context.CarbIntakes
-                .Where(e => e.Mills >= startMills && e.Mills < endMills)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => e.Mills),
+                .Select(e => e.Timestamp),
             dayMap, cancellationToken);
 
-        await CollectCountsFromMillsTable(
+        await CollectCountsFromTimestampTable(
             "BolusCalculations",
             _context.BolusCalculations
-                .Where(e => e.Mills >= startMills && e.Mills < endMills)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => e.Mills),
+                .Select(e => e.Timestamp),
             dayMap, cancellationToken);
 
-        await CollectCountsFromMillsTable(
+        await CollectCountsFromTimestampTable(
             "Notes",
             _context.Notes
-                .Where(e => e.Mills >= startMills && e.Mills < endMills)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => e.Mills),
+                .Select(e => e.Timestamp),
             dayMap, cancellationToken);
 
-        await CollectCountsFromMillsTable(
+        await CollectCountsFromTimestampTable(
             "DeviceEvents",
             _context.DeviceEvents
-                .Where(e => e.Mills >= startMills && e.Mills < endMills)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => e.Mills),
+                .Select(e => e.Timestamp),
             dayMap, cancellationToken);
 
-        // StateSpans: uses StartMills and Source (not Mills/DataSource)
-        await CollectCountsFromMillsTable(
+        // StateSpans: uses StartTimestamp and Source (not Timestamp/DataSource)
+        await CollectCountsFromTimestampTable(
             "StateSpans",
             _context.StateSpans
-                .Where(e => e.StartMills >= startMills && e.StartMills < endMills)
+                .Where(e => e.StartTimestamp >= startUtc && e.StartTimestamp < endUtc)
                 .Where(e => !hasFilter || dataSources!.Contains(e.Source!))
-                .Select(e => e.StartMills),
+                .Select(e => e.StartTimestamp),
             dayMap, cancellationToken);
 
         // Activities: has Mills but NO DataSource - skip when filter is active
@@ -253,13 +255,13 @@ public class DataOverviewService : IDataOverviewService
             dayMap, cancellationToken);
 
         // Glucose averages (SensorGlucose + MeterGlucose + legacy Entries)
-        await CollectGlucoseAverages(startMills, endMills, dataSources, hasFilter, dayMap, cancellationToken);
+        await CollectGlucoseAverages(startMills, endMills, startUtc, endUtc, dataSources, hasFilter, dayMap, cancellationToken);
 
         // Insulin totals (Bolus from Boluses table + Basal from algorithm boluses & TempBasals)
-        await CollectInsulinTotals(startMills, endMills, dataSources, hasFilter, dayMap, cancellationToken);
+        await CollectInsulinTotals(startMills, endMills, startUtc, endUtc, dataSources, hasFilter, dayMap, cancellationToken);
 
         // Carb totals
-        await CollectCarbTotals(startMills, endMills, dataSources, hasFilter, dayMap, cancellationToken);
+        await CollectCarbTotals(startMills, endMills, startUtc, endUtc, dataSources, hasFilter, dayMap, cancellationToken);
 
         // Compute TotalCount and TotalDailyDose for each day
         foreach (var day in dayMap.Values)
@@ -301,6 +303,33 @@ public class DataOverviewService : IDataOverviewService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to get min/max mills from table");
+            return (null, null);
+        }
+    }
+
+    /// <summary>
+    /// Gets min and max from an IQueryable of nullable DateTimes (V4 entities), converting to mills.
+    /// </summary>
+    private async Task<(long? Min, long? Max)> GetMinMaxTimestamp(
+        IQueryable<DateTime?> timestampQuery,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var min = await timestampQuery.MinAsync(cancellationToken);
+            var max = await timestampQuery.MaxAsync(cancellationToken);
+            return (
+                min.HasValue ? new DateTimeOffset(min.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null,
+                max.HasValue ? new DateTimeOffset(max.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null
+            );
+        }
+        catch (InvalidOperationException)
+        {
+            return (null, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to get min/max timestamp from table");
             return (null, null);
         }
     }
@@ -365,47 +394,49 @@ public class DataOverviewService : IDataOverviewService
     private async Task CollectGlucoseAverages(
         long startMills,
         long endMills,
+        DateTime startUtc,
+        DateTime endUtc,
         string[]? dataSources,
         bool hasFilter,
         Dictionary<string, DailySummaryDay> dayMap,
         CancellationToken cancellationToken)
     {
         // Collect readings from multiple sources independently
-        var allReadings = new List<(long Mills, double Mgdl)>();
+        var allReadings = new List<(DateTime Timestamp, double Mgdl)>();
 
-        // SensorGlucose (CGM)
+        // SensorGlucose (CGM) - V4 entity uses Timestamp
         try
         {
             var sensorReadings = await _context.SensorGlucose
-                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Mgdl > 0)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc && e.Mgdl > 0)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => new { e.Mills, e.Mgdl })
+                .Select(e => new { e.Timestamp, e.Mgdl })
                 .ToListAsync(cancellationToken);
 
-            allReadings.AddRange(sensorReadings.Select(r => (r.Mills, r.Mgdl)));
+            allReadings.AddRange(sensorReadings.Select(r => (r.Timestamp, r.Mgdl)));
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to collect glucose averages from SensorGlucose");
         }
 
-        // MeterGlucose (finger sticks)
+        // MeterGlucose (finger sticks) - V4 entity uses Timestamp
         try
         {
             var meterReadings = await _context.MeterGlucose
-                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Mgdl > 0)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc && e.Mgdl > 0)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => new { e.Mills, e.Mgdl })
+                .Select(e => new { e.Timestamp, e.Mgdl })
                 .ToListAsync(cancellationToken);
 
-            allReadings.AddRange(meterReadings.Select(r => (r.Mills, r.Mgdl)));
+            allReadings.AddRange(meterReadings.Select(r => (r.Timestamp, r.Mgdl)));
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to collect glucose averages from MeterGlucose");
         }
 
-        // Legacy Entries (type=sgv)
+        // Legacy Entries (type=sgv) - legacy entity still uses Mills
         try
         {
             var legacySgv = await _context.Entries
@@ -414,14 +445,14 @@ public class DataOverviewService : IDataOverviewService
                 .Select(e => new { e.Mills, e.Mgdl })
                 .ToListAsync(cancellationToken);
 
-            allReadings.AddRange(legacySgv.Select(r => (r.Mills, r.Mgdl)));
+            allReadings.AddRange(legacySgv.Select(r => (DateTimeOffset.FromUnixTimeMilliseconds(r.Mills).UtcDateTime, r.Mgdl)));
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to collect glucose averages from Entries (sgv)");
         }
 
-        // Legacy Entries (type=mbg)
+        // Legacy Entries (type=mbg) - legacy entity still uses Mills
         try
         {
             var legacyMbg = await _context.Entries
@@ -430,7 +461,7 @@ public class DataOverviewService : IDataOverviewService
                 .Select(e => new { e.Mills, e.Mgdl })
                 .ToListAsync(cancellationToken);
 
-            allReadings.AddRange(legacyMbg.Select(r => (r.Mills, r.Mgdl)));
+            allReadings.AddRange(legacyMbg.Select(r => (DateTimeOffset.FromUnixTimeMilliseconds(r.Mills).UtcDateTime, r.Mgdl)));
         }
         catch (Exception ex)
         {
@@ -439,13 +470,13 @@ public class DataOverviewService : IDataOverviewService
 
         if (allReadings.Count == 0)
         {
-            _logger.LogDebug("No glucose readings found for year range {StartMills}-{EndMills}", startMills, endMills);
+            _logger.LogDebug("No glucose readings found for year range {StartUtc}-{EndUtc}", startUtc, endUtc);
             return;
         }
 
         // Group by date and compute daily averages
         var grouped = allReadings
-            .GroupBy(r => MillsToDateString(r.Mills))
+            .GroupBy(r => TimestampToDateString(r.Timestamp))
             .Select(g => new { Date = g.Key, AvgMgdl = g.Average(r => r.Mgdl) });
 
         foreach (var group in grouped)
@@ -467,6 +498,8 @@ public class DataOverviewService : IDataOverviewService
     private async Task CollectInsulinTotals(
         long startMills,
         long endMills,
+        DateTime startUtc,
+        DateTime endUtc,
         string[]? dataSources,
         bool hasFilter,
         Dictionary<string, DailySummaryDay> dayMap,
@@ -476,16 +509,16 @@ public class DataOverviewService : IDataOverviewService
         try
         {
             var bolusRecords = await _context.Boluses
-                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Insulin > 0)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc && e.Insulin > 0)
                 .Where(e => e.BolusKind != "Algorithm")
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => new { e.Mills, e.Insulin })
+                .Select(e => new { e.Timestamp, e.Insulin })
                 .ToListAsync(cancellationToken);
 
             if (bolusRecords.Count > 0)
             {
                 var grouped = bolusRecords
-                    .GroupBy(r => MillsToDateString(r.Mills))
+                    .GroupBy(r => TimestampToDateString(r.Timestamp))
                     .Select(g => new
                     {
                         Date = g.Key,
@@ -514,16 +547,16 @@ public class DataOverviewService : IDataOverviewService
         try
         {
             var algorithmBolusRecords = await _context.Boluses
-                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Insulin > 0)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc && e.Insulin > 0)
                 .Where(e => e.BolusKind == "Algorithm")
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => new { e.Mills, e.Insulin })
+                .Select(e => new { e.Timestamp, e.Insulin })
                 .ToListAsync(cancellationToken);
 
             if (algorithmBolusRecords.Count > 0)
             {
                 var grouped = algorithmBolusRecords
-                    .GroupBy(r => MillsToDateString(r.Mills))
+                    .GroupBy(r => TimestampToDateString(r.Timestamp))
                     .Select(g => new { Date = g.Key, TotalBasal = g.Sum(r => r.Insulin) });
 
                 foreach (var group in grouped)
@@ -547,22 +580,23 @@ public class DataOverviewService : IDataOverviewService
         try
         {
             var tempBasalRecords = await _context.TempBasals
-                .Where(e => e.StartMills >= startMills && e.StartMills < endMills && e.Rate > 0)
+                .Where(e => e.StartTimestamp >= startUtc && e.StartTimestamp < endUtc && e.Rate > 0)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => new { e.StartMills, e.Rate, e.EndMills })
+                .Select(e => new { e.StartTimestamp, e.Rate, e.EndTimestamp })
                 .ToListAsync(cancellationToken);
 
             if (tempBasalRecords.Count > 0)
             {
-                const long defaultDurationMills = 5L * 60 * 1000; // 5 minutes
-                const double millisPerHour = 1000.0 * 60 * 60;
+                const double defaultDurationMinutes = 5.0; // 5 minutes
 
                 var grouped = tempBasalRecords
                     .Select(r =>
                     {
-                        var durationMills = (r.EndMills ?? r.StartMills + defaultDurationMills) - r.StartMills;
-                        var insulin = r.Rate * durationMills / millisPerHour;
-                        return new { Date = MillsToDateString(r.StartMills), Insulin = insulin };
+                        var durationHours = (r.EndTimestamp.HasValue
+                            ? (r.EndTimestamp.Value - r.StartTimestamp).TotalHours
+                            : defaultDurationMinutes / 60.0);
+                        var insulin = r.Rate * durationHours;
+                        return new { Date = TimestampToDateString(r.StartTimestamp), Insulin = insulin };
                     })
                     .Where(r => r.Insulin > 0)
                     .GroupBy(r => r.Date)
@@ -592,6 +626,8 @@ public class DataOverviewService : IDataOverviewService
     private async Task CollectCarbTotals(
         long startMills,
         long endMills,
+        DateTime startUtc,
+        DateTime endUtc,
         string[]? dataSources,
         bool hasFilter,
         Dictionary<string, DailySummaryDay> dayMap,
@@ -600,15 +636,15 @@ public class DataOverviewService : IDataOverviewService
         try
         {
             var carbRecords = await _context.CarbIntakes
-                .Where(e => e.Mills >= startMills && e.Mills < endMills && e.Carbs > 0)
+                .Where(e => e.Timestamp >= startUtc && e.Timestamp < endUtc && e.Carbs > 0)
                 .Where(e => !hasFilter || dataSources!.Contains(e.DataSource!))
-                .Select(e => new { e.Mills, e.Carbs })
+                .Select(e => new { e.Timestamp, e.Carbs })
                 .ToListAsync(cancellationToken);
 
             if (carbRecords.Count == 0) return;
 
             var grouped = carbRecords
-                .GroupBy(r => MillsToDateString(r.Mills))
+                .GroupBy(r => TimestampToDateString(r.Timestamp))
                 .Select(g => new { Date = g.Key, TotalCarbs = g.Sum(r => r.Carbs) });
 
             foreach (var group in grouped)
@@ -634,5 +670,48 @@ public class DataOverviewService : IDataOverviewService
     private static string MillsToDateString(long mills)
     {
         return DateTimeOffset.FromUnixTimeMilliseconds(mills).UtcDateTime.ToString("yyyy-MM-dd");
+    }
+
+    /// <summary>
+    /// Converts a UTC DateTime to a date string in "yyyy-MM-dd" format.
+    /// </summary>
+    private static string TimestampToDateString(DateTime timestamp)
+    {
+        return timestamp.ToString("yyyy-MM-dd");
+    }
+
+    /// <summary>
+    /// Materializes timestamp values from a V4 table, groups by date in-memory, and merges counts into the dayMap.
+    /// </summary>
+    private async Task CollectCountsFromTimestampTable(
+        string dataType,
+        IQueryable<DateTime> timestampQuery,
+        Dictionary<string, DailySummaryDay> dayMap,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var timestampList = await timestampQuery.ToListAsync(cancellationToken);
+
+            var grouped = timestampList
+                .GroupBy(t => TimestampToDateString(t))
+                .Select(g => new { Date = g.Key, Count = g.Count() });
+
+            foreach (var group in grouped)
+            {
+                if (!dayMap.TryGetValue(group.Date, out var day))
+                {
+                    day = new DailySummaryDay { Date = group.Date };
+                    dayMap[group.Date] = day;
+                }
+
+                day.Counts.TryGetValue(dataType, out var existing);
+                day.Counts[dataType] = existing + group.Count;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to collect counts for {DataType}", dataType);
+        }
     }
 }

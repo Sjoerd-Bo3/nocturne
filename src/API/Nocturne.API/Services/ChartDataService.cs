@@ -108,6 +108,9 @@ public class ChartDataService : IChartDataService
         var timezone = _profileService.HasData() ? _profileService.GetTimezone() : null;
         var thresholds = GetProfileThresholds(endTime);
 
+        // Helper to convert mills to DateTime for V4 repository calls
+        static DateTime? MillsToDateTime(long mills) => DateTimeOffset.FromUnixTimeMilliseconds(mills).UtcDateTime;
+
         // Fetch all data sequentially (DbContext is not thread-safe)
         var bufferMs = 8L * 60 * 60 * 1000; // 8 hours buffer for IOB calculation
 
@@ -122,8 +125,8 @@ public class ChartDataService : IChartDataService
         // Fetch glucose data from v4 SensorGlucose table
         var sensorGlucoseList = (
             await _sensorGlucoseRepository.GetAsync(
-                from: startTime,
-                to: endTime,
+                from: MillsToDateTime(startTime),
+                to: MillsToDateTime(endTime),
                 device: null,
                 source: null,
                 limit: entryLimit,
@@ -136,8 +139,8 @@ public class ChartDataService : IChartDataService
         // Fetch bolus data from v4 Bolus table — extended range for IOB calculation
         var bolusList = (
             await _bolusRepository.GetAsync(
-                from: startTime - bufferMs,
-                to: endTime,
+                from: MillsToDateTime(startTime - bufferMs),
+                to: MillsToDateTime(endTime),
                 device: null,
                 source: null,
                 limit: treatmentLimit,
@@ -150,8 +153,8 @@ public class ChartDataService : IChartDataService
         // Fetch carb data from v4 CarbIntake table — extended range for COB calculation
         var carbIntakeList = (
             await _carbIntakeRepository.GetAsync(
-                from: startTime - bufferMs,
-                to: endTime,
+                from: MillsToDateTime(startTime - bufferMs),
+                to: MillsToDateTime(endTime),
                 device: null,
                 source: null,
                 limit: treatmentLimit,
@@ -164,8 +167,8 @@ public class ChartDataService : IChartDataService
         // Fetch BG checks from v4 BGCheck table (display range only)
         var bgCheckList = (
             await _bgCheckRepository.GetAsync(
-                from: startTime,
-                to: endTime,
+                from: MillsToDateTime(startTime),
+                to: MillsToDateTime(endTime),
                 device: null,
                 source: null,
                 limit: treatmentLimit,
@@ -198,8 +201,8 @@ public class ChartDataService : IChartDataService
         var displayRangeLimit = (int)Math.Max(500, Math.Ceiling(rangeHours * 10));
         var deviceEventList = (
             await _deviceEventRepository.GetAsync(
-                from: startTime,
-                to: endTime,
+                from: MillsToDateTime(startTime),
+                to: MillsToDateTime(endTime),
                 device: null,
                 source: null,
                 limit: displayRangeLimit,
@@ -230,8 +233,8 @@ public class ChartDataService : IChartDataService
         // Fetch TempBasal records from v4 table (replaces BasalDelivery StateSpans)
         var tempBasalList = (
             await _tempBasalRepository.GetAsync(
-                from: startTime,
-                to: endTime,
+                from: MillsToDateTime(startTime),
+                to: MillsToDateTime(endTime),
                 device: null,
                 source: null,
                 limit: displayRangeLimit,
@@ -255,8 +258,8 @@ public class ChartDataService : IChartDataService
 
         var allStateSpans = await _stateSpanRepository.GetByCategories(
             stateSpanCategories,
-            startTime,
-            endTime,
+            MillsToDateTime(startTime),
+            MillsToDateTime(endTime),
             cancellationToken
         );
 

@@ -75,7 +75,7 @@ internal sealed class TempBasalHandler : IMyLifeStateSpanHandler
             )
         )
         {
-            tempBasal.EndMills = tempBasal.StartMills + (long)(durationMinutes * 60 * 1000);
+            tempBasal.EndTimestamp = tempBasal.StartTimestamp.AddMinutes(durationMinutes);
         }
 
         return [tempBasal];

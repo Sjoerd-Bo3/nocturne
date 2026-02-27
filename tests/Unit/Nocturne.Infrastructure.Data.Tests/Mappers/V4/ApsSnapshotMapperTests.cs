@@ -14,7 +14,7 @@ public class ApsSnapshotMapperTests
         var model = new ApsSnapshot
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             UtcOffset = -300,
             Device = "openaps-rig",
             LegacyId = "aps123",
@@ -39,13 +39,13 @@ public class ApsSnapshotMapperTests
             PredictedZtJson = "[120,125,130]",
             PredictedCobJson = "[120,112,105]",
             PredictedUamJson = "[120,122,124]",
-            PredictedStartMills = 1700000000000,
+            PredictedStartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
         };
 
         var entity = ApsSnapshotMapper.ToEntity(model);
 
         entity.Id.Should().Be(id);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.UtcOffset.Should().Be(-300);
         entity.Device.Should().Be("openaps-rig");
         entity.LegacyId.Should().Be("aps123");
@@ -70,14 +70,14 @@ public class ApsSnapshotMapperTests
         entity.PredictedZtJson.Should().Be("[120,125,130]");
         entity.PredictedCobJson.Should().Be("[120,112,105]");
         entity.PredictedUamJson.Should().Be("[120,122,124]");
-        entity.PredictedStartMills.Should().Be(1700000000000);
+        entity.PredictedStartTimestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     public void ToEntity_EmptyGuid_GeneratesNewId()
     {
-        var model = new ApsSnapshot { Mills = 1700000000000, ApsSystem = ApsSystem.OpenAps };
+        var model = new ApsSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, ApsSystem = ApsSystem.OpenAps };
 
         var entity = ApsSnapshotMapper.ToEntity(model);
 
@@ -94,7 +94,7 @@ public class ApsSnapshotMapperTests
         var entity = new ApsSnapshotEntity
         {
             Id = id,
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             UtcOffset = -300,
             Device = "openaps-rig",
             LegacyId = "aps123",
@@ -121,7 +121,7 @@ public class ApsSnapshotMapperTests
             PredictedZtJson = "[120,125,130]",
             PredictedCobJson = "[120,112,105]",
             PredictedUamJson = "[120,122,124]",
-            PredictedStartMills = 1700000000000,
+            PredictedStartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
         };
 
         var model = ApsSnapshotMapper.ToDomainModel(entity);
@@ -167,13 +167,13 @@ public class ApsSnapshotMapperTests
         {
             Id = originalId,
             SysCreatedAt = originalCreatedAt,
-            Mills = 1000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1000).UtcDateTime,
             ApsSystem = "OpenAps",
         };
 
         var model = new ApsSnapshot
         {
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             UtcOffset = 60,
             Device = "loop-phone",
             LegacyId = "upd456",
@@ -198,14 +198,14 @@ public class ApsSnapshotMapperTests
             PredictedZtJson = "[130,135,140]",
             PredictedCobJson = "[130,122,115]",
             PredictedUamJson = "[130,132,134]",
-            PredictedStartMills = 1700000050000,
+            PredictedStartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000050000).UtcDateTime,
         };
 
         ApsSnapshotMapper.UpdateEntity(entity, model);
 
         entity.Id.Should().Be(originalId);
         entity.SysCreatedAt.Should().Be(originalCreatedAt);
-        entity.Mills.Should().Be(1700000000000);
+        entity.Timestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime);
         entity.UtcOffset.Should().Be(60);
         entity.Device.Should().Be("loop-phone");
         entity.LegacyId.Should().Be("upd456");
@@ -230,7 +230,7 @@ public class ApsSnapshotMapperTests
         entity.PredictedZtJson.Should().Be("[130,135,140]");
         entity.PredictedCobJson.Should().Be("[130,122,115]");
         entity.PredictedUamJson.Should().Be("[130,132,134]");
-        entity.PredictedStartMills.Should().Be(1700000050000);
+        entity.PredictedStartTimestamp.Should().Be(DateTimeOffset.FromUnixTimeMilliseconds(1700000050000).UtcDateTime);
         entity.SysUpdatedAt.Should().BeAfter(originalCreatedAt);
     }
 
@@ -238,7 +238,7 @@ public class ApsSnapshotMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_ApsSystemEnum_StoredAsString()
     {
-        var model = new ApsSnapshot { Mills = 1700000000000, ApsSystem = ApsSystem.Loop };
+        var model = new ApsSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, ApsSystem = ApsSystem.Loop };
 
         var entity = ApsSnapshotMapper.ToEntity(model);
 
@@ -252,7 +252,7 @@ public class ApsSnapshotMapperTests
         var entity = new ApsSnapshotEntity
         {
             Id = Guid.CreateVersion7(),
-            Mills = 1700000000000,
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
             ApsSystem = "Loop",
         };
 
@@ -269,7 +269,7 @@ public class ApsSnapshotMapperTests
     [InlineData(ApsSystem.Trio, "Trio")]
     public void ToEntity_AllApsSystemValues_RoundTripCorrectly(ApsSystem system, string expected)
     {
-        var model = new ApsSnapshot { Mills = 1700000000000, ApsSystem = system };
+        var model = new ApsSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, ApsSystem = system };
 
         var entity = ApsSnapshotMapper.ToEntity(model);
         entity.ApsSystem.Should().Be(expected);

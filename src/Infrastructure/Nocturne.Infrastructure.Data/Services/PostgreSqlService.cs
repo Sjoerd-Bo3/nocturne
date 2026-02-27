@@ -1351,6 +1351,7 @@ public class PostgreSqlService : IPostgreSqlService
 
         var now = DateTimeOffset.UtcNow;
         var oneDayAgo = now.AddHours(-24).ToUnixTimeMilliseconds();
+        var oneDayAgoDate = now.AddHours(-24).UtcDateTime;
 
         // Query entry stats
         var entryStats = await _context
@@ -1385,9 +1386,9 @@ public class PostgreSqlService : IPostgreSqlService
             .Select(g => new
             {
                 TotalStateSpans = g.LongCount(),
-                StateSpansLast24Hours = g.Count(s => s.StartMills >= oneDayAgo),
-                LastStateSpanMills = g.Max(s => (long?)s.StartMills),
-                FirstStateSpanMills = g.Min(s => (long?)s.StartMills),
+                StateSpansLast24Hours = g.Count(s => s.StartTimestamp >= oneDayAgoDate),
+                LastStateSpanTime = g.Max(s => (DateTime?)s.StartTimestamp),
+                FirstStateSpanTime = g.Min(s => (DateTime?)s.StartTimestamp),
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -1397,7 +1398,7 @@ public class PostgreSqlService : IPostgreSqlService
             .LongCountAsync(cancellationToken);
         var sensorGlucose24h = sensorGlucoseTotal > 0
             ? await _context
-                .SensorGlucose.Where(sg => sg.DataSource == dataSource && sg.Mills >= oneDayAgo)
+                .SensorGlucose.Where(sg => sg.DataSource == dataSource && sg.Timestamp >= oneDayAgoDate)
                 .CountAsync(cancellationToken)
             : 0;
 
@@ -1406,7 +1407,7 @@ public class PostgreSqlService : IPostgreSqlService
             .LongCountAsync(cancellationToken);
         var meterGlucose24h = meterGlucoseTotal > 0
             ? await _context
-                .MeterGlucose.Where(mg => mg.DataSource == dataSource && mg.Mills >= oneDayAgo)
+                .MeterGlucose.Where(mg => mg.DataSource == dataSource && mg.Timestamp >= oneDayAgoDate)
                 .CountAsync(cancellationToken)
             : 0;
 
@@ -1415,7 +1416,7 @@ public class PostgreSqlService : IPostgreSqlService
             .LongCountAsync(cancellationToken);
         var boluses24h = bolusesTotal > 0
             ? await _context
-                .Boluses.Where(b => b.DataSource == dataSource && b.Mills >= oneDayAgo)
+                .Boluses.Where(b => b.DataSource == dataSource && b.Timestamp >= oneDayAgoDate)
                 .CountAsync(cancellationToken)
             : 0;
 
@@ -1424,7 +1425,7 @@ public class PostgreSqlService : IPostgreSqlService
             .LongCountAsync(cancellationToken);
         var carbIntakes24h = carbIntakesTotal > 0
             ? await _context
-                .CarbIntakes.Where(c => c.DataSource == dataSource && c.Mills >= oneDayAgo)
+                .CarbIntakes.Where(c => c.DataSource == dataSource && c.Timestamp >= oneDayAgoDate)
                 .CountAsync(cancellationToken)
             : 0;
 
@@ -1433,7 +1434,7 @@ public class PostgreSqlService : IPostgreSqlService
             .LongCountAsync(cancellationToken);
         var bolusCalcs24h = bolusCalcsTotal > 0
             ? await _context
-                .BolusCalculations.Where(bc => bc.DataSource == dataSource && bc.Mills >= oneDayAgo)
+                .BolusCalculations.Where(bc => bc.DataSource == dataSource && bc.Timestamp >= oneDayAgoDate)
                 .CountAsync(cancellationToken)
             : 0;
 
@@ -1442,7 +1443,7 @@ public class PostgreSqlService : IPostgreSqlService
             .LongCountAsync(cancellationToken);
         var notes24h = notesTotal > 0
             ? await _context
-                .Notes.Where(n => n.DataSource == dataSource && n.Mills >= oneDayAgo)
+                .Notes.Where(n => n.DataSource == dataSource && n.Timestamp >= oneDayAgoDate)
                 .CountAsync(cancellationToken)
             : 0;
 
@@ -1451,7 +1452,7 @@ public class PostgreSqlService : IPostgreSqlService
             .LongCountAsync(cancellationToken);
         var deviceEvents24h = deviceEventsTotal > 0
             ? await _context
-                .DeviceEvents.Where(de => de.DataSource == dataSource && de.Mills >= oneDayAgo)
+                .DeviceEvents.Where(de => de.DataSource == dataSource && de.Timestamp >= oneDayAgoDate)
                 .CountAsync(cancellationToken)
             : 0;
 
@@ -1516,19 +1517,9 @@ public class PostgreSqlService : IPostgreSqlService
                     .UtcDateTime
                 : (DateTime?)null;
 
-        var lastStateSpanTime =
-            stateSpanStats?.LastStateSpanMills.HasValue == true
-                ? DateTimeOffset
-                    .FromUnixTimeMilliseconds(stateSpanStats.LastStateSpanMills.Value)
-                    .UtcDateTime
-                : (DateTime?)null;
+        var lastStateSpanTime = stateSpanStats?.LastStateSpanTime;
 
-        var firstStateSpanTime =
-            stateSpanStats?.FirstStateSpanMills.HasValue == true
-                ? DateTimeOffset
-                    .FromUnixTimeMilliseconds(stateSpanStats.FirstStateSpanMills.Value)
-                    .UtcDateTime
-                : (DateTime?)null;
+        var firstStateSpanTime = stateSpanStats?.FirstStateSpanTime;
 
         return new DataSourceStats(
             dataSource,

@@ -24,7 +24,7 @@ export const getProfileSummary = query(async () => {
 });
 
 /** Get all therapy settings with optional filtering */
-export const getTherapySettings = query(z.object({ from: z.number().optional(), to: z.number().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
+export const getTherapySettings = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

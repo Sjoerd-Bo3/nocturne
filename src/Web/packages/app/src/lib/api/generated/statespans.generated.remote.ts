@@ -9,7 +9,7 @@ import { CreateStateSpanRequestSchema, UpdateStateSpanRequestSchema } from '$lib
 import { StateSpanCategory, type CreateStateSpanRequest, type UpdateStateSpanRequest } from '$api';
 
 /** Query all state spans with optional filtering */
-export const getStateSpans = query(z.object({ category: z.enum(StateSpanCategory).optional(), state: z.string().optional(), from: z.number().optional(), to: z.number().optional(), source: z.string().optional(), active: z.boolean().optional(), count: z.number().optional(), skip: z.number().optional() }).optional(), async (params) => {
+export const getStateSpans = query(z.object({ category: z.enum(StateSpanCategory).optional(), state: z.string().optional(), from: z.coerce.date().optional(), to: z.coerce.date().optional(), source: z.string().optional(), active: z.boolean().optional(), count: z.number().optional(), skip: z.number().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
