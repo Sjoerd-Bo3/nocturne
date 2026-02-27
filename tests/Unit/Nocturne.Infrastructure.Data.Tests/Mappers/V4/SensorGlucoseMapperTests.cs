@@ -18,7 +18,6 @@ public class SensorGlucoseMapperTests
             Mills = 1700000000000,
             Mgdl = 120,
             Direction = GlucoseDirection.Flat,
-            Trend = GlucoseTrend.Flat,
             TrendRate = 0.5,
             Noise = 1,
             Device = "dexcom",
@@ -35,7 +34,6 @@ public class SensorGlucoseMapperTests
         entity.Mills.Should().Be(1700000000000);
         entity.Mgdl.Should().Be(120);
         entity.Direction.Should().Be("Flat");
-        entity.Trend.Should().Be(4); // GlucoseTrend.Flat = 4
         entity.TrendRate.Should().Be(0.5);
         entity.Noise.Should().Be(1);
         entity.Device.Should().Be("dexcom");
@@ -70,17 +68,6 @@ public class SensorGlucoseMapperTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void ToEntity_NullTrend_MapsToNull()
-    {
-        var model = new SensorGlucose { Mills = 1700000000000, Mgdl = 100, Trend = null };
-
-        var entity = SensorGlucoseMapper.ToEntity(model);
-
-        entity.Trend.Should().BeNull();
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
     public void ToEntity_AllDirectionValues_MapCorrectly()
     {
         var directions = Enum.GetValues<GlucoseDirection>();
@@ -89,19 +76,6 @@ public class SensorGlucoseMapperTests
             var model = new SensorGlucose { Mills = 1700000000000, Mgdl = 100, Direction = direction };
             var entity = SensorGlucoseMapper.ToEntity(model);
             entity.Direction.Should().Be(direction.ToString());
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public void ToEntity_AllTrendValues_MapCorrectly()
-    {
-        var trends = Enum.GetValues<GlucoseTrend>();
-        foreach (var trend in trends)
-        {
-            var model = new SensorGlucose { Mills = 1700000000000, Mgdl = 100, Trend = trend };
-            var entity = SensorGlucoseMapper.ToEntity(model);
-            entity.Trend.Should().Be((int)trend);
         }
     }
 
@@ -119,7 +93,6 @@ public class SensorGlucoseMapperTests
             Mills = 1700000000000,
             Mgdl = 120,
             Direction = "Flat",
-            Trend = 4,
             TrendRate = 0.5,
             Noise = 1,
             Device = "dexcom",
@@ -186,36 +159,37 @@ public class SensorGlucoseMapperTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void ToDomainModel_NullTrend_ReturnsNull()
+    public void ToDomainModel_NullDirection_TrendIsNull()
     {
         var entity = new SensorGlucoseEntity
         {
             Id = Guid.CreateVersion7(),
             Mills = 1700000000000,
-            Trend = null
+            Direction = null
         };
 
         var model = SensorGlucoseMapper.ToDomainModel(entity);
 
-        model.Trend.Should().BeNull();
+        model.Trend.Should().BeNull("Trend is computed from Direction, which is null");
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void ToDomainModel_TrendRoundTrips()
+    public void ToDomainModel_TrendComputedFromDirection()
     {
-        foreach (var trend in Enum.GetValues<GlucoseTrend>())
+        foreach (var direction in Enum.GetValues<GlucoseDirection>())
         {
             var entity = new SensorGlucoseEntity
             {
                 Id = Guid.CreateVersion7(),
                 Mills = 1700000000000,
-                Trend = (int)trend
+                Direction = direction.ToString()
             };
 
             var model = SensorGlucoseMapper.ToDomainModel(entity);
 
-            model.Trend.Should().Be(trend);
+            model.Trend.Should().Be((GlucoseTrend)(int)direction,
+                "Trend should be computed from Direction with matching integer values");
         }
     }
 
@@ -237,7 +211,6 @@ public class SensorGlucoseMapperTests
         {
             Mgdl = 150,
             Direction = GlucoseDirection.SingleUp,
-            Trend = GlucoseTrend.SingleUp,
             TrendRate = 2.0,
             Noise = 2,
             Mills = 1700000000000,
@@ -255,7 +228,6 @@ public class SensorGlucoseMapperTests
         entity.SysCreatedAt.Should().Be(originalCreatedAt);
         entity.Mgdl.Should().Be(150);
         entity.Direction.Should().Be("SingleUp");
-        entity.Trend.Should().Be(2); // GlucoseTrend.SingleUp = 2
         entity.TrendRate.Should().Be(2.0);
         entity.Noise.Should().Be(2);
         entity.Mills.Should().Be(1700000000000);
@@ -298,7 +270,6 @@ public class SensorGlucoseMapperTests
             Mills = 1700000000000,
             Mgdl = 120,
             Direction = GlucoseDirection.FortyFiveDown,
-            Trend = GlucoseTrend.FortyFiveDown,
             TrendRate = -0.8,
             Noise = 3,
             Device = "dexcom",

@@ -71,9 +71,9 @@ public class SensorGlucose : IV4Record
     public GlucoseDirection? Direction { get; set; }
 
     /// <summary>
-    /// Numeric trend value corresponding to CGM trend arrows
+    /// Numeric trend value computed from Direction (1:1 mapping)
     /// </summary>
-    public GlucoseTrend? Trend { get; set; }
+    public GlucoseTrend? Trend => Direction.HasValue ? (GlucoseTrend)(int)Direction.Value : null;
 
     /// <summary>
     /// Rate of glucose change in mg/dL per minute

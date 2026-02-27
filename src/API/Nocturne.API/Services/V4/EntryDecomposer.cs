@@ -150,7 +150,6 @@ public class EntryDecomposer : IEntryDecomposer
             Mills = entry.Mills,
             Mgdl = entry.Sgv ?? entry.Mgdl,
             Direction = MapDirection(entry.Direction),
-            Trend = MapTrend(entry.Trend),
             TrendRate = entry.TrendRate,
             Noise = entry.Noise,
             Device = entry.Device,
@@ -216,14 +215,4 @@ public class EntryDecomposer : IEntryDecomposer
         };
     }
 
-    internal static GlucoseTrend? MapTrend(int? trend)
-    {
-        if (trend is null)
-            return null;
-
-        if (Enum.IsDefined(typeof(GlucoseTrend), trend.Value))
-            return (GlucoseTrend)trend.Value;
-
-        return null;
-    }
 }

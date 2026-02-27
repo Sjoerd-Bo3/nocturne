@@ -701,39 +701,5 @@ public class EntryDecomposerTests : IDisposable
         EntryDecomposer.MapDirection("INVALID_DIRECTION").Should().BeNull();
     }
 
-    [Theory]
-    [InlineData(0, GlucoseTrend.None)]
-    [InlineData(1, GlucoseTrend.DoubleUp)]
-    [InlineData(2, GlucoseTrend.SingleUp)]
-    [InlineData(3, GlucoseTrend.FortyFiveUp)]
-    [InlineData(4, GlucoseTrend.Flat)]
-    [InlineData(5, GlucoseTrend.FortyFiveDown)]
-    [InlineData(6, GlucoseTrend.SingleDown)]
-    [InlineData(7, GlucoseTrend.DoubleDown)]
-    [InlineData(8, GlucoseTrend.NotComputable)]
-    [InlineData(9, GlucoseTrend.RateOutOfRange)]
-    public void MapTrend_KnownValues_MapsCorrectly(int input, GlucoseTrend expected)
-    {
-        EntryDecomposer.MapTrend(input).Should().Be(expected);
-    }
-
-    [Fact]
-    public void MapTrend_Null_ReturnsNull()
-    {
-        EntryDecomposer.MapTrend(null).Should().BeNull();
-    }
-
-    [Fact]
-    public void MapTrend_OutOfRange_ReturnsNull()
-    {
-        EntryDecomposer.MapTrend(99).Should().BeNull();
-    }
-
-    [Fact]
-    public void MapTrend_NegativeValue_ReturnsNull()
-    {
-        EntryDecomposer.MapTrend(-1).Should().BeNull();
-    }
-
     #endregion
 }

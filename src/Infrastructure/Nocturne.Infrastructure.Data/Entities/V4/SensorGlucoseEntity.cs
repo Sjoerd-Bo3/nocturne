@@ -88,12 +88,6 @@ public class SensorGlucoseEntity
     public string? Direction { get; set; }
 
     /// <summary>
-    /// Numeric trend value corresponding to CGM trend arrows
-    /// </summary>
-    [Column("trend")]
-    public int? Trend { get; set; }
-
-    /// <summary>
     /// Rate of glucose change in mg/dL per minute
     /// </summary>
     [Column("trend_rate")]
