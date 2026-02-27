@@ -8,8 +8,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// PostgreSQL entity for food attribution entries linked to carb intake records.
 /// </summary>
 [Table("treatment_foods")]
-public class TreatmentFoodEntity
+public class TreatmentFoodEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID Version 7 for time-ordered, globally unique identification
     /// </summary>

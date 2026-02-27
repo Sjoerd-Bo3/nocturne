@@ -8,8 +8,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Maps to Nocturne.Core.Models.Activity
 /// </summary>
 [Table("activities")]
-public class ActivityEntity
+public class ActivityEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID Version 7 for time-ordered, globally unique identification
     /// </summary>

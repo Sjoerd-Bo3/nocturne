@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+using Nocturne.Infrastructure.Data.Entities;
+
 namespace Nocturne.Infrastructure.Data.Entities.V4;
 
 /// <summary>
@@ -8,8 +10,11 @@ namespace Nocturne.Infrastructure.Data.Entities.V4;
 /// Maps to Nocturne.Core.Models.V4.MeterGlucose
 /// </summary>
 [Table("meter_glucose")]
-public class MeterGlucoseEntity
+public class MeterGlucoseEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID Version 7 for time-ordered, globally unique identification
     /// </summary>

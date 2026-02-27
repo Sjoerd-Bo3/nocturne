@@ -8,8 +8,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Maps to emergency contacts for alert escalation
 /// </summary>
 [Table("emergency_contacts")]
-public class EmergencyContactEntity
+public class EmergencyContactEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID for emergency contact
     /// </summary>

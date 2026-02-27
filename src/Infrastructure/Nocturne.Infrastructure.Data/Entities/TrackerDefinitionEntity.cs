@@ -9,8 +9,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Defines a type of tracker with notification thresholds and event matching
 /// </summary>
 [Table("tracker_definitions")]
-public class TrackerDefinitionEntity
+public class TrackerDefinitionEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID for tracker definition
     /// </summary>

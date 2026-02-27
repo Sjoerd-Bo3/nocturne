@@ -8,8 +8,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Links records from different sources that represent the same underlying event.
 /// </summary>
 [Table("linked_records")]
-public class LinkedRecordEntity
+public class LinkedRecordEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID Version 7 for time-ordered, globally unique identification
     /// </summary>

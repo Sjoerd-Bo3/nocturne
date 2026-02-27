@@ -8,8 +8,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Links to a single definition for easy activation
 /// </summary>
 [Table("tracker_presets")]
-public class TrackerPresetEntity
+public class TrackerPresetEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID for preset
     /// </summary>

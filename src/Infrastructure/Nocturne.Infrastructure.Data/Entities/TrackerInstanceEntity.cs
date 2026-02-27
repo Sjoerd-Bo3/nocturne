@@ -9,8 +9,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Represents a running or completed tracker with lifecycle timestamps
 /// </summary>
 [Table("tracker_instances")]
-public class TrackerInstanceEntity
+public class TrackerInstanceEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID for tracker instance
     /// </summary>

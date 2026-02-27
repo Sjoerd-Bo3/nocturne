@@ -9,8 +9,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Comprehensive device monitoring for CGM sensors, insulin pumps, and blood glucose meters
 /// </summary>
 [Table("device_health")]
-public class DeviceHealthEntity
+public class DeviceHealthEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID for device health record
     /// </summary>

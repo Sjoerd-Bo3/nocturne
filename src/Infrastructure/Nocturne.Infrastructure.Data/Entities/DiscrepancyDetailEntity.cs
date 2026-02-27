@@ -8,8 +8,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Entity for storing detailed discrepancy information
 /// </summary>
 [Table("discrepancy_details")]
-public class DiscrepancyDetailEntity
+public class DiscrepancyDetailEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Unique identifier for the discrepancy detail
     /// </summary>

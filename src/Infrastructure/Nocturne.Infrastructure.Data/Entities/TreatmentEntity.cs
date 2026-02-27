@@ -9,8 +9,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Maps to Nocturne.Core.Models.Treatment
 /// </summary>
 [Table("treatments")]
-public class TreatmentEntity
+public class TreatmentEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     // === Identity ===
 
     /// <summary>

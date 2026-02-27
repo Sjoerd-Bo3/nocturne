@@ -10,8 +10,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Multiple thresholds can be defined per definition, supporting multiple notifications per urgency level
 /// </summary>
 [Table("tracker_notification_thresholds")]
-public class TrackerNotificationThresholdEntity
+public class TrackerNotificationThresholdEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key
     /// </summary>

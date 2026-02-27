@@ -2,6 +2,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
+using Nocturne.Infrastructure.Data.Entities;
+
 namespace Nocturne.Infrastructure.Data.Entities.V4;
 
 /// <summary>
@@ -10,8 +12,11 @@ namespace Nocturne.Infrastructure.Data.Entities.V4;
 /// </summary>
 [Table("pump_devices")]
 [Index(nameof(PumpType), nameof(PumpSerial), IsUnique = true)]
-public class PumpDeviceEntity
+public class PumpDeviceEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID Version 7 for time-ordered, globally unique identification
     /// </summary>

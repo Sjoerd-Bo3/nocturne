@@ -9,8 +9,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// entity allows tracking user preferences like archive status.
 /// </summary>
 [Table("data_source_metadata")]
-public class DataSourceMetadataEntity
+public class DataSourceMetadataEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Unique identifier for this metadata record
     /// </summary>

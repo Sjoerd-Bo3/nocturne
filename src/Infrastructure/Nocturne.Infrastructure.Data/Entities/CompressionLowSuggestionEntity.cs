@@ -7,8 +7,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// PostgreSQL entity for compression low suggestions
 /// </summary>
 [Table("compression_low_suggestions")]
-public class CompressionLowSuggestionEntity
+public class CompressionLowSuggestionEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID Version 7
     /// </summary>

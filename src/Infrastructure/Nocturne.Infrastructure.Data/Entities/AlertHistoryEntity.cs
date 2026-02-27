@@ -8,8 +8,11 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Maps to notification alert history and state management
 /// </summary>
 [Table("alert_history")]
-public class AlertHistoryEntity
+public class AlertHistoryEntity : ITenantScoped
 {
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
+
     /// <summary>
     /// Primary key - UUID for alert history entry
     /// </summary>
