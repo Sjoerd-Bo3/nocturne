@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Nocturne.Connectors.Core.Utilities;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Infrastructure.Data;
@@ -9,10 +10,12 @@ namespace Nocturne.API.Services;
 public class TenantService : ITenantService
 {
     private readonly IDbContextFactory<NocturneDbContext> _factory;
+    private readonly IMemoryCache _cache;
 
-    public TenantService(IDbContextFactory<NocturneDbContext> factory)
+    public TenantService(IDbContextFactory<NocturneDbContext> factory, IMemoryCache cache)
     {
         _factory = factory;
+        _cache = cache;
     }
 
     public async Task<TenantDto> CreateAsync(
@@ -65,6 +68,12 @@ public class TenantService : ITenantService
         tenant.DisplayName = displayName;
         tenant.IsActive = isActive;
         await context.SaveChangesAsync(ct);
+
+        // Invalidate cached tenant context
+        _cache.Remove($"tenant:{tenant.Slug}");
+        if (tenant.IsDefault)
+            _cache.Remove("tenant:__default__");
+
         return ToDto(tenant);
     }
 
@@ -72,13 +81,29 @@ public class TenantService : ITenantService
         Guid tenantId, Guid subjectId, string role, CancellationToken ct = default)
     {
         await using var context = await _factory.CreateDbContextAsync(ct);
+
+        // Check if already a member
+        var exists = await context.TenantMembers
+            .AnyAsync(tm => tm.TenantId == tenantId && tm.SubjectId == subjectId, ct);
+
+        if (exists)
+            return;
+
         context.TenantMembers.Add(new TenantMemberEntity
         {
             TenantId = tenantId,
             SubjectId = subjectId,
             Role = role,
         });
-        await context.SaveChangesAsync(ct);
+
+        try
+        {
+            await context.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            // Race condition: another request already inserted. This is fine.
+        }
     }
 
     public async Task RemoveMemberAsync(
