@@ -4,7 +4,9 @@ using Microsoft.Extensions.Options;
 using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Configuration;
+using Nocturne.Infrastructure.Data.Entities;
 using SameSiteMode = Nocturne.Core.Models.Configuration.SameSiteMode;
 
 namespace Nocturne.API.Controllers;
@@ -127,6 +129,27 @@ public class LocalAuthController : ControllerBase
                         Message = result.ErrorMessage ?? "Registration failed",
                     }
                 );
+            }
+
+            // Add newly registered user to the current tenant
+            if (HttpContext.Items["TenantContext"] is TenantContext tenantCtx && result.User != null)
+            {
+                try
+                {
+                    var tenantService = HttpContext.RequestServices.GetRequiredService<ITenantService>();
+                    var tenantMemberService = HttpContext.RequestServices.GetRequiredService<ITenantMemberService>();
+
+                    // First user on a tenant gets Owner, subsequent users get Member
+                    var memberCount = await tenantMemberService.GetMemberCountAsync(tenantCtx.TenantId);
+                    var role = memberCount == 0 ? TenantRole.Owner : TenantRole.Member;
+
+                    await tenantService.AddMemberAsync(tenantCtx.TenantId, result.User.Id, role);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to add registered user {UserId} to tenant {TenantId}",
+                        result.User.Id, tenantCtx.TenantId);
+                }
             }
 
             return Ok(

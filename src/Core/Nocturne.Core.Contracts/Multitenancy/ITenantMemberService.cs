@@ -8,4 +8,5 @@ public interface ITenantMemberService
 {
     Task<bool> IsMemberAsync(Guid subjectId, Guid tenantId, CancellationToken ct = default);
     Task<List<Guid>> GetTenantIdsForSubjectAsync(Guid subjectId, CancellationToken ct = default);
+    Task<int> GetMemberCountAsync(Guid tenantId, CancellationToken ct = default);
 }

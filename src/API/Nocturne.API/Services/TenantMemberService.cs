@@ -28,4 +28,11 @@ public class TenantMemberService : ITenantMemberService
             .Select(tm => tm.TenantId)
             .ToListAsync(ct);
     }
+
+    public async Task<int> GetMemberCountAsync(Guid tenantId, CancellationToken ct = default)
+    {
+        await using var context = await _factory.CreateDbContextAsync(ct);
+        return await context.TenantMembers.AsNoTracking()
+            .CountAsync(tm => tm.TenantId == tenantId, ct);
+    }
 }
