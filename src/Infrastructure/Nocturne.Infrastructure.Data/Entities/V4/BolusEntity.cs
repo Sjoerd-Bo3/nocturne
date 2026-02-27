@@ -135,4 +135,7 @@ public class BolusEntity
     [Column("pump_record_id")]
     [MaxLength(256)]
     public string? PumpRecordId { get; set; }
+
+    [Column("bolus_calculation_id")]
+    public Guid? BolusCalculationId { get; set; }
 }

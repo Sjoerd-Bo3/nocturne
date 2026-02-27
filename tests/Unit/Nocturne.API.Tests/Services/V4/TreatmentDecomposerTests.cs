@@ -1627,6 +1627,137 @@ public class TreatmentDecomposerTests : IDisposable
 
     #endregion
 
+    #region FK Linking: Bolus -> BolusCalculation, CarbIntake -> Bolus
+
+    [Fact]
+    public async Task DecomposeAsync_BolusWizardWithInsulin_SetsBolusCalculationIdOnBolus()
+    {
+        // Arrange - Bolus Wizard with insulin should produce a BolusCalculation and a Bolus,
+        // and the Bolus should have its BolusCalculationId set to the BolusCalculation's ID
+        var treatment = new Treatment
+        {
+            Id = "wizard-fk-link-1",
+            EventType = "Bolus Wizard",
+            Mills = 1700000000000,
+            Insulin = 4.0,
+            BloodGlucoseInput = 180,
+            BloodGlucoseInputSource = "Sensor",
+            InsulinOnBoard = 1.5
+        };
+
+        // Act
+        var result = await _decomposer.DecomposeAsync(treatment);
+
+        // Assert
+        var bolusCalc = result.CreatedRecords.OfType<V4Models.BolusCalculation>().Single();
+        var bolus = result.CreatedRecords.OfType<V4Models.Bolus>().Single();
+
+        bolus.BolusCalculationId.Should().Be(bolusCalc.Id,
+            "the Bolus should be linked to the BolusCalculation that produced it");
+        bolusCalc.Id.Should().NotBe(Guid.Empty);
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_MealBolus_SetsBolusIdOnCarbIntake()
+    {
+        // Arrange - Meal Bolus with insulin and carbs should produce a Bolus and a CarbIntake,
+        // and the CarbIntake should have its BolusId set to the Bolus's ID
+        var treatment = new Treatment
+        {
+            Id = "meal-fk-link-1",
+            EventType = "Meal Bolus",
+            Mills = 1700000000000,
+            Insulin = 5.5,
+            Carbs = 45,
+            EnteredBy = "xDrip+",
+            DataSource = "manual"
+        };
+
+        // Act
+        var result = await _decomposer.DecomposeAsync(treatment);
+
+        // Assert
+        var bolus = result.CreatedRecords.OfType<V4Models.Bolus>().Single();
+        var carbIntake = result.CreatedRecords.OfType<V4Models.CarbIntake>().Single();
+
+        carbIntake.BolusId.Should().Be(bolus.Id,
+            "the CarbIntake should be linked to the Bolus that covered it");
+        bolus.Id.Should().NotBe(Guid.Empty);
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_BolusWizardWithInsulinAndCarbs_SetsAllFKs()
+    {
+        // Arrange - Bolus Wizard with insulin AND carbs triggers the override rule,
+        // producing BolusCalculation + Bolus + CarbIntake. All FKs should be set.
+        var treatment = new Treatment
+        {
+            Id = "wizard-all-fks",
+            EventType = "Bolus Wizard",
+            Mills = 1700000000000,
+            Insulin = 4.0,
+            Carbs = 30,
+            BloodGlucoseInput = 180
+        };
+
+        // Act
+        var result = await _decomposer.DecomposeAsync(treatment);
+
+        // Assert
+        var bolusCalc = result.CreatedRecords.OfType<V4Models.BolusCalculation>().Single();
+        var bolus = result.CreatedRecords.OfType<V4Models.Bolus>().Single();
+        var carbIntake = result.CreatedRecords.OfType<V4Models.CarbIntake>().Single();
+
+        bolus.BolusCalculationId.Should().Be(bolusCalc.Id,
+            "Bolus should link to its BolusCalculation");
+        carbIntake.BolusId.Should().Be(bolus.Id,
+            "CarbIntake should link to its Bolus");
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_CarbCorrectionOnly_DoesNotSetBolusIdOnCarbIntake()
+    {
+        // Arrange - Carb Correction produces only a CarbIntake, no Bolus, so BolusId should be null
+        var treatment = new Treatment
+        {
+            Id = "carb-correction-no-fk",
+            EventType = "Carb Correction",
+            Mills = 1700000000000,
+            Carbs = 15
+        };
+
+        // Act
+        var result = await _decomposer.DecomposeAsync(treatment);
+
+        // Assert
+        var carbIntake = result.CreatedRecords.OfType<V4Models.CarbIntake>().Single();
+        carbIntake.BolusId.Should().BeNull(
+            "no Bolus was produced, so CarbIntake.BolusId should remain null");
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_CorrectionBolusOnly_DoesNotSetBolusCalculationId()
+    {
+        // Arrange - Correction Bolus produces only a Bolus, no BolusCalculation
+        var treatment = new Treatment
+        {
+            Id = "correction-no-calc-fk",
+            EventType = "Correction Bolus",
+            Mills = 1700000000000,
+            Insulin = 3.0
+        };
+
+        // Act
+        var result = await _decomposer.DecomposeAsync(treatment);
+
+        // Assert
+        var bolus = result.CreatedRecords.OfType<V4Models.Bolus>().Single();
+        bolus.BolusCalculationId.Should().BeNull(
+            "no BolusCalculation was produced, so Bolus.BolusCalculationId should remain null");
+    }
+
+    #endregion
+
     #region Announcement with IsAnnouncement property
 
     [Fact]

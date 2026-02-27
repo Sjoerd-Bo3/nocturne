@@ -37,6 +37,7 @@ public static class BolusMapper
             Unabsorbed = model.Unabsorbed,
             PumpDeviceId = model.PumpDeviceId,
             PumpRecordId = model.PumpRecordId,
+            BolusCalculationId = model.BolusCalculationId,
         };
     }
 
@@ -69,6 +70,7 @@ public static class BolusMapper
             Unabsorbed = entity.Unabsorbed,
             PumpDeviceId = entity.PumpDeviceId,
             PumpRecordId = entity.PumpRecordId,
+            BolusCalculationId = entity.BolusCalculationId,
         };
     }
 
@@ -97,5 +99,6 @@ public static class BolusMapper
         entity.Unabsorbed = model.Unabsorbed;
         entity.PumpDeviceId = model.PumpDeviceId;
         entity.PumpRecordId = model.PumpRecordId;
+        entity.BolusCalculationId = model.BolusCalculationId;
     }
 }

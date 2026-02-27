@@ -89,4 +89,7 @@ public class CarbIntakeEntity
 
     [Column("absorption_time")]
     public int? AbsorptionTime { get; set; }
+
+    [Column("bolus_id")]
+    public Guid? BolusId { get; set; }
 }

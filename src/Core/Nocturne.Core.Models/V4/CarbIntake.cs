@@ -75,4 +75,9 @@ public class CarbIntake : IV4Record
     /// When present, overrides the profile default for COB calculations.
     /// </summary>
     public int? AbsorptionTime { get; set; }
+
+    /// <summary>
+    /// FK to the Bolus that covered this carb intake (null for carb corrections without bolus)
+    /// </summary>
+    public Guid? BolusId { get; set; }
 }

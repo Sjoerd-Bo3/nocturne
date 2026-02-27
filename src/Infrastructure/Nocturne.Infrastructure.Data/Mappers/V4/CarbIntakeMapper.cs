@@ -29,6 +29,7 @@ public static class CarbIntakeMapper
             SyncIdentifier = model.SyncIdentifier,
             CarbTime = model.CarbTime,
             AbsorptionTime = model.AbsorptionTime,
+            BolusId = model.BolusId,
         };
     }
 
@@ -53,6 +54,7 @@ public static class CarbIntakeMapper
             SyncIdentifier = entity.SyncIdentifier,
             CarbTime = entity.CarbTime,
             AbsorptionTime = entity.AbsorptionTime,
+            BolusId = entity.BolusId,
         };
     }
 
@@ -73,5 +75,6 @@ public static class CarbIntakeMapper
         entity.SyncIdentifier = model.SyncIdentifier;
         entity.CarbTime = model.CarbTime;
         entity.AbsorptionTime = model.AbsorptionTime;
+        entity.BolusId = model.BolusId;
     }
 }

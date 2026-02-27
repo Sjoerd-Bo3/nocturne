@@ -114,4 +114,9 @@ public class Bolus : IV4Record
     /// Per-record pump counter (AAPS internal identifier)
     /// </summary>
     public string? PumpRecordId { get; set; }
+
+    /// <summary>
+    /// FK to the BolusCalculation that produced this bolus (null for manual/correction/SMB boluses)
+    /// </summary>
+    public Guid? BolusCalculationId { get; set; }
 }

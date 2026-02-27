@@ -201,6 +201,28 @@ public class TreatmentDecomposer : ITreatmentDecomposer
             await DecomposeDeviceEventAsync(treatment, result, parsedDeviceEventType, ct);
         }
 
+        // After all decompositions, link records via FKs
+        var bolusCalc = result.CreatedRecords.OfType<V4Models.BolusCalculation>().FirstOrDefault()
+            ?? result.UpdatedRecords.OfType<V4Models.BolusCalculation>().FirstOrDefault();
+        var bolus = result.CreatedRecords.OfType<V4Models.Bolus>().FirstOrDefault()
+            ?? result.UpdatedRecords.OfType<V4Models.Bolus>().FirstOrDefault();
+        var carbIntake = result.CreatedRecords.OfType<V4Models.CarbIntake>().FirstOrDefault()
+            ?? result.UpdatedRecords.OfType<V4Models.CarbIntake>().FirstOrDefault();
+
+        // Link Bolus -> BolusCalculation
+        if (bolus != null && bolusCalc != null && bolus.BolusCalculationId != bolusCalc.Id)
+        {
+            bolus.BolusCalculationId = bolusCalc.Id;
+            await _bolusRepository.UpdateAsync(bolus.Id, bolus, ct);
+        }
+
+        // Link CarbIntake -> Bolus
+        if (carbIntake != null && bolus != null && carbIntake.BolusId != bolus.Id)
+        {
+            carbIntake.BolusId = bolus.Id;
+            await _carbIntakeRepository.UpdateAsync(carbIntake.Id, carbIntake, ct);
+        }
+
         // If nothing was produced and there's no delegation, log a warning
         if (!produceBolus && !produceCarbIntake && !produceBGCheck
             && !produceNote && !produceBolusCalc && !produceDeviceEvent && !delegateToStateSpan)
