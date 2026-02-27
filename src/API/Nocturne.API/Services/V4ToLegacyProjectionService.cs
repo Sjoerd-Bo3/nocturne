@@ -219,26 +219,40 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
 
         var treatments = new List<Treatment>();
 
-        // --- Bolus + CarbIntake pairing via CorrelationId ---
-        // Group by CorrelationId; those without one are singletons.
-        var bolusesWithCorrelation = boluses
+        // --- Bolus + CarbIntake pairing ---
+        // Phase 1: FK-based pairing (preferred for native V4 records)
+        var bolusLookup = boluses.ToDictionary(b => b.Id);
+        var pairedCarbIds = new HashSet<Guid>();
+        var pairedBolusIds = new HashSet<Guid>();
+
+        foreach (var carb in carbs.Where(c => c.BolusId.HasValue))
+        {
+            if (bolusLookup.TryGetValue(carb.BolusId!.Value, out var bolus))
+            {
+                pairedCarbIds.Add(carb.Id);
+                pairedBolusIds.Add(bolus.Id);
+                treatments.Add(ProjectMealBolus(bolus, carb, foodsByCarbId.GetValueOrDefault(carb.Id, [])));
+            }
+        }
+
+        // Phase 2: CorrelationId-based pairing (fallback for legacy data)
+        var remainingBoluses = boluses.Where(b => !pairedBolusIds.Contains(b.Id)).ToList();
+        var remainingCarbs = carbs.Where(c => !pairedCarbIds.Contains(c.Id)).ToList();
+
+        var bolusesWithCorrelation = remainingBoluses
             .Where(b => b.CorrelationId.HasValue)
             .ToLookup(b => b.CorrelationId!.Value);
-        var bolusesWithoutCorrelation = boluses.Where(b => !b.CorrelationId.HasValue).ToList();
+        var bolusesWithoutCorrelation = remainingBoluses.Where(b => !b.CorrelationId.HasValue).ToList();
 
-        var carbsWithCorrelation = carbs
+        var carbsWithCorrelation = remainingCarbs
             .Where(c => c.CorrelationId.HasValue)
             .ToLookup(c => c.CorrelationId!.Value);
-        var carbsWithoutCorrelation = carbs.Where(c => !c.CorrelationId.HasValue).ToList();
+        var carbsWithoutCorrelation = remainingCarbs.Where(c => !c.CorrelationId.HasValue).ToList();
 
-        // Collect all correlation IDs that appear in either boluses or carbs.
         var allCorrelationIds = bolusesWithCorrelation
             .Select(g => g.Key)
             .Union(carbsWithCorrelation.Select(g => g.Key))
             .Distinct();
-
-        // Track which carb records have already been paired.
-        var pairedCarbIds = new HashSet<Guid>();
 
         foreach (var correlationId in allCorrelationIds)
         {
@@ -247,34 +261,34 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
 
             if (pairedBoluses.Count > 0 && pairedCarbs.Count > 0)
             {
-                // Meal Bolus: bolus + carbs
-                var bolus = pairedBoluses.First();
-                var carb = pairedCarbs.First();
-                pairedCarbIds.Add(carb.Id);
-                treatments.Add(ProjectMealBolus(bolus, carb, foodsByCarbId.GetValueOrDefault(carb.Id, [])));
+                var b = pairedBoluses.First();
+                var c = pairedCarbs.First();
+                pairedCarbIds.Add(c.Id);
+                pairedBolusIds.Add(b.Id);
+                treatments.Add(ProjectMealBolus(b, c, foodsByCarbId.GetValueOrDefault(c.Id, [])));
             }
             else if (pairedBoluses.Count > 0)
             {
-                // Bolus has a CorrelationId but no matching CarbIntake → Correction Bolus
-                foreach (var bolus in pairedBoluses)
-                    treatments.Add(ProjectCorrectionBolus(bolus));
+                foreach (var b in pairedBoluses)
+                {
+                    pairedBolusIds.Add(b.Id);
+                    treatments.Add(ProjectCorrectionBolus(b));
+                }
             }
             else
             {
-                // CarbIntake with CorrelationId but no matching Bolus → Carb Correction
-                foreach (var carb in pairedCarbs)
+                foreach (var c in pairedCarbs)
                 {
-                    pairedCarbIds.Add(carb.Id);
-                    treatments.Add(ProjectCarbCorrection(carb, foodsByCarbId.GetValueOrDefault(carb.Id, [])));
+                    pairedCarbIds.Add(c.Id);
+                    treatments.Add(ProjectCarbCorrection(c, foodsByCarbId.GetValueOrDefault(c.Id, [])));
                 }
             }
         }
 
-        // Singleton boluses (no CorrelationId) → Correction Bolus
-        foreach (var bolus in bolusesWithoutCorrelation)
+        // Remaining unpaired records
+        foreach (var bolus in bolusesWithoutCorrelation.Where(b => !pairedBolusIds.Contains(b.Id)))
             treatments.Add(ProjectCorrectionBolus(bolus));
 
-        // Singleton carbs (no CorrelationId, not already paired) → Carb Correction
         foreach (var carb in carbsWithoutCorrelation.Where(c => !pairedCarbIds.Contains(c.Id)))
             treatments.Add(ProjectCarbCorrection(carb, foodsByCarbId.GetValueOrDefault(carb.Id, [])));
 
