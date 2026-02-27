@@ -5,6 +5,7 @@ using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
+using Nocturne.Infrastructure.Data.Entities;
 
 namespace Nocturne.API.Services.Auth;
 
@@ -193,7 +194,7 @@ public class UserSeedService : IHostedService
                 return;
             }
 
-            var role = userConfig.IsAdmin ? "admin" : "member";
+            var role = userConfig.IsAdmin ? TenantRole.Owner : TenantRole.Member;
             await tenantService.AddMemberAsync(defaultTenant.Id, subjectId, role);
             _logger.LogInformation("Added {Email} to default tenant as {Role}", userConfig.Email, role);
         }

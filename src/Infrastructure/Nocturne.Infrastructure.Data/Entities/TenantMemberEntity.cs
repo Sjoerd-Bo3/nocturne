@@ -39,6 +39,7 @@ public class TenantMemberEntity
 public static class TenantRole
 {
     public const string Owner = "owner";
+    public const string Member = "member";
     public const string Caretaker = "caretaker";
     public const string ReadOnly = "readonly";
 }
