@@ -1,5 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
+using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Repositories;
 
 namespace Nocturne.API.Services;
@@ -9,7 +12,7 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class NotificationResolutionService : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<NotificationResolutionService> _logger;
 
     /// <summary>
@@ -20,14 +23,14 @@ public class NotificationResolutionService : BackgroundService
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationResolutionService"/> class.
     /// </summary>
-    /// <param name="scopeFactory">Service scope factory for creating scoped services</param>
+    /// <param name="serviceProvider">Service provider for creating scoped services</param>
     /// <param name="logger">Logger</param>
     public NotificationResolutionService(
-        IServiceScopeFactory scopeFactory,
+        IServiceProvider serviceProvider,
         ILogger<NotificationResolutionService> logger
     )
     {
-        _scopeFactory = scopeFactory;
+        _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
@@ -43,7 +46,7 @@ public class NotificationResolutionService : BackgroundService
         {
             try
             {
-                await EvaluatePendingNotificationsAsync(stoppingToken);
+                await EvaluateAllTenantsAsync(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -64,14 +67,43 @@ public class NotificationResolutionService : BackgroundService
     }
 
     /// <summary>
-    /// Evaluate all pending notifications with resolution conditions
+    /// Evaluate pending notifications across all active tenants
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token</param>
-    private async Task EvaluatePendingNotificationsAsync(CancellationToken cancellationToken)
+    private async Task EvaluateAllTenantsAsync(CancellationToken cancellationToken)
     {
-        using var scope = _scopeFactory.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<InAppNotificationRepository>();
-        var broadcastService = scope.ServiceProvider.GetRequiredService<ISignalRBroadcastService>();
+        // Lookup active tenants using unfiltered context
+        using var lookupScope = _serviceProvider.CreateScope();
+        var factory = lookupScope.ServiceProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+        await using var lookupContext = await factory.CreateDbContextAsync(cancellationToken);
+        var tenants = await lookupContext.Tenants.AsNoTracking()
+            .Where(t => t.IsActive)
+            .Select(t => new { t.Id, t.Slug, t.DisplayName })
+            .ToListAsync(cancellationToken);
+
+        foreach (var tenant in tenants)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var tenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
+                tenantAccessor.SetTenant(new TenantContext(tenant.Id, tenant.Slug, tenant.DisplayName, true));
+
+                await EvaluatePendingNotificationsAsync(scope.ServiceProvider, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during notification resolution for tenant {TenantSlug}", tenant.Slug);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Evaluate all pending notifications with resolution conditions for a single tenant
+    /// </summary>
+    private async Task EvaluatePendingNotificationsAsync(IServiceProvider scopedProvider, CancellationToken cancellationToken)
+    {
+        var repository = scopedProvider.GetRequiredService<InAppNotificationRepository>();
+        var broadcastService = scopedProvider.GetRequiredService<ISignalRBroadcastService>();
 
         // Get all notifications with pending resolution conditions
         var notifications = await repository.GetPendingResolutionAsync(cancellationToken);
