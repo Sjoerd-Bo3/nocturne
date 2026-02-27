@@ -1,6 +1,7 @@
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Alerts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
@@ -10,8 +11,7 @@ namespace Nocturne.API.Services.ConnectorPublishing;
 
 public class InProcessConnectorPublisher : IConnectorPublisher
 {
-    private const string DefaultUserId = "default";
-
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly IEntryService _entryService;
     private readonly ITreatmentService _treatmentService;
     private readonly IDeviceStatusService _deviceStatusService;
@@ -33,6 +33,7 @@ public class InProcessConnectorPublisher : IConnectorPublisher
     private readonly ILogger<InProcessConnectorPublisher> _logger;
 
     public InProcessConnectorPublisher(
+        ITenantAccessor tenantAccessor,
         IEntryService entryService,
         ITreatmentService treatmentService,
         IDeviceStatusService deviceStatusService,
@@ -54,6 +55,7 @@ public class InProcessConnectorPublisher : IConnectorPublisher
         ILogger<InProcessConnectorPublisher> logger
     )
     {
+        _tenantAccessor = tenantAccessor ?? throw new ArgumentNullException(nameof(tenantAccessor));
         _entryService = entryService ?? throw new ArgumentNullException(nameof(entryService));
         _treatmentService =
             treatmentService ?? throw new ArgumentNullException(nameof(treatmentService));
@@ -233,7 +235,7 @@ public class InProcessConnectorPublisher : IConnectorPublisher
     {
         try
         {
-            await _connectorFoodEntryService.ImportAsync(DefaultUserId, entries, cancellationToken);
+            await _connectorFoodEntryService.ImportAsync(_tenantAccessor.TenantId.ToString(), entries, cancellationToken);
             return true;
         }
         catch (OperationCanceledException)

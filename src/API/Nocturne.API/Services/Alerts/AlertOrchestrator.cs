@@ -1,4 +1,5 @@
 using Nocturne.Core.Contracts.Alerts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 
@@ -7,10 +8,10 @@ namespace Nocturne.API.Services.Alerts;
 public class AlertOrchestrator(
     IAlertRulesEngine rulesEngine,
     IAlertProcessingService processingService,
+    ITenantAccessor tenantAccessor,
     ILogger<AlertOrchestrator> logger)
     : IAlertOrchestrator
 {
-    private const string DefaultUserId = "00000000-0000-0000-0000-000000000001";
 
     /// <summary>
     /// Maximum age of a glucose reading (in minutes) for it to be eligible for alert evaluation.
@@ -24,7 +25,7 @@ public class AlertOrchestrator(
         CancellationToken cancellationToken = default
     )
     {
-        var resolvedUserId = string.IsNullOrWhiteSpace(userId) ? DefaultUserId : userId;
+        var resolvedUserId = string.IsNullOrWhiteSpace(userId) ? tenantAccessor.TenantId.ToString() : userId;
         var cutoff = DateTimeOffset.UtcNow.AddMinutes(-MaxReadingAgeMinutes).ToUnixTimeMilliseconds();
 
         foreach (var reading in readings)
