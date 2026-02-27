@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Nocturne.API.Configuration;
 using Nocturne.API.Extensions;
+using Nocturne.API.Multitenancy;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.API.Hubs;
 using Nocturne.API.Middleware;
 using Nocturne.API.Middleware.Handlers;
@@ -265,6 +267,11 @@ builder.Services.AddScoped<ILocalIdentityService, LocalIdentityService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHostedService<UserSeedService>();
 builder.Services.AddHostedService<AuthorizationSeedService>();
+
+// Multitenancy
+builder.Services.Configure<MultitenancyConfiguration>(
+    builder.Configuration.GetSection(MultitenancyConfiguration.SectionName));
+builder.Services.AddScoped<ITenantAccessor, HttpContextTenantAccessor>();
 
 // Register authentication handlers for the middleware pipeline
 // Handlers are executed in priority order (lowest first)
@@ -569,6 +576,9 @@ app.UseCors();
 // Add JSON extension middleware to handle .json suffixes for legacy compatibility
 app.UseMiddleware<JsonExtensionMiddleware>();
 
+// Resolve tenant from subdomain (must run before authentication)
+app.UseMiddleware<TenantResolutionMiddleware>();
+
 // Add Nightscout authentication middleware
 app.UseMiddleware<AuthenticationMiddleware>();
 
@@ -666,6 +676,9 @@ if (!isNSwagGeneration)
     Console.WriteLine("Running PostgreSQL database migrations...");
     await app.Services.MigrateDatabaseAsync();
     Console.WriteLine("PostgreSQL database migrations completed successfully.");
+
+    // Seed default tenant if none exists and backfill tenant_id on existing rows
+    await DefaultTenantSeeder.SeedDefaultTenantAsync(app.Services);
 }
 else
 {
