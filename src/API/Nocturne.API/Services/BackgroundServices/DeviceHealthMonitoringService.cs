@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
 
@@ -73,17 +74,45 @@ public class DeviceHealthMonitoringService : BackgroundService
     }
 
     /// <summary>
-    /// Perform health check on all registered devices
+    /// Perform health check across all active tenants
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task completion</returns>
     private async Task PerformHealthCheckAsync(CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<NocturneDbContext>();
-        var deviceRegistry = scope.ServiceProvider.GetRequiredService<IDeviceRegistryService>();
+        // Lookup active tenants using unfiltered context
+        using var lookupScope = _serviceProvider.CreateScope();
+        var factory = lookupScope.ServiceProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+        await using var lookupContext = await factory.CreateDbContextAsync(cancellationToken);
+        var tenants = await lookupContext.Tenants.AsNoTracking()
+            .Where(t => t.IsActive)
+            .Select(t => new { t.Id, t.Slug, t.DisplayName })
+            .ToListAsync(cancellationToken);
 
-        var alertEngine = scope.ServiceProvider.GetRequiredService<IDeviceAlertEngine>();
+        foreach (var tenant in tenants)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var tenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
+                tenantAccessor.SetTenant(new TenantContext(tenant.Id, tenant.Slug, tenant.DisplayName, true));
+
+                await PerformHealthCheckForTenantAsync(scope.ServiceProvider, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during device health monitoring for tenant {TenantSlug}", tenant.Slug);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Perform health check on all registered devices for a single tenant
+    /// </summary>
+    private async Task PerformHealthCheckForTenantAsync(IServiceProvider scopedProvider, CancellationToken cancellationToken)
+    {
+        var dbContext = scopedProvider.GetRequiredService<NocturneDbContext>();
+        var deviceRegistry = scopedProvider.GetRequiredService<IDeviceRegistryService>();
+        var alertEngine = scopedProvider.GetRequiredService<IDeviceAlertEngine>();
+        var trackerSuggestionService = scopedProvider.GetRequiredService<ITrackerSuggestionService>();
 
         _logger.LogDebug("Starting device health check cycle");
 
@@ -102,8 +131,8 @@ public class DeviceHealthMonitoringService : BackgroundService
                 await ProcessDeviceBatchAsync(
                     batch,
                     deviceRegistry,
-
                     alertEngine,
+                    trackerSuggestionService,
                     cancellationToken
                 );
             }
@@ -144,17 +173,11 @@ public class DeviceHealthMonitoringService : BackgroundService
     /// <summary>
     /// Process a batch of devices for health monitoring
     /// </summary>
-    /// <param name="deviceIds">List of device IDs to process</param>
-    /// <param name="deviceRegistry">Device registry service</param>
-
-    /// <param name="alertEngine">Alert engine service</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task completion</returns>
     private async Task ProcessDeviceBatchAsync(
         List<string> deviceIds,
         IDeviceRegistryService deviceRegistry,
-
         IDeviceAlertEngine alertEngine,
+        ITrackerSuggestionService trackerSuggestionService,
         CancellationToken cancellationToken
     )
     {
@@ -162,8 +185,8 @@ public class DeviceHealthMonitoringService : BackgroundService
             ProcessSingleDeviceAsync(
                 deviceId,
                 deviceRegistry,
-
                 alertEngine,
+                trackerSuggestionService,
                 cancellationToken
             )
         );
@@ -174,17 +197,11 @@ public class DeviceHealthMonitoringService : BackgroundService
     /// <summary>
     /// Process health monitoring for a single device
     /// </summary>
-    /// <param name="deviceId">Device identifier</param>
-    /// <param name="deviceRegistry">Device registry service</param>
-
-    /// <param name="alertEngine">Alert engine service</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task completion</returns>
     private async Task ProcessSingleDeviceAsync(
         string deviceId,
         IDeviceRegistryService deviceRegistry,
-
         IDeviceAlertEngine alertEngine,
+        ITrackerSuggestionService trackerSuggestionService,
         CancellationToken cancellationToken
     )
     {
@@ -202,8 +219,6 @@ public class DeviceHealthMonitoringService : BackgroundService
                 _logger.LogWarning("Device {DeviceId} not found during health check", deviceId);
                 return;
             }
-
-
 
             // Generate and process alerts
             var alerts = await alertEngine.ProcessDeviceAlertsAsync(device, cancellationToken);
@@ -227,7 +242,7 @@ public class DeviceHealthMonitoringService : BackgroundService
             }
 
             // Perform device-specific monitoring
-            await PerformDeviceSpecificMonitoringAsync(device, cancellationToken);
+            await PerformDeviceSpecificMonitoringAsync(device, trackerSuggestionService, cancellationToken);
 
             if (_options.EnableDebugLogging)
             {
@@ -246,13 +261,9 @@ public class DeviceHealthMonitoringService : BackgroundService
     /// <summary>
     /// Perform device-specific monitoring based on device type
     /// </summary>
-    /// <param name="device">Device to monitor</param>
-
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task completion</returns>
     private async Task PerformDeviceSpecificMonitoringAsync(
         DeviceHealth device,
-
+        ITrackerSuggestionService trackerSuggestionService,
         CancellationToken cancellationToken
     )
     {
@@ -261,7 +272,7 @@ public class DeviceHealthMonitoringService : BackgroundService
             switch (device.DeviceType)
             {
                 case DeviceType.CGM:
-                    await PerformCgmSpecificMonitoringAsync(device, cancellationToken);
+                    await PerformCgmSpecificMonitoringAsync(device, trackerSuggestionService, cancellationToken);
                     break;
                 case DeviceType.InsulinPump:
                     await PerformInsulinPumpSpecificMonitoringAsync(device, cancellationToken);
@@ -292,11 +303,9 @@ public class DeviceHealthMonitoringService : BackgroundService
     /// <summary>
     /// Perform CGM-specific monitoring
     /// </summary>
-    /// <param name="device">CGM device</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task completion</returns>
     private async Task PerformCgmSpecificMonitoringAsync(
         DeviceHealth device,
+        ITrackerSuggestionService trackerSuggestionService,
         CancellationToken cancellationToken
     )
     {
@@ -345,7 +354,7 @@ public class DeviceHealthMonitoringService : BackgroundService
             if (minutesSinceLastData >= MinimumGapMinutesForWarmupSuggestion)
             {
                 // Evaluate for sensor tracker suggestion (might be a warmup)
-                await EvaluateSensorWarmupSuggestionAsync(device, cancellationToken);
+                await EvaluateSensorWarmupSuggestionAsync(device, trackerSuggestionService, cancellationToken);
             }
         }
     }
@@ -353,18 +362,14 @@ public class DeviceHealthMonitoringService : BackgroundService
     /// <summary>
     /// Evaluate if a sensor tracker suggestion should be created based on data gap
     /// </summary>
-    /// <param name="device">The CGM device with a data gap</param>
-    /// <param name="cancellationToken">Cancellation token</param>
     private async Task EvaluateSensorWarmupSuggestionAsync(
         DeviceHealth device,
+        ITrackerSuggestionService trackerSuggestionService,
         CancellationToken cancellationToken
     )
     {
         try
         {
-            using var scope = _serviceProvider.CreateScope();
-            var trackerSuggestionService = scope.ServiceProvider.GetRequiredService<ITrackerSuggestionService>();
-
             await trackerSuggestionService.EvaluateDataGapForTrackerSuggestionAsync(
                 device.UserId,
                 device.LastDataReceived!.Value,
@@ -385,20 +390,13 @@ public class DeviceHealthMonitoringService : BackgroundService
     /// <summary>
     /// Perform insulin pump-specific monitoring
     /// </summary>
-    /// <param name="device">Insulin pump device</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task completion</returns>
     private async Task PerformInsulinPumpSpecificMonitoringAsync(
         DeviceHealth device,
         CancellationToken cancellationToken
     )
     {
-        // This would monitor insulin reservoir levels, infusion set age, occlusion detection, etc.
-        // For now, we'll perform basic monitoring
-
         await CheckDataContinuityAsync(device, cancellationToken);
 
-        // Log pump-specific metrics if available
         _logger.LogDebug(
             "Performed insulin pump monitoring for device {DeviceId}",
             device.DeviceId
@@ -408,17 +406,11 @@ public class DeviceHealthMonitoringService : BackgroundService
     /// <summary>
     /// Perform BGM-specific monitoring
     /// </summary>
-    /// <param name="device">BGM device</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task completion</returns>
     private async Task PerformBgmSpecificMonitoringAsync(
         DeviceHealth device,
         CancellationToken cancellationToken
     )
     {
-        // This would monitor test strip inventory, control solution testing, etc.
-        // For now, we'll perform basic monitoring
-
         await CheckDataContinuityAsync(device, cancellationToken);
 
         // Check calibration status for BGM devices
@@ -440,9 +432,6 @@ public class DeviceHealthMonitoringService : BackgroundService
     /// <summary>
     /// Check data continuity for a device
     /// </summary>
-    /// <param name="device">Device to check</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task completion</returns>
     private Task CheckDataContinuityAsync(DeviceHealth device, CancellationToken cancellationToken)
     {
         if (!device.LastDataReceived.HasValue)
