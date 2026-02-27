@@ -59,7 +59,7 @@
             <!-- Desktop CTA -->
             <div class="hidden md:flex items-center gap-3">
                 <LanguageSelector compact />
-                <Button href="/setup" variant="default" size="sm">
+                <Button href="/docs/installation" variant="default" size="sm">
                     Get Started
                 </Button>
             </div>
@@ -98,7 +98,7 @@
                         <div class="px-4">
                             <LanguageSelector />
                         </div>
-                        <Button href="/setup" variant="default" class="w-full">
+                        <Button href="/docs/installation" variant="default" class="w-full">
                             Get Started
                         </Button>
                     </div>

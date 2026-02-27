@@ -7,10 +7,9 @@
         Shield,
         RefreshCw,
         Globe,
-        Database,
         Activity,
-        Settings,
-        Download,
+        Monitor,
+        Rocket,
         Server,
         Play,
     } from "@lucide/svelte";
@@ -37,7 +36,7 @@
                 diabetes community.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button href="/setup" size="lg" class="gap-2 text-base">
+                <Button href="/docs/installation" size="lg" class="gap-2 text-base">
                     Get Started
                     <ArrowRight class="w-4 h-4" />
                 </Button>
@@ -178,8 +177,8 @@
         <div class="text-center mb-12">
             <h2 class="text-3xl font-bold mb-4">Get Started in Minutes</h2>
             <p class="text-muted-foreground max-w-2xl mx-auto">
-                Our configuration wizard generates everything you need for a
-                production-ready deployment.
+                Follow our step-by-step guides to deploy Nocturne on your
+                preferred platform.
             </p>
         </div>
 
@@ -190,17 +189,17 @@
                     <div
                         class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
                     >
-                        <Settings class="w-8 h-8 text-primary" />
+                        <Rocket class="w-8 h-8 text-primary" />
                     </div>
                     <div
                         class="text-sm font-medium text-primary mb-2 uppercase tracking-wider"
                     >
                         Step 1
                     </div>
-                    <h3 class="text-lg font-semibold mb-2">Configure</h3>
+                    <h3 class="text-lg font-semibold mb-2">Choose Your Platform</h3>
                     <p class="text-sm text-muted-foreground">
-                        Choose your setup type and configure your data sources through our
-                        friendly wizard.
+                        Pick your hosting provider. We have guides for Docker Compose,
+                        Portainer, and more.
                     </p>
                 </div>
 
@@ -209,7 +208,7 @@
                     <div
                         class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
                     >
-                        <Download class="w-8 h-8 text-primary" />
+                        <Server class="w-8 h-8 text-primary" />
                     </div>
                     <div
                         class="text-sm font-medium text-primary mb-2 uppercase tracking-wider"
@@ -218,8 +217,8 @@
                     </div>
                     <h3 class="text-lg font-semibold mb-2">Deploy</h3>
                     <p class="text-sm text-muted-foreground">
-                        Download your configuration files and deploy with Docker in one
-                        command.
+                        Follow the guide to deploy with Docker Compose. Configure
+                        environment variables for your setup.
                     </p>
                 </div>
 
@@ -228,7 +227,7 @@
                     <div
                         class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
                     >
-                        <Activity class="w-8 h-8 text-primary" />
+                        <Monitor class="w-8 h-8 text-primary" />
                     </div>
                     <div
                         class="text-sm font-medium text-primary mb-2 uppercase tracking-wider"
@@ -260,8 +259,8 @@
                 terms. Free, open source, and always will be.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button href="/setup" size="lg" class="gap-2 text-base">
-                    Start Configuration
+                <Button href="/docs/installation" size="lg" class="gap-2 text-base">
+                    Installation Guide
                     <ArrowRight class="w-4 h-4" />
                 </Button>
                 <Button href="/docs" variant="outline" size="lg" class="text-base">

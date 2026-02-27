@@ -1,96 +1,87 @@
 <script lang="ts">
-    import { AlertCircle } from "@lucide/svelte";
+    import { ArrowRight, Terminal, LayoutDashboard, Cloud } from "@lucide/svelte";
+    import SystemRequirements from "$lib/components/docs/SystemRequirements.svelte";
 </script>
 
 <div class="max-w-3xl">
     <h1 class="text-4xl font-bold tracking-tight mb-4">Installation Guide</h1>
     <p class="text-lg text-muted-foreground mb-8">
-        Detailed instructions for installing Nocturne on various platforms.
+        Choose a deployment method below to get Nocturne running on your infrastructure.
+        All methods use the same Docker images and configuration.
     </p>
 
-    <div
-        class="p-4 rounded-lg border border-amber-500/30 bg-amber-500/5 mb-8 not-prose"
-    >
-        <div class="flex items-start gap-3">
-            <AlertCircle class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-            <p class="text-sm text-muted-foreground">
-                <strong class="text-amber-700 dark:text-amber-400">Placeholder content.</strong>
-                This guide will be expanded with detailed instructions.
-            </p>
+    <h2 class="text-2xl font-bold mt-8 mb-4">System Requirements</h2>
+    <SystemRequirements />
+
+    <h2 class="text-2xl font-bold mt-8 mb-4">Choose Your Platform</h2>
+    <div class="grid gap-4 not-prose">
+        <a
+            href="/docs/installation/docker-compose"
+            class="p-6 rounded-xl border border-border/60 bg-card/50 hover:bg-card hover:border-primary/30 transition-colors group"
+        >
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
+                    <Terminal class="w-6 h-6 text-blue-500" />
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">
+                        Docker Compose
+                    </h3>
+                    <p class="text-sm text-muted-foreground">
+                        Deploy directly on any Linux server, VPS, or Raspberry Pi using Docker Compose
+                        from the command line.
+                    </p>
+                </div>
+                <ArrowRight class="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mt-1" />
+            </div>
+        </a>
+
+        <a
+            href="/docs/installation/portainer"
+            class="p-6 rounded-xl border border-border/60 bg-card/50 hover:bg-card hover:border-primary/30 transition-colors group"
+        >
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-lg bg-cyan-500/15 flex items-center justify-center shrink-0">
+                    <LayoutDashboard class="w-6 h-6 text-cyan-500" />
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">
+                        Portainer
+                    </h3>
+                    <p class="text-sm text-muted-foreground">
+                        Deploy using the Portainer web interface. Great for managing your stack
+                        visually without SSH access.
+                    </p>
+                </div>
+                <ArrowRight class="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mt-1" />
+            </div>
+        </a>
+
+        <div
+            class="p-6 rounded-xl border border-border/60 bg-card/30 opacity-60"
+        >
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-lg bg-purple-500/15 flex items-center justify-center shrink-0">
+                    <Cloud class="w-6 h-6 text-purple-500" />
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold mb-1">
+                        Cloud Providers
+                    </h3>
+                    <p class="text-sm text-muted-foreground">
+                        Guides for GCP, Azure, Heroku, and other cloud platforms are coming soon.
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <h2 class="text-2xl font-bold mt-8 mb-4">System Requirements</h2>
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-border">
-                    <th class="text-left py-2 pr-4 font-semibold">Component</th>
-                    <th class="text-left py-2 pr-4 font-semibold">Minimum</th>
-                    <th class="text-left py-2 font-semibold">Recommended</th>
-                </tr>
-            </thead>
-            <tbody class="text-muted-foreground">
-                <tr class="border-b border-border/50">
-                    <td class="py-2 pr-4">RAM</td>
-                    <td class="py-2 pr-4">1 GB</td>
-                    <td class="py-2">2 GB+</td>
-                </tr>
-                <tr class="border-b border-border/50">
-                    <td class="py-2 pr-4">Storage</td>
-                    <td class="py-2 pr-4">10 GB</td>
-                    <td class="py-2">20 GB+</td>
-                </tr>
-                <tr class="border-b border-border/50">
-                    <td class="py-2 pr-4">Docker</td>
-                    <td class="py-2 pr-4">20.10+</td>
-                    <td class="py-2">Latest</td>
-                </tr>
-                <tr>
-                    <td class="py-2 pr-4">Docker Compose</td>
-                    <td class="py-2 pr-4">2.0+</td>
-                    <td class="py-2">Latest</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <h2 class="text-2xl font-bold mt-8 mb-4">Docker Installation</h2>
-    <p class="text-muted-foreground mb-4">
-        The recommended way to run Nocturne is using Docker Compose:
-    </p>
-    <ol class="list-decimal list-inside space-y-4 text-muted-foreground">
-        <li>
-            <strong class="text-foreground">Generate configuration files</strong>
-            <p class="ml-6 mt-1">
-                Use the configuration wizard to generate your docker-compose.yml and
-                environment files.
-            </p>
-        </li>
-        <li>
-            <strong class="text-foreground">Extract the downloaded ZIP</strong>
-            <pre
-                class="ml-6 mt-2 p-3 rounded-lg bg-muted/50 border border-border/60 text-sm"><code>unzip nocturne-config.zip
-cd nocturne-config</code></pre>
-        </li>
-        <li>
-            <strong class="text-foreground">Start the services</strong>
-            <pre
-                class="ml-6 mt-2 p-3 rounded-lg bg-muted/50 border border-border/60 text-sm"><code>docker compose up -d</code></pre>
-        </li>
-        <li>
-            <strong class="text-foreground">Verify the installation</strong>
-            <pre
-                class="ml-6 mt-2 p-3 rounded-lg bg-muted/50 border border-border/60 text-sm"><code>docker compose ps
-docker compose logs -f</code></pre>
-        </li>
-    </ol>
-
-    <h2 class="text-2xl font-bold mt-8 mb-4">Platform-Specific Notes</h2>
+    <h2 class="text-2xl font-bold mt-12 mb-4">Platform Notes</h2>
 
     <h3 class="text-xl font-semibold mt-6 mb-3">Linux (Ubuntu/Debian)</h3>
     <p class="text-muted-foreground mb-4">
-        Install Docker using the official repository for the latest version.
+        Install Docker using the official repository for the latest version. Both x86_64 and ARM64
+        architectures are supported.
     </p>
 
     <h3 class="text-xl font-semibold mt-6 mb-3">Raspberry Pi</h3>
@@ -99,20 +90,9 @@ docker compose logs -f</code></pre>
         Raspberry Pi OS.
     </p>
 
-    <h3 class="text-xl font-semibold mt-6 mb-3">Windows</h3>
+    <h3 class="text-xl font-semibold mt-6 mb-3">Windows / macOS</h3>
     <p class="text-muted-foreground mb-4">
-        Use Docker Desktop for Windows with WSL2 backend for best performance.
+        Use Docker Desktop with WSL2 backend (Windows) or the native Docker Desktop (macOS).
+        Both Intel and Apple Silicon Macs are supported.
     </p>
-
-    <h3 class="text-xl font-semibold mt-6 mb-3">macOS</h3>
-    <p class="text-muted-foreground mb-4">
-        Use Docker Desktop for Mac. Both Intel and Apple Silicon are supported.
-    </p>
-
-    <h2 class="text-2xl font-bold mt-8 mb-4">Troubleshooting</h2>
-    <p class="text-muted-foreground">
-        If you encounter issues during installation, check the logs with:
-    </p>
-    <pre
-        class="mt-2 p-3 rounded-lg bg-muted/50 border border-border/60 text-sm"><code>docker compose logs</code></pre>
 </div>

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from "$app/state";
-    import { Book, Rocket, Download, Settings, ChevronRight } from "@lucide/svelte";
+    import { Rocket, Download, Settings, ChevronRight, ChevronDown } from "@lucide/svelte";
 
     const navSections = [
         {
@@ -15,7 +15,9 @@
             title: "Installation",
             icon: Download,
             items: [
-                { href: "/docs/installation", label: "Installation Guide" },
+                { href: "/docs/installation", label: "Overview" },
+                { href: "/docs/installation/docker-compose", label: "Docker Compose" },
+                { href: "/docs/installation/portainer", label: "Portainer" },
             ],
         },
         {
@@ -44,6 +46,11 @@
             >
                 <section.icon class="w-4 h-4" />
                 {section.title}
+                {#if isSectionActive(section.items)}
+                    <ChevronDown class="w-3 h-3 ml-auto" />
+                {:else}
+                    <ChevronRight class="w-3 h-3 ml-auto" />
+                {/if}
             </div>
             <ul class="space-y-1 ml-6">
                 {#each section.items as item}

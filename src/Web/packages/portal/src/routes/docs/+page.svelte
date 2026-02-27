@@ -64,8 +64,8 @@
                         Installation Guide
                     </h2>
                     <p class="text-sm text-muted-foreground">
-                        Detailed instructions for installing Nocturne on various
-                        platforms.
+                        Step-by-step guides for deploying Nocturne with Docker Compose,
+                        Portainer, and more.
                     </p>
                 </div>
                 <ArrowRight
