@@ -1,8 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
+using Nocturne.Infrastructure.Data;
 
 namespace Nocturne.API.Services.BackgroundServices;
 
@@ -41,6 +44,7 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
             try
             {
                 // Get wake time and user timezone from settings to schedule detection
+                // Use default tenant settings for scheduling; per-tenant detection happens in RunForAllTenantsAsync
                 int wakeTimeHour;
                 TimeZoneInfo userTimeZone;
                 using (var scope = _serviceProvider.CreateScope())
@@ -70,10 +74,8 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
 
                 await Task.Delay(delay, stoppingToken);
 
-                // Determine "last night" in the user's local timezone
-                var detectionTimeLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, userTimeZone);
-                var lastNight = DateOnly.FromDateTime(detectionTimeLocal.AddDays(-1));
-                await DetectForNightAsync(lastNight, stoppingToken);
+                // Run detection for all tenants
+                await RunForAllTenantsAsync(stoppingToken);
             }
             catch (OperationCanceledException)
             {
@@ -89,17 +91,60 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
         _logger.LogInformation("Compression Low Detection Service stopped");
     }
 
+    private async Task RunForAllTenantsAsync(CancellationToken cancellationToken)
+    {
+        // Lookup active tenants using unfiltered context
+        using var lookupScope = _serviceProvider.CreateScope();
+        var factory = lookupScope.ServiceProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+        await using var lookupContext = await factory.CreateDbContextAsync(cancellationToken);
+        var tenants = await lookupContext.Tenants.AsNoTracking()
+            .Where(t => t.IsActive)
+            .Select(t => new { t.Id, t.Slug, t.DisplayName })
+            .ToListAsync(cancellationToken);
+
+        foreach (var tenant in tenants)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var tenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
+                tenantAccessor.SetTenant(new TenantContext(tenant.Id, tenant.Slug, tenant.DisplayName, true));
+
+                // Determine "last night" in the user's local timezone
+                var profileDataService = scope.ServiceProvider.GetRequiredService<IProfileDataService>();
+                var userTimeZone = await GetUserTimeZoneAsync(profileDataService, cancellationToken);
+                var detectionTimeLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, userTimeZone);
+                var lastNight = DateOnly.FromDateTime(detectionTimeLocal.AddDays(-1));
+
+                await DetectForNightInternalAsync(lastNight, scope.ServiceProvider, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during compression low detection for tenant {TenantSlug}", tenant.Slug);
+            }
+        }
+    }
+
     public async Task<int> DetectForNightAsync(
         DateOnly nightOf,
         CancellationToken cancellationToken = default)
     {
         using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<ICompressionLowRepository>();
-        var entryService = scope.ServiceProvider.GetRequiredService<IEntryService>();
-        var treatmentService = scope.ServiceProvider.GetRequiredService<ITreatmentService>();
-        var notificationService = scope.ServiceProvider.GetRequiredService<IInAppNotificationService>();
-        var profileDataService = scope.ServiceProvider.GetRequiredService<IProfileDataService>();
-        var uiSettingsService = scope.ServiceProvider.GetRequiredService<IUISettingsService>();
+        return await DetectForNightInternalAsync(nightOf, scope.ServiceProvider, cancellationToken);
+    }
+
+    private async Task<int> DetectForNightInternalAsync(
+        DateOnly nightOf,
+        IServiceProvider scopedProvider,
+        CancellationToken cancellationToken)
+    {
+        var repository = scopedProvider.GetRequiredService<ICompressionLowRepository>();
+        var entryService = scopedProvider.GetRequiredService<IEntryService>();
+        var treatmentService = scopedProvider.GetRequiredService<ITreatmentService>();
+        var notificationService = scopedProvider.GetRequiredService<IInAppNotificationService>();
+        var profileDataService = scopedProvider.GetRequiredService<IProfileDataService>();
+        var uiSettingsService = scopedProvider.GetRequiredService<IUISettingsService>();
+        var tenantAccessor = scopedProvider.GetRequiredService<ITenantAccessor>();
 
         // Check if detection is enabled
         var settings = await uiSettingsService.GetSettingsAsync(cancellationToken);
@@ -186,7 +231,8 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
         // Notification uses i18n keys so the frontend can render localized text.
         if (suggestions.Count > 0)
         {
-            await CreateNotificationAsync(nightOf, suggestions.Count, notificationService, cancellationToken);
+            var userId = tenantAccessor.TenantId.ToString();
+            await CreateNotificationAsync(nightOf, suggestions.Count, userId, notificationService, cancellationToken);
         }
 
         _logger.LogInformation(
@@ -395,13 +441,14 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
     private async Task CreateNotificationAsync(
         DateOnly nightOf,
         int count,
+        string userId,
         IInAppNotificationService notificationService,
         CancellationToken cancellationToken)
     {
         // Use i18n keys for title/subtitle so the frontend renders localized text.
         // The metadata contains the count and nightOf for interpolation.
         await notificationService.CreateNotificationAsync(
-            userId: "default", // TODO: Multi-user support
+            userId: userId,
             type: InAppNotificationType.CompressionLowReview,
             urgency: NotificationUrgency.Info,
             title: "compression_low_detected",
