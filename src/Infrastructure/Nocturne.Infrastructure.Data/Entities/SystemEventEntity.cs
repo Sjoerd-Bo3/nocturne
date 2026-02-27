@@ -8,7 +8,7 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Maps to Nocturne.Core.Models.SystemEvent
 /// </summary>
 [Table("system_events")]
-public class SystemEventEntity
+public class SystemEventEntity : ITenantScoped
 {
     /// <summary>
     /// Primary key - UUID Version 7 for time-ordered, globally unique identification
@@ -77,4 +77,10 @@ public class SystemEventEntity
     /// </summary>
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Tenant this system event belongs to
+    /// </summary>
+    [Column("tenant_id")]
+    public Guid TenantId { get; set; }
 }
