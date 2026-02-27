@@ -4,9 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Adapters;
 using Nocturne.Infrastructure.Data.Configuration;
+using Nocturne.Infrastructure.Data.Interceptors;
 using Nocturne.Infrastructure.Data.Repositories;
 using Nocturne.Infrastructure.Data.Services;
 
@@ -50,9 +52,8 @@ public static class ServiceCollectionExtensions
         var dataSource = dataSourceBuilder.Build();
         services.AddSingleton(dataSource);
 
-        // Use the simpler AddDbContextPool overload that doesn't require service provider access
-        // This avoids "Cannot resolve scoped service from root provider" errors in .NET 9+
-        services.AddDbContextPool<NocturneDbContext>(
+        // Use AddPooledDbContextFactory for multitenant context pooling
+        services.AddPooledDbContextFactory<NocturneDbContext>(
             options =>
             {
                 options.UseNpgsql(
@@ -80,9 +81,25 @@ public static class ServiceCollectionExtensions
                 }
 
                 options.EnableServiceProviderCaching();
+                options.AddInterceptors(new TenantConnectionInterceptor());
             },
             poolSize: 128
         );
+
+        // Register scoped NocturneDbContext that sets TenantId from ITenantAccessor.
+        // All existing constructor injections of NocturneDbContext continue to work.
+        // The context is returned to the pool when the scope ends.
+        services.AddScoped(sp =>
+        {
+            var factory = sp.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+            var context = factory.CreateDbContext();
+            var tenantAccessor = sp.GetService<ITenantAccessor>();
+            if (tenantAccessor?.IsResolved == true)
+            {
+                context.TenantId = tenantAccessor.TenantId;
+            }
+            return context;
+        });
 
         // Register deduplication service (required by repositories)
         services.AddScoped<IDeduplicationService, DeduplicationService>();
@@ -152,9 +169,8 @@ public static class ServiceCollectionExtensions
         var dataSource = dataSourceBuilder.Build();
         services.AddSingleton(dataSource);
 
-        // Use the simpler AddDbContextPool overload that doesn't require service provider access
-        // This avoids "Cannot resolve scoped service from root provider" errors in .NET 9+
-        services.AddDbContextPool<NocturneDbContext>(
+        // Use AddPooledDbContextFactory for multitenant context pooling
+        services.AddPooledDbContextFactory<NocturneDbContext>(
             options =>
             {
                 options.UseNpgsql(
@@ -182,9 +198,25 @@ public static class ServiceCollectionExtensions
                 }
 
                 options.EnableServiceProviderCaching();
+                options.AddInterceptors(new TenantConnectionInterceptor());
             },
             poolSize: 128
         );
+
+        // Register scoped NocturneDbContext that sets TenantId from ITenantAccessor.
+        // All existing constructor injections of NocturneDbContext continue to work.
+        // The context is returned to the pool when the scope ends.
+        services.AddScoped(sp =>
+        {
+            var factory = sp.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+            var context = factory.CreateDbContext();
+            var tenantAccessor = sp.GetService<ITenantAccessor>();
+            if (tenantAccessor?.IsResolved == true)
+            {
+                context.TenantId = tenantAccessor.TenantId;
+            }
+            return context;
+        });
 
         // Register deduplication service (required by repositories)
         services.AddScoped<IDeduplicationService, DeduplicationService>();

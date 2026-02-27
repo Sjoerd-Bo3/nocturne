@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Nocturne.Core.Models;
@@ -9,7 +10,7 @@ namespace Nocturne.Infrastructure.Data;
 
 /// <summary>
 /// Entity Framework DbContext for PostgreSQL database operations
-/// Single-tenant architecture for main Nocturne application
+/// Multitenant architecture with per-tenant global query filters
 /// </summary>
 public class NocturneDbContext : DbContext
 {
@@ -19,6 +20,13 @@ public class NocturneDbContext : DbContext
     /// <param name="options">The options for this context</param>
     public NocturneDbContext(DbContextOptions<NocturneDbContext> options)
         : base(options) { }
+
+    /// <summary>
+    /// The current tenant ID. Set per-request by the DI factory.
+    /// Referenced by global query filters for automatic tenant isolation.
+    /// With context pooling, this property is set each time the context is checked out.
+    /// </summary>
+    public Guid TenantId { get; set; }
 
     /// <summary>
     /// Gets or sets the Entries table for glucose entries
@@ -339,6 +347,18 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<TargetRangeScheduleEntity> TargetRangeSchedules { get; set; }
 
+    // Multitenancy entities
+
+    /// <summary>
+    /// Gets or sets the Tenants table for tenant isolation
+    /// </summary>
+    public DbSet<TenantEntity> Tenants { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the TenantMembers table for tenant membership
+    /// </summary>
+    public DbSet<TenantMemberEntity> TenantMembers { get; set; } = null!;
+
 
     /// <summary>
     /// Configure the database model and relationships
@@ -353,6 +373,9 @@ public class NocturneDbContext : DbContext
 
         // Configure table-specific settings
         ConfigureEntities(modelBuilder);
+
+        // Configure per-tenant global query filters
+        ConfigureTenantFilters(modelBuilder);
     }
 
     private static void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -1578,6 +1601,21 @@ public class NocturneDbContext : DbContext
             .Entity<TargetRangeScheduleEntity>()
             .HasIndex(e => e.ProfileName)
             .HasDatabaseName("ix_target_range_schedules_profile_name");
+
+        // Tenant indexes
+        modelBuilder.Entity<TenantEntity>()
+            .HasIndex(t => t.Slug)
+            .HasDatabaseName("ix_tenants_slug")
+            .IsUnique();
+
+        modelBuilder.Entity<TenantMemberEntity>()
+            .HasIndex(tm => new { tm.TenantId, tm.SubjectId })
+            .HasDatabaseName("ix_tenant_members_tenant_subject")
+            .IsUnique();
+
+        modelBuilder.Entity<TenantMemberEntity>()
+            .HasIndex(tm => tm.SubjectId)
+            .HasDatabaseName("ix_tenant_members_subject_id");
     }
 
     private static void ConfigureEntities(ModelBuilder modelBuilder)
@@ -1798,6 +1836,16 @@ public class NocturneDbContext : DbContext
         modelBuilder
             .Entity<TargetRangeScheduleEntity>()
             .Property(e => e.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+
+        // Tenant entity UUID generators
+        modelBuilder
+            .Entity<TenantEntity>()
+            .Property(t => t.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<TenantMemberEntity>()
+            .Property(tm => tm.Id)
             .HasValueGenerator<GuidV7ValueGenerator>();
 
         modelBuilder
@@ -2323,6 +2371,23 @@ public class NocturneDbContext : DbContext
                 .ValueGeneratedOnAddOrUpdate();
         });
 
+        // Configure TenantMember relationships
+        modelBuilder.Entity<TenantMemberEntity>()
+            .HasOne(tm => tm.Tenant)
+            .WithMany(t => t.Members)
+            .HasForeignKey(tm => tm.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TenantMemberEntity>()
+            .HasOne(tm => tm.Subject)
+            .WithMany()
+            .HasForeignKey(tm => tm.SubjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TenantMemberEntity>()
+            .Property(tm => tm.Role)
+            .HasConversion<string>();
+
     }
 
     /// <summary>
@@ -2355,6 +2420,32 @@ public class NocturneDbContext : DbContext
 
         foreach (var entry in ChangeTracker.Entries())
         {
+            // Enforce tenant ID on all new ITenantScoped entities
+            if (entry.State == EntityState.Added && entry.Entity is ITenantScoped tenantScoped)
+            {
+                if (tenantScoped.TenantId == Guid.Empty && TenantId != Guid.Empty)
+                {
+                    tenantScoped.TenantId = TenantId;
+                }
+                else if (tenantScoped.TenantId == Guid.Empty)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot save {entry.Entity.GetType().Name} without a TenantId. " +
+                        "Ensure tenant context is resolved before writing data.");
+                }
+            }
+
+            // Prevent cross-tenant writes
+            if (entry.State == EntityState.Modified && entry.Entity is ITenantScoped modifiedTenant)
+            {
+                if (TenantId != Guid.Empty && modifiedTenant.TenantId != TenantId)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot modify {entry.Entity.GetType().Name} belonging to tenant " +
+                        $"{modifiedTenant.TenantId} from tenant context {TenantId}.");
+                }
+            }
+
             if (entry.Entity is EntryEntity entryEntity)
             {
                 if (entry.State == EntityState.Added)
@@ -2694,6 +2785,43 @@ public class NocturneDbContext : DbContext
                 }
                 targetRangeScheduleEntity.SysUpdatedAt = utcNow;
             }
+            else if (entry.Entity is TenantEntity tenantEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    tenantEntity.SysCreatedAt = utcNow;
+                }
+                tenantEntity.SysUpdatedAt = utcNow;
+            }
+            else if (entry.Entity is TenantMemberEntity tenantMemberEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    tenantMemberEntity.SysCreatedAt = utcNow;
+                }
+                tenantMemberEntity.SysUpdatedAt = utcNow;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Applies global query filters for tenant isolation on all ITenantScoped entities.
+    /// Filters reference this.TenantId which is set per-request.
+    /// EF Core parameterizes the value, so pooled contexts work correctly.
+    /// </summary>
+    private void ConfigureTenantFilters(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!typeof(ITenantScoped).IsAssignableFrom(entityType.ClrType))
+                continue;
+
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+            var tenantIdProperty = Expression.Property(parameter, nameof(ITenantScoped.TenantId));
+            var currentTenantId = Expression.Property(Expression.Constant(this), nameof(TenantId));
+            var filter = Expression.Lambda(Expression.Equal(tenantIdProperty, currentTenantId), parameter);
+
+            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
         }
     }
 }
