@@ -1,9 +1,12 @@
 using System.Reflection;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
+using Nocturne.Infrastructure.Data;
 
 namespace Nocturne.API.Services.BackgroundServices;
 
@@ -172,118 +175,112 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Load configuration and secrets from DB before checking enabled state
-        await LoadDatabaseConfigurationAsync(stoppingToken);
-
-        if (!Config.Enabled)
-        {
-            Logger.LogInformation(
-                "{ConnectorName} connector is disabled, background service will not run",
-                ConnectorName
-            );
-            return;
-        }
-
-        if (Config.SyncIntervalMinutes <= 0)
-        {
-            Logger.LogInformation(
-                "{ConnectorName} connector is disabled (SyncIntervalMinutes <= 0), background service will not run",
-                ConnectorName
-            );
-            return;
-        }
+        // Wait briefly to let the application fully start
+        await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 
         Logger.LogInformation(
-            "{ConnectorName} connector background service started with {SyncInterval} minute intervals",
-            ConnectorName,
-            Config.SyncIntervalMinutes
-        );
+            "{ConnectorName} connector background service started",
+            ConnectorName);
 
         try
         {
-            var syncInterval = TimeSpan.FromMinutes(Config.SyncIntervalMinutes);
-
-            using var timer = new PeriodicTimer(syncInterval);
+            using var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
 
             do
             {
                 try
                 {
-                    Logger.LogDebug("Starting {ConnectorName} data sync cycle", ConnectorName);
-
-                    // Record sync attempt
-                    await UpdateHealthStateAsync(
-                        lastSyncAttempt: DateTime.UtcNow,
-                        cancellationToken: stoppingToken
-                    );
-
-                    var success = await PerformSyncAsync(stoppingToken);
-
-                    if (success)
-                    {
-                        Logger.LogInformation(
-                            "{ConnectorName} data sync completed successfully",
-                            ConnectorName
-                        );
-
-                        // Clear error state, mark as healthy
-                        await UpdateHealthStateAsync(
-                            lastSuccessfulSync: DateTime.UtcNow,
-                            isHealthy: true,
-                            lastErrorMessage: string.Empty, // Explicit clear
-                            lastErrorAt: DateTime.MinValue, // Explicit clear
-                            cancellationToken: stoppingToken
-                        );
-                    }
-                    else
-                    {
-                        Logger.LogWarning("{ConnectorName} data sync failed", ConnectorName);
-
-                        // Mark as unhealthy with generic error
-                        await UpdateHealthStateAsync(
-                            isHealthy: false,
-                            lastErrorMessage: "Sync failed after retries",
-                            lastErrorAt: DateTime.UtcNow,
-                            cancellationToken: stoppingToken
-                        );
-                    }
+                    await SyncAllTenantsAsync(stoppingToken);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    Logger.LogError(ex, "Error during {ConnectorName} data sync cycle", ConnectorName);
-
-                    // Record exception in health state
-                    await UpdateHealthStateAsync(
-                        isHealthy: false,
-                        lastErrorMessage: ex.Message.Length > 1000 ? ex.Message[..1000] : ex.Message,
-                        lastErrorAt: DateTime.UtcNow,
-                        cancellationToken: stoppingToken
-                    );
+                    Logger.LogError(ex, "Error during {ConnectorName} tenant sync cycle", ConnectorName);
                 }
             } while (await timer.WaitForNextTickAsync(stoppingToken));
         }
         catch (OperationCanceledException)
         {
-            Logger.LogInformation(
-                "{ConnectorName} connector background service cancellation requested",
-                ConnectorName
-            );
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(
-                ex,
-                "Unexpected error in {ConnectorName} connector background service",
-                ConnectorName
-            );
-            throw;
+            Logger.LogInformation("{ConnectorName} connector background service stopping", ConnectorName);
         }
         finally
         {
             Logger.LogInformation(
                 "{ConnectorName} connector background service stopped",
-                ConnectorName
-            );
+                ConnectorName);
+        }
+    }
+
+    private async Task SyncAllTenantsAsync(CancellationToken stoppingToken)
+    {
+        using var lookupScope = ServiceProvider.CreateScope();
+        var factory = lookupScope.ServiceProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+        await using var lookupContext = await factory.CreateDbContextAsync(stoppingToken);
+        var tenants = await lookupContext.Tenants.AsNoTracking()
+            .Where(t => t.IsActive)
+            .Select(t => new { t.Id, t.Slug })
+            .ToListAsync(stoppingToken);
+
+        foreach (var tenant in tenants)
+        {
+            try
+            {
+                await SyncForTenantAsync(tenant.Id, tenant.Slug, stoppingToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Logger.LogError(ex,
+                    "Error syncing {ConnectorName} for tenant {TenantSlug}",
+                    ConnectorName, tenant.Slug);
+            }
+        }
+    }
+
+    private async Task SyncForTenantAsync(Guid tenantId, string tenantSlug, CancellationToken stoppingToken)
+    {
+        using var scope = ServiceProvider.CreateScope();
+
+        // Set tenant context for this scope
+        var tenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
+        tenantAccessor.SetTenant(new TenantContext(tenantId, tenantSlug, true));
+
+        // Load tenant-specific connector configuration
+        await LoadDatabaseConfigurationAsync(stoppingToken);
+
+        if (!Config.Enabled || Config.SyncIntervalMinutes <= 0)
+            return;
+
+        Logger.LogDebug("Syncing {ConnectorName} for tenant {TenantSlug}", ConnectorName, tenantSlug);
+
+        await UpdateHealthStateAsync(
+            lastSyncAttempt: DateTime.UtcNow,
+            cancellationToken: stoppingToken);
+
+        var success = await PerformSyncAsync(stoppingToken);
+
+        if (success)
+        {
+            Logger.LogInformation(
+                "{ConnectorName} sync completed for tenant {TenantSlug}",
+                ConnectorName, tenantSlug);
+
+            await UpdateHealthStateAsync(
+                lastSuccessfulSync: DateTime.UtcNow,
+                isHealthy: true,
+                lastErrorMessage: string.Empty,
+                lastErrorAt: DateTime.MinValue,
+                cancellationToken: stoppingToken);
+        }
+        else
+        {
+            Logger.LogWarning(
+                "{ConnectorName} sync failed for tenant {TenantSlug}",
+                ConnectorName, tenantSlug);
+
+            await UpdateHealthStateAsync(
+                isHealthy: false,
+                lastErrorMessage: "Sync failed after retries",
+                lastErrorAt: DateTime.UtcNow,
+                cancellationToken: stoppingToken);
         }
     }
 
