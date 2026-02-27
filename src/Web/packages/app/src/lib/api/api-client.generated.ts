@@ -44,6 +44,7 @@ import {
   MealMatchingClient,
   MetadataClient,
   MigrationClient,
+  MyTenantsClient,
   NotificationsClient,
   NutritionClient,
   ObservationsClient,
@@ -61,6 +62,7 @@ import {
   StatusClient,
   StepCountClient,
   SystemEventsClient,
+  TenantClient,
   TimeQueryClient,
   TrackerAlertsClient,
   TrackersClient,
@@ -119,6 +121,7 @@ export class ApiClient {
   public readonly mealMatching: MealMatchingClient;
   public readonly metadata: MetadataClient;
   public readonly migration: MigrationClient;
+  public readonly myTenants: MyTenantsClient;
   public readonly notifications: NotificationsClient;
   public readonly nutrition: NutritionClient;
   public readonly observations: ObservationsClient;
@@ -136,6 +139,7 @@ export class ApiClient {
   public readonly status: StatusClient;
   public readonly stepCount: StepCountClient;
   public readonly systemEvents: SystemEventsClient;
+  public readonly tenant: TenantClient;
   public readonly timeQuery: TimeQueryClient;
   public readonly trackerAlerts: TrackerAlertsClient;
   public readonly trackers: TrackersClient;
@@ -194,6 +198,7 @@ export class ApiClient {
     this.mealMatching = new MealMatchingClient(apiBaseUrl, http);
     this.metadata = new MetadataClient(apiBaseUrl, http);
     this.migration = new MigrationClient(apiBaseUrl, http);
+    this.myTenants = new MyTenantsClient(apiBaseUrl, http);
     this.notifications = new NotificationsClient(apiBaseUrl, http);
     this.nutrition = new NutritionClient(apiBaseUrl, http);
     this.observations = new ObservationsClient(apiBaseUrl, http);
@@ -211,6 +216,7 @@ export class ApiClient {
     this.status = new StatusClient(apiBaseUrl, http);
     this.stepCount = new StepCountClient(apiBaseUrl, http);
     this.systemEvents = new SystemEventsClient(apiBaseUrl, http);
+    this.tenant = new TenantClient(apiBaseUrl, http);
     this.timeQuery = new TimeQueryClient(apiBaseUrl, http);
     this.trackerAlerts = new TrackerAlertsClient(apiBaseUrl, http);
     this.trackers = new TrackersClient(apiBaseUrl, http);

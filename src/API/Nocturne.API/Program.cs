@@ -62,6 +62,19 @@ if (File.Exists(Path.Combine(solutionRoot, "appsettings.json")))
 
 // else: Docker or other deployment - use current directory (where files are copied)
 
+var appsettingsPath = Path.Combine(configPath, "appsettings.json");
+if (!File.Exists(appsettingsPath))
+{
+    var examplePath = Path.Combine(configPath, "appsettings.example.json");
+    Console.Error.WriteLine("ERROR: appsettings.json not found.");
+    Console.Error.WriteLine($"  Expected at: {appsettingsPath}");
+    if (File.Exists(examplePath))
+        Console.Error.WriteLine($"  Copy the example file to get started: cp appsettings.example.json appsettings.json");
+    else
+        Console.Error.WriteLine("  No example file found either. Check your repository setup.");
+    Environment.Exit(1);
+}
+
 builder.Configuration.SetBasePath(configPath);
 
 // Add additional configuration

@@ -41,6 +41,7 @@
     Timer,
     Layers,
     ShieldCheck,
+    Building2,
   } from "lucide-svelte";
   import type { AuthUser } from "$lib/stores/auth-store.svelte";
 
@@ -159,6 +160,11 @@
       icon: Utensils,
     },
     {
+      title: "Tenants",
+      href: "/tenants",
+      icon: Building2,
+    },
+    {
       title: "Dev Tools",
       icon: Terminal,
       children: [
@@ -199,6 +205,11 @@
           title: "Support & Community",
           href: "/settings/support",
           icon: HeartHandshake,
+        },
+        {
+          title: "Tenant Management",
+          href: "/settings/admin/tenants",
+          icon: Building2,
         },
       ],
     },

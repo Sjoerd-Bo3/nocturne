@@ -1464,6 +1464,52 @@
         "x-remote-type": "query"
       }
     },
+    "/api/Metadata/multitenancy": {
+      "get": {
+        "tags": [
+          "Metadata"
+        ],
+        "summary": "Get multitenancy configuration for the frontend\nProvides details needed for tenant switching and display",
+        "operationId": "Metadata_GetMultitenancyInfo",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultitenancyInfo"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/me/tenants": {
+      "get": {
+        "tags": [
+          "MyTenants"
+        ],
+        "operationId": "MyTenants_GetMyTenants",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
     "/auth/providers": {
       "get": {
         "tags": [
@@ -20550,6 +20596,224 @@
         }
       }
     },
+    "/api/admin/tenants": {
+      "get": {
+        "tags": [
+          "Tenant"
+        ],
+        "operationId": "Tenant_GetAll",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "post": {
+        "tags": [
+          "Tenant"
+        ],
+        "operationId": "Tenant_Create",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTenantRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantDto"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetAll"
+        ]
+      }
+    },
+    "/api/admin/tenants/{id}": {
+      "get": {
+        "tags": [
+          "Tenant"
+        ],
+        "operationId": "Tenant_GetById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "put": {
+        "tags": [
+          "Tenant"
+        ],
+        "operationId": "Tenant_Update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTenantRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantDto"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetAll",
+          "GetById"
+        ]
+      }
+    },
+    "/api/admin/tenants/{id}/members": {
+      "post": {
+        "tags": [
+          "Tenant"
+        ],
+        "operationId": "Tenant_AddMember",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMemberRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetById"
+        ]
+      }
+    },
+    "/api/admin/tenants/{id}/members/{subjectId}": {
+      "delete": {
+        "tags": [
+          "Tenant"
+        ],
+        "operationId": "Tenant_RemoveMember",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "subjectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetById"
+        ]
+      }
+    },
     "/internal/config/{connectorName}": {
       "get": {
         "tags": [
@@ -22700,6 +22964,63 @@
           "Medium",
           "Large"
         ]
+      },
+      "MultitenancyInfo": {
+        "type": "object",
+        "description": "Multitenancy configuration exposed to the frontend",
+        "additionalProperties": false,
+        "properties": {
+          "baseDomain": {
+            "type": "string",
+            "description": "Base domain for subdomain-based tenant resolution (e.g. \"nocturnecgm.com\")",
+            "nullable": true
+          },
+          "defaultTenantSlug": {
+            "type": "string",
+            "description": "Slug of the auto-created default tenant"
+          },
+          "subdomainResolution": {
+            "type": "boolean",
+            "description": "Whether subdomain-based tenant resolution is active"
+          },
+          "currentTenantSlug": {
+            "type": "string",
+            "description": "Slug of the tenant resolved for the current request",
+            "nullable": true
+          },
+          "currentTenantId": {
+            "type": "string",
+            "description": "ID of the tenant resolved for the current request",
+            "format": "guid",
+            "nullable": true
+          }
+        }
+      },
+      "TenantDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "sysCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       },
       "OidcProviderInfo": {
         "type": "object",
@@ -38044,6 +38365,96 @@
           "query": {
             "type": "object",
             "additionalProperties": {}
+          }
+        }
+      },
+      "TenantDetailDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "sysCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TenantMemberDto"
+            }
+          }
+        }
+      },
+      "TenantMemberDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "role": {
+            "type": "string"
+          },
+          "sysCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateTenantRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "apiSecret": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateTenantRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AddMemberRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "role": {
+            "type": "string"
           }
         }
       },

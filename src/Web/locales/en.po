@@ -207,6 +207,9 @@ msgstr "Reason for this treatment"
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -284,6 +287,7 @@ msgstr "Using cached data"
 #: src/lib/components/dashboard/widgets/ConnectionStatusWidget.svelte
 #: src/lib/components/settings/DataSourceRow.svelte
 #: src/lib/components/status-pills/LoopPill.svelte
+#: src/routes/+layout.svelte
 #: src/routes/auth/forgot-password/+page.svelte
 #: src/routes/auth/register/+page.svelte
 #: src/routes/compatibility/+page.svelte
@@ -294,10 +298,12 @@ msgstr "Using cached data"
 #: src/routes/food/food-state.svelte.ts
 #: src/routes/food/food-state.svelte.ts
 #: src/routes/food/food-state.svelte.ts
+#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/[connector]/+page.svelte
 #: src/routes/settings/migration/+page.svelte
+#: src/routes/tenants/+page.svelte
 msgid "Error"
 msgstr "Error"
 
@@ -1486,6 +1492,7 @@ msgstr "Path"
 #: src/lib/components/status-pills/COBPill.svelte
 #: src/routes/compatibility/+page.svelte
 #: src/routes/meals/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 msgid "Status"
@@ -1861,6 +1868,7 @@ msgstr "Show hidden <0/>"
 #: src/routes/food/QuickPicksList.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Save"
@@ -2076,6 +2084,7 @@ msgid "Unattributed"
 msgstr "Unattributed"
 
 #: src/routes/clock/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
 msgid "Edit"
 msgstr "Edit"
@@ -5445,6 +5454,8 @@ msgstr "Audio File"
 
 #: src/lib/components/settings/CustomSoundUpload.svelte
 #: src/routes/auth/register/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Display Name"
 msgstr "Display Name"
 
@@ -8813,6 +8824,7 @@ msgid "Account Details"
 msgstr "Account Details"
 
 #: src/routes/settings/account/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Subject ID"
 msgstr "Subject ID"
 
@@ -9162,6 +9174,7 @@ msgid "Custom Permission"
 msgstr "Custom Permission"
 
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Add"
 msgstr "Add"
 
@@ -9267,6 +9280,8 @@ msgstr "<0/> Color Theme"
 msgid "Choose between Nocturne's custom theme or match the Trio iOS app"
 msgstr "Choose between Nocturne's custom theme or match the Trio iOS app"
 
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -9670,7 +9685,9 @@ msgstr "Carbs/hr"
 msgid "{0} g/hr"
 msgstr "{0} g/hr"
 
+#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/profile/+page.svelte
+#: src/routes/tenants/+page.svelte
 msgid "Default"
 msgstr "Default"
 
@@ -10627,8 +10644,10 @@ msgstr "Failed to sync food data"
 msgid "Stale"
 msgstr "Stale"
 
+#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/[connector]/+page.svelte
+#: src/routes/tenants/+page.svelte
 msgid "Inactive"
 msgstr "Inactive"
 
@@ -13284,6 +13303,7 @@ msgstr "Report generated from {0} boluses between {1} and {2}"
 
 #: src/lib/components/treatments/TreatmentsDataTable.svelte
 #: src/routes/reports/treatments/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Details"
 msgstr "Details"
 
@@ -13390,6 +13410,7 @@ msgid "<0/> BG Check"
 msgstr "<0/> BG Check"
 
 #: src/lib/components/entries/BGCheckSection.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Type"
 msgstr "Type"
 
@@ -13890,6 +13911,7 @@ msgid "Removing..."
 msgstr "Removing..."
 
 #: src/routes/meals/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Remove"
 msgstr "Remove"
 
@@ -14795,120 +14817,100 @@ msgstr "Select an option"
 msgid "No configuration required for this connector."
 msgstr "No configuration required for this connector."
 
-#: src/routes/+page.svelte
-msgid "Your Diabetes Data, <0>Your Way</0>"
-msgstr "Your Diabetes Data, <0>Your Way</0>"
+#~ msgid "Your Diabetes Data, <0>Your Way</0>"
+#~ msgstr "Your Diabetes Data, <0>Your Way</0>"
 
-#: src/routes/+page.svelte
-msgid ""
-"A modern, open-source platform for managing your glucose data with full\n"
-"Nightscout compatibility. Built by the diabetes community, for the\n"
-"diabetes community."
-msgstr ""
-"A modern, open-source platform for managing your glucose data with full\n"
-"Nightscout compatibility. Built by the diabetes community, for the\n"
-"diabetes community."
+#~ msgid ""
+#~ "A modern, open-source platform for managing your glucose data with full\n"
+#~ "Nightscout compatibility. Built by the diabetes community, for the\n"
+#~ "diabetes community."
+#~ msgstr ""
+#~ "A modern, open-source platform for managing your glucose data with full\n"
+#~ "Nightscout compatibility. Built by the diabetes community, for the\n"
+#~ "diabetes community."
 
-#: src/routes/+page.svelte
-msgid "Get Started <0/>"
-msgstr "Get Started <0/>"
+#~ msgid "Get Started <0/>"
+#~ msgstr "Get Started <0/>"
 
-#: src/routes/+page.svelte
-msgid "<0/> See it in Action"
-msgstr "<0/> See it in Action"
+#~ msgid "<0/> See it in Action"
+#~ msgstr "<0/> See it in Action"
 
-#: src/routes/+page.svelte
-msgid "Explore Features"
-msgstr "Explore Features"
+#~ msgid "Explore Features"
+#~ msgstr "Explore Features"
 
-#: src/routes/+page.svelte
-msgid "Why Choose Nocturne?"
-msgstr "Why Choose Nocturne?"
+#~ msgid "Why Choose Nocturne?"
+#~ msgstr "Why Choose Nocturne?"
 
-#: src/routes/+page.svelte
-msgid ""
-"Modern architecture meets proven reliability. Get the features you need\n"
-"without sacrificing compatibility."
-msgstr ""
-"Modern architecture meets proven reliability. Get the features you need\n"
-"without sacrificing compatibility."
+#~ msgid ""
+#~ "Modern architecture meets proven reliability. Get the features you need\n"
+#~ "without sacrificing compatibility."
+#~ msgstr ""
+#~ "Modern architecture meets proven reliability. Get the features you need\n"
+#~ "without sacrificing compatibility."
 
-#: src/routes/+page.svelte
-msgid "Nightscout Compatible"
-msgstr "Nightscout Compatible"
+#~ msgid "Nightscout Compatible"
+#~ msgstr "Nightscout Compatible"
 
-#: src/routes/+page.svelte
-msgid ""
-"Full API compatibility means your existing apps and devices work\n"
-"seamlessly. No migration headaches."
-msgstr ""
-"Full API compatibility means your existing apps and devices work\n"
-"seamlessly. No migration headaches."
+#~ msgid ""
+#~ "Full API compatibility means your existing apps and devices work\n"
+#~ "seamlessly. No migration headaches."
+#~ msgstr ""
+#~ "Full API compatibility means your existing apps and devices work\n"
+#~ "seamlessly. No migration headaches."
 
-#: src/routes/+page.svelte
 #: src/routes/features/+page.svelte
 msgid "Modern Performance"
 msgstr "Modern Performance"
 
-#: src/routes/+page.svelte
-msgid ""
-"Built on .NET 10 for blazing fast performance. Handle more data with\n"
-"less resources."
-msgstr ""
-"Built on .NET 10 for blazing fast performance. Handle more data with\n"
-"less resources."
+#~ msgid ""
+#~ "Built on .NET 10 for blazing fast performance. Handle more data with\n"
+#~ "less resources."
+#~ msgstr ""
+#~ "Built on .NET 10 for blazing fast performance. Handle more data with\n"
+#~ "less resources."
 
-#: src/routes/+page.svelte
-msgid "Self-Hosted Security"
-msgstr "Self-Hosted Security"
+#~ msgid "Self-Hosted Security"
+#~ msgstr "Self-Hosted Security"
 
-#: src/routes/+page.svelte
-msgid ""
-"Your data stays on your server. Full control over your health\n"
-"information, always."
-msgstr ""
-"Your data stays on your server. Full control over your health\n"
-"information, always."
+#~ msgid ""
+#~ "Your data stays on your server. Full control over your health\n"
+#~ "information, always."
+#~ msgstr ""
+#~ "Your data stays on your server. Full control over your health\n"
+#~ "information, always."
 
-#: src/routes/+page.svelte
-msgid "Multiple Data Sources"
-msgstr "Multiple Data Sources"
+#~ msgid "Multiple Data Sources"
+#~ msgstr "Multiple Data Sources"
 
-#: src/routes/+page.svelte
-msgid ""
-"Connect Dexcom, Libre, Glooko, and more. Bring all your data\n"
-"together in one place."
-msgstr ""
-"Connect Dexcom, Libre, Glooko, and more. Bring all your data\n"
-"together in one place."
+#~ msgid ""
+#~ "Connect Dexcom, Libre, Glooko, and more. Bring all your data\n"
+#~ "together in one place."
+#~ msgstr ""
+#~ "Connect Dexcom, Libre, Glooko, and more. Bring all your data\n"
+#~ "together in one place."
 
-#: src/routes/+page.svelte
-msgid "Real-Time Monitoring"
-msgstr "Real-Time Monitoring"
+#~ msgid "Real-Time Monitoring"
+#~ msgstr "Real-Time Monitoring"
 
-#: src/routes/+page.svelte
-msgid ""
-"Live glucose updates with WebSocket support. Stay informed with\n"
-"instant notifications."
-msgstr ""
-"Live glucose updates with WebSocket support. Stay informed with\n"
-"instant notifications."
+#~ msgid ""
+#~ "Live glucose updates with WebSocket support. Stay informed with\n"
+#~ "instant notifications."
+#~ msgstr ""
+#~ "Live glucose updates with WebSocket support. Stay informed with\n"
+#~ "instant notifications."
 
-#: src/routes/+page.svelte
-msgid "Easy Migration"
-msgstr "Easy Migration"
+#~ msgid "Easy Migration"
+#~ msgstr "Easy Migration"
 
-#: src/routes/+page.svelte
-msgid ""
-"Import your existing Nightscout data with one click. Or run both\n"
-"side-by-side to test first."
-msgstr ""
-"Import your existing Nightscout data with one click. Or run both\n"
-"side-by-side to test first."
+#~ msgid ""
+#~ "Import your existing Nightscout data with one click. Or run both\n"
+#~ "side-by-side to test first."
+#~ msgstr ""
+#~ "Import your existing Nightscout data with one click. Or run both\n"
+#~ "side-by-side to test first."
 
-#: src/routes/+page.svelte
-msgid "Get Started in Minutes"
-msgstr "Get Started in Minutes"
+#~ msgid "Get Started in Minutes"
+#~ msgstr "Get Started in Minutes"
 
 #~ msgid ""
 #~ "Our configuration wizard generates everything you need for a\n"
@@ -14917,9 +14919,8 @@ msgstr "Get Started in Minutes"
 #~ "Our configuration wizard generates everything you need for a\n"
 #~ "production-ready deployment."
 
-#: src/routes/+page.svelte
-msgid "Step 1"
-msgstr "Step 1"
+#~ msgid "Step 1"
+#~ msgstr "Step 1"
 
 #~ msgid "Configure"
 #~ msgstr "Configure"
@@ -14931,13 +14932,11 @@ msgstr "Step 1"
 #~ "Choose your setup type and configure your data sources through our\n"
 #~ "friendly wizard."
 
-#: src/routes/+page.svelte
-msgid "Step 2"
-msgstr "Step 2"
+#~ msgid "Step 2"
+#~ msgstr "Step 2"
 
-#: src/routes/+page.svelte
-msgid "Deploy"
-msgstr "Deploy"
+#~ msgid "Deploy"
+#~ msgstr "Deploy"
 
 #~ msgid ""
 #~ "Download your configuration files and deploy with Docker in one\n"
@@ -14946,39 +14945,33 @@ msgstr "Deploy"
 #~ "Download your configuration files and deploy with Docker in one\n"
 #~ "command."
 
-#: src/routes/+page.svelte
-msgid "Step 3"
-msgstr "Step 3"
+#~ msgid "Step 3"
+#~ msgstr "Step 3"
 
-#: src/routes/+page.svelte
-msgid "Monitor"
-msgstr "Monitor"
+#~ msgid "Monitor"
+#~ msgstr "Monitor"
 
-#: src/routes/+page.svelte
-msgid ""
-"Start tracking your glucose data with a modern, responsive\n"
-"interface."
-msgstr ""
-"Start tracking your glucose data with a modern, responsive\n"
-"interface."
+#~ msgid ""
+#~ "Start tracking your glucose data with a modern, responsive\n"
+#~ "interface."
+#~ msgstr ""
+#~ "Start tracking your glucose data with a modern, responsive\n"
+#~ "interface."
 
-#: src/routes/+page.svelte
-msgid "Ready to Take Control?"
-msgstr "Ready to Take Control?"
+#~ msgid "Ready to Take Control?"
+#~ msgstr "Ready to Take Control?"
 
-#: src/routes/+page.svelte
-msgid ""
-"Join the community of people managing their diabetes data on their own\n"
-"terms. Free, open source, and always will be."
-msgstr ""
-"Join the community of people managing their diabetes data on their own\n"
-"terms. Free, open source, and always will be."
+#~ msgid ""
+#~ "Join the community of people managing their diabetes data on their own\n"
+#~ "terms. Free, open source, and always will be."
+#~ msgstr ""
+#~ "Join the community of people managing their diabetes data on their own\n"
+#~ "terms. Free, open source, and always will be."
 
 #: src/routes/features/+page.svelte
 msgid "Start Configuration <0/>"
 msgstr "Start Configuration <0/>"
 
-#: src/routes/+page.svelte
 #: src/routes/features/+page.svelte
 msgid "Read the Docs"
 msgstr "Read the Docs"
@@ -16436,38 +16429,33 @@ msgstr "Example"
 msgid "See the full <0>Configuration Guide</0> for connector-specific environment variables."
 msgstr "See the full <0>Configuration Guide</0> for connector-specific environment variables."
 
-#: src/routes/+page.svelte
-msgid ""
-"Follow our step-by-step guides to deploy Nocturne on your\n"
-"preferred platform."
-msgstr ""
-"Follow our step-by-step guides to deploy Nocturne on your\n"
-"preferred platform."
+#~ msgid ""
+#~ "Follow our step-by-step guides to deploy Nocturne on your\n"
+#~ "preferred platform."
+#~ msgstr ""
+#~ "Follow our step-by-step guides to deploy Nocturne on your\n"
+#~ "preferred platform."
 
-#: src/routes/+page.svelte
 #: src/routes/docs/installation/+page.svelte
 msgid "Choose Your Platform"
 msgstr "Choose Your Platform"
 
-#: src/routes/+page.svelte
-msgid ""
-"Pick your hosting provider. We have guides for Docker Compose,\n"
-"Portainer, and more."
-msgstr ""
-"Pick your hosting provider. We have guides for Docker Compose,\n"
-"Portainer, and more."
+#~ msgid ""
+#~ "Pick your hosting provider. We have guides for Docker Compose,\n"
+#~ "Portainer, and more."
+#~ msgstr ""
+#~ "Pick your hosting provider. We have guides for Docker Compose,\n"
+#~ "Portainer, and more."
 
-#: src/routes/+page.svelte
-msgid ""
-"Follow the guide to deploy with Docker Compose. Configure\n"
-"environment variables for your setup."
-msgstr ""
-"Follow the guide to deploy with Docker Compose. Configure\n"
-"environment variables for your setup."
+#~ msgid ""
+#~ "Follow the guide to deploy with Docker Compose. Configure\n"
+#~ "environment variables for your setup."
+#~ msgstr ""
+#~ "Follow the guide to deploy with Docker Compose. Configure\n"
+#~ "environment variables for your setup."
 
-#: src/routes/+page.svelte
-msgid "Installation Guide <0/>"
-msgstr "Installation Guide <0/>"
+#~ msgid "Installation Guide <0/>"
+#~ msgstr "Installation Guide <0/>"
 
 #: src/lib/components/docs/NextSteps.svelte
 msgid "Configure your data connectors (Dexcom, LibreLinkUp, Glooko, etc.) via the admin panel"
@@ -16846,3 +16834,129 @@ msgstr "If you encounter issues, check the logs for error details:"
 #: src/routes/docs/installation/docker-compose/+page.svelte
 msgid "To start fresh, stop all services and remove volumes:"
 msgstr "To start fresh, stop all services and remove volumes:"
+
+#: src/lib/components/layout/AppSidebar.svelte
+#: src/routes/tenants/+page.svelte
+msgid "Tenants"
+msgstr "Tenants"
+
+#: src/routes/tenants/+page.svelte
+msgid "Switch between your Nocturne instances"
+msgstr "Switch between your Nocturne instances"
+
+#: src/routes/tenants/+page.svelte
+msgid "Failed to load tenants"
+msgstr "Failed to load tenants"
+
+#: src/routes/tenants/+page.svelte
+msgid "Subdomain resolution not configured"
+msgstr "Subdomain resolution not configured"
+
+#: src/routes/tenants/+page.svelte
+msgid "A base domain must be configured to enable URL-based tenant switching."
+msgstr "A base domain must be configured to enable URL-based tenant switching."
+
+#: src/routes/tenants/+page.svelte
+msgid "You are not a member of any tenants."
+msgstr "You are not a member of any tenants."
+
+#: src/routes/tenants/+page.svelte
+#: src/routes/tenants/+page.svelte
+msgid "Current"
+msgstr "Current"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/tenants/+page.svelte
+msgid "Created"
+msgstr "Created"
+
+#: src/routes/tenants/+page.svelte
+#: src/routes/tenants/+page.svelte
+msgid "Switch"
+msgstr "Switch"
+
+#: src/lib/components/layout/AppSidebar.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Tenant Management"
+msgstr "Tenant Management"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Owner"
+msgstr "Owner"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Caretaker"
+msgstr "Caretaker"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Read Only"
+msgstr "Read Only"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Could not determine the current tenant."
+msgstr "Could not determine the current tenant."
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Failed to load tenant details."
+msgstr "Failed to load tenant details."
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Manage the current tenant's details and members"
+msgstr "Manage the current tenant's details and members"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Members"
+msgstr "Members"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Standard"
+msgstr "Standard"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Slug"
+msgstr "Slug"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Users who have access to this tenant"
+msgstr "Users who have access to this tenant"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Add Member"
+msgstr "Add Member"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "No members found"
+msgstr "No members found"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Joined"
+msgstr "Joined"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Edit Tenant"
+msgstr "Edit Tenant"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Update the tenant's display name and active status."
+msgstr "Update the tenant's display name and active status."
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Add a user to this tenant."
+msgstr "Add a user to this tenant."
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Role"
+msgstr "Role"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Remove member"
+msgstr "Remove member"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Remove this member from the tenant? They will lose access to all tenant data."
+msgstr "Remove this member from the tenant? They will lose access to all tenant data."

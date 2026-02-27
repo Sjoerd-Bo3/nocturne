@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Authorization;
 
@@ -7,6 +8,7 @@ namespace Nocturne.API.Controllers;
 
 [ApiController]
 [Route("api/me/tenants")]
+[Produces("application/json")]
 [Authorize]
 public class MyTenantsController : ControllerBase
 {
@@ -18,6 +20,8 @@ public class MyTenantsController : ControllerBase
     }
 
     [HttpGet]
+    [RemoteQuery]
+    [ProducesResponseType(typeof(List<TenantDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyTenants(CancellationToken ct)
     {
         var authContext = HttpContext.Items["AuthContext"] as AuthContext;

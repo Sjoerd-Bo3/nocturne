@@ -1,8 +1,11 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Nocturne.API.Attributes;
+using Nocturne.API.Multitenancy;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Core.Constants;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Configuration;
 
@@ -160,6 +163,29 @@ public class MetadataController : ControllerBase
                 Description = "Available dashboard widget definitions for configuration",
             }
         );
+    }
+
+    /// <summary>
+    /// Get multitenancy configuration for the frontend
+    /// Provides details needed for tenant switching and display
+    /// </summary>
+    [HttpGet("multitenancy")]
+    [RemoteQuery]
+    [ProducesResponseType(typeof(MultitenancyInfo), 200)]
+    public ActionResult<MultitenancyInfo> GetMultitenancyInfo(
+        [FromServices] IOptions<MultitenancyConfiguration> config,
+        [FromServices] ITenantAccessor tenantAccessor)
+    {
+        var tenantContext = tenantAccessor.Context;
+
+        return Ok(new MultitenancyInfo
+        {
+            BaseDomain = config.Value.BaseDomain,
+            DefaultTenantSlug = config.Value.DefaultTenantSlug,
+            SubdomainResolution = !string.IsNullOrEmpty(config.Value.BaseDomain),
+            CurrentTenantSlug = tenantContext?.Slug,
+            CurrentTenantId = tenantContext?.TenantId,
+        });
     }
 
     private static WidgetDefinition[] GetAllWidgetDefinitions() =>
@@ -478,4 +504,35 @@ public class ConnectorPropertyKeysMetadata
     /// Description of the connector property keys
     /// </summary>
     public string Description { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Multitenancy configuration exposed to the frontend
+/// </summary>
+public class MultitenancyInfo
+{
+    /// <summary>
+    /// Base domain for subdomain-based tenant resolution (e.g. "nocturnecgm.com")
+    /// </summary>
+    public string? BaseDomain { get; set; }
+
+    /// <summary>
+    /// Slug of the auto-created default tenant
+    /// </summary>
+    public string DefaultTenantSlug { get; set; } = "default";
+
+    /// <summary>
+    /// Whether subdomain-based tenant resolution is active
+    /// </summary>
+    public bool SubdomainResolution { get; set; }
+
+    /// <summary>
+    /// Slug of the tenant resolved for the current request
+    /// </summary>
+    public string? CurrentTenantSlug { get; set; }
+
+    /// <summary>
+    /// ID of the tenant resolved for the current request
+    /// </summary>
+    public Guid? CurrentTenantId { get; set; }
 }

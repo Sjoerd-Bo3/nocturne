@@ -116,3 +116,19 @@ export const getWidgetDefinitions = query(async () => {
     throw error(500, 'Failed to get widget definitions');
   }
 });
+
+/** Get multitenancy configuration for the frontend
+Provides details needed for tenant switching and display */
+export const getMultitenancyInfo = query(async () => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    return await apiClient.metadata.getMultitenancyInfo();
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in metadata.getMultitenancyInfo:', err);
+    throw error(500, 'Failed to get multitenancy info');
+  }
+});
