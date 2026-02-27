@@ -1177,8 +1177,8 @@ public class NocturneDbContext : DbContext
         // ConnectorConfiguration indexes - optimized for connector lookups
         modelBuilder
             .Entity<ConnectorConfigurationEntity>()
-            .HasIndex(c => c.ConnectorName)
-            .HasDatabaseName("ix_connector_configurations_connector_name")
+            .HasIndex(c => new { c.ConnectorName, c.TenantId })
+            .HasDatabaseName("ix_connector_configurations_connector_name_tenant")
             .IsUnique();
 
         // InAppNotification indexes - optimized for user notification queries
