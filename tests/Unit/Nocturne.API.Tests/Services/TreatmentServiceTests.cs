@@ -9,6 +9,7 @@ using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Data.Abstractions;
@@ -74,6 +75,7 @@ public class TreatmentServiceTests
             _mockTreatmentDecomposer.Object,
             _mockProjectionService.Object,
             _mockTempBasalRepository.Object,
+            new Mock<ITenantAccessor>().Object,
             _mockLogger.Object
         );
     }

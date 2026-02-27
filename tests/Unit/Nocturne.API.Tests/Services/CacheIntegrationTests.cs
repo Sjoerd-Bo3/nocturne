@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Authorization;
@@ -74,6 +75,7 @@ public class CacheIntegrationTests
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
             _mockProjectionService.Object,
+            new Mock<ITenantAccessor>().Object,
             _mockEntryLogger.Object
         );
 
@@ -137,6 +139,7 @@ public class CacheIntegrationTests
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
             _mockProjectionService.Object,
+            new Mock<ITenantAccessor>().Object,
             _mockEntryLogger.Object
         );
 
@@ -209,6 +212,7 @@ public class CacheIntegrationTests
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
             _mockProjectionService.Object,
+            new Mock<ITenantAccessor>().Object,
             _mockEntryLogger.Object
         );
 

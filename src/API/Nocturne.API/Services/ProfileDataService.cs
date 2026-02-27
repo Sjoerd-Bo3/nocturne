@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
@@ -18,15 +19,17 @@ public class ProfileDataService : IProfileDataService
     private readonly ISignalRBroadcastService _broadcastService;
     private readonly ICacheService _cacheService;
     private readonly CacheConfiguration _cacheConfig;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<ProfileDataService> _logger;
     private const string CollectionName = "profiles";
-    private const string DefaultTenantId = "default"; // TODO: Replace with actual tenant context
+    private string TenantSlug => _tenantAccessor.Context?.Slug ?? "default";
 
     public ProfileDataService(
         IPostgreSqlService postgreSqlService,
         ISignalRBroadcastService broadcastService,
         ICacheService cacheService,
         IOptions<CacheConfiguration> cacheConfig,
+        ITenantAccessor tenantAccessor,
         ILogger<ProfileDataService> logger
     )
     {
@@ -34,6 +37,7 @@ public class ProfileDataService : IProfileDataService
         _broadcastService = broadcastService;
         _cacheService = cacheService;
         _cacheConfig = cacheConfig.Value;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
 
@@ -91,7 +95,7 @@ public class ProfileDataService : IProfileDataService
         CancellationToken cancellationToken = default
     )
     {
-        var cacheKey = CacheKeyBuilder.BuildProfileAtTimestampKey(DefaultTenantId, timestamp);
+        var cacheKey = CacheKeyBuilder.BuildProfileAtTimestampKey(TenantSlug, timestamp);
         var cacheTtl = TimeSpan.FromSeconds(
             CacheConstants.Defaults.ProfileTimestampExpirationSeconds
         );
@@ -150,7 +154,7 @@ public class ProfileDataService : IProfileDataService
 
             // Invalidate all profile timestamp caches since profiles were created
             var profileTimestampPattern = CacheKeyBuilder.BuildProfileTimestampPattern(
-                DefaultTenantId
+                TenantSlug
             );
             await _cacheService.RemoveByPatternAsync(profileTimestampPattern, cancellationToken);
             _logger.LogDebug(
@@ -214,7 +218,7 @@ public class ProfileDataService : IProfileDataService
 
                 // Invalidate all profile timestamp caches since a profile was updated
                 var profileTimestampPattern = CacheKeyBuilder.BuildProfileTimestampPattern(
-                    DefaultTenantId
+                    TenantSlug
                 );
                 await _cacheService.RemoveByPatternAsync(
                     profileTimestampPattern,
@@ -279,7 +283,7 @@ public class ProfileDataService : IProfileDataService
 
                 // Invalidate all profile timestamp caches since a profile was deleted
                 var profileTimestampPattern = CacheKeyBuilder.BuildProfileTimestampPattern(
-                    DefaultTenantId
+                    TenantSlug
                 );
                 await _cacheService.RemoveByPatternAsync(
                     profileTimestampPattern,

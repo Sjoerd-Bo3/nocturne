@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
@@ -23,9 +24,10 @@ public class EntryService : IEntryService
     private readonly IDemoModeService _demoModeService;
     private readonly IEntryDecomposer _entryDecomposer;
     private readonly IV4ToLegacyProjectionService _projectionService;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<EntryService> _logger;
     private const string CollectionName = "entries";
-    private const string DefaultTenantId = "default"; // TODO: Replace with actual tenant context
+    private string TenantSlug => _tenantAccessor.Context?.Slug ?? "default";
 
     public EntryService(
         IPostgreSqlService postgreSqlService,
@@ -35,6 +37,7 @@ public class EntryService : IEntryService
         IDemoModeService demoModeService,
         IEntryDecomposer entryDecomposer,
         IV4ToLegacyProjectionService projectionService,
+        ITenantAccessor tenantAccessor,
         ILogger<EntryService> logger
     )
     {
@@ -45,6 +48,7 @@ public class EntryService : IEntryService
         _demoModeService = demoModeService;
         _entryDecomposer = entryDecomposer;
         _projectionService = projectionService;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
 
@@ -71,7 +75,7 @@ public class EntryService : IEntryService
         {
             var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
             var cacheKey =
-                CacheKeyBuilder.BuildRecentEntriesKey(DefaultTenantId, actualCount, find)
+                CacheKeyBuilder.BuildRecentEntriesKey(TenantSlug, actualCount, find)
                 + demoSuffix;
             var cacheTtl = TimeSpan.FromSeconds(
                 CacheConstants.Defaults.RecentEntriesExpirationSeconds
@@ -156,7 +160,7 @@ public class EntryService : IEntryService
         {
             var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
             var cacheKey =
-                CacheKeyBuilder.BuildRecentEntriesKey(DefaultTenantId, count, type) + demoSuffix;
+                CacheKeyBuilder.BuildRecentEntriesKey(TenantSlug, count, type) + demoSuffix;
             var cacheTtl = TimeSpan.FromSeconds(
                 CacheConstants.Defaults.RecentEntriesExpirationSeconds
             );
@@ -453,7 +457,7 @@ public class EntryService : IEntryService
             );
 
             // Invalidate all recent entries caches using pattern matching
-            var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(DefaultTenantId);
+            var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(TenantSlug);
             await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
             _logger.LogInformation(
                 "Cache INVALIDATION: recent entries pattern '{Pattern}' after creating {Count} entries",
@@ -544,7 +548,7 @@ public class EntryService : IEntryService
 
                 // Invalidate all recent entries caches using pattern matching
                 var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(
-                    DefaultTenantId
+                    TenantSlug
                 );
                 await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
                 _logger.LogInformation(
@@ -630,7 +634,7 @@ public class EntryService : IEntryService
 
                 // Invalidate all recent entries caches using pattern matching
                 var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(
-                    DefaultTenantId
+                    TenantSlug
                 );
                 await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
                 _logger.LogInformation(
@@ -697,7 +701,7 @@ public class EntryService : IEntryService
 
                 // Invalidate all recent entries caches using pattern matching
                 var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(
-                    DefaultTenantId
+                    TenantSlug
                 );
                 await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
                 _logger.LogDebug(

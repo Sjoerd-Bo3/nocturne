@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
@@ -28,9 +29,10 @@ public class TreatmentService : ITreatmentService
     private readonly ITreatmentDecomposer _treatmentDecomposer;
     private readonly IV4ToLegacyProjectionService _projectionService;
     private readonly ITempBasalRepository _tempBasalRepository;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<TreatmentService> _logger;
     private const string CollectionName = "treatments";
-    private const string DefaultTenantId = "default"; // TODO: Replace with actual tenant context
+    private string TenantSlug => _tenantAccessor.Context?.Slug ?? "default";
 
     public TreatmentService(
         IPostgreSqlService postgreSqlService,
@@ -42,6 +44,7 @@ public class TreatmentService : ITreatmentService
         ITreatmentDecomposer treatmentDecomposer,
         IV4ToLegacyProjectionService projectionService,
         ITempBasalRepository tempBasalRepository,
+        ITenantAccessor tenantAccessor,
         ILogger<TreatmentService> logger
     )
     {
@@ -54,6 +57,7 @@ public class TreatmentService : ITreatmentService
         _treatmentDecomposer = treatmentDecomposer;
         _projectionService = projectionService;
         _tempBasalRepository = tempBasalRepository;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
 
@@ -107,7 +111,7 @@ public class TreatmentService : ITreatmentService
             var hours = DetermineTimeRangeHours(actualCount);
             var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
             var cacheKey =
-                CacheKeyBuilder.BuildRecentTreatmentsKey(DefaultTenantId, hours, actualCount)
+                CacheKeyBuilder.BuildRecentTreatmentsKey(TenantSlug, hours, actualCount)
                 + demoSuffix;
             var cacheTtl = TimeSpan.FromSeconds(
                 CacheConstants.Defaults.RecentTreatmentsExpirationSeconds
@@ -180,7 +184,7 @@ public class TreatmentService : ITreatmentService
             var hours = DetermineTimeRangeHours(count);
             var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
             var cacheKey =
-                CacheKeyBuilder.BuildRecentTreatmentsKey(DefaultTenantId, hours, count)
+                CacheKeyBuilder.BuildRecentTreatmentsKey(TenantSlug, hours, count)
                 + demoSuffix;
             var cacheTtl = TimeSpan.FromSeconds(
                 CacheConstants.Defaults.RecentTreatmentsExpirationSeconds
@@ -580,7 +584,7 @@ public class TreatmentService : ITreatmentService
             try
             {
                 var recentTreatmentsPattern = CacheKeyBuilder.BuildRecentTreatmentsPattern(
-                    DefaultTenantId
+                    TenantSlug
                 );
                 await _cacheService.RemoveByPatternAsync(
                     recentTreatmentsPattern,
@@ -715,7 +719,7 @@ public class TreatmentService : ITreatmentService
             try
             {
                 var recentTreatmentsPattern = CacheKeyBuilder.BuildRecentTreatmentsPattern(
-                    DefaultTenantId
+                    TenantSlug
                 );
                 await _cacheService.RemoveByPatternAsync(
                     recentTreatmentsPattern,
@@ -874,7 +878,7 @@ public class TreatmentService : ITreatmentService
         try
         {
             var recentTreatmentsPattern = CacheKeyBuilder.BuildRecentTreatmentsPattern(
-                DefaultTenantId
+                TenantSlug
             );
             await _cacheService.RemoveByPatternAsync(recentTreatmentsPattern, cancellationToken);
         }
@@ -961,7 +965,7 @@ public class TreatmentService : ITreatmentService
             try
             {
                 var recentTreatmentsPattern = CacheKeyBuilder.BuildRecentTreatmentsPattern(
-                    DefaultTenantId
+                    TenantSlug
                 );
                 await _cacheService.RemoveByPatternAsync(
                     recentTreatmentsPattern,
@@ -1021,7 +1025,7 @@ public class TreatmentService : ITreatmentService
             try
             {
                 var recentTreatmentsPattern = CacheKeyBuilder.BuildRecentTreatmentsPattern(
-                    DefaultTenantId
+                    TenantSlug
                 );
                 await _cacheService.RemoveByPatternAsync(
                     recentTreatmentsPattern,

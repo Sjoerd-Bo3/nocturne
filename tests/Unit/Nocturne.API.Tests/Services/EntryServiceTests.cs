@@ -6,6 +6,7 @@ using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Data.Abstractions;
@@ -54,6 +55,7 @@ public class EntryServiceTests
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
             _mockProjectionService.Object,
+            new Mock<ITenantAccessor>().Object,
             _mockLogger.Object
         );
     }

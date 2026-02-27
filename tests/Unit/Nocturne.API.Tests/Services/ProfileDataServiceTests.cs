@@ -4,6 +4,7 @@ using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Data.Abstractions;
@@ -38,6 +39,7 @@ public class ProfileDataServiceTests
             _mockSignalRBroadcastService.Object,
             _mockCacheService.Object,
             _mockCacheConfig.Object,
+            new Mock<ITenantAccessor>().Object,
             _mockLogger.Object
         );
     }
