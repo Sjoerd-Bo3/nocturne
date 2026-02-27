@@ -1,6 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using Nocturne.Connectors.Core.Utilities;
 using Nocturne.Core.Constants;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Authorization;
+using Nocturne.Infrastructure.Data;
 
 namespace Nocturne.API.Middleware.Handlers;
 
@@ -43,44 +46,56 @@ public class ApiSecretHandler : IAuthHandler
     }
 
     /// <inheritdoc />
-    public Task<AuthResult> AuthenticateAsync(HttpContext context)
+    public async Task<AuthResult> AuthenticateAsync(HttpContext context)
     {
-        // Check for api-secret header
         var apiSecretHeader = context.Request.Headers["api-secret"].FirstOrDefault();
-
         if (string.IsNullOrEmpty(apiSecretHeader))
+            return AuthResult.Skip();
+
+        // Try per-tenant API secret first
+        if (context.Items["TenantContext"] is TenantContext tenantCtx)
         {
-            // No api-secret header, skip to next handler
-            return Task.FromResult(AuthResult.Skip());
+            var factory = context.RequestServices.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+            await using var dbContext = await factory.CreateDbContextAsync();
+            var tenant = await dbContext.Tenants.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == tenantCtx.TenantId);
+
+            if (tenant?.ApiSecretHash != null &&
+                string.Equals(apiSecretHeader, tenant.ApiSecretHash, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogDebug("Per-tenant API secret authentication successful for tenant {Slug}", tenantCtx.Slug);
+                return AuthResult.Success(new AuthContext
+                {
+                    IsAuthenticated = true,
+                    AuthType = AuthType.ApiSecret,
+                    SubjectName = "admin",
+                    Permissions = ["*"],
+                    Roles = ["admin"],
+                });
+            }
         }
 
-        // API secret not configured on server
+        // Fall back to global API secret (backward compat for self-hosted)
         if (string.IsNullOrEmpty(_apiSecretHash))
         {
-            _logger.LogWarning(
-                "api-secret header provided but API_SECRET not configured on server"
-            );
-            return Task.FromResult(AuthResult.Failure("API secret not configured"));
+            _logger.LogWarning("api-secret header provided but no API secret configured");
+            return AuthResult.Failure("API secret not configured");
         }
 
-        // Validate the hash (case-insensitive comparison)
         if (!string.Equals(apiSecretHeader, _apiSecretHash, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Invalid API secret provided");
-            return Task.FromResult(AuthResult.Failure("Invalid API secret"));
+            return AuthResult.Failure("Invalid API secret");
         }
 
-        // API secret authentication successful - grant admin permissions
-        var authContext = new AuthContext
+        _logger.LogDebug("Global API secret authentication successful");
+        return AuthResult.Success(new AuthContext
         {
             IsAuthenticated = true,
             AuthType = AuthType.ApiSecret,
             SubjectName = "admin",
             Permissions = ["*"],
             Roles = ["admin"],
-        };
-
-        _logger.LogDebug("API secret authentication successful");
-        return Task.FromResult(AuthResult.Success(authContext));
+        });
     }
 }

@@ -1,4 +1,5 @@
 using Nocturne.API.Middleware.Handlers;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Authorization;
 
@@ -46,6 +47,12 @@ public class AuthenticationMiddleware
             // Set authentication context in HttpContext items
             context.Items["AuthContext"] = authContext;
 
+            // Set tenant ID from the resolved tenant context
+            if (context.Items["TenantContext"] is TenantContext tenantCtx)
+            {
+                authContext.TenantId = tenantCtx.TenantId;
+            }
+
             // Build and set permission trie for fast permission checking
             var permissionTrie = new PermissionTrie();
             if (authContext.IsAuthenticated && authContext.Permissions.Count > 0)
@@ -90,6 +97,30 @@ public class AuthenticationMiddleware
         {
             _logger.LogError(ex, "Error during authentication");
             SetUnauthenticated(context);
+        }
+
+        // Verify authenticated subject is a member of the resolved tenant
+        var resolvedAuth = context.Items["AuthContext"] as AuthContext;
+        if (resolvedAuth is { IsAuthenticated: true, SubjectId: not null, TenantId: not null })
+        {
+            // Skip membership check for ApiSecret auth (grants admin on the resolved tenant)
+            if (resolvedAuth.AuthType != AuthType.ApiSecret)
+            {
+                var tenantMemberService = context.RequestServices.GetRequiredService<ITenantMemberService>();
+                var isMember = await tenantMemberService.IsMemberAsync(
+                    resolvedAuth.SubjectId!.Value,
+                    resolvedAuth.TenantId!.Value);
+
+                if (!isMember)
+                {
+                    _logger.LogWarning(
+                        "Subject {SubjectId} is not a member of tenant {TenantId}",
+                        resolvedAuth.SubjectId, resolvedAuth.TenantId);
+                    SetUnauthenticated(context);
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    return;
+                }
+            }
         }
 
         await _next(context);

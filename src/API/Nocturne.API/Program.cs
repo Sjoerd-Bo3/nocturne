@@ -272,6 +272,7 @@ builder.Services.AddHostedService<AuthorizationSeedService>();
 builder.Services.Configure<MultitenancyConfiguration>(
     builder.Configuration.GetSection(MultitenancyConfiguration.SectionName));
 builder.Services.AddScoped<ITenantAccessor, HttpContextTenantAccessor>();
+builder.Services.AddScoped<ITenantMemberService, TenantMemberService>();
 
 // Register authentication handlers for the middleware pipeline
 // Handlers are executed in priority order (lowest first)

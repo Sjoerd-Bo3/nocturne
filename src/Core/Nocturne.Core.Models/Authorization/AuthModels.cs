@@ -65,6 +65,11 @@ public class AuthContext
     public Guid? SubjectId { get; set; }
 
     /// <summary>
+    /// Resolved tenant ID for this request
+    /// </summary>
+    public Guid? TenantId { get; set; }
+
+    /// <summary>
     /// Subject name for display
     /// </summary>
     public string? SubjectName { get; set; }
