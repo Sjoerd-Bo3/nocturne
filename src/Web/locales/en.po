@@ -9645,7 +9645,9 @@ msgstr "<0/> Configure Data Sources"
 #~ "profile is shown first."
 
 #. placeholder {0}: new Date(face.createdAt).toLocaleDateString()
+#. placeholder {0}: tenant.sysCreatedAt ? new Date(tenant.sysCreatedAt).toLocaleDateString() : ""
 #: src/routes/clock/+page.svelte
+#: src/routes/tenants/+page.svelte
 msgid "Created {0}"
 msgstr "Created {0}"
 
@@ -16861,19 +16863,15 @@ msgid "You are not a member of any tenants."
 msgstr "You are not a member of any tenants."
 
 #: src/routes/tenants/+page.svelte
-#: src/routes/tenants/+page.svelte
 msgid "Current"
 msgstr "Current"
 
 #: src/routes/settings/admin/tenants/+page.svelte
-#: src/routes/tenants/+page.svelte
 msgid "Created"
 msgstr "Created"
 
-#: src/routes/tenants/+page.svelte
-#: src/routes/tenants/+page.svelte
-msgid "Switch"
-msgstr "Switch"
+#~ msgid "Switch"
+#~ msgstr "Switch"
 
 #: src/lib/components/layout/AppSidebar.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
@@ -16960,3 +16958,12 @@ msgstr "Remove member"
 #: src/routes/settings/admin/tenants/+page.svelte
 msgid "Remove this member from the tenant? They will lose access to all tenant data."
 msgstr "Remove this member from the tenant? They will lose access to all tenant data."
+
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Current"
+msgstr "<0/> Current"
+
+#: src/routes/tenants/+page.svelte
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Switch"
+msgstr "<0/> Switch"

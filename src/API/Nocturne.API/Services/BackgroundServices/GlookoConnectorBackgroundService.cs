@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Connectors.Glooko.Models;
 using Nocturne.Connectors.Glooko.Configurations;
 using Nocturne.Connectors.Glooko.Services;
@@ -20,11 +19,9 @@ public class GlookoConnectorBackgroundService
 
     protected override string ConnectorName => "Glooko";
 
-    protected override async Task<bool> PerformSyncAsync(CancellationToken cancellationToken)
+    protected override async Task<bool> PerformSyncAsync(IServiceProvider scopeProvider, CancellationToken cancellationToken)
     {
-        using var scope = ServiceProvider.CreateScope();
-        var connectorService = scope.ServiceProvider.GetRequiredService<GlookoConnectorService>();
-
+        var connectorService = scopeProvider.GetRequiredService<GlookoConnectorService>();
         return await connectorService.SyncDataAsync(Config, cancellationToken);
     }
 }

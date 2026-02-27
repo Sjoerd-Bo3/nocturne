@@ -113,12 +113,25 @@ public class AuthenticationMiddleware
 
                 if (!isMember)
                 {
-                    _logger.LogWarning(
-                        "Subject {SubjectId} is not a member of tenant {TenantId}",
-                        resolvedAuth.SubjectId, resolvedAuth.TenantId);
-                    SetUnauthenticated(context);
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    return;
+                    // Auto-enroll authenticated users into the tenant they're accessing
+                    var tenantService = context.RequestServices.GetRequiredService<ITenantService>();
+                    try
+                    {
+                        await tenantService.AddMemberAsync(
+                            resolvedAuth.TenantId!.Value,
+                            resolvedAuth.SubjectId!.Value,
+                            "member");
+                        _logger.LogInformation(
+                            "Auto-enrolled subject {SubjectId} into tenant {TenantId}",
+                            resolvedAuth.SubjectId, resolvedAuth.TenantId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex,
+                            "Failed to auto-enroll subject {SubjectId} into tenant {TenantId}",
+                            resolvedAuth.SubjectId, resolvedAuth.TenantId);
+                        SetUnauthenticated(context);
+                    }
                 }
             }
         }

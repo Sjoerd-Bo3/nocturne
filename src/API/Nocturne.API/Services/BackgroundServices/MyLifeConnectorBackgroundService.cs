@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Nocturne.Connectors.MyLife.Configurations;
 using Nocturne.Connectors.MyLife.Services;
 
@@ -19,11 +17,9 @@ public class MyLifeConnectorBackgroundService : ConnectorBackgroundService<MyLif
 
     protected override string ConnectorName => "MyLife";
 
-    protected override async Task<bool> PerformSyncAsync(CancellationToken cancellationToken)
+    protected override async Task<bool> PerformSyncAsync(IServiceProvider scopeProvider, CancellationToken cancellationToken)
     {
-        using var scope = ServiceProvider.CreateScope();
-        var connectorService = scope.ServiceProvider.GetRequiredService<MyLifeConnectorService>();
-
+        var connectorService = scopeProvider.GetRequiredService<MyLifeConnectorService>();
         return await connectorService.SyncDataAsync(Config, cancellationToken);
     }
 }

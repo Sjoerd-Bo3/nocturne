@@ -24050,6 +24050,8 @@ export interface MultitenancyInfo {
     currentTenantSlug?: string | undefined;
     /** ID of the tenant resolved for the current request */
     currentTenantId?: string | undefined;
+    /** Display name of the tenant resolved for the current request */
+    currentTenantDisplayName?: string | undefined;
 }
 
 export interface TenantDto {

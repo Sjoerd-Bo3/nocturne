@@ -198,7 +198,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
     /// </summary>
     private DateTime CalculateSinceFromTimestamp(DateTime? latestTimestamp, string dataType)
     {
-        if (latestTimestamp.HasValue)
+        if (latestTimestamp.HasValue && latestTimestamp.Value > DateTime.MinValue.AddMinutes(10))
         {
             // Add a small overlap to ensure we don't miss any data due to clock drift
             var sinceWithOverlap = latestTimestamp.Value.AddMinutes(-5);

@@ -2844,8 +2844,10 @@ msgstr ""
 
 #. placeholder {0}: new Date(face.createdAt).toLocaleDateString()
 #. placeholder {0}: formatDateDetailed(selectedProfile.created_at)
+#. placeholder {0}: tenant.sysCreatedAt ? new Date(tenant.sysCreatedAt).toLocaleDateString() : ""
 #: src/routes/clock/+page.svelte
 #: src/routes/profile/+page.svelte
+#: src/routes/tenants/+page.svelte
 msgid "Created {0}"
 msgstr ""
 
@@ -17740,16 +17742,13 @@ msgid "You are not a member of any tenants."
 msgstr ""
 
 #: src/routes/tenants/+page.svelte
-#: src/routes/tenants/+page.svelte
 msgid "Current"
 msgstr ""
 
 #: src/routes/settings/admin/tenants/+page.svelte
-#: src/routes/tenants/+page.svelte
 msgid "Created"
 msgstr ""
 
-#: src/routes/tenants/+page.svelte
 #: src/routes/tenants/+page.svelte
 msgid "Switch"
 msgstr ""
@@ -17833,4 +17832,13 @@ msgstr ""
 
 #: src/routes/settings/admin/tenants/+page.svelte
 msgid "Remove this member from the tenant? They will lose access to all tenant data."
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Current"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Switch"
 msgstr ""

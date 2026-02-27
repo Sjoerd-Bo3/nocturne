@@ -38,23 +38,25 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
     protected abstract string ConnectorName { get; }
 
     /// <summary>
-    /// Performs a single sync operation using the connector service
+    /// Performs a single sync operation using the connector service.
+    /// Services should be resolved from the provided <paramref name="scopeProvider"/>
+    /// which has the tenant context already set.
     /// </summary>
+    /// <param name="scopeProvider">Tenant-scoped service provider</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>True if sync was successful, false otherwise</returns>
-    protected abstract Task<bool> PerformSyncAsync(CancellationToken cancellationToken);
+    protected abstract Task<bool> PerformSyncAsync(IServiceProvider scopeProvider, CancellationToken cancellationToken);
 
     /// <summary>
     /// Loads runtime configuration and secrets from the database and applies them
     /// to the Config singleton. This ensures DB-stored values (including encrypted
     /// passwords) are available to the connector at runtime.
     /// </summary>
-    protected async Task LoadDatabaseConfigurationAsync(CancellationToken ct)
+    protected async Task LoadDatabaseConfigurationAsync(IServiceProvider scopeProvider, CancellationToken ct)
     {
         try
         {
-            using var scope = ServiceProvider.CreateScope();
-            var configService = scope.ServiceProvider.GetRequiredService<IConnectorConfigurationService>();
+            var configService = scopeProvider.GetRequiredService<IConnectorConfigurationService>();
 
             // Load runtime configuration from DB
             var dbConfig = await configService.GetConfigurationAsync(ConnectorName, ct);
@@ -139,7 +141,8 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
     /// <summary>
     /// Updates the health state for this connector in the database
     /// </summary>
-    protected async Task UpdateHealthStateAsync(
+    private async Task UpdateHealthStateAsync(
+        IServiceProvider scopeProvider,
         DateTime? lastSyncAttempt = null,
         DateTime? lastSuccessfulSync = null,
         string? lastErrorMessage = null,
@@ -150,8 +153,7 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
     {
         try
         {
-            using var scope = ServiceProvider.CreateScope();
-            var configService = scope.ServiceProvider.GetRequiredService<IConnectorConfigurationService>();
+            var configService = scopeProvider.GetRequiredService<IConnectorConfigurationService>();
 
             await configService.UpdateHealthStateAsync(
                 ConnectorName,
@@ -217,14 +219,14 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
         await using var lookupContext = await factory.CreateDbContextAsync(stoppingToken);
         var tenants = await lookupContext.Tenants.AsNoTracking()
             .Where(t => t.IsActive)
-            .Select(t => new { t.Id, t.Slug })
+            .Select(t => new { t.Id, t.Slug, t.DisplayName })
             .ToListAsync(stoppingToken);
 
         foreach (var tenant in tenants)
         {
             try
             {
-                await SyncForTenantAsync(tenant.Id, tenant.Slug, stoppingToken);
+                await SyncForTenantAsync(tenant.Id, tenant.Slug, tenant.DisplayName, stoppingToken);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -235,16 +237,16 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
         }
     }
 
-    private async Task SyncForTenantAsync(Guid tenantId, string tenantSlug, CancellationToken stoppingToken)
+    private async Task SyncForTenantAsync(Guid tenantId, string tenantSlug, string displayName, CancellationToken stoppingToken)
     {
         using var scope = ServiceProvider.CreateScope();
 
         // Set tenant context for this scope
         var tenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
-        tenantAccessor.SetTenant(new TenantContext(tenantId, tenantSlug, true));
+        tenantAccessor.SetTenant(new TenantContext(tenantId, tenantSlug, displayName, true));
 
         // Load tenant-specific connector configuration
-        await LoadDatabaseConfigurationAsync(stoppingToken);
+        await LoadDatabaseConfigurationAsync(scope.ServiceProvider, stoppingToken);
 
         if (!Config.Enabled || Config.SyncIntervalMinutes <= 0)
             return;
@@ -252,10 +254,11 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
         Logger.LogDebug("Syncing {ConnectorName} for tenant {TenantSlug}", ConnectorName, tenantSlug);
 
         await UpdateHealthStateAsync(
+            scope.ServiceProvider,
             lastSyncAttempt: DateTime.UtcNow,
             cancellationToken: stoppingToken);
 
-        var success = await PerformSyncAsync(stoppingToken);
+        var success = await PerformSyncAsync(scope.ServiceProvider, stoppingToken);
 
         if (success)
         {
@@ -264,6 +267,7 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
                 ConnectorName, tenantSlug);
 
             await UpdateHealthStateAsync(
+                scope.ServiceProvider,
                 lastSuccessfulSync: DateTime.UtcNow,
                 isHealthy: true,
                 lastErrorMessage: string.Empty,
@@ -277,6 +281,7 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
                 ConnectorName, tenantSlug);
 
             await UpdateHealthStateAsync(
+                scope.ServiceProvider,
                 isHealthy: false,
                 lastErrorMessage: "Sync failed after retries",
                 lastErrorAt: DateTime.UtcNow,

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Connectors.Tidepool.Configurations;
 using Nocturne.Connectors.Tidepool.Services;
 
@@ -18,11 +17,9 @@ public class TidepoolConnectorBackgroundService : ConnectorBackgroundService<Tid
 
     protected override string ConnectorName => "Tidepool";
 
-    protected override async Task<bool> PerformSyncAsync(CancellationToken cancellationToken)
+    protected override async Task<bool> PerformSyncAsync(IServiceProvider scopeProvider, CancellationToken cancellationToken)
     {
-        using var scope = ServiceProvider.CreateScope();
-        var connectorService = scope.ServiceProvider.GetRequiredService<TidepoolConnectorService>();
-
+        var connectorService = scopeProvider.GetRequiredService<TidepoolConnectorService>();
         return await connectorService.SyncDataAsync(Config, cancellationToken);
     }
 }

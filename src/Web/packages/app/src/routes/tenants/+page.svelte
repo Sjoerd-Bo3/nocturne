@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { _ } from "svelte-i18n";
   import {
     Card,
     CardContent,
@@ -54,9 +53,9 @@
   <div class="flex items-center gap-3">
     <Building2 class="h-8 w-8 text-primary" />
     <div>
-      <h1 class="text-2xl font-bold">{$_("Tenants")}</h1>
+      <h1 class="text-2xl font-bold">Tenants</h1>
       <p class="text-muted-foreground">
-        {$_("Switch between your Nocturne instances")}
+        Switch between your Nocturne instances
       </p>
     </div>
   </div>
@@ -68,16 +67,16 @@
   {:else if queryError}
     <Alert.Root variant="destructive">
       <AlertTriangle class="h-4 w-4" />
-      <Alert.Title>{$_("Error")}</Alert.Title>
-      <Alert.Description>{$_("Failed to load tenants")}</Alert.Description>
+      <Alert.Title>Error</Alert.Title>
+      <Alert.Description>Failed to load tenants</Alert.Description>
     </Alert.Root>
   {:else}
     {#if mtInfo && !mtInfo.subdomainResolution}
       <Alert.Root>
         <Info class="h-4 w-4" />
-        <Alert.Title>{$_("Subdomain resolution not configured")}</Alert.Title>
+        <Alert.Title>Subdomain resolution not configured</Alert.Title>
         <Alert.Description>
-          {$_("A base domain must be configured to enable URL-based tenant switching.")}
+          A base domain must be configured to enable URL-based tenant switching.
         </Alert.Description>
       </Alert.Root>
     {/if}
@@ -86,7 +85,7 @@
       <Card>
         <CardContent class="flex flex-col items-center justify-center py-12 text-center">
           <Building2 class="h-12 w-12 text-muted-foreground/50 mb-4" />
-          <p class="text-muted-foreground">{$_("You are not a member of any tenants.")}</p>
+          <p class="text-muted-foreground">You are not a member of any tenants.</p>
         </CardContent>
       </Card>
     {:else}
@@ -103,13 +102,13 @@
                 </div>
                 <div class="flex gap-1.5">
                   {#if current}
-                    <Badge variant="default">{$_("Current")}</Badge>
+                    <Badge variant="default">Current</Badge>
                   {/if}
                   {#if tenant.isDefault}
-                    <Badge variant="secondary">{$_("Default")}</Badge>
+                    <Badge variant="secondary">Default</Badge>
                   {/if}
                   {#if !tenant.isActive}
-                    <Badge variant="destructive">{$_("Inactive")}</Badge>
+                    <Badge variant="destructive">Inactive</Badge>
                   {/if}
                 </div>
               </div>
@@ -117,12 +116,12 @@
             <CardContent>
               <div class="flex items-center justify-between">
                 <span class="text-xs text-muted-foreground">
-                  {$_("Created")} {tenant.sysCreatedAt ? new Date(tenant.sysCreatedAt).toLocaleDateString() : ""}
+                  Created {tenant.sysCreatedAt ? new Date(tenant.sysCreatedAt).toLocaleDateString() : ""}
                 </span>
                 {#if current}
                   <Button variant="outline" size="sm" disabled>
                     <Check class="mr-2 h-4 w-4" />
-                    {$_("Current")}
+                    Current
                   </Button>
                 {:else if url}
                   <Button
@@ -132,12 +131,12 @@
                     onclick={() => switchToTenant(tenant.slug ?? "")}
                   >
                     <ArrowRightLeft class="mr-2 h-4 w-4" />
-                    {$_("Switch")}
+                    Switch
                   </Button>
                 {:else}
                   <Button variant="outline" size="sm" disabled>
                     <ArrowRightLeft class="mr-2 h-4 w-4" />
-                    {$_("Switch")}
+                    Switch
                   </Button>
                 {/if}
               </div>

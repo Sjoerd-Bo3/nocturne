@@ -185,6 +185,7 @@ public class MetadataController : ControllerBase
             SubdomainResolution = !string.IsNullOrEmpty(config.Value.BaseDomain),
             CurrentTenantSlug = tenantContext?.Slug,
             CurrentTenantId = tenantContext?.TenantId,
+            CurrentTenantDisplayName = tenantContext?.DisplayName,
         });
     }
 
@@ -535,4 +536,9 @@ public class MultitenancyInfo
     /// ID of the tenant resolved for the current request
     /// </summary>
     public Guid? CurrentTenantId { get; set; }
+
+    /// <summary>
+    /// Display name of the tenant resolved for the current request
+    /// </summary>
+    public string? CurrentTenantDisplayName { get; set; }
 }

@@ -13,11 +13,14 @@
     ArrowLeft,
   } from "lucide-svelte";
   import { registerForm, getLocalAuthConfig } from "../auth.remote";
+  import { getMultitenancyInfo } from "$lib/api/generated/metadatas.generated.remote";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
 
-  // Query for local auth configuration
+  // Query for local auth configuration and tenant info
   const localAuthQuery = getLocalAuthConfig();
+  const tenantQuery = getMultitenancyInfo();
+  const tenantName = $derived(tenantQuery.current?.currentTenantDisplayName);
 
   // Get return URL from query params
   const returnUrl = $derived(page.url.searchParams.get("returnUrl") || "/");
@@ -51,7 +54,7 @@
 </script>
 
 <svelte:head>
-  <title>Sign Up - Nocturne</title>
+  <title>Sign Up{tenantName ? ` - ${tenantName}` : ' - Nocturne'}</title>
 </svelte:head>
 
 <svelte:boundary>
@@ -121,6 +124,8 @@
               {:else}
                 Your account has been created. You can now sign in.
               {/if}
+            {:else if tenantName}
+              Sign up to join {tenantName}
             {:else}
               Enter your information to create your Nocturne account
             {/if}

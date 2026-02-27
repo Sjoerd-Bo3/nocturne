@@ -22993,6 +22993,11 @@
             "description": "ID of the tenant resolved for the current request",
             "format": "guid",
             "nullable": true
+          },
+          "currentTenantDisplayName": {
+            "type": "string",
+            "description": "Display name of the tenant resolved for the current request",
+            "nullable": true
           }
         }
       },

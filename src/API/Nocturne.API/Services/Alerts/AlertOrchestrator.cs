@@ -12,6 +12,12 @@ public class AlertOrchestrator(
 {
     private const string DefaultUserId = "00000000-0000-0000-0000-000000000001";
 
+    /// <summary>
+    /// Maximum age of a glucose reading (in minutes) for it to be eligible for alert evaluation.
+    /// Readings older than this are historical backfill and should not generate alerts.
+    /// </summary>
+    private const int MaxReadingAgeMinutes = 10;
+
     public async Task EvaluateAndProcessSensorGlucoseAsync(
         IEnumerable<SensorGlucose> readings,
         string? userId,
@@ -19,9 +25,21 @@ public class AlertOrchestrator(
     )
     {
         var resolvedUserId = string.IsNullOrWhiteSpace(userId) ? DefaultUserId : userId;
+        var cutoff = DateTimeOffset.UtcNow.AddMinutes(-MaxReadingAgeMinutes).ToUnixTimeMilliseconds();
 
         foreach (var reading in readings)
         {
+            // Skip stale/historical readings — only evaluate recent data for alerts
+            if (reading.Mills < cutoff)
+            {
+                logger.LogDebug(
+                    "Skipping alert evaluation for stale SensorGlucose {ReadingId} (timestamp {Mills} is older than {MaxAge} minutes)",
+                    reading.Id,
+                    reading.Mills,
+                    MaxReadingAgeMinutes
+                );
+                continue;
+            }
             try
             {
                 var alertEvents = await rulesEngine.EvaluateGlucoseData(

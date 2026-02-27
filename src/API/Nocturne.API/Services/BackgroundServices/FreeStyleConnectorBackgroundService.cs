@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Connectors.FreeStyle.Configurations;
 using Nocturne.Connectors.FreeStyle.Services;
 
@@ -19,11 +18,9 @@ public class FreeStyleConnectorBackgroundService
 
     protected override string ConnectorName => "FreeStyle LibreLinkUp";
 
-    protected override async Task<bool> PerformSyncAsync(CancellationToken cancellationToken)
+    protected override async Task<bool> PerformSyncAsync(IServiceProvider scopeProvider, CancellationToken cancellationToken)
     {
-        using var scope = ServiceProvider.CreateScope();
-        var connectorService = scope.ServiceProvider.GetRequiredService<LibreConnectorService>();
-
+        var connectorService = scopeProvider.GetRequiredService<LibreConnectorService>();
         return await connectorService.SyncDataAsync(Config, cancellationToken);
     }
 }

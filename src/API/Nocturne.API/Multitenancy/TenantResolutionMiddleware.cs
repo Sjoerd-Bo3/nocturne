@@ -88,7 +88,7 @@ public class TenantResolutionMiddleware
         if (tenant == null)
             return null;
 
-        var tenantContext = new TenantContext(tenant.Id, tenant.Slug, tenant.IsActive);
+        var tenantContext = new TenantContext(tenant.Id, tenant.Slug, tenant.DisplayName, tenant.IsActive);
         _cache.Set(cacheKey, tenantContext, CacheDuration);
         return tenantContext;
     }

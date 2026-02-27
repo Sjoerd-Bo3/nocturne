@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { _ } from "svelte-i18n";
   import {
     Card,
     CardContent,
@@ -162,9 +161,9 @@
   <div class="flex items-center gap-3">
     <Building2 class="h-8 w-8 text-primary" />
     <div>
-      <h1 class="text-2xl font-bold">{$_("Tenant Management")}</h1>
+      <h1 class="text-2xl font-bold">Tenant Management</h1>
       <p class="text-muted-foreground">
-        {$_("Manage the current tenant's details and members")}
+        Manage the current tenant's details and members
       </p>
     </div>
   </div>
@@ -176,21 +175,23 @@
   {:else if loadError}
     <Alert.Root variant="destructive">
       <AlertTriangle class="h-4 w-4" />
-      <Alert.Title>{$_("Error")}</Alert.Title>
-      <Alert.Description>{$_(loadError)}</Alert.Description>
+      <Alert.Title>Error</Alert.Title>
+      <Alert.Description>{loadError}</Alert.Description>
     </Alert.Root>
   {:else if tenant}
     <Tabs.Root bind:value={activeTab}>
       <Tabs.List>
         <Tabs.Trigger value="details">
           <Building2 class="mr-2 h-4 w-4" />
-          {$_("Details")}
+          Details
         </Tabs.Trigger>
         <Tabs.Trigger value="members">
           <Users class="mr-2 h-4 w-4" />
-          {$_("Members")}
+          Members
           {#if tenant.members?.length}
-            <Badge variant="secondary" class="ml-2">{tenant.members.length}</Badge>
+            <Badge variant="secondary" class="ml-2">
+              {tenant.members.length}
+            </Badge>
           {/if}
         </Tabs.Trigger>
       </Tabs.List>
@@ -205,39 +206,41 @@
             </div>
             <Button variant="outline" size="sm" onclick={openEditDialog}>
               <Pencil class="mr-2 h-4 w-4" />
-              {$_("Edit")}
+              Edit
             </Button>
           </CardHeader>
           <CardContent class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <p class="text-sm font-medium text-muted-foreground">{$_("Status")}</p>
+                <p class="text-sm font-medium text-muted-foreground">Status</p>
                 <div class="mt-1">
                   {#if tenant.isActive}
-                    <Badge variant="default">{$_("Active")}</Badge>
+                    <Badge variant="default">Active</Badge>
                   {:else}
-                    <Badge variant="destructive">{$_("Inactive")}</Badge>
+                    <Badge variant="destructive">Inactive</Badge>
                   {/if}
                 </div>
               </div>
               <div>
-                <p class="text-sm font-medium text-muted-foreground">{$_("Type")}</p>
+                <p class="text-sm font-medium text-muted-foreground">Type</p>
                 <div class="mt-1">
                   {#if tenant.isDefault}
-                    <Badge variant="secondary">{$_("Default")}</Badge>
+                    <Badge variant="secondary">Default</Badge>
                   {:else}
-                    <Badge variant="outline">{$_("Standard")}</Badge>
+                    <Badge variant="outline">Standard</Badge>
                   {/if}
                 </div>
               </div>
               <div>
-                <p class="text-sm font-medium text-muted-foreground">{$_("Slug")}</p>
+                <p class="text-sm font-medium text-muted-foreground">Slug</p>
                 <p class="mt-1 font-mono text-sm">{tenant.slug}</p>
               </div>
               <div>
-                <p class="text-sm font-medium text-muted-foreground">{$_("Created")}</p>
+                <p class="text-sm font-medium text-muted-foreground">Created</p>
                 <p class="mt-1 text-sm">
-                  {tenant.sysCreatedAt ? new Date(tenant.sysCreatedAt).toLocaleDateString() : "—"}
+                  {tenant.sysCreatedAt
+                    ? new Date(tenant.sysCreatedAt).toLocaleDateString()
+                    : "—"}
                 </p>
               </div>
             </div>
@@ -250,37 +253,46 @@
         <Card>
           <CardHeader class="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>{$_("Members")}</CardTitle>
+              <CardTitle>Members</CardTitle>
               <CardDescription>
-                {$_("Users who have access to this tenant")}
+                Users who have access to this tenant
               </CardDescription>
             </div>
             <Button variant="default" size="sm" onclick={openAddMemberDialog}>
               <Plus class="mr-2 h-4 w-4" />
-              {$_("Add Member")}
+              Add Member
             </Button>
           </CardHeader>
           <CardContent>
             {#if !tenant.members?.length}
-              <div class="flex flex-col items-center justify-center py-8 text-center">
+              <div
+                class="flex flex-col items-center justify-center py-8 text-center"
+              >
                 <Users class="h-12 w-12 text-muted-foreground/50 mb-4" />
-                <p class="text-muted-foreground">{$_("No members found")}</p>
+                <p class="text-muted-foreground">No members found</p>
               </div>
             {:else}
               <div class="space-y-3">
                 {#each tenant.members as member (member.subjectId)}
-                  <div class="flex items-center justify-between rounded-lg border p-3">
+                  <div
+                    class="flex items-center justify-between rounded-lg border p-3"
+                  >
                     <div class="flex items-center gap-3">
                       <Shield class="h-5 w-5 text-muted-foreground" />
                       <div>
                         <p class="font-mono text-sm">{member.subjectId}</p>
                         <p class="text-xs text-muted-foreground">
-                          {$_("Joined")} {member.sysCreatedAt ? new Date(member.sysCreatedAt).toLocaleDateString() : ""}
+                          Joined {member.sysCreatedAt
+                            ? new Date(member.sysCreatedAt).toLocaleDateString()
+                            : ""}
                         </p>
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
-                      <Badge variant={roleVariants[member.role ?? "readonly"] ?? "outline"}>
+                      <Badge
+                        variant={roleVariants[member.role ?? "readonly"] ??
+                          "outline"}
+                      >
                         {roleLabels[member.role ?? "readonly"] ?? member.role}
                       </Badge>
                       <Button
@@ -306,28 +318,28 @@
 <Dialog.Root bind:open={isEditDialogOpen}>
   <Dialog.Content class="max-w-md">
     <Dialog.Header>
-      <Dialog.Title>{$_("Edit Tenant")}</Dialog.Title>
+      <Dialog.Title>Edit Tenan</Dialog.Title>
       <Dialog.Description>
-        {$_("Update the tenant's display name and active status.")}
+        Update the tenant's display name and active status
       </Dialog.Description>
     </Dialog.Header>
     <div class="space-y-4 py-4">
       <div class="space-y-2">
-        <Label for="edit-display-name">{$_("Display Name")}</Label>
+        <Label for="edit-display-name">Display Nam</Label>
         <Input
           id="edit-display-name"
           bind:value={editDisplayName}
-          placeholder={$_("Display Name")}
+          placeholder="Display Name"
         />
       </div>
       <div class="flex items-center justify-between">
-        <Label for="edit-active">{$_("Active")}</Label>
+        <Label for="edit-active">Activ</Label>
         <Switch id="edit-active" bind:checked={editIsActive} />
       </div>
     </div>
     <Dialog.Footer>
       <Button variant="outline" onclick={() => (isEditDialogOpen = false)}>
-        {$_("Cancel")}
+        Cance
       </Button>
       <Button
         onclick={saveEdit}
@@ -336,7 +348,7 @@
         {#if editSaving}
           <Loader2 class="mr-2 h-4 w-4 animate-spin" />
         {/if}
-        {$_("Save")}
+        Sav
       </Button>
     </Dialog.Footer>
   </Dialog.Content>
@@ -346,14 +358,12 @@
 <Dialog.Root bind:open={isAddMemberDialogOpen}>
   <Dialog.Content class="max-w-md">
     <Dialog.Header>
-      <Dialog.Title>{$_("Add Member")}</Dialog.Title>
-      <Dialog.Description>
-        {$_("Add a user to this tenant.")}
-      </Dialog.Description>
+      <Dialog.Title>Add Membe</Dialog.Title>
+      <Dialog.Description>Add a user to this tenant</Dialog.Description>
     </Dialog.Header>
     <div class="space-y-4 py-4">
       <div class="space-y-2">
-        <Label for="member-subject-id">{$_("Subject ID")}</Label>
+        <Label for="member-subject-id">Subject I</Label>
         <Input
           id="member-subject-id"
           bind:value={newMemberSubjectId}
@@ -362,20 +372,22 @@
         />
       </div>
       <div class="space-y-2">
-        <Label>{$_("Role")}</Label>
+        <Label>Rol</Label>
         <Select.Root type="single" bind:value={newMemberRole}>
-          <Select.Trigger>{roleLabels[newMemberRole] ?? newMemberRole}</Select.Trigger>
+          <Select.Trigger>
+            {roleLabels[newMemberRole] ?? newMemberRole}
+          </Select.Trigger>
           <Select.Content>
-            <Select.Item value="owner" label={$_("Owner")} />
-            <Select.Item value="caretaker" label={$_("Caretaker")} />
-            <Select.Item value="readonly" label={$_("Read Only")} />
+            <Select.Item value="owner" label="Owner" />
+            <Select.Item value="caretaker" label="Caretaker" />
+            <Select.Item value="readonly" label="Read Only" />
           </Select.Content>
         </Select.Root>
       </div>
     </div>
     <Dialog.Footer>
       <Button variant="outline" onclick={() => (isAddMemberDialogOpen = false)}>
-        {$_("Cancel")}
+        Cance
       </Button>
       <Button
         onclick={addMember}
@@ -384,7 +396,7 @@
         {#if addMemberSaving}
           <Loader2 class="mr-2 h-4 w-4 animate-spin" />
         {/if}
-        {$_("Add")}
+        Ad
       </Button>
     </Dialog.Footer>
   </Dialog.Content>
@@ -394,21 +406,19 @@
 <AlertDialog.Root bind:open={isRemoveDialogOpen}>
   <AlertDialog.Content>
     <AlertDialog.Header>
-      <AlertDialog.Title>{$_("Remove member")}</AlertDialog.Title>
+      <AlertDialog.Title>Remove membe</AlertDialog.Title>
       <AlertDialog.Description>
-        {$_("Remove this member from the tenant? They will lose access to all tenant data.")}
+        Remove this member from the tenant? They will lose access to all tenant
+        data
       </AlertDialog.Description>
     </AlertDialog.Header>
     <AlertDialog.Footer>
-      <AlertDialog.Cancel>{$_("Cancel")}</AlertDialog.Cancel>
-      <AlertDialog.Action
-        onclick={removeMember}
-        disabled={removeSaving}
-      >
+      <AlertDialog.Cancel>Cance</AlertDialog.Cancel>
+      <AlertDialog.Action onclick={removeMember} disabled={removeSaving}>
         {#if removeSaving}
           <Loader2 class="mr-2 h-4 w-4 animate-spin" />
         {/if}
-        {$_("Remove")}
+        Remov
       </AlertDialog.Action>
     </AlertDialog.Footer>
   </AlertDialog.Content>

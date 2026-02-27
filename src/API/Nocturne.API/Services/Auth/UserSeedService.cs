@@ -1,7 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Core.Models.Authorization;
+using Nocturne.Infrastructure.Data;
 
 namespace Nocturne.API.Services.Auth;
 
@@ -73,6 +76,11 @@ public class UserSeedService : IHostedService
             if (existingUser != null)
             {
                 _logger.LogDebug("User account already exists for {Email}", userConfig.Email);
+                // Ensure existing user is a member of the default tenant
+                if (existingUser.SubjectId.HasValue)
+                {
+                    await AddToDefaultTenantAsync(scope.ServiceProvider, existingUser.SubjectId.Value, userConfig);
+                }
                 return;
             }
 
@@ -148,11 +156,50 @@ public class UserSeedService : IHostedService
                 _logger.LogDebug("Assigned role '{RoleName}' to {Email}", roleName, userConfig.Email);
             }
 
+            // Add user to the default tenant
+            await AddToDefaultTenantAsync(scope.ServiceProvider, result.SubjectId.Value, userConfig);
+
             _logger.LogInformation("Successfully seeded user account for {Email}", userConfig.Email);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error seeding user account for {Email}", userConfig.Email);
+        }
+    }
+
+    private async Task AddToDefaultTenantAsync(
+        IServiceProvider services, Guid subjectId, SeedUserOptions userConfig)
+    {
+        try
+        {
+            var factory = services.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+            await using var context = await factory.CreateDbContextAsync();
+
+            var defaultTenant = await context.Tenants.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.IsDefault);
+
+            if (defaultTenant == null)
+            {
+                _logger.LogWarning("No default tenant found, skipping tenant membership for {Email}", userConfig.Email);
+                return;
+            }
+
+            var tenantService = services.GetRequiredService<ITenantService>();
+            var memberService = services.GetRequiredService<ITenantMemberService>();
+
+            if (await memberService.IsMemberAsync(subjectId, defaultTenant.Id))
+            {
+                _logger.LogDebug("User {Email} is already a member of default tenant", userConfig.Email);
+                return;
+            }
+
+            var role = userConfig.IsAdmin ? "admin" : "member";
+            await tenantService.AddMemberAsync(defaultTenant.Id, subjectId, role);
+            _logger.LogInformation("Added {Email} to default tenant as {Role}", userConfig.Email, role);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add {Email} to default tenant", userConfig.Email);
         }
     }
 

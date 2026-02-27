@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Connectors.Nightscout.Configurations;
 using Nocturne.Connectors.Nightscout.Services;
 
@@ -15,11 +14,9 @@ public class NightscoutConnectorBackgroundService : ConnectorBackgroundService<N
 
     protected override string ConnectorName => "Nightscout";
 
-    protected override async Task<bool> PerformSyncAsync(CancellationToken cancellationToken)
+    protected override async Task<bool> PerformSyncAsync(IServiceProvider scopeProvider, CancellationToken cancellationToken)
     {
-        using var scope = ServiceProvider.CreateScope();
-        var connectorService = scope.ServiceProvider.GetRequiredService<NightscoutConnectorService>();
-
+        var connectorService = scopeProvider.GetRequiredService<NightscoutConnectorService>();
         return await connectorService.SyncDataAsync(Config, cancellationToken);
     }
 }

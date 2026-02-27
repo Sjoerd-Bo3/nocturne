@@ -69,9 +69,22 @@ export function trigger(event: AlarmEvent, profiles: AlarmProfileConfiguration[]
 }
 
 export function dismiss() {
+	const defaultMinutes = activeAlarm?.profile.snooze.defaultMinutes ?? 15;
 	stopAlarmSound();
 	stopFlashing();
 	activeAlarm = null;
+
+	// Apply the default snooze period so continuous alarm events
+	// from the server don't immediately re-trigger the alarm.
+	isSnoozed = true;
+	snoozeUntil = Date.now() + defaultMinutes * 60 * 1000;
+
+	if (snoozeTimer) clearTimeout(snoozeTimer);
+	snoozeTimer = setTimeout(() => {
+		isSnoozed = false;
+		snoozeUntil = null;
+		snoozeTimer = null;
+	}, defaultMinutes * 60 * 1000);
 }
 
 export function snooze(minutes: number) {
