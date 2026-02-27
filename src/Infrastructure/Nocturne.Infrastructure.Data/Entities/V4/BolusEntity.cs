@@ -138,4 +138,7 @@ public class BolusEntity
 
     [Column("bolus_calculation_id")]
     public Guid? BolusCalculationId { get; set; }
+
+    [Column("aps_snapshot_id")]
+    public Guid? ApsSnapshotId { get; set; }
 }

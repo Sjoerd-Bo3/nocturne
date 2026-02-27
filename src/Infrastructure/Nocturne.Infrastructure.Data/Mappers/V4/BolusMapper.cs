@@ -38,6 +38,7 @@ public static class BolusMapper
             PumpDeviceId = model.PumpDeviceId,
             PumpRecordId = model.PumpRecordId,
             BolusCalculationId = model.BolusCalculationId,
+            ApsSnapshotId = model.ApsSnapshotId,
         };
     }
 
@@ -71,6 +72,7 @@ public static class BolusMapper
             PumpDeviceId = entity.PumpDeviceId,
             PumpRecordId = entity.PumpRecordId,
             BolusCalculationId = entity.BolusCalculationId,
+            ApsSnapshotId = entity.ApsSnapshotId,
         };
     }
 
@@ -100,5 +102,6 @@ public static class BolusMapper
         entity.PumpDeviceId = model.PumpDeviceId;
         entity.PumpRecordId = model.PumpRecordId;
         entity.BolusCalculationId = model.BolusCalculationId;
+        entity.ApsSnapshotId = model.ApsSnapshotId;
     }
 }

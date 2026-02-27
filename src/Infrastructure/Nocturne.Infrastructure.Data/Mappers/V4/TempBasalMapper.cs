@@ -31,6 +31,7 @@ public static class TempBasalMapper
             Origin = model.Origin.ToString(),
             PumpDeviceId = model.PumpDeviceId,
             PumpRecordId = model.PumpRecordId,
+            ApsSnapshotId = model.ApsSnapshotId,
         };
     }
 
@@ -59,6 +60,7 @@ public static class TempBasalMapper
                 : TempBasalOrigin.Inferred,
             PumpDeviceId = entity.PumpDeviceId,
             PumpRecordId = entity.PumpRecordId,
+            ApsSnapshotId = entity.ApsSnapshotId,
         };
     }
 
@@ -81,5 +83,6 @@ public static class TempBasalMapper
         entity.Origin = model.Origin.ToString();
         entity.PumpDeviceId = model.PumpDeviceId;
         entity.PumpRecordId = model.PumpRecordId;
+        entity.ApsSnapshotId = model.ApsSnapshotId;
     }
 }

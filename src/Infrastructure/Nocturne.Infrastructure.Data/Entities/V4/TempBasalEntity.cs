@@ -111,4 +111,7 @@ public class TempBasalEntity
     [Column("pump_record_id")]
     [MaxLength(256)]
     public string? PumpRecordId { get; set; }
+
+    [Column("aps_snapshot_id")]
+    public Guid? ApsSnapshotId { get; set; }
 }

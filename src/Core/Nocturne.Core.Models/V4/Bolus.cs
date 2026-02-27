@@ -119,4 +119,9 @@ public class Bolus : IV4Record
     /// FK to the BolusCalculation that produced this bolus (null for manual/correction/SMB boluses)
     /// </summary>
     public Guid? BolusCalculationId { get; set; }
+
+    /// <summary>
+    /// FK to the ApsSnapshot whose algorithm decision triggered this bolus (for SMBs/auto-boluses)
+    /// </summary>
+    public Guid? ApsSnapshotId { get; set; }
 }

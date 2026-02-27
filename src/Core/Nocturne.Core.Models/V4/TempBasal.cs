@@ -85,4 +85,9 @@ public class TempBasal
     /// Pump-specific record identifier for deduplication
     /// </summary>
     public string? PumpRecordId { get; set; }
+
+    /// <summary>
+    /// FK to the ApsSnapshot whose algorithm decision set this temp basal
+    /// </summary>
+    public Guid? ApsSnapshotId { get; set; }
 }
