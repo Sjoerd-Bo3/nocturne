@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
@@ -14,6 +15,7 @@ namespace Nocturne.API.Controllers.V2;
 [Produces("application/json")]
 [Tags("V2 Summary")]
 [ClientPropertyName("v2Summary")]
+[Authorize]
 public class SummaryController : ControllerBase
 {
     private readonly ISummaryService _summaryService;
@@ -38,6 +40,7 @@ public class SummaryController : ControllerBase
     /// <response code="400">If the hours parameter is invalid</response>
     /// <response code="500">If there was an internal server error</response>
     [HttpGet]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(SummaryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

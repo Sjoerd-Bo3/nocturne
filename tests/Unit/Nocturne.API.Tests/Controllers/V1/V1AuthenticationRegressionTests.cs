@@ -1,0 +1,313 @@
+using System.Net;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Nocturne.API.Tests.Infrastructure;
+using Xunit;
+
+namespace Nocturne.API.Tests.Controllers.V1;
+
+/// <summary>
+/// Regression tests that verify Nightscout V1 API authentication compatibility.
+///
+/// Original Nightscout V1 API contract:
+///   - All GET (read) endpoints are completely public (no authentication)
+///   - All POST/PUT/DELETE (write) endpoints require the api-secret header
+///   - The api-secret header contains a SHA1 hash of the configured secret
+///
+/// These tests ensure [Authorize] / [AllowAnonymous] attributes on V1 controllers
+/// never regress and break compatibility with existing Nightscout clients.
+/// </summary>
+[Trait("Category", "Unit")]
+public class V1AuthenticationRegressionTests : IClassFixture<AuthenticationTestFactory>, IDisposable
+{
+    private const string TestApiSecret = "test-api-secret-for-v1-regression";
+    private readonly AuthenticationTestFactory _factory;
+    private readonly HttpClient _anonymousClient;
+    private readonly HttpClient _authenticatedClient;
+
+    public V1AuthenticationRegressionTests(AuthenticationTestFactory factory)
+    {
+        _factory = factory;
+
+        // Client with no authentication (anonymous)
+        _anonymousClient = _factory
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureAppConfiguration((_, config) =>
+                {
+                    config.Sources.Insert(0,
+                        new Microsoft.Extensions.Configuration.Memory.MemoryConfigurationSource
+                        {
+                            InitialData = new[]
+                            {
+                                new KeyValuePair<string, string?>("API_SECRET", TestApiSecret),
+                            },
+                        });
+                });
+            })
+            .CreateClient();
+
+        // Client with valid api-secret authentication
+        _authenticatedClient = _factory
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureAppConfiguration((_, config) =>
+                {
+                    config.Sources.Insert(0,
+                        new Microsoft.Extensions.Configuration.Memory.MemoryConfigurationSource
+                        {
+                            InitialData = new[]
+                            {
+                                new KeyValuePair<string, string?>("API_SECRET", TestApiSecret),
+                            },
+                        });
+                });
+            })
+            .CreateClient();
+        _authenticatedClient.DefaultRequestHeaders.Add("api-secret", ComputeSha1Hash(TestApiSecret));
+    }
+
+    public void Dispose()
+    {
+        _anonymousClient.Dispose();
+        _authenticatedClient.Dispose();
+    }
+
+    // ====================================================================
+    // GET endpoints: must be publicly accessible (AllowAnonymous)
+    // ====================================================================
+
+    [Theory]
+    [InlineData("/api/v1/entries")]
+    [InlineData("/api/v1/entries/current")]
+    [InlineData("/api/v1/entries/sgv")]
+    [InlineData("/api/v1/treatments")]
+    [InlineData("/api/v1/devicestatus")]
+    [InlineData("/api/v1/food")]
+    [InlineData("/api/v1/profile")]
+    [InlineData("/api/v1/profile/current")]
+    [InlineData("/api/v1/activity")]
+    [InlineData("/api/v1/adminnotifies")]
+    public async Task V1_GetEndpoints_ShouldBeAccessibleWithoutAuthentication(string endpoint)
+    {
+        // Act
+        var response = await _anonymousClient.GetAsync(endpoint);
+
+        // Assert - should NOT be 401 or 403 (may be 200, 204, 304, etc.)
+        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    // ====================================================================
+    // POST endpoints: must reject unauthenticated requests
+    // ====================================================================
+
+    [Theory]
+    [InlineData("/api/v1/entries")]
+    [InlineData("/api/v1/treatments")]
+    [InlineData("/api/v1/devicestatus")]
+    [InlineData("/api/v1/food")]
+    [InlineData("/api/v1/profile")]
+    [InlineData("/api/v1/activity")]
+    [InlineData("/api/v1/notifications/ack")]
+    [InlineData("/api/v1/adminnotifies")]
+    [InlineData("/api/v1/notifications/pushover")]
+    public async Task V1_PostEndpoints_ShouldRejectUnauthenticatedRequests(string endpoint)
+    {
+        // Arrange
+        var content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await _anonymousClient.PostAsync(endpoint, content);
+
+        // Assert - unauthenticated write should be blocked
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/entries/abc123abc123abc123abc123")]
+    [InlineData("/api/v1/treatments/test-id")]
+    [InlineData("/api/v1/food/test-id")]
+    [InlineData("/api/v1/activity/test-id")]
+    public async Task V1_PutEndpoints_ShouldRejectUnauthenticatedRequests(string endpoint)
+    {
+        // Arrange
+        var content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await _anonymousClient.PutAsync(endpoint, content);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/entries/abc123abc123abc123abc123")]
+    [InlineData("/api/v1/treatments/test-id")]
+    [InlineData("/api/v1/devicestatus/test-id")]
+    [InlineData("/api/v1/food/test-id")]
+    [InlineData("/api/v1/activity/test-id")]
+    [InlineData("/api/v1/adminnotifies")]
+    public async Task V1_DeleteEndpoints_ShouldRejectUnauthenticatedRequests(string endpoint)
+    {
+        // Arrange & Act
+        var response = await _anonymousClient.DeleteAsync(endpoint);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    // ====================================================================
+    // POST/PUT/DELETE with api-secret: must be accepted (Nightscout compat)
+    // ====================================================================
+
+    [Theory]
+    [InlineData("/api/v1/entries")]
+    [InlineData("/api/v1/treatments")]
+    [InlineData("/api/v1/devicestatus")]
+    [InlineData("/api/v1/food")]
+    [InlineData("/api/v1/profile")]
+    [InlineData("/api/v1/activity")]
+    public async Task V1_PostEndpoints_ShouldAcceptValidApiSecret(string endpoint)
+    {
+        // Arrange - send minimal valid JSON body
+        var content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await _authenticatedClient.PostAsync(endpoint, content);
+
+        // Assert - should NOT be 401 or 403 (may be 400 due to invalid body, 200, etc.)
+        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/entries/abc123abc123abc123abc123")]
+    [InlineData("/api/v1/treatments/test-id")]
+    [InlineData("/api/v1/food/test-id")]
+    [InlineData("/api/v1/activity/test-id")]
+    public async Task V1_PutEndpoints_ShouldAcceptValidApiSecret(string endpoint)
+    {
+        // Arrange
+        var content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await _authenticatedClient.PutAsync(endpoint, content);
+
+        // Assert - should NOT be 401 or 403 (may be 400/404 for non-existent records)
+        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/entries/abc123abc123abc123abc123")]
+    [InlineData("/api/v1/treatments/test-id")]
+    [InlineData("/api/v1/devicestatus/test-id")]
+    [InlineData("/api/v1/food/test-id")]
+    [InlineData("/api/v1/activity/test-id")]
+    public async Task V1_DeleteEndpoints_ShouldAcceptValidApiSecret(string endpoint)
+    {
+        // Act
+        var response = await _authenticatedClient.DeleteAsync(endpoint);
+
+        // Assert - should NOT be 401 or 403 (may be 404 for non-existent records)
+        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    // ====================================================================
+    // Webhook endpoint: Pushover callback must be accessible without auth
+    // (Pushover sends callbacks to our webhook - it doesn't have our api-secret)
+    // ====================================================================
+
+    [Fact]
+    public async Task V1_PushoverCallback_ShouldBeAccessibleWithoutAuthentication()
+    {
+        // Arrange - Pushover sends a JSON callback to this webhook endpoint
+        var content = new StringContent(
+            """{"receipt":"test-receipt","acknowledged":1,"acknowledged_at":1234567890}""",
+            Encoding.UTF8,
+            "application/json");
+
+        // Act
+        var response = await _anonymousClient.PostAsync("/api/v1/notifications/pushovercallback", content);
+
+        // Assert - webhook should not require authentication
+        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    // ====================================================================
+    // Bulk delete endpoints with api-secret
+    // ====================================================================
+
+    [Theory]
+    [InlineData("/api/v1/entries?find[type]=sgv")]
+    [InlineData("/api/v1/treatments?find[created_at][$gte]=2024-01-01")]
+    [InlineData("/api/v1/devicestatus?find[device]=test")]
+    public async Task V1_BulkDeleteEndpoints_ShouldRejectUnauthenticatedRequests(string endpoint)
+    {
+        // Act
+        var response = await _anonymousClient.DeleteAsync(endpoint);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/entries?find[type]=sgv")]
+    [InlineData("/api/v1/treatments?find[created_at][$gte]=2024-01-01")]
+    [InlineData("/api/v1/devicestatus?find[device]=test")]
+    public async Task V1_BulkDeleteEndpoints_ShouldAcceptValidApiSecret(string endpoint)
+    {
+        // Act
+        var response = await _authenticatedClient.DeleteAsync(endpoint);
+
+        // Assert - should NOT be 401 or 403
+        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    // ====================================================================
+    // Wrong api-secret: must be rejected
+    // ====================================================================
+
+    [Fact]
+    public async Task V1_PostWithWrongApiSecret_ShouldBeRejected()
+    {
+        // Arrange
+        var client = _factory
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureAppConfiguration((_, config) =>
+                {
+                    config.Sources.Insert(0,
+                        new Microsoft.Extensions.Configuration.Memory.MemoryConfigurationSource
+                        {
+                            InitialData = new[]
+                            {
+                                new KeyValuePair<string, string?>("API_SECRET", TestApiSecret),
+                            },
+                        });
+                });
+            })
+            .CreateClient();
+        client.DefaultRequestHeaders.Add("api-secret", ComputeSha1Hash("wrong-secret"));
+
+        var content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/v1/entries", content);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    private static string ComputeSha1Hash(string input)
+    {
+        var hashBytes = SHA1.HashData(Encoding.UTF8.GetBytes(input));
+        return Convert.ToHexStringLower(hashBytes);
+    }
+}

@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
+using IAuthorizationService = Nocturne.Core.Contracts.IAuthorizationService;
 
 namespace Nocturne.API.Controllers;
 
@@ -10,6 +12,7 @@ namespace Nocturne.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/v2/authorization")]
+[Authorize]
 public class AuthorizationController : ControllerBase
 {
     private readonly IAuthorizationService _authorizationService;

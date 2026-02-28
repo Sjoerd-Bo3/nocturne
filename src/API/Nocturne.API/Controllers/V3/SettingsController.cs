@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
@@ -14,6 +15,7 @@ namespace Nocturne.API.Controllers.V3;
 /// </summary>
 [ApiController]
 [Route("api/v3/[controller]")]
+[Authorize]
 public class SettingsController : BaseV3Controller<Settings>
 {
     public SettingsController(
@@ -30,6 +32,7 @@ public class SettingsController : BaseV3Controller<Settings>
     /// </summary>
     /// <returns>V3 settings collection response</returns>
     [HttpGet]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/settings")]
     [ProducesResponseType(typeof(V3CollectionResponse<object>), 200)]
     [ProducesResponseType(typeof(V3ErrorResponse), 400)]
@@ -111,6 +114,7 @@ public class SettingsController : BaseV3Controller<Settings>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Single settings record in V3 format</returns>
     [HttpGet("{id}")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/settings/{id}")]
     [ProducesResponseType(typeof(Settings), 200)]
     [ProducesResponseType(typeof(V3ErrorResponse), 404)]

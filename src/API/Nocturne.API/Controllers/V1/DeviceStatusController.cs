@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
@@ -12,6 +13,7 @@ namespace Nocturne.API.Controllers.V1;
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize]
 public class DeviceStatusController : ControllerBase
 {
     private readonly IDeviceStatusService _deviceStatusService;
@@ -38,6 +40,7 @@ public class DeviceStatusController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Array of device status entries ordered by most recent first</returns>
     [HttpGet]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v1/devicestatus")]
     [ProducesResponseType(typeof(DeviceStatus[]), 200)]
     [ProducesResponseType(400)]
@@ -345,6 +348,7 @@ public class DeviceStatusController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Array of device status entries ordered by most recent first</returns>
     [HttpGet("~/api/v1/devicestatus.json")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v1/devicestatus.json")]
     [ProducesResponseType(typeof(DeviceStatus[]), 200)]
     [ProducesResponseType(400)]

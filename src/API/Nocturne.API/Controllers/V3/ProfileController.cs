@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
@@ -13,6 +14,7 @@ namespace Nocturne.API.Controllers.V3;
 /// </summary>
 [ApiController]
 [Route("api/v3/[controller]")]
+[Authorize]
 public class ProfileController : BaseV3Controller<Profile>
 {
     public ProfileController(
@@ -28,6 +30,7 @@ public class ProfileController : BaseV3Controller<Profile>
     /// </summary>
     /// <returns>V3 profiles collection response</returns>
     [HttpGet]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/profile")]
     [ProducesResponseType(typeof(V3CollectionResponse<object>), 200)]
     [ProducesResponseType(typeof(V3ErrorResponse), 400)]
@@ -103,6 +106,7 @@ public class ProfileController : BaseV3Controller<Profile>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Single profile in V3 format</returns>
     [HttpGet("{id}")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/profile/{id}")]
     [ProducesResponseType(typeof(Profile), 200)]
     [ProducesResponseType(typeof(V3ErrorResponse), 404)]

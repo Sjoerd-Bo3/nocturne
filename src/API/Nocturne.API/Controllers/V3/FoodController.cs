@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
@@ -13,6 +14,7 @@ namespace Nocturne.API.Controllers.V3;
 /// </summary>
 [ApiController]
 [Route("api/v3/[controller]")]
+[Authorize]
 public class FoodController : BaseV3Controller<Food>
 {
     public FoodController(
@@ -28,6 +30,7 @@ public class FoodController : BaseV3Controller<Food>
     /// </summary>
     /// <returns>V3 food collection response</returns>
     [HttpGet]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/food")]
     [ProducesResponseType(typeof(V3CollectionResponse<object>), 200)]
     [ProducesResponseType(typeof(V3ErrorResponse), 400)]
@@ -218,6 +221,7 @@ public class FoodController : BaseV3Controller<Food>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Single food record in V3 format</returns>
     [HttpGet("{id}")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/food/{id}")]
     [ProducesResponseType(typeof(Food), 200)]
     [ProducesResponseType(typeof(V3ErrorResponse), 404)]

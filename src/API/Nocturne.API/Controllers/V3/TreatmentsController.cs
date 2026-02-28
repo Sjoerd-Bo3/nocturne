@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
@@ -13,6 +14,7 @@ namespace Nocturne.API.Controllers.V3;
 /// </summary>
 [ApiController]
 [Route("api/v3/[controller]")]
+[Authorize]
 public class TreatmentsController : BaseV3Controller<Treatment>
 {
     private readonly ITreatmentService _treatmentService;
@@ -34,6 +36,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
     /// </summary>
     /// <returns>V3 treatments collection response</returns>
     [HttpGet]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/treatments")]
     [ProducesResponseType(typeof(V3CollectionResponse<object>), 200)]
     [ProducesResponseType(typeof(V3ErrorResponse), 400)]
@@ -111,6 +114,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Single treatment in V3 format</returns>
     [HttpGet("{id}")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/treatments/:id")]
     [ProducesResponseType(typeof(Treatment), 200)]
     [ProducesResponseType(typeof(V3ErrorResponse), 404)]
@@ -431,6 +435,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
     /// Get treatments modified since a given timestamp (for AAPS incremental sync)
     /// </summary>
     [HttpGet("history/{lastModified:long}")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/treatments/history/{lastModified}")]
     [ProducesResponseType(typeof(object), 200)]
     [ProducesResponseType(500)]

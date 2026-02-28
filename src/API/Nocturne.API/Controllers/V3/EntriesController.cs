@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
@@ -16,6 +17,7 @@ namespace Nocturne.API.Controllers.V3;
 /// </summary>
 [ApiController]
 [Route("api/v3/[controller]")]
+[Authorize]
 public class EntriesController : BaseV3Controller<Entry>
 {
     private readonly IEntryService _entryService;
@@ -40,6 +42,7 @@ public class EntriesController : BaseV3Controller<Entry>
     /// </summary>
     /// <returns>V3 entries collection response</returns>
     [HttpGet]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/entries")]
     [ProducesResponseType(typeof(V3CollectionResponse<object>), 200)]
     [ProducesResponseType(typeof(V3ErrorResponse), 400)]
@@ -122,6 +125,7 @@ public class EntriesController : BaseV3Controller<Entry>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Single entry in V3 format</returns>
     [HttpGet("{id}")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/entries/:id")]
     [ProducesResponseType(typeof(Entry), 200)]
     [ProducesResponseType(typeof(V3ErrorResponse), 404)]
@@ -470,6 +474,7 @@ public class EntriesController : BaseV3Controller<Entry>
     /// Get entries modified since a given timestamp (for AAPS incremental sync)
     /// </summary>
     [HttpGet("history/{lastModified:long}")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v3/entries/history/{lastModified}")]
     [ProducesResponseType(typeof(object), 200)]
     [ProducesResponseType(500)]

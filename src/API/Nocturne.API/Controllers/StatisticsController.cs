@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
@@ -16,6 +18,7 @@ namespace Nocturne.API.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class StatisticsController : ControllerBase
 {
     private readonly IStatisticsService _statisticsService;
@@ -26,6 +29,10 @@ public class StatisticsController : ControllerBase
     private readonly IBolusRepository _bolusRepository;
     private readonly ICarbIntakeRepository _carbIntakeRepository;
     private readonly ITempBasalRepository _tempBasalRepository;
+    private readonly ITenantAccessor _tenantAccessor;
+
+    private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
+        ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public StatisticsController(
         IStatisticsService statisticsService,
@@ -35,7 +42,8 @@ public class StatisticsController : ControllerBase
         ISensorGlucoseRepository sensorGlucoseRepository,
         IBolusRepository bolusRepository,
         ICarbIntakeRepository carbIntakeRepository,
-        ITempBasalRepository tempBasalRepository
+        ITempBasalRepository tempBasalRepository,
+        ITenantAccessor tenantAccessor
     )
     {
         _statisticsService = statisticsService;
@@ -46,6 +54,7 @@ public class StatisticsController : ControllerBase
         _bolusRepository = bolusRepository;
         _carbIntakeRepository = carbIntakeRepository;
         _tempBasalRepository = tempBasalRepository;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <summary>
@@ -524,7 +533,7 @@ public class StatisticsController : ControllerBase
     {
         try
         {
-            const string cacheKey = "statistics:multi-period";
+            var cacheKey = $"statistics:multi-period:{TenantCacheId}";
 
             // Try to get from cache first
             var cachedResult = await _cacheService.GetAsync<MultiPeriodStatistics>(

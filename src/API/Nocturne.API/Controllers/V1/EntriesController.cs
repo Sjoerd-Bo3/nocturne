@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
@@ -15,6 +16,7 @@ namespace Nocturne.API.Controllers.V1;
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize]
 public class EntriesController : ControllerBase
 {
     private readonly IEntryService _entryService;
@@ -48,6 +50,7 @@ public class EntriesController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The most recent glucose entry, or empty array if no entries exist</returns>
     [HttpGet("current")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v1/entries/current")]
     [ResponseCache(Duration = 60, VaryByHeader = "If-Modified-Since")]
     [ProducesResponseType(typeof(Entry[]), 200)]
@@ -142,6 +145,7 @@ public class EntriesController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Entry or entries matching the specification</returns>
     [HttpGet("{spec}")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v1/entries/{spec}")]
     [ProducesResponseType(typeof(Entry[]), 200)]
     [ProducesResponseType(typeof(Entry[]), 304)] // Not Modified response
@@ -280,6 +284,7 @@ public class EntriesController : ControllerBase
     /// <param name="format">Output format (json, csv, tsv, txt)</param>
     /// <returns>Array of entries matching the criteria</returns>
     [HttpGet]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v1/entries")]
     [ResponseCache(Duration = 60, VaryByQueryKeys = new[] { "*" }, VaryByHeader = "If-Modified-Since")]
     [ProducesResponseType(typeof(Entry[]), 200)]

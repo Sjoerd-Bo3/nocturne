@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
@@ -14,6 +15,7 @@ namespace Nocturne.API.Controllers.V2;
 [Produces("application/json")]
 [Tags("V2 Properties")]
 [ClientPropertyName("v2Properties")]
+[Authorize]
 public class PropertiesController : ControllerBase
 {
     private readonly IPropertiesService _propertiesService;
@@ -38,6 +40,7 @@ public class PropertiesController : ControllerBase
     /// <response code="200">Returns the properties structure</response>
     /// <response code="500">If there was an internal server error</response>
     [HttpGet]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(Dictionary<string, object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<Dictionary<string, object>>> GetAllProperties(
@@ -79,6 +82,7 @@ public class PropertiesController : ControllerBase
     /// <response code="400">If property names are invalid</response>
     /// <response code="500">If there was an internal server error</response>
     [HttpGet("{*propertyPath}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(Dictionary<string, object>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

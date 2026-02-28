@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
@@ -13,6 +14,7 @@ namespace Nocturne.API.Controllers.V2;
 [Route("api/v2")]
 [Produces("application/json")]
 [Tags("Loop Notifications")]
+[Authorize]
 public class LoopController : ControllerBase
 {
     private readonly ILoopService _loopService;
@@ -120,6 +122,7 @@ public class LoopController : ControllerBase
     /// <returns>Loop configuration status</returns>
     /// <response code="200">Configuration status retrieved successfully</response>
     [HttpGet("loop/status")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public ActionResult<object> GetLoopStatus()
     {

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
@@ -13,6 +14,7 @@ namespace Nocturne.API.Controllers.V1;
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
+[Authorize]
 public class FoodController : ControllerBase
 {
     private readonly IPostgreSqlService _postgreSqlService;
@@ -30,6 +32,7 @@ public class FoodController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Array of food records ordered by name/position</returns>
     [HttpGet]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v1/food")]
     [ProducesResponseType(typeof(Food[]), 200)]
     [ProducesResponseType(500)]
@@ -73,6 +76,7 @@ public class FoodController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Array of food records</returns>
     [HttpGet("~/api/v1/food.json")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v1/food.json")]
     [ProducesResponseType(typeof(Food[]), 200)]
     [ProducesResponseType(500)]
@@ -89,6 +93,7 @@ public class FoodController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Array of regular food records</returns>
     [HttpGet("regular")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v1/food/regular")]
     [ProducesResponseType(typeof(Food[]), 200)]
     [ProducesResponseType(500)]
@@ -131,6 +136,7 @@ public class FoodController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Array of quickpick food records ordered by position</returns>
     [HttpGet("quickpicks")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v1/food/quickpicks")]
     [ProducesResponseType(typeof(Food[]), 200)]
     [ProducesResponseType(500)]
@@ -180,6 +186,7 @@ public class FoodController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The food record with the specified ID</returns>
     [HttpGet("{id}")]
+    [AllowAnonymous]
     [NightscoutEndpoint("/api/v1/food/:id")]
     [ProducesResponseType(typeof(Food), 200)]
     [ProducesResponseType(404)]
