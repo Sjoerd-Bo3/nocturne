@@ -1211,7 +1211,7 @@
               ? connectorCapabilitiesById[connector.id]
               : null}
             {@const canQuickSync =
-              connectorStatus?.isHealthy === true &&
+              (connectorStatus?.isHealthy === true || connectorStatus?.state === "Configured") &&
               (connectorCapabilities?.supportsManualSync ?? true)}
 
             {#if isConnected && connectorStatus}

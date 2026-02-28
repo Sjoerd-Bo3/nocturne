@@ -5321,6 +5321,7 @@ msgstr "<0/> Credentials"
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
+#: src/routes/settings/connectors/+page.svelte
 msgid "Configured"
 msgstr "Configured"
 
