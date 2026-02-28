@@ -207,9 +207,6 @@ msgstr "Reason for this treatment"
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -1868,7 +1865,6 @@ msgstr "Show hidden <0/>"
 #: src/routes/food/QuickPicksList.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Save"
@@ -2084,7 +2080,6 @@ msgid "Unattributed"
 msgstr "Unattributed"
 
 #: src/routes/clock/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
 msgid "Edit"
 msgstr "Edit"
@@ -5455,7 +5450,6 @@ msgstr "Audio File"
 #: src/lib/components/settings/CustomSoundUpload.svelte
 #: src/routes/auth/register/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Display Name"
 msgstr "Display Name"
 
@@ -6350,9 +6344,8 @@ msgstr "<0/> Return Home"
 msgid "Error code: <0/>"
 msgstr "Error code: <0/>"
 
-#: src/routes/auth/register/+page.svelte
-msgid "Sign Up - Nocturne"
-msgstr "Sign Up - Nocturne"
+#~ msgid "Sign Up - Nocturne"
+#~ msgstr "Sign Up - Nocturne"
 
 #: src/routes/auth/register/+page.svelte
 msgid "Registration Successful"
@@ -8824,7 +8817,6 @@ msgid "Account Details"
 msgstr "Account Details"
 
 #: src/routes/settings/account/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Subject ID"
 msgstr "Subject ID"
 
@@ -9174,7 +9166,6 @@ msgid "Custom Permission"
 msgstr "Custom Permission"
 
 #: src/routes/settings/admin/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Add"
 msgstr "Add"
 
@@ -9280,7 +9271,6 @@ msgstr "<0/> Color Theme"
 msgid "Choose between Nocturne's custom theme or match the Trio iOS app"
 msgstr "Choose between Nocturne's custom theme or match the Trio iOS app"
 
-#: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -9695,6 +9685,7 @@ msgstr "Default"
 
 #: src/lib/components/settings/notifications/webhooks/WebhookChannelRow.svelte
 #: src/routes/clock/[id]/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
 msgid "<0/> Edit"
 msgstr "<0/> Edit"
 
@@ -13305,7 +13296,6 @@ msgstr "Report generated from {0} boluses between {1} and {2}"
 
 #: src/lib/components/treatments/TreatmentsDataTable.svelte
 #: src/routes/reports/treatments/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Details"
 msgstr "Details"
 
@@ -13913,7 +13903,6 @@ msgid "Removing..."
 msgstr "Removing..."
 
 #: src/routes/meals/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Remove"
 msgstr "Remove"
 
@@ -16906,7 +16895,6 @@ msgid "Manage the current tenant's details and members"
 msgstr "Manage the current tenant's details and members"
 
 #: src/routes/settings/admin/tenants/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
 msgid "Members"
 msgstr "Members"
 
@@ -16922,42 +16910,33 @@ msgstr "Slug"
 msgid "Users who have access to this tenant"
 msgstr "Users who have access to this tenant"
 
-#: src/routes/settings/admin/tenants/+page.svelte
-#: src/routes/settings/admin/tenants/+page.svelte
-msgid "Add Member"
-msgstr "Add Member"
+#~ msgid "Add Member"
+#~ msgstr "Add Member"
 
 #: src/routes/settings/admin/tenants/+page.svelte
 msgid "No members found"
 msgstr "No members found"
 
-#: src/routes/settings/admin/tenants/+page.svelte
-msgid "Joined"
-msgstr "Joined"
+#~ msgid "Joined"
+#~ msgstr "Joined"
 
-#: src/routes/settings/admin/tenants/+page.svelte
-msgid "Edit Tenant"
-msgstr "Edit Tenant"
+#~ msgid "Edit Tenant"
+#~ msgstr "Edit Tenant"
 
-#: src/routes/settings/admin/tenants/+page.svelte
-msgid "Update the tenant's display name and active status."
-msgstr "Update the tenant's display name and active status."
+#~ msgid "Update the tenant's display name and active status."
+#~ msgstr "Update the tenant's display name and active status."
 
-#: src/routes/settings/admin/tenants/+page.svelte
-msgid "Add a user to this tenant."
-msgstr "Add a user to this tenant."
+#~ msgid "Add a user to this tenant."
+#~ msgstr "Add a user to this tenant."
 
-#: src/routes/settings/admin/tenants/+page.svelte
-msgid "Role"
-msgstr "Role"
+#~ msgid "Role"
+#~ msgstr "Role"
 
-#: src/routes/settings/admin/tenants/+page.svelte
-msgid "Remove member"
-msgstr "Remove member"
+#~ msgid "Remove member"
+#~ msgstr "Remove member"
 
-#: src/routes/settings/admin/tenants/+page.svelte
-msgid "Remove this member from the tenant? They will lose access to all tenant data."
-msgstr "Remove this member from the tenant? They will lose access to all tenant data."
+#~ msgid "Remove this member from the tenant? They will lose access to all tenant data."
+#~ msgstr "Remove this member from the tenant? They will lose access to all tenant data."
 
 #: src/routes/tenants/+page.svelte
 msgid "<0/> Current"
@@ -16967,3 +16946,92 @@ msgstr "<0/> Current"
 #: src/routes/tenants/+page.svelte
 msgid "<0/> Switch"
 msgstr "<0/> Switch"
+
+#. placeholder {0}: tenantName ? ` - ${tenantName}` : ' - Nocturne'
+#: src/routes/auth/register/+page.svelte
+msgid "Sign Up{0}"
+msgstr "Sign Up{0}"
+
+#. placeholder {0}: tenantName
+#: src/routes/auth/register/+page.svelte
+msgid "Sign up to join {0}"
+msgstr "Sign up to join {0}"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "<0/> Details"
+msgstr "<0/> Details"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "<0/> Members <1/>"
+msgstr "<0/> Members <1/>"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "<0/> Add Member"
+msgstr "<0/> Add Member"
+
+#. placeholder {0}: member.sysCreatedAt ? new Date(member.sysCreatedAt).toLocaleDateString() : ""
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Joined {0}"
+msgstr "Joined {0}"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Edit Tenan"
+msgstr "Edit Tenan"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Update the tenant's display name and active status"
+msgstr "Update the tenant's display name and active status"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Display Nam"
+msgstr "Display Nam"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Activ"
+msgstr "Activ"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Cance"
+msgstr "Cance"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "<0/> Sav"
+msgstr "<0/> Sav"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Add Membe"
+msgstr "Add Membe"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Add a user to this tenant"
+msgstr "Add a user to this tenant"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Subject I"
+msgstr "Subject I"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Rol"
+msgstr "Rol"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "<0/> Ad"
+msgstr "<0/> Ad"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "Remove membe"
+msgstr "Remove membe"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid ""
+"Remove this member from the tenant? They will lose access to all tenant\n"
+"data"
+msgstr ""
+"Remove this member from the tenant? They will lose access to all tenant\n"
+"data"
+
+#: src/routes/settings/admin/tenants/+page.svelte
+msgid "<0/> Remov"
+msgstr "<0/> Remov"

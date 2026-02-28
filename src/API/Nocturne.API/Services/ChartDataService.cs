@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Nocturne.API.Helpers;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
@@ -36,6 +37,7 @@ public class ChartDataService : IChartDataService
     private readonly SystemEventRepository _systemEventRepository;
     private readonly TrackerRepository _trackerRepository;
     private readonly IMemoryCache _cache;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<ChartDataService> _logger;
 
     // Clinical standard thresholds (mg/dL) -- used when profile doesn't specify
@@ -44,6 +46,9 @@ public class ChartDataService : IChartDataService
 
     // Cache settings
     private static readonly TimeSpan IobCobCacheExpiration = TimeSpan.FromMinutes(1);
+
+    private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
+        ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public ChartDataService(
         IIobService iobService,
@@ -62,6 +67,7 @@ public class ChartDataService : IChartDataService
         SystemEventRepository systemEventRepository,
         TrackerRepository trackerRepository,
         IMemoryCache cache,
+        ITenantAccessor tenantAccessor,
         ILogger<ChartDataService> logger
     )
     {
@@ -81,6 +87,7 @@ public class ChartDataService : IChartDataService
         _systemEventRepository = systemEventRepository;
         _trackerRepository = trackerRepository;
         _cache = cache;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
 
@@ -542,8 +549,9 @@ public class ChartDataService : IChartDataService
     /// <summary>
     /// Generate a cache key for IOB/COB calculations based on treatment fingerprint and time range.
     /// Uses SHA256 of individual treatment mills/insulin/carbs values for collision resistance.
+    /// Includes tenant ID to prevent cross-tenant cache leakage.
     /// </summary>
-    private static string GenerateIobCobCacheKey(
+    private string GenerateIobCobCacheKey(
         List<Treatment> treatments,
         long startTime,
         long endTime,
@@ -577,7 +585,7 @@ public class ChartDataService : IChartDataService
             ..16
         ]; // First 16 hex chars (64 bits) is sufficient
 
-        return $"iobcob:{hash}:{roundedStart}:{roundedEnd}:{intervalMinutes}";
+        return $"iobcob:{TenantCacheId}:{hash}:{roundedStart}:{roundedEnd}:{intervalMinutes}";
     }
 
     internal static (List<GlucosePointDto> data, double yMax) BuildGlucoseData(

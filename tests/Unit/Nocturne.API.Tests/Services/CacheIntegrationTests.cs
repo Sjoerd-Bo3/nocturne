@@ -32,6 +32,7 @@ public class CacheIntegrationTests
     private readonly Mock<IV4ToLegacyProjectionService> _mockProjectionService;
     private readonly Mock<ILogger<EntryService>> _mockEntryLogger;
     private readonly Mock<ILogger<StatusService>> _mockStatusLogger;
+    private readonly Mock<ITenantAccessor> _mockTenantAccessor;
 
     public CacheIntegrationTests()
     {
@@ -44,6 +45,11 @@ public class CacheIntegrationTests
         _mockProjectionService = new Mock<IV4ToLegacyProjectionService>();
         _mockEntryLogger = new Mock<ILogger<EntryService>>();
         _mockStatusLogger = new Mock<ILogger<StatusService>>();
+        _mockTenantAccessor = new Mock<ITenantAccessor>();
+        _mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
+        _mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
+        _mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
 
         _mockCacheConfig.Setup(x => x.Value).Returns(new CacheConfiguration());
         _mockDemoModeService.Setup(x => x.IsEnabled).Returns(false);
@@ -64,7 +70,7 @@ public class CacheIntegrationTests
         };
 
         _mockCacheService
-            .Setup(x => x.GetAsync<Entry>("entries:current", It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync<Entry>("entries:current:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()))
             .ReturnsAsync(cachedEntry);
 
         var entryService = new EntryService(
@@ -75,7 +81,7 @@ public class CacheIntegrationTests
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
             _mockProjectionService.Object,
-            new Mock<ITenantAccessor>().Object,
+            _mockTenantAccessor.Object,
             _mockEntryLogger.Object
         );
 
@@ -89,7 +95,7 @@ public class CacheIntegrationTests
 
         // Verify cache was checked but database was not called
         _mockCacheService.Verify(
-            x => x.GetAsync<Entry>("entries:current", It.IsAny<CancellationToken>()),
+            x => x.GetAsync<Entry>("entries:current:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()),
             Times.Once
         );
         _mockPostgreSqlService.Verify(
@@ -113,7 +119,7 @@ public class CacheIntegrationTests
         };
 
         _mockCacheService
-            .Setup(x => x.GetAsync<Entry>("entries:current", It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync<Entry>("entries:current:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()))
             .ReturnsAsync((Entry?)null);
 
         // Production code now uses GetEntriesWithAdvancedFilterAsync with demo mode filter
@@ -139,7 +145,7 @@ public class CacheIntegrationTests
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
             _mockProjectionService.Object,
-            new Mock<ITenantAccessor>().Object,
+            _mockTenantAccessor.Object,
             _mockEntryLogger.Object
         );
 
@@ -153,7 +159,7 @@ public class CacheIntegrationTests
 
         // Verify cache was checked, database was called, and result was cached
         _mockCacheService.Verify(
-            x => x.GetAsync<Entry>("entries:current", It.IsAny<CancellationToken>()),
+            x => x.GetAsync<Entry>("entries:current:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()),
             Times.Once
         );
         _mockPostgreSqlService.Verify(
@@ -172,7 +178,7 @@ public class CacheIntegrationTests
         _mockCacheService.Verify(
             x =>
                 x.SetAsync(
-                    "entries:current",
+                    "entries:current:00000000-0000-0000-0000-000000000001",
                     dbEntry,
                     TimeSpan.FromSeconds(60),
                     It.IsAny<CancellationToken>()
@@ -212,7 +218,7 @@ public class CacheIntegrationTests
             _mockDemoModeService.Object,
             _mockEntryDecomposer.Object,
             _mockProjectionService.Object,
-            new Mock<ITenantAccessor>().Object,
+            _mockTenantAccessor.Object,
             _mockEntryLogger.Object
         );
 
@@ -225,7 +231,7 @@ public class CacheIntegrationTests
 
         // Verify cache was invalidated
         _mockCacheService.Verify(
-            x => x.RemoveAsync("entries:current", It.IsAny<CancellationToken>()),
+            x => x.RemoveAsync("entries:current:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()),
             Times.Once
         );
 
@@ -251,7 +257,7 @@ public class CacheIntegrationTests
         };
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()))
             .ReturnsAsync(cachedStatus);
 
         var configurationData = new Dictionary<string, string?>
@@ -280,6 +286,7 @@ public class CacheIntegrationTests
             _mockDemoModeService.Object,
             dbContext,
             httpContextAccessor,
+            _mockTenantAccessor.Object,
             _mockStatusLogger.Object
         );
 
@@ -293,7 +300,7 @@ public class CacheIntegrationTests
 
         // Verify cache was checked
         _mockCacheService.Verify(
-            x => x.GetAsync<StatusResponse>("status:system", It.IsAny<CancellationToken>()),
+            x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -305,7 +312,7 @@ public class CacheIntegrationTests
     {
         // Arrange
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()))
             .ReturnsAsync((StatusResponse?)null);
 
         var configurationData = new Dictionary<string, string?>
@@ -357,6 +364,7 @@ public class CacheIntegrationTests
             _mockDemoModeService.Object,
             dbContext,
             httpContextAccessor,
+            _mockTenantAccessor.Object,
             _mockStatusLogger.Object
         );
 
@@ -370,13 +378,13 @@ public class CacheIntegrationTests
 
         // Verify cache was checked and result was cached
         _mockCacheService.Verify(
-            x => x.GetAsync<StatusResponse>("status:system", It.IsAny<CancellationToken>()),
+            x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()),
             Times.Once
         );
         _mockCacheService.Verify(
             x =>
                 x.SetAsync(
-                    "status:system",
+                    "status:system:00000000-0000-0000-0000-000000000001",
                     It.IsAny<StatusResponse>(),
                     TimeSpan.FromMinutes(2),
                     It.IsAny<CancellationToken>()

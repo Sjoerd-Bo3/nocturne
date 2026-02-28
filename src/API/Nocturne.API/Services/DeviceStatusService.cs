@@ -1,4 +1,5 @@
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
@@ -15,14 +16,19 @@ public class DeviceStatusService : IDeviceStatusService
     private readonly ISignalRBroadcastService _broadcastService;
     private readonly ICacheService _cacheService;
     private readonly IDeviceStatusDecomposer _deviceStatusDecomposer;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<DeviceStatusService> _logger;
     private const string CollectionName = "devicestatus";
+
+    private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
+        ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public DeviceStatusService(
         IPostgreSqlService postgreSqlService,
         ISignalRBroadcastService broadcastService,
         ICacheService cacheService,
         IDeviceStatusDecomposer deviceStatusDecomposer,
+        ITenantAccessor tenantAccessor,
         ILogger<DeviceStatusService> logger
     )
     {
@@ -30,6 +36,7 @@ public class DeviceStatusService : IDeviceStatusService
         _broadcastService = broadcastService;
         _cacheService = cacheService;
         _deviceStatusDecomposer = deviceStatusDecomposer;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
 
@@ -44,7 +51,7 @@ public class DeviceStatusService : IDeviceStatusService
         // Cache device status only for the common case of recent entries with default pagination
         if (string.IsNullOrEmpty(find) && (count ?? 10) == 10 && (skip ?? 0) == 0)
         {
-            const string cacheKey = "devicestatus:current";
+            var cacheKey = $"devicestatus:current:{TenantCacheId}";
             var cacheTtl = TimeSpan.FromSeconds(60);
 
             var cachedDeviceStatus = await _cacheService.GetAsync<IEnumerable<DeviceStatus>>(
@@ -114,7 +121,7 @@ public class DeviceStatusService : IDeviceStatusService
         // Invalidate current device status cache since new entries were created
         try
         {
-            await _cacheService.RemoveAsync("devicestatus:current", cancellationToken);
+            await _cacheService.RemoveAsync($"devicestatus:current:{TenantCacheId}", cancellationToken);
             _logger.LogDebug("Invalidated current device status cache after creating new entries");
         }
         catch (Exception ex)
@@ -184,7 +191,7 @@ public class DeviceStatusService : IDeviceStatusService
             // Invalidate current device status cache since an entry was updated
             try
             {
-                await _cacheService.RemoveAsync("devicestatus:current", cancellationToken);
+                await _cacheService.RemoveAsync($"devicestatus:current:{TenantCacheId}", cancellationToken);
                 _logger.LogDebug(
                     "Invalidated current device status cache after updating device status {DeviceStatusId}",
                     id
@@ -262,7 +269,7 @@ public class DeviceStatusService : IDeviceStatusService
             // Invalidate current device status cache since an entry was deleted
             try
             {
-                await _cacheService.RemoveAsync("devicestatus:current", cancellationToken);
+                await _cacheService.RemoveAsync($"devicestatus:current:{TenantCacheId}", cancellationToken);
                 _logger.LogDebug(
                     "Invalidated current device status cache after deleting device status {DeviceStatusId}",
                     id
@@ -316,7 +323,7 @@ public class DeviceStatusService : IDeviceStatusService
             // Invalidate current device status cache since entries were deleted
             try
             {
-                await _cacheService.RemoveAsync("devicestatus:current", cancellationToken);
+                await _cacheService.RemoveAsync($"devicestatus:current:{TenantCacheId}", cancellationToken);
                 _logger.LogDebug(
                     "Invalidated current device status cache after bulk deleting {Count} entries",
                     deletedCount

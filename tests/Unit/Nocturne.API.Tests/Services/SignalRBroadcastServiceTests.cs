@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Hubs;
 using Nocturne.API.Services;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Xunit;
 
@@ -53,10 +54,17 @@ public class SignalRBroadcastServiceTests
             .Setup(x => x.Group(It.IsAny<string>()))
             .Returns(_mockConfigGroupProxy.Object);
 
+        var mockTenantAccessor = new Mock<ITenantAccessor>();
+        mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
+        mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
+        mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+
         _service = new SignalRBroadcastService(
             _mockDataHubContext.Object,
             _mockAlarmHubContext.Object,
             _mockConfigHubContext.Object,
+            mockTenantAccessor.Object,
             _mockLogger.Object
         );
     }
@@ -72,7 +80,7 @@ public class SignalRBroadcastServiceTests
         await _service.BroadcastDataUpdateAsync(testData);
 
         // Assert
-        _mockDataClients.Verify(x => x.Group("authorized"), Times.Once);
+        _mockDataClients.Verify(x => x.Group("00000000-0000-0000-0000-000000000001:authorized"), Times.Once);
         _mockDataGroupProxy.Verify(
             x =>
                 x.SendCoreAsync(
@@ -96,7 +104,7 @@ public class SignalRBroadcastServiceTests
         await _service.BroadcastStorageCreateAsync(collectionName, data);
 
         // Assert
-        _mockDataClients.Verify(x => x.Group(collectionName), Times.Once);
+        _mockDataClients.Verify(x => x.Group($"00000000-0000-0000-0000-000000000001:{collectionName}"), Times.Once);
         _mockDataGroupProxy.Verify(
             x => x.SendCoreAsync("create", It.Is<object[]>(args => args[0] == data), default),
             Times.Once
@@ -115,7 +123,7 @@ public class SignalRBroadcastServiceTests
         await _service.BroadcastStorageUpdateAsync(collectionName, data);
 
         // Assert
-        _mockDataClients.Verify(x => x.Group(collectionName), Times.Once);
+        _mockDataClients.Verify(x => x.Group($"00000000-0000-0000-0000-000000000001:{collectionName}"), Times.Once);
         _mockDataGroupProxy.Verify(
             x => x.SendCoreAsync("update", It.Is<object[]>(args => args[0] == data), default),
             Times.Once
@@ -134,7 +142,7 @@ public class SignalRBroadcastServiceTests
         await _service.BroadcastStorageDeleteAsync(collectionName, data);
 
         // Assert
-        _mockDataClients.Verify(x => x.Group(collectionName), Times.Once);
+        _mockDataClients.Verify(x => x.Group($"00000000-0000-0000-0000-000000000001:{collectionName}"), Times.Once);
         _mockDataGroupProxy.Verify(
             x => x.SendCoreAsync("delete", It.Is<object[]>(args => args[0] == data), default),
             Times.Once
@@ -157,7 +165,7 @@ public class SignalRBroadcastServiceTests
         await _service.BroadcastNotificationAsync(notification);
 
         // Assert
-        _mockAlarmClients.Verify(x => x.Group("alarm-subscribers"), Times.Once);
+        _mockAlarmClients.Verify(x => x.Group("00000000-0000-0000-0000-000000000001:alarm-subscribers"), Times.Once);
         _mockAlarmGroupProxy.Verify(
             x =>
                 x.SendCoreAsync(
@@ -185,7 +193,7 @@ public class SignalRBroadcastServiceTests
         await _service.BroadcastAlarmAsync(alarm);
 
         // Assert
-        _mockAlarmClients.Verify(x => x.Group("alarm-subscribers"), Times.Once);
+        _mockAlarmClients.Verify(x => x.Group("00000000-0000-0000-0000-000000000001:alarm-subscribers"), Times.Once);
         _mockAlarmGroupProxy.Verify(
             x => x.SendCoreAsync("alarm", It.Is<object[]>(args => args[0] == alarm), default),
             Times.Once
@@ -208,7 +216,7 @@ public class SignalRBroadcastServiceTests
         await _service.BroadcastUrgentAlarmAsync(urgentAlarm);
 
         // Assert
-        _mockAlarmClients.Verify(x => x.Group("alarm-subscribers"), Times.Once);
+        _mockAlarmClients.Verify(x => x.Group("00000000-0000-0000-0000-000000000001:alarm-subscribers"), Times.Once);
         _mockAlarmGroupProxy.Verify(
             x =>
                 x.SendCoreAsync(
@@ -237,7 +245,7 @@ public class SignalRBroadcastServiceTests
         await _service.BroadcastClearAlarmAsync(clearAlarm);
 
         // Assert
-        _mockAlarmClients.Verify(x => x.Group("alarm-subscribers"), Times.Once);
+        _mockAlarmClients.Verify(x => x.Group("00000000-0000-0000-0000-000000000001:alarm-subscribers"), Times.Once);
         _mockAlarmGroupProxy.Verify(
             x =>
                 x.SendCoreAsync(
@@ -265,7 +273,7 @@ public class SignalRBroadcastServiceTests
         await _service.BroadcastAnnouncementAsync(announcement);
 
         // Assert
-        _mockAlarmClients.Verify(x => x.Group("alarm-subscribers"), Times.Once);
+        _mockAlarmClients.Verify(x => x.Group("00000000-0000-0000-0000-000000000001:alarm-subscribers"), Times.Once);
         _mockAlarmGroupProxy.Verify(
             x =>
                 x.SendCoreAsync(
@@ -311,7 +319,7 @@ public class SignalRBroadcastServiceTests
         await _service.BroadcastPasswordResetRequestAsync();
 
         // Assert
-        _mockDataClients.Verify(x => x.Group("admin"), Times.Once);
+        _mockDataClients.Verify(x => x.Group("00000000-0000-0000-0000-000000000001:admin"), Times.Once);
         _mockDataGroupProxy.Verify(
             x =>
                 x.SendCoreAsync(

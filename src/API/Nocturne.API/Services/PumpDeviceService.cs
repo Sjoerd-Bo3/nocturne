@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models.V4;
 
@@ -8,11 +9,16 @@ namespace Nocturne.API.Services;
 public class PumpDeviceService : IPumpDeviceService
 {
     private readonly IPumpDeviceRepository _repository;
-    private readonly ConcurrentDictionary<(string, string), Guid> _cache = new();
+    private readonly ITenantAccessor _tenantAccessor;
+    private readonly ConcurrentDictionary<(string, string, string), Guid> _cache = new();
 
-    public PumpDeviceService(IPumpDeviceRepository repository)
+    private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
+        ?? throw new InvalidOperationException("Tenant context is not resolved");
+
+    public PumpDeviceService(IPumpDeviceRepository repository, ITenantAccessor tenantAccessor)
     {
         _repository = repository;
+        _tenantAccessor = tenantAccessor;
     }
 
     public async Task<Guid?> ResolveAsync(string? pumpType, string? pumpSerial, long mills, CancellationToken ct = default)
@@ -20,7 +26,8 @@ public class PumpDeviceService : IPumpDeviceService
         if (string.IsNullOrEmpty(pumpType) || string.IsNullOrEmpty(pumpSerial))
             return null;
 
-        var key = (pumpType, pumpSerial);
+        var tenantId = TenantCacheId;
+        var key = (tenantId, pumpType, pumpSerial);
         if (_cache.TryGetValue(key, out var cachedId))
             return cachedId;
 

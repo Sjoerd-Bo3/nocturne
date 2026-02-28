@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Nocturne.API.Hubs;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services;
@@ -107,32 +108,57 @@ public class SignalRBroadcastService : ISignalRBroadcastService
     private readonly IHubContext<DataHub> _dataHubContext;
     private readonly IHubContext<AlarmHub> _alarmHubContext;
     private readonly IHubContext<ConfigHub> _configHubContext;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<SignalRBroadcastService> _logger;
 
     public SignalRBroadcastService(
         IHubContext<DataHub> dataHubContext,
         IHubContext<AlarmHub> alarmHubContext,
         IHubContext<ConfigHub> configHubContext,
+        ITenantAccessor tenantAccessor,
         ILogger<SignalRBroadcastService> logger
     )
     {
         _dataHubContext = dataHubContext;
         _alarmHubContext = alarmHubContext;
         _configHubContext = configHubContext;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
+
+    /// <summary>
+    /// Gets the current tenant ID (as a string) from the tenant accessor, or throws if not resolved.
+    /// Uses the immutable TenantId (GUID) instead of the mutable Slug to prevent
+    /// cache poisoning if a tenant's slug is changed.
+    /// </summary>
+    private string GetTenantId()
+    {
+        var tenantId = _tenantAccessor.Context?.TenantId.ToString()
+            ?? throw new InvalidOperationException(
+                "Cannot broadcast: tenant context is not resolved. " +
+                "SignalRBroadcastService must be called from a request with an active tenant context.");
+        return tenantId;
+    }
+
+    /// <summary>
+    /// Creates a tenant-scoped group name, consistent with the hub-side TenantAwareHub.TenantGroup method.
+    /// </summary>
+    private string TenantGroup(string groupName)
+        => TenantAwareHub.FormatTenantGroup(GetTenantId(), groupName);
 
     /// <inheritdoc />
     public async Task BroadcastDataUpdateAsync(object data)
     {
         try
         {
+            var group = TenantGroup("authorized");
             _logger.LogInformation(
-                "Broadcasting data update to authorized clients: {DataType}",
+                "Broadcasting data update to {Group}: {DataType}",
+                group,
                 data?.GetType().Name ?? "null"
             );
             await _dataHubContext
-                .Clients.Group("authorized")
+                .Clients.Group(group)
                 .SendCoreAsync("dataUpdate", new[] { data });
             _logger.LogInformation("Data update broadcast completed successfully");
         }
@@ -169,7 +195,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         {
             _logger.LogDebug("Broadcasting notification: {Title}", notification.Title);
             await _alarmHubContext
-                .Clients.Group("alarm-subscribers")
+                .Clients.Group(TenantGroup("alarm-subscribers"))
                 .SendCoreAsync("notification", new[] { notification });
         }
         catch (Exception ex)
@@ -185,7 +211,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         {
             _logger.LogDebug("Broadcasting announcement: {Title}", announcement.Title);
             await _alarmHubContext
-                .Clients.Group("alarm-subscribers")
+                .Clients.Group(TenantGroup("alarm-subscribers"))
                 .SendCoreAsync("announcement", new[] { announcement });
         }
         catch (Exception ex)
@@ -201,7 +227,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         {
             _logger.LogDebug("Broadcasting alarm: {Title}", alarm.Title);
             await _alarmHubContext
-                .Clients.Group("alarm-subscribers")
+                .Clients.Group(TenantGroup("alarm-subscribers"))
                 .SendCoreAsync("alarm", new[] { alarm });
         }
         catch (Exception ex)
@@ -217,7 +243,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         {
             _logger.LogDebug("Broadcasting urgent alarm: {Title}", urgentAlarm.Title);
             await _alarmHubContext
-                .Clients.Group("alarm-subscribers")
+                .Clients.Group(TenantGroup("alarm-subscribers"))
                 .SendCoreAsync("urgent_alarm", new[] { urgentAlarm });
         }
         catch (Exception ex)
@@ -233,7 +259,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         {
             _logger.LogDebug("Broadcasting clear alarm: {Title}", clearAlarm.Title);
             await _alarmHubContext
-                .Clients.Group("alarm-subscribers")
+                .Clients.Group(TenantGroup("alarm-subscribers"))
                 .SendCoreAsync("clear_alarm", new[] { clearAlarm });
         }
         catch (Exception ex)
@@ -248,7 +274,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         try
         {
             await _dataHubContext
-                .Clients.Group(collectionName)
+                .Clients.Group(TenantGroup(collectionName))
                 .SendCoreAsync("create", new[] { data });
         }
         catch (Exception ex)
@@ -271,7 +297,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
                 collectionName
             );
             await _dataHubContext
-                .Clients.Group(collectionName)
+                .Clients.Group(TenantGroup(collectionName))
                 .SendCoreAsync("update", new[] { data });
         }
         catch (Exception ex)
@@ -294,7 +320,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
                 collectionName
             );
             await _dataHubContext
-                .Clients.Group(collectionName)
+                .Clients.Group(TenantGroup(collectionName))
                 .SendCoreAsync("delete", new[] { data });
         }
         catch (Exception ex)
@@ -318,7 +344,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
             );
             var payload = new { action, instance = trackerInstance };
             await _dataHubContext
-                .Clients.Group("authorized")
+                .Clients.Group(TenantGroup("authorized"))
                 .SendCoreAsync("trackerUpdate", new[] { payload });
             _logger.LogDebug("Tracker update broadcast completed for action {Action}", action);
         }
@@ -335,7 +361,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         {
             _logger.LogInformation("Broadcasting password reset request to admin subscribers");
             await _dataHubContext
-                .Clients.Group("admin")
+                .Clients.Group(TenantGroup("admin"))
                 .SendCoreAsync("passwordResetRequested", Array.Empty<object>());
         }
         catch (Exception ex)
@@ -355,15 +381,15 @@ public class SignalRBroadcastService : ISignalRBroadcastService
                 change.ChangeType
             );
 
-            // Broadcast to connector-specific group
+            // Broadcast to tenant-scoped connector-specific group
             var connectorGroup = $"config:{change.ConnectorName.ToLowerInvariant()}";
             await _configHubContext
-                .Clients.Group(connectorGroup)
+                .Clients.Group(TenantGroup(connectorGroup))
                 .SendCoreAsync("configChanged", new[] { change });
 
-            // Also broadcast to "all" subscribers
+            // Also broadcast to tenant-scoped "all" subscribers
             await _configHubContext
-                .Clients.Group("config:all")
+                .Clients.Group(TenantGroup("config:all"))
                 .SendCoreAsync("configChanged", new[] { change });
 
             _logger.LogDebug("Config change broadcast completed for {ConnectorName}", change.ConnectorName);
@@ -389,15 +415,15 @@ public class SignalRBroadcastService : ISignalRBroadcastService
                 notification.Id
             );
 
-            // Broadcast to user-specific group for multi-user scenarios
+            // Broadcast to tenant-scoped user-specific group for multi-user scenarios
             var userGroup = $"user-{userId}";
             await _dataHubContext
-                .Clients.Group(userGroup)
+                .Clients.Group(TenantGroup(userGroup))
                 .SendCoreAsync("notificationCreated", new object[] { notification });
 
-            // Also broadcast to authorized group for single-user deployments and bridge relay
+            // Also broadcast to tenant-scoped authorized group for single-user deployments and bridge relay
             await _dataHubContext
-                .Clients.Group("authorized")
+                .Clients.Group(TenantGroup("authorized"))
                 .SendCoreAsync("notificationCreated", new object[] { notification });
 
             _logger.LogDebug("Notification created broadcast completed for user {UserId}", userId);
@@ -427,14 +453,14 @@ public class SignalRBroadcastService : ISignalRBroadcastService
             var userGroup = $"user-{userId}";
             var payload = new { notification, archiveReason };
 
-            // Broadcast to user-specific group for multi-user scenarios
+            // Broadcast to tenant-scoped user-specific group for multi-user scenarios
             await _dataHubContext
-                .Clients.Group(userGroup)
+                .Clients.Group(TenantGroup(userGroup))
                 .SendCoreAsync("notificationArchived", new object[] { payload });
 
-            // Also broadcast to authorized group for single-user deployments and bridge relay
+            // Also broadcast to tenant-scoped authorized group for single-user deployments and bridge relay
             await _dataHubContext
-                .Clients.Group("authorized")
+                .Clients.Group(TenantGroup("authorized"))
                 .SendCoreAsync("notificationArchived", new object[] { payload });
 
             _logger.LogDebug("Notification archived broadcast completed for user {UserId}", userId);
@@ -462,14 +488,14 @@ public class SignalRBroadcastService : ISignalRBroadcastService
 
             var userGroup = $"user-{userId}";
 
-            // Broadcast to user-specific group for multi-user scenarios
+            // Broadcast to tenant-scoped user-specific group for multi-user scenarios
             await _dataHubContext
-                .Clients.Group(userGroup)
+                .Clients.Group(TenantGroup(userGroup))
                 .SendCoreAsync("notificationUpdated", new object[] { notification });
 
-            // Also broadcast to authorized group for single-user deployments and bridge relay
+            // Also broadcast to tenant-scoped authorized group for single-user deployments and bridge relay
             await _dataHubContext
-                .Clients.Group("authorized")
+                .Clients.Group(TenantGroup("authorized"))
                 .SendCoreAsync("notificationUpdated", new object[] { notification });
 
             _logger.LogDebug("Notification updated broadcast completed for user {UserId}", userId);

@@ -76,8 +76,8 @@ public class AlarmHub : TenantAwareHub
 
             if (isAuthorized)
             {
-                // Add connection to alarm subscribers group
-                await Groups.AddToGroupAsync(Context.ConnectionId, "alarm-subscribers");
+                // Add connection to tenant-scoped alarm subscribers group
+                await Groups.AddToGroupAsync(Context.ConnectionId, TenantGroup("alarm-subscribers"));
 
                 _logger.LogInformation(
                     "Client {ConnectionId} subscribed to alarms successfully",
@@ -172,9 +172,9 @@ public class AlarmHub : TenantAwareHub
                     }
                 );
 
-                // Broadcast to all alarm subscribers that this alarm was acknowledged
+                // Broadcast to all tenant alarm subscribers that this alarm was acknowledged
                 await Clients
-                    .Group("alarm-subscribers")
+                    .Group(TenantGroup("alarm-subscribers"))
                     .SendAsync(
                         "alarmAck",
                         new

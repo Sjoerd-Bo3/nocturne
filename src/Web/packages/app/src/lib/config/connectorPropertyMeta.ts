@@ -16,10 +16,6 @@ export type PropertyMeta = {
   category: PropertyCategory;
 };
 
-/**
- * Exhaustive mapping of connector property keys to their metadata.
- * TypeScript will error if any enum key is missing.
- */
 export const connectorPropertyMeta: Record<ConnectorPropertyKeyName, PropertyMeta> = {
   // Base configuration
   TimezoneOffset: {
@@ -233,11 +229,23 @@ export function formatPropertyName(name: string): string {
 
 /**
  * Get metadata for a property key with fallback for unknown keys.
+ * Handles both PascalCase (enum names) and camelCase (schema property keys).
  * @param key The property key to look up
  * @returns PropertyMeta with label, description, and category
  */
 export function getPropertyMeta(key: string): PropertyMeta {
-  return connectorPropertyMeta[key as ConnectorPropertyKeyName] ?? {
+  // Direct match (PascalCase from enum)
+  if (key in connectorPropertyMeta) {
+    return connectorPropertyMeta[key as ConnectorPropertyKeyName];
+  }
+
+  // Convert camelCase to PascalCase for lookup (schema keys are camelCased)
+  const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
+  if (pascalKey in connectorPropertyMeta) {
+    return connectorPropertyMeta[pascalKey as ConnectorPropertyKeyName];
+  }
+
+  return {
     label: formatPropertyName(key),
     description: '',
     category: 'General',

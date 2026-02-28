@@ -481,8 +481,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<FoodEntity>()
-            .HasIndex(f => new { f.ExternalSource, f.ExternalId })
-            .HasDatabaseName("ix_foods_external_source_id")
+            .HasIndex(f => new { f.TenantId, f.ExternalSource, f.ExternalId })
+            .HasDatabaseName("ix_foods_tenant_external")
             .HasFilter("external_source IS NOT NULL AND external_id IS NOT NULL")
             .IsUnique();
 
@@ -499,8 +499,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<ConnectorFoodEntryEntity>()
-            .HasIndex(e => new { e.ConnectorSource, e.ExternalEntryId })
-            .HasDatabaseName("ix_connector_food_entries_source_entry")
+            .HasIndex(e => new { e.TenantId, e.ConnectorSource, e.ExternalEntryId })
+            .HasDatabaseName("ix_connector_food_entries_tenant_source_id")
             .IsUnique();
 
         modelBuilder
@@ -547,8 +547,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<UserFoodFavoriteEntity>()
-            .HasIndex(f => new { f.UserId, f.FoodId })
-            .HasDatabaseName("ix_user_food_favorites_user_food")
+            .HasIndex(f => new { f.TenantId, f.UserId, f.FoodId })
+            .HasDatabaseName("ix_user_food_favorites_tenant_user_food")
             .IsUnique();
 
         // Settings indexes - optimized for common queries
@@ -749,9 +749,9 @@ public class NocturneDbContext : DbContext
         // Notification Preferences indexes - optimized for user lookups
         modelBuilder
             .Entity<NotificationPreferencesEntity>()
-            .HasIndex(p => p.UserId)
-            .HasDatabaseName("ix_notification_preferences_user_id")
-            .IsUnique(); // One preference set per user
+            .HasIndex(p => new { p.TenantId, p.UserId })
+            .HasDatabaseName("ix_notification_preferences_tenant_user")
+            .IsUnique(); // One preference set per user per tenant
 
         modelBuilder
             .Entity<NotificationPreferencesEntity>()
@@ -797,9 +797,9 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<DeviceHealthEntity>()
-            .HasIndex(d => d.DeviceId)
-            .HasDatabaseName("ix_device_health_device_id")
-            .IsUnique(); // One health record per device
+            .HasIndex(d => new { d.TenantId, d.DeviceId })
+            .HasDatabaseName("ix_device_health_tenant_device")
+            .IsUnique(); // One health record per device per tenant
 
         modelBuilder
             .Entity<DeviceHealthEntity>()
@@ -943,8 +943,8 @@ public class NocturneDbContext : DbContext
         // DataSourceMetadata indexes - optimized for device lookups
         modelBuilder
             .Entity<DataSourceMetadataEntity>()
-            .HasIndex(d => d.DeviceId)
-            .HasDatabaseName("ix_data_source_metadata_device_id")
+            .HasIndex(d => new { d.TenantId, d.DeviceId })
+            .HasDatabaseName("ix_data_source_metadata_tenant_device")
             .IsUnique();
 
         modelBuilder
@@ -1160,9 +1160,9 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<LinkedRecordEntity>()
-            .HasIndex(l => new { l.RecordType, l.RecordId })
+            .HasIndex(l => new { l.TenantId, l.RecordType, l.RecordId })
             .IsUnique()
-            .HasDatabaseName("ix_linked_records_unique");
+            .HasDatabaseName("ix_linked_records_tenant_type_id");
 
         modelBuilder
             .Entity<LinkedRecordEntity>()
@@ -1259,8 +1259,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<SensorGlucoseEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_sensor_glucose_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_sensor_glucose_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1312,8 +1312,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<BolusEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_boluses_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_boluses_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1331,8 +1331,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<CarbIntakeEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_carb_intakes_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_carb_intakes_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1350,8 +1350,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<BGCheckEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_bg_checks_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_bg_checks_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1369,8 +1369,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<NoteEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_notes_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_notes_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1388,8 +1388,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<DeviceEventEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_device_events_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_device_events_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1407,8 +1407,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<BolusCalculationEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_bolus_calculations_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_bolus_calculations_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1468,8 +1468,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<TempBasalEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_temp_basals_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_temp_basals_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1491,8 +1491,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<TherapySettingsEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_therapy_settings_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_therapy_settings_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1515,8 +1515,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<BasalScheduleEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_basal_schedules_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_basal_schedules_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1539,8 +1539,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<CarbRatioScheduleEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_carb_ratio_schedules_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_carb_ratio_schedules_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1563,8 +1563,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<SensitivityScheduleEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_sensitivity_schedules_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_sensitivity_schedules_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 
@@ -1587,8 +1587,8 @@ public class NocturneDbContext : DbContext
 
         modelBuilder
             .Entity<TargetRangeScheduleEntity>()
-            .HasIndex(e => e.LegacyId)
-            .HasDatabaseName("ix_target_range_schedules_legacy_id")
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_target_range_schedules_tenant_legacy_id")
             .IsUnique()
             .HasFilter("legacy_id IS NOT NULL");
 

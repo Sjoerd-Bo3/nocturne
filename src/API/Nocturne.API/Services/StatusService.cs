@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Nocturne.API.Extensions;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Data;
@@ -22,7 +23,11 @@ public class StatusService : IStatusService
     private readonly IDemoModeService _demoModeService;
     private readonly NocturneDbContext _dbContext;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<StatusService> _logger;
+
+    private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
+        ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public StatusService(
         IConfiguration configuration,
@@ -30,6 +35,7 @@ public class StatusService : IStatusService
         IDemoModeService demoModeService,
         NocturneDbContext dbContext,
         IHttpContextAccessor httpContextAccessor,
+        ITenantAccessor tenantAccessor,
         ILogger<StatusService> logger
     )
     {
@@ -38,6 +44,7 @@ public class StatusService : IStatusService
         _demoModeService = demoModeService;
         _dbContext = dbContext;
         _httpContextAccessor = httpContextAccessor;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
 
@@ -48,7 +55,7 @@ public class StatusService : IStatusService
     {
         // Include demo mode in cache key to ensure correct status is returned
         var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
-        var cacheKey = "status:system" + demoSuffix;
+        var cacheKey = $"status:system:{TenantCacheId}" + demoSuffix;
         var cacheTtl = TimeSpan.FromMinutes(2);
 
         var cachedStatus = await _cacheService.GetAsync<StatusResponse>(cacheKey);

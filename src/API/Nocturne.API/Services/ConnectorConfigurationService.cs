@@ -582,7 +582,7 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
 
         if (secrets.Count > 0)
         {
-            schema["x-secrets"] = secrets;
+            schema["secrets"] = secrets;
         }
 
         var json = JsonSerializer.Serialize(schema, _jsonOptions);

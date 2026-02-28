@@ -26,6 +26,7 @@ public class TreatmentDecomposerTests : IDisposable
     public TreatmentDecomposerTests()
     {
         _context = TestDbContextFactory.CreateInMemoryContext();
+        _context.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var mockDedup = new Mock<IDeduplicationService>();
         var bolusRepo = new BolusRepository(_context, mockDedup.Object, NullLogger<BolusRepository>.Instance);
         var carbIntakeRepo = new CarbIntakeRepository(_context, mockDedup.Object, NullLogger<CarbIntakeRepository>.Instance);

@@ -17,6 +17,7 @@ namespace Nocturne.API.Controllers.V4;
 [Route("api/v4/debug")]
 [Produces("application/json")]
 [Tags("V4 Debug")]
+[Authorize]
 public class DebugController : ControllerBase
 {
     private readonly IPostgreSqlService _postgreSqlService;
@@ -56,6 +57,7 @@ public class DebugController : ControllerBase
     /// <response code="400">Invalid parameters</response>
     /// <response code="500">Internal server error</response>
     [HttpGet("echo/{echo}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -75,6 +77,7 @@ public class DebugController : ControllerBase
     /// <response code="400">Invalid parameters</response>
     /// <response code="500">Internal server error</response>
     [HttpGet("echo/{echo}/{model}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -95,6 +98,7 @@ public class DebugController : ControllerBase
     /// <response code="400">Invalid parameters</response>
     /// <response code="500">Internal server error</response>
     [HttpGet("echo/{echo}/{model}/{spec}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -505,7 +509,6 @@ public class DebugController : ControllerBase
     /// <response code="401">User not authenticated</response>
     /// <response code="403">Endpoint only available in development</response>
     [HttpPost("test/inappnotification")]
-    [Authorize]
     [ProducesResponseType(typeof(InAppNotificationDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -562,6 +565,7 @@ public class DebugController : ControllerBase
     /// <returns>The created notification</returns>
     /// <response code="200">Notification created and broadcast successfully</response>
     [HttpGet("test/notification")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(InAppNotificationDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<InAppNotificationDto>> CreateSimpleTestNotification(
         [FromQuery] string type = "info",
@@ -637,6 +641,7 @@ public class DebugController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Confirmation of broadcast</returns>
     [HttpGet("test/signalr-broadcast")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<ActionResult<object>> TestSignalRBroadcast(
         CancellationToken cancellationToken = default

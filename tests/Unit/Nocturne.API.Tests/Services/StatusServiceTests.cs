@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Data;
@@ -24,6 +25,7 @@ public class StatusServiceTests
     private readonly Mock<ICacheService> _mockCacheService;
     private readonly Mock<IDemoModeService> _mockDemoModeService;
     private readonly Mock<ILogger<StatusService>> _mockLogger;
+    private readonly Mock<ITenantAccessor> _mockTenantAccessor;
     private readonly IConfiguration _configuration;
     private readonly NocturneDbContext _dbContext;
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -34,6 +36,11 @@ public class StatusServiceTests
         _mockCacheService = new Mock<ICacheService>();
         _mockDemoModeService = new Mock<IDemoModeService>();
         _mockLogger = new Mock<ILogger<StatusService>>();
+        _mockTenantAccessor = new Mock<ITenantAccessor>();
+        _mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
+        _mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
+        _mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
         _mockDemoModeService.Setup(x => x.IsEnabled).Returns(false);
         _dbContext = TestDbContextFactory.CreateInMemoryContext();
 
@@ -97,7 +104,7 @@ public class StatusServiceTests
         };
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync(cachedStatus);
 
         // Act
@@ -110,7 +117,7 @@ public class StatusServiceTests
         result.Name.Should().Be("Test Nocturne");
 
         _mockCacheService.Verify(
-            x => x.GetAsync<StatusResponse>("status:system", default),
+            x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default),
             Times.Once
         );
         _mockCacheService.Verify(
@@ -130,7 +137,7 @@ public class StatusServiceTests
     {
         // Arrange
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -145,11 +152,11 @@ public class StatusServiceTests
         result.ServerTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
         _mockCacheService.Verify(
-            x => x.GetAsync<StatusResponse>("status:system", default),
+            x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default),
             Times.Once
         );
         _mockCacheService.Verify(
-            x => x.SetAsync("status:system", result, TimeSpan.FromMinutes(2), default),
+            x => x.SetAsync("status:system:00000000-0000-0000-0000-000000000001", result, TimeSpan.FromMinutes(2), default),
             Times.Once
         );
     }
@@ -171,7 +178,7 @@ public class StatusServiceTests
         var customService = CreateStatusService(customConfiguration, _dbContext);
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -191,7 +198,7 @@ public class StatusServiceTests
         Environment.SetEnvironmentVariable("GIT_COMMIT", "abc123def456");
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         try
@@ -217,7 +224,7 @@ public class StatusServiceTests
         Environment.SetEnvironmentVariable("GIT_COMMIT", null);
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         try
@@ -244,7 +251,7 @@ public class StatusServiceTests
     {
         // Arrange
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -361,7 +368,7 @@ public class StatusServiceTests
         var customService = CreateStatusService(customConfiguration, _dbContext);
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -405,7 +412,7 @@ public class StatusServiceTests
         var customService = CreateStatusService(customConfiguration, _dbContext);
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -444,7 +451,7 @@ public class StatusServiceTests
         var customService = CreateStatusService(customConfiguration, _dbContext);
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -486,7 +493,7 @@ public class StatusServiceTests
         var customService = CreateStatusService(customConfiguration, _dbContext);
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -518,7 +525,7 @@ public class StatusServiceTests
         var customService = CreateStatusService(customConfiguration, _dbContext);
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -545,7 +552,7 @@ public class StatusServiceTests
     {
         // Arrange
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ThrowsAsync(new InvalidOperationException("Cache service unavailable"));
 
         // Act & Assert
@@ -555,7 +562,7 @@ public class StatusServiceTests
 
         // Verify cache operations were attempted
         _mockCacheService.Verify(
-            x => x.GetAsync<StatusResponse>("status:system", default),
+            x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default),
             Times.Once
         );
     }
@@ -569,7 +576,7 @@ public class StatusServiceTests
         var nullConfigService = CreateStatusService(emptyConfiguration, _dbContext);
 
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -590,7 +597,7 @@ public class StatusServiceTests
     {
         // Arrange
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -644,7 +651,7 @@ public class StatusServiceTests
     {
         // Arrange
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -680,7 +687,7 @@ public class StatusServiceTests
     {
         // Arrange
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -688,7 +695,7 @@ public class StatusServiceTests
 
         // Assert
         _mockCacheService.Verify(
-            x => x.SetAsync("status:system", result, TimeSpan.FromMinutes(2), default),
+            x => x.SetAsync("status:system:00000000-0000-0000-0000-000000000001", result, TimeSpan.FromMinutes(2), default),
             Times.Once
         );
     }
@@ -698,7 +705,7 @@ public class StatusServiceTests
     {
         // Arrange
         _mockCacheService
-            .Setup(x => x.GetAsync<StatusResponse>("status:system", default))
+            .Setup(x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default))
             .ReturnsAsync((StatusResponse?)null);
 
         // Act
@@ -716,7 +723,7 @@ public class StatusServiceTests
 
         // Cache should be checked for each call
         _mockCacheService.Verify(
-            x => x.GetAsync<StatusResponse>("status:system", default),
+            x => x.GetAsync<StatusResponse>("status:system:00000000-0000-0000-0000-000000000001", default),
             Times.Exactly(5)
         );
     }
@@ -727,6 +734,9 @@ public class StatusServiceTests
 
     private static void SeedLastModifiedData(NocturneDbContext context, DateTime now)
     {
+        // Set tenant ID on the context so entities pass the tenant validation on save
+        context.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+
         var baseMills = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         context.Entries.Add(
@@ -870,6 +880,7 @@ public class StatusServiceTests
             _mockDemoModeService.Object,
             context ?? TestDbContextFactory.CreateInMemoryContext(),
             _httpContextAccessor,
+            _mockTenantAccessor.Object,
             _mockLogger.Object
         );
 

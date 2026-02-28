@@ -32,7 +32,7 @@ public class TreatmentService : ITreatmentService
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<TreatmentService> _logger;
     private const string CollectionName = "treatments";
-    private string TenantSlug => _tenantAccessor.Context?.Slug
+    private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
         ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public TreatmentService(
@@ -112,7 +112,7 @@ public class TreatmentService : ITreatmentService
             var hours = DetermineTimeRangeHours(actualCount);
             var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
             var cacheKey =
-                CacheKeyBuilder.BuildRecentTreatmentsKey(TenantSlug, hours, actualCount)
+                CacheKeyBuilder.BuildRecentTreatmentsKey(TenantCacheId, hours, actualCount)
                 + demoSuffix;
             var cacheTtl = TimeSpan.FromSeconds(
                 CacheConstants.Defaults.RecentTreatmentsExpirationSeconds
@@ -185,7 +185,7 @@ public class TreatmentService : ITreatmentService
             var hours = DetermineTimeRangeHours(count);
             var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
             var cacheKey =
-                CacheKeyBuilder.BuildRecentTreatmentsKey(TenantSlug, hours, count)
+                CacheKeyBuilder.BuildRecentTreatmentsKey(TenantCacheId, hours, count)
                 + demoSuffix;
             var cacheTtl = TimeSpan.FromSeconds(
                 CacheConstants.Defaults.RecentTreatmentsExpirationSeconds
@@ -585,7 +585,7 @@ public class TreatmentService : ITreatmentService
             try
             {
                 var recentTreatmentsPattern = CacheKeyBuilder.BuildRecentTreatmentsPattern(
-                    TenantSlug
+                    TenantCacheId
                 );
                 await _cacheService.RemoveByPatternAsync(
                     recentTreatmentsPattern,
@@ -720,7 +720,7 @@ public class TreatmentService : ITreatmentService
             try
             {
                 var recentTreatmentsPattern = CacheKeyBuilder.BuildRecentTreatmentsPattern(
-                    TenantSlug
+                    TenantCacheId
                 );
                 await _cacheService.RemoveByPatternAsync(
                     recentTreatmentsPattern,
@@ -879,7 +879,7 @@ public class TreatmentService : ITreatmentService
         try
         {
             var recentTreatmentsPattern = CacheKeyBuilder.BuildRecentTreatmentsPattern(
-                TenantSlug
+                TenantCacheId
             );
             await _cacheService.RemoveByPatternAsync(recentTreatmentsPattern, cancellationToken);
         }
@@ -966,7 +966,7 @@ public class TreatmentService : ITreatmentService
             try
             {
                 var recentTreatmentsPattern = CacheKeyBuilder.BuildRecentTreatmentsPattern(
-                    TenantSlug
+                    TenantCacheId
                 );
                 await _cacheService.RemoveByPatternAsync(
                     recentTreatmentsPattern,
@@ -1026,7 +1026,7 @@ public class TreatmentService : ITreatmentService
             try
             {
                 var recentTreatmentsPattern = CacheKeyBuilder.BuildRecentTreatmentsPattern(
-                    TenantSlug
+                    TenantCacheId
                 );
                 await _cacheService.RemoveByPatternAsync(
                     recentTreatmentsPattern,

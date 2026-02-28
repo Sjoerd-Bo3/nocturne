@@ -26,7 +26,7 @@ public class ConfigHub : TenantAwareHub
         _logger.LogDebug("Client {ConnectionId} subscribing to config changes for {ConnectorName}",
             Context.ConnectionId, connectorName);
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, GetGroupName(connectorName));
+        await Groups.AddToGroupAsync(Context.ConnectionId, TenantGroup(GetConfigGroupName(connectorName)));
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public class ConfigHub : TenantAwareHub
         _logger.LogDebug("Client {ConnectionId} unsubscribing from config changes for {ConnectorName}",
             Context.ConnectionId, connectorName);
 
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, GetGroupName(connectorName));
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, TenantGroup(GetConfigGroupName(connectorName)));
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public class ConfigHub : TenantAwareHub
     {
         _logger.LogDebug("Client {ConnectionId} subscribing to all config changes", Context.ConnectionId);
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, "config:all");
+        await Groups.AddToGroupAsync(Context.ConnectionId, TenantGroup("config:all"));
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ public class ConfigHub : TenantAwareHub
     {
         _logger.LogDebug("Client {ConnectionId} unsubscribing from all config changes", Context.ConnectionId);
 
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, "config:all");
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, TenantGroup("config:all"));
     }
 
     public override async Task OnConnectedAsync()
@@ -87,7 +87,7 @@ public class ConfigHub : TenantAwareHub
         await base.OnDisconnectedAsync(exception);
     }
 
-    private static string GetGroupName(string connectorName) => $"config:{connectorName.ToLowerInvariant()}";
+    private static string GetConfigGroupName(string connectorName) => $"config:{connectorName.ToLowerInvariant()}";
 }
 
 /// <summary>

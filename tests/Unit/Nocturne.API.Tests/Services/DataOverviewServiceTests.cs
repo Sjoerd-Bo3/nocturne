@@ -32,6 +32,7 @@ public class DataOverviewServiceTests : IDisposable
     public DataOverviewServiceTests()
     {
         _dbContext = TestDbContextFactory.CreateInMemoryContext();
+        _dbContext.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         _service = new DataOverviewService(
             _dbContext,
             NullLogger<DataOverviewService>.Instance

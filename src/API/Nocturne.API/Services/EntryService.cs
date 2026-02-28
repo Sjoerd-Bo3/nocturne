@@ -27,7 +27,7 @@ public class EntryService : IEntryService
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<EntryService> _logger;
     private const string CollectionName = "entries";
-    private string TenantSlug => _tenantAccessor.Context?.Slug
+    private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
         ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public EntryService(
@@ -76,7 +76,7 @@ public class EntryService : IEntryService
         {
             var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
             var cacheKey =
-                CacheKeyBuilder.BuildRecentEntriesKey(TenantSlug, actualCount, find)
+                CacheKeyBuilder.BuildRecentEntriesKey(TenantCacheId, actualCount, find)
                 + demoSuffix;
             var cacheTtl = TimeSpan.FromSeconds(
                 CacheConstants.Defaults.RecentEntriesExpirationSeconds
@@ -161,7 +161,7 @@ public class EntryService : IEntryService
         {
             var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
             var cacheKey =
-                CacheKeyBuilder.BuildRecentEntriesKey(TenantSlug, count, type) + demoSuffix;
+                CacheKeyBuilder.BuildRecentEntriesKey(TenantCacheId, count, type) + demoSuffix;
             var cacheTtl = TimeSpan.FromSeconds(
                 CacheConstants.Defaults.RecentEntriesExpirationSeconds
             );
@@ -451,7 +451,7 @@ public class EntryService : IEntryService
         // Invalidate current entry cache since new entries were created
         try
         {
-            var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantSlug);
+            var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId);
             await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
             _logger.LogInformation(
                 "Cache INVALIDATION: {CacheKey} after creating {Count} entries",
@@ -460,7 +460,7 @@ public class EntryService : IEntryService
             );
 
             // Invalidate all recent entries caches using pattern matching
-            var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(TenantSlug);
+            var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(TenantCacheId);
             await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
             _logger.LogInformation(
                 "Cache INVALIDATION: recent entries pattern '{Pattern}' after creating {Count} entries",
@@ -543,7 +543,7 @@ public class EntryService : IEntryService
             // Invalidate current entry cache since an entry was updated
             try
             {
-                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantSlug);
+                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId);
                 await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
                 _logger.LogInformation(
                     "Cache INVALIDATION: {CacheKey} after updating entry {EntryId}",
@@ -553,7 +553,7 @@ public class EntryService : IEntryService
 
                 // Invalidate all recent entries caches using pattern matching
                 var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(
-                    TenantSlug
+                    TenantCacheId
                 );
                 await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
                 _logger.LogInformation(
@@ -631,7 +631,7 @@ public class EntryService : IEntryService
             // Invalidate current entry cache since an entry was deleted
             try
             {
-                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantSlug);
+                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId);
                 await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
                 _logger.LogInformation(
                     "Cache INVALIDATION: {CacheKey} after deleting entry {EntryId}",
@@ -641,7 +641,7 @@ public class EntryService : IEntryService
 
                 // Invalidate all recent entries caches using pattern matching
                 var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(
-                    TenantSlug
+                    TenantCacheId
                 );
                 await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
                 _logger.LogInformation(
@@ -700,7 +700,7 @@ public class EntryService : IEntryService
             // Invalidate current entry cache since entries were deleted
             try
             {
-                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantSlug);
+                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId);
                 await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
                 _logger.LogDebug(
                     "Invalidated {CacheKey} cache after bulk deleting {Count} entries",
@@ -710,7 +710,7 @@ public class EntryService : IEntryService
 
                 // Invalidate all recent entries caches using pattern matching
                 var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(
-                    TenantSlug
+                    TenantCacheId
                 );
                 await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
                 _logger.LogDebug(
@@ -732,7 +732,7 @@ public class EntryService : IEntryService
     public async Task<Entry?> GetCurrentEntryAsync(CancellationToken cancellationToken = default)
     {
         var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
-        var cacheKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantSlug) + demoSuffix;
+        var cacheKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId) + demoSuffix;
         var cacheTtl = TimeSpan.FromSeconds(CacheConstants.Defaults.CurrentEntryExpirationSeconds);
 
         var cachedEntry = await _cacheService.GetAsync<Entry>(cacheKey, cancellationToken);

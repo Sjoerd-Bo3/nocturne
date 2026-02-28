@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using Nocturne.API.Services;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models.V4;
 using Xunit;
@@ -18,7 +19,12 @@ public class PumpDeviceServiceTests
     public PumpDeviceServiceTests()
     {
         _mockRepository = new Mock<IPumpDeviceRepository>();
-        _service = new PumpDeviceService(_mockRepository.Object);
+        var mockTenantAccessor = new Mock<ITenantAccessor>();
+        mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
+        mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
+        mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        _service = new PumpDeviceService(_mockRepository.Object, mockTenantAccessor.Object);
     }
 
     [Fact]

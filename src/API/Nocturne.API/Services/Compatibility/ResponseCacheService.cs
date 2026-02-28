@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Nocturne.API.Configuration;
 using Nocturne.API.Models.Compatibility;
+using Nocturne.Core.Contracts.Multitenancy;
 
 namespace Nocturne.API.Services.Compatibility;
 
@@ -49,6 +50,7 @@ public class ResponseCacheService : IResponseCacheService
 {
     private readonly IMemoryCache _memoryCache;
     private readonly IOptions<CompatibilityProxyConfiguration> _configuration;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<ResponseCacheService> _logger;
 
     // HTTP methods that are safe to cache
@@ -59,20 +61,26 @@ public class ResponseCacheService : IResponseCacheService
         "OPTIONS",
     };
 
+    private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
+        ?? throw new InvalidOperationException("Tenant context is not resolved");
+
     /// <summary>
     /// Initializes a new instance of the ResponseCacheService class
     /// </summary>
     /// <param name="memoryCache">Memory cache for storing responses</param>
     /// <param name="configuration">Compatibility proxy configuration settings</param>
+    /// <param name="tenantAccessor">Tenant accessor for scoping cache keys</param>
     /// <param name="logger">Logger instance for this service</param>
     public ResponseCacheService(
         IMemoryCache memoryCache,
         IOptions<CompatibilityProxyConfiguration> configuration,
+        ITenantAccessor tenantAccessor,
         ILogger<ResponseCacheService> logger
     )
     {
         _memoryCache = memoryCache;
         _configuration = configuration;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
 
@@ -118,7 +126,7 @@ public class ResponseCacheService : IResponseCacheService
             using var sha = SHA256.Create();
             var keyHash = Convert.ToBase64String(sha.ComputeHash(Encoding.UTF8.GetBytes(fullKey)));
 
-            var cacheKey = $"compatibility_proxy_cache_{keyHash}";
+            var cacheKey = $"compatibility_proxy_cache:{TenantCacheId}:{keyHash}";
 
             _logger.LogDebug(
                 "Generated cache key for {Method} {Path}: {CacheKey}",

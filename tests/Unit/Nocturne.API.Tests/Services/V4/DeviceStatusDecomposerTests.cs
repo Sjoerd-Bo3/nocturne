@@ -22,6 +22,7 @@ public class DeviceStatusDecomposerTests : IDisposable
     public DeviceStatusDecomposerTests()
     {
         _context = TestDbContextFactory.CreateInMemoryContext();
+        _context.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var apsRepo = new ApsSnapshotRepository(_context, NullLogger<ApsSnapshotRepository>.Instance);
         var pumpRepo = new PumpSnapshotRepository(_context, NullLogger<PumpSnapshotRepository>.Instance);
         var uploaderRepo = new UploaderSnapshotRepository(_context, NullLogger<UploaderSnapshotRepository>.Instance);

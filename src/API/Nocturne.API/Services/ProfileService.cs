@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services;
@@ -16,8 +17,12 @@ namespace Nocturne.API.Services;
 public class ProfileService : IProfileService
 {
     private readonly IMemoryCache _cache;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<ProfileService>? _logger;
     private const int CacheTtlMs = 5000; // 5 seconds cache TTL like legacy
+
+    private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
+        ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     private List<Profile>? _profileData;
     private List<Treatment> _profileTreatments = new();
@@ -25,9 +30,10 @@ public class ProfileService : IProfileService
     private List<Treatment> _comboBolusTreatments = new();
     private Treatment? _prevBasalTreatment;
 
-    public ProfileService(IMemoryCache cache, ILogger<ProfileService>? logger = null)
+    public ProfileService(IMemoryCache cache, ITenantAccessor tenantAccessor, ILogger<ProfileService>? logger = null)
     {
         _cache = cache;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
 
@@ -71,7 +77,7 @@ public class ProfileService : IProfileService
 
         // Round to the minute for better caching (like legacy)
         var minuteTime = (long)(Math.Round(time.Value / 60000.0) * 60000);
-        var cacheKey = $"profile{minuteTime}{specProfile}";
+        var cacheKey = $"profile:{TenantCacheId}:{minuteTime}:{specProfile}";
 
         if (_cache.TryGetValue(cacheKey, out ProfileData? cachedResult))
         {
@@ -165,7 +171,7 @@ public class ProfileService : IProfileService
     {
         // Round to the minute for better caching
         var minuteTime = (long)(Math.Round(time / 60000.0) * 60000);
-        var cacheKey = $"{minuteTime}{valueType}{specProfile}";
+        var cacheKey = $"profileValue:{TenantCacheId}:{minuteTime}:{valueType}:{specProfile}";
 
         if (_cache.TryGetValue(cacheKey, out double cachedValue))
         {
@@ -299,7 +305,7 @@ public class ProfileService : IProfileService
     public Treatment? GetActiveProfileTreatment(long time)
     {
         var minuteTime = (long)(Math.Round(time / 60000.0) * 60000);
-        var cacheKey = $"profileCache{minuteTime}";
+        var cacheKey = $"profileCache:{TenantCacheId}:{minuteTime}";
 
         if (_cache.TryGetValue(cacheKey, out Treatment? cachedTreatment))
         {
@@ -392,7 +398,7 @@ public class ProfileService : IProfileService
     public TempBasalResult GetTempBasal(long time, string? specProfile = null)
     {
         var minuteTime = (long)(Math.Round(time / 60000.0) * 60000);
-        var cacheKey = $"basalCache{minuteTime}{specProfile}";
+        var cacheKey = $"basalCache:{TenantCacheId}:{minuteTime}:{specProfile}";
         if (_cache.TryGetValue(cacheKey, out TempBasalResult? cachedResult) && cachedResult != null)
         {
             return cachedResult;

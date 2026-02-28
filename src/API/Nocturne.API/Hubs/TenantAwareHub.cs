@@ -31,29 +31,29 @@ public abstract class TenantAwareHub : Hub
         Context.GetHttpContext()?.Items[TenantContextKey] as TenantContext;
 
     /// <summary>
-    /// Creates a tenant-scoped SignalR group name using the pattern "{tenantSlug}:{groupName}".
-    /// This prevents cross-tenant data leakage by ensuring each tenant's clients
-    /// are in isolated groups.
+    /// Creates a tenant-scoped SignalR group name using the pattern "{tenantId}:{groupName}".
+    /// Uses the immutable TenantId (GUID) instead of the mutable Slug to prevent
+    /// cross-tenant data leakage if a tenant's slug is changed.
     /// </summary>
     /// <param name="groupName">The base group name (e.g., "authorized", "admin")</param>
     /// <returns>A tenant-scoped group name</returns>
     /// <exception cref="HubException">Thrown when tenant context is not available</exception>
     protected string TenantGroup(string groupName)
     {
-        var slug = TenantContext?.Slug
+        var tenantId = TenantContext?.TenantId.ToString()
             ?? throw new HubException("Cannot create tenant group: no tenant context resolved.");
-        return FormatTenantGroup(slug, groupName);
+        return FormatTenantGroup(tenantId, groupName);
     }
 
     /// <summary>
     /// Static helper to format a tenant-scoped group name.
     /// Used by both hub methods and the broadcast service to ensure consistent naming.
     /// </summary>
-    /// <param name="tenantSlug">The tenant slug</param>
+    /// <param name="tenantId">The tenant identifier (GUID as string)</param>
     /// <param name="groupName">The base group name</param>
-    /// <returns>A tenant-scoped group name in the format "{tenantSlug}:{groupName}"</returns>
-    public static string FormatTenantGroup(string tenantSlug, string groupName)
-        => $"{tenantSlug}:{groupName}";
+    /// <returns>A tenant-scoped group name in the format "{tenantId}:{groupName}"</returns>
+    public static string FormatTenantGroup(string tenantId, string groupName)
+        => $"{tenantId}:{groupName}";
 
     /// <summary>
     /// Validates that a tenant context exists from the HTTP upgrade handshake.

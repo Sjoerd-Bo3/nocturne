@@ -65,6 +65,12 @@ public class TreatmentServiceTests
             )
             .ReturnsAsync(new List<TempBasal>());
 
+        var mockTenantAccessor = new Mock<ITenantAccessor>();
+        mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
+        mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
+        mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+
         _treatmentService = new TreatmentService(
             _mockPostgreSqlService.Object,
             _mockBroadcastService.Object,
@@ -75,7 +81,7 @@ public class TreatmentServiceTests
             _mockTreatmentDecomposer.Object,
             _mockProjectionService.Object,
             _mockTempBasalRepository.Object,
-            new Mock<ITenantAccessor>().Object,
+            mockTenantAccessor.Object,
             _mockLogger.Object
         );
     }

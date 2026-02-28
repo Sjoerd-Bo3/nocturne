@@ -22,7 +22,7 @@ public class ProfileDataService : IProfileDataService
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<ProfileDataService> _logger;
     private const string CollectionName = "profiles";
-    private string TenantSlug => _tenantAccessor.Context?.Slug
+    private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
         ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public ProfileDataService(
@@ -67,7 +67,7 @@ public class ProfileDataService : IProfileDataService
         CancellationToken cancellationToken = default
     )
     {
-        var cacheKey = CacheKeyBuilder.BuildCurrentProfileKey(TenantSlug);
+        var cacheKey = CacheKeyBuilder.BuildCurrentProfileKey(TenantCacheId);
         var cacheTtl = TimeSpan.FromMinutes(10);
 
         var cachedProfile = await _cacheService.GetAsync<Profile>(cacheKey, cancellationToken);
@@ -96,7 +96,7 @@ public class ProfileDataService : IProfileDataService
         CancellationToken cancellationToken = default
     )
     {
-        var cacheKey = CacheKeyBuilder.BuildProfileAtTimestampKey(TenantSlug, timestamp);
+        var cacheKey = CacheKeyBuilder.BuildProfileAtTimestampKey(TenantCacheId, timestamp);
         var cacheTtl = TimeSpan.FromSeconds(
             CacheConstants.Defaults.ProfileTimestampExpirationSeconds
         );
@@ -150,12 +150,12 @@ public class ProfileDataService : IProfileDataService
         // Invalidate current profile cache since new profiles were created
         try
         {
-            await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantSlug), cancellationToken);
+            await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantCacheId), cancellationToken);
             _logger.LogDebug("Invalidated current profile cache after creating new profiles");
 
             // Invalidate all profile timestamp caches since profiles were created
             var profileTimestampPattern = CacheKeyBuilder.BuildProfileTimestampPattern(
-                TenantSlug
+                TenantCacheId
             );
             await _cacheService.RemoveByPatternAsync(profileTimestampPattern, cancellationToken);
             _logger.LogDebug(
@@ -211,7 +211,7 @@ public class ProfileDataService : IProfileDataService
             // Invalidate current profile cache since a profile was updated
             try
             {
-                await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantSlug), cancellationToken);
+                await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantCacheId), cancellationToken);
                 _logger.LogDebug(
                     "Invalidated current profile cache after updating profile {ProfileId}",
                     id
@@ -219,7 +219,7 @@ public class ProfileDataService : IProfileDataService
 
                 // Invalidate all profile timestamp caches since a profile was updated
                 var profileTimestampPattern = CacheKeyBuilder.BuildProfileTimestampPattern(
-                    TenantSlug
+                    TenantCacheId
                 );
                 await _cacheService.RemoveByPatternAsync(
                     profileTimestampPattern,
@@ -276,7 +276,7 @@ public class ProfileDataService : IProfileDataService
             // Invalidate current profile cache since a profile was deleted
             try
             {
-                await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantSlug), cancellationToken);
+                await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantCacheId), cancellationToken);
                 _logger.LogDebug(
                     "Invalidated current profile cache after deleting profile {ProfileId}",
                     id
@@ -284,7 +284,7 @@ public class ProfileDataService : IProfileDataService
 
                 // Invalidate all profile timestamp caches since a profile was deleted
                 var profileTimestampPattern = CacheKeyBuilder.BuildProfileTimestampPattern(
-                    TenantSlug
+                    TenantCacheId
                 );
                 await _cacheService.RemoveByPatternAsync(
                     profileTimestampPattern,

@@ -20,6 +20,7 @@ public class EntryDecomposerTests : IDisposable
     public EntryDecomposerTests()
     {
         _context = TestDbContextFactory.CreateInMemoryContext();
+        _context.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var mockDedup = new Mock<IDeduplicationService>();
         var sgRepo = new SensorGlucoseRepository(_context, mockDedup.Object, NullLogger<SensorGlucoseRepository>.Instance);
         var mgRepo = new MeterGlucoseRepository(_context, NullLogger<MeterGlucoseRepository>.Instance);

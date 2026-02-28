@@ -32,6 +32,7 @@ public class AlertProcessingServiceTests
     {
         _dbContext =
             Nocturne.Tests.Shared.Infrastructure.TestDbContextFactory.CreateInMemoryContext();
+        _dbContext.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         _mockAlertHistoryRepository = new Mock<AlertHistoryRepository>(_dbContext)
         {
             CallBase = true,

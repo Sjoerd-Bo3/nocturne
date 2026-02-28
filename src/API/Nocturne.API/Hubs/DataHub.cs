@@ -84,7 +84,7 @@ public class DataHub : TenantAwareHub
                 var httpContext = Context.GetHttpContext();
                 if (httpContext?.IsAdmin() == true)
                 {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, "admin");
+                    await Groups.AddToGroupAsync(Context.ConnectionId, TenantGroup("admin"));
                     _logger.LogDebug(
                         "Client {ConnectionId} added to admin group",
                         Context.ConnectionId
@@ -244,7 +244,7 @@ public class DataHub : TenantAwareHub
             {
                 if (enabledCollections.Contains(collection))
                 {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, collection);
+                    await Groups.AddToGroupAsync(Context.ConnectionId, TenantGroup(collection));
                     subscribed.Add(collection);
                     _logger.LogDebug(
                         "Client {ConnectionId} subscribed to collection {Collection}",
