@@ -110,5 +110,10 @@ public enum RecordType
     /// <summary>
     /// V4 bolus calculation
     /// </summary>
-    BolusCalculation
+    BolusCalculation,
+
+    /// <summary>
+    /// V4 temporary basal rate
+    /// </summary>
+    TempBasal
 }

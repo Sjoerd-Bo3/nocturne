@@ -29451,6 +29451,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "tempBasalsProcessed": {
+            "type": "integer",
+            "format": "int32"
+          },
           "success": {
             "type": "boolean"
           },
@@ -29510,7 +29514,8 @@
           "BGCheck",
           "DeviceEvent",
           "Note",
-          "BolusCalculation"
+          "BolusCalculation",
+          "TempBasal"
         ],
         "enum": [
           "Entry",
@@ -29522,7 +29527,8 @@
           "BGCheck",
           "DeviceEvent",
           "Note",
-          "BolusCalculation"
+          "BolusCalculation",
+          "TempBasal"
         ]
       },
       "LinkedRecord": {

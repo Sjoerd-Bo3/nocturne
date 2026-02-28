@@ -337,6 +337,31 @@ public class DeduplicationService : IDeduplicationService
                 }
             }
         }
+        // For temp basals, check rate and origin matching
+        else if (recordType == RecordType.TempBasal && criteria.Rate.HasValue)
+        {
+            var canonicalIds = potentialMatches.Select(m => m.CanonicalId).Distinct().ToList();
+
+            foreach (var canonicalId in canonicalIds)
+            {
+                var recordIds = potentialMatches
+                    .Where(m => m.CanonicalId == canonicalId)
+                    .Select(m => m.RecordId)
+                    .ToList();
+
+                var tempBasals = await _context.TempBasals
+                    .Where(tb => recordIds.Contains(tb.Id))
+                    .ToListAsync(cancellationToken);
+
+                foreach (var tb in tempBasals)
+                {
+                    if (Math.Abs(tb.Rate - criteria.Rate.Value) <= criteria.RateTolerance)
+                    {
+                        return canonicalId;
+                    }
+                }
+            }
+        }
 
         // No matching records found, create a new canonical ID
         return Guid.CreateVersion7();
@@ -560,9 +585,10 @@ public class DeduplicationService : IDeduplicationService
             var deviceEventCount = await _context.DeviceEvents.CountAsync(cancellationToken);
             var noteCount = await _context.Notes.CountAsync(cancellationToken);
             var bolusCalcCount = await _context.BolusCalculations.CountAsync(cancellationToken);
+            var tempBasalCount = await _context.TempBasals.CountAsync(cancellationToken);
             var totalRecords = entryCount + treatmentCount + stateSpanCount
                 + sensorGlucoseCount + bolusCount + carbIntakeCount + bgCheckCount
-                + deviceEventCount + noteCount + bolusCalcCount;
+                + deviceEventCount + noteCount + bolusCalcCount + tempBasalCount;
 
             var processed = 0;
             var groupsCreated = 0;
@@ -729,6 +755,22 @@ public class DeduplicationService : IDeduplicationService
             recordsLinked += bolusCalcResult.linked;
             duplicateGroups += bolusCalcResult.duplicates;
 
+            // Process temp basals
+            progress?.Report(new DeduplicationProgress
+            {
+                TotalRecords = totalRecords,
+                ProcessedRecords = processed,
+                GroupsFound = groupsCreated,
+                RecordsLinked = recordsLinked,
+                CurrentPhase = "TempBasals"
+            });
+
+            var tempBasalResult = await DeduplicateTempBasalsAsync(progress, totalRecords, processed, cancellationToken);
+            processed += tempBasalResult.processed;
+            groupsCreated += tempBasalResult.groups;
+            recordsLinked += tempBasalResult.linked;
+            duplicateGroups += tempBasalResult.duplicates;
+
             stopwatch.Stop();
 
             _logger.LogInformation(
@@ -752,6 +794,7 @@ public class DeduplicationService : IDeduplicationService
                 DeviceEventsProcessed = deviceEventResult.processed,
                 NotesProcessed = noteResult.processed,
                 BolusCalculationsProcessed = bolusCalcResult.processed,
+                TempBasalsProcessed = tempBasalResult.processed,
                 Success = true
             };
         }
@@ -1798,6 +1841,103 @@ public class DeduplicationService : IDeduplicationService
                         CurrentPhase = "BolusCalculations"
                     });
                 }
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return (processed, groupsCreated, recordsLinked, duplicateGroups);
+    }
+
+    private async Task<(int processed, int groups, int linked, int duplicates)> DeduplicateTempBasalsAsync(
+        IProgress<DeduplicationProgress>? progress,
+        int totalRecords,
+        int startOffset,
+        CancellationToken cancellationToken)
+    {
+        const int batchSize = 500;
+        var processed = 0;
+        var groupsCreated = 0;
+        var recordsLinked = 0;
+        var duplicateGroups = 0;
+
+        var tempBasals = await _context.TempBasals
+            .OrderBy(tb => tb.StartTimestamp)
+            .Select(tb => new { tb.Id, tb.StartTimestamp, tb.Rate, tb.Origin, tb.DataSource })
+            .ToListAsync(cancellationToken);
+
+        // Track which records have been processed to avoid duplicates
+        var processedIds = new HashSet<Guid>();
+
+        foreach (var tempBasal in tempBasals)
+        {
+            if (processedIds.Contains(tempBasal.Id))
+                continue;
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var mills = new DateTimeOffset(tempBasal.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
+            var windowStart = mills - MatchingWindowMillis;
+            var windowEnd = mills + MatchingWindowMillis;
+
+            // Find all temp basals within the matching window that have the same rate and origin
+            var matches = tempBasals
+                .Where(tb => !processedIds.Contains(tb.Id))
+                .Where(tb =>
+                {
+                    var tbMills = new DateTimeOffset(tb.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
+                    return tbMills >= windowStart && tbMills <= windowEnd;
+                })
+                .Where(tb => Math.Abs(tb.Rate - tempBasal.Rate) <= 0.05) // ±0.05 u/hr tolerance
+                .Where(tb => string.Equals(tb.Origin, tempBasal.Origin, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (matches.Count == 0)
+                continue;
+
+            if (matches.Count > 1)
+            {
+                duplicateGroups++;
+            }
+
+            var canonicalId = Guid.CreateVersion7();
+            groupsCreated++;
+
+            foreach (var match in matches)
+            {
+                processedIds.Add(match.Id);
+
+                var existing = await _context.LinkedRecords
+                    .AnyAsync(lr => lr.RecordType == "tempbasal" && lr.RecordId == match.Id, cancellationToken);
+
+                if (!existing)
+                {
+                    var linkedRecord = new LinkedRecordEntity
+                    {
+                        CanonicalId = canonicalId,
+                        RecordType = "tempbasal",
+                        RecordId = match.Id,
+                        SourceTimestamp = new DateTimeOffset(match.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds(),
+                        DataSource = match.DataSource ?? "unknown",
+                        IsPrimary = match == matches.First()
+                    };
+                    _context.LinkedRecords.Add(linkedRecord);
+                    recordsLinked++;
+                }
+
+                processed++;
+            }
+
+            if (processed % batchSize == 0)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+                progress?.Report(new DeduplicationProgress
+                {
+                    TotalRecords = totalRecords,
+                    ProcessedRecords = startOffset + processed,
+                    GroupsFound = groupsCreated,
+                    RecordsLinked = recordsLinked,
+                    CurrentPhase = "TempBasals"
+                });
             }
         }
 

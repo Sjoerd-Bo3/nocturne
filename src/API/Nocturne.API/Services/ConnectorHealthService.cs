@@ -45,14 +45,11 @@ public class ConnectorHealthService(
             results.Add(status);
         }
 
-        // Filter out connectors that have no data and are not enabled (truly unused)
+        // Filter out connectors that are not configured and have no data (truly unused)
         return results
             .Where(r =>
-                r.IsHealthy
-                || // Running and healthy
-                r.Status == "Disabled" && r.TotalEntries > 0
-                || // Disabled but has historical data
-                r.Status != "Disabled" // Any other status (unhealthy, unreachable, etc.)
+                r.State != "Not Configured"
+                || r.TotalEntries > 0
             )
             .ToList();
     }
@@ -132,13 +129,46 @@ public class ConnectorHealthService(
             };
         }
 
+        // Derive state from actual health and sync history, not just enabled flag
+        var isEnabled = enabledConfig == true;
+        // Consider a connector as having synced if it has a recorded successful sync
+        // OR if it has data in the database (legacy connectors that synced before health tracking)
+        var hasEverSynced = healthState?.LastSuccessfulSync != null || dbStats.TotalItems > 0;
+        var isHealthy = healthState?.IsHealthy ?? false;
+        var hasError = healthState != null && !healthState.IsHealthy && healthState.LastErrorAt != null;
+
+        string state;
+        bool healthy;
+
+        if (!isEnabled)
+        {
+            state = "Not Configured";
+            healthy = false;
+        }
+        else if (hasError)
+        {
+            state = "Error";
+            healthy = false;
+        }
+        else if (!hasEverSynced)
+        {
+            // Enabled but never successfully synced — waiting for first sync
+            state = "Configured";
+            healthy = false;
+        }
+        else
+        {
+            state = "Running";
+            healthy = true;
+        }
+
         var liveStatus = new ConnectorStatusDto
         {
             Id = connector.Id,
             Name = connector.Id,
-            Status = enabledConfig == true ? "Running" : "Not Configured",
-            IsHealthy = healthState?.IsHealthy ?? (enabledConfig == true),
-            State = enabledConfig == true ? "Running" : "Not Configured",
+            Status = state,
+            IsHealthy = healthy,
+            State = state,
             StateMessage = healthState?.LastErrorMessage,
             LastSyncAttempt = healthState?.LastSyncAttempt,
             LastSuccessfulSync = healthState?.LastSuccessfulSync,

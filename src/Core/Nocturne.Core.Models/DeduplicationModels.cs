@@ -231,6 +231,12 @@ public record DeduplicationResult
     public int BolusCalculationsProcessed { get; init; }
 
     /// <summary>
+    /// Number of temp basal records processed
+    /// </summary>
+    [JsonPropertyName("tempBasalsProcessed")]
+    public int TempBasalsProcessed { get; init; }
+
+    /// <summary>
     /// Whether the job completed successfully
     /// </summary>
     [JsonPropertyName("success")]

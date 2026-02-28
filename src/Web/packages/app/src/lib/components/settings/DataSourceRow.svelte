@@ -20,6 +20,7 @@
     | "backing-off"
     | "disabled"
     | "offline"
+    | "configured"
     | "demo";
 
   interface Props {
@@ -72,6 +73,11 @@
         return {
           bg: "bg-purple-100 dark:bg-purple-900/30",
           text: "text-purple-600 dark:text-purple-400",
+        };
+      case "configured":
+        return {
+          bg: "bg-blue-100 dark:bg-blue-900/30",
+          text: "text-blue-600 dark:text-blue-400",
         };
       case "stale":
       case "backing-off":
@@ -182,6 +188,14 @@
             <Badge variant="destructive" class="text-xs">
               <AlertCircle class="h-3 w-3 mr-1" />
               Error
+            </Badge>
+          {:else if status === "configured"}
+            <Badge
+              variant="secondary"
+              class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 text-xs"
+            >
+              <Clock class="h-3 w-3 mr-1" />
+              Configured
             </Badge>
           {:else if status === "active"}
             <Badge

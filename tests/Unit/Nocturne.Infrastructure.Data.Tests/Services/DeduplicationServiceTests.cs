@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
+using Nocturne.Infrastructure.Data.Entities.V4;
 using Nocturne.Infrastructure.Data.Mappers;
 using Nocturne.Infrastructure.Data.Services;
 
@@ -648,6 +649,215 @@ public class DeduplicationServiceTests : IDisposable
 
     #endregion
 
+    #region TempBasal Deduplication Tests
+
+    [Fact]
+    public async Task DeduplicateAllAsync_ShouldGroupTempBasals_FromDifferentConnectors()
+    {
+        // Arrange
+        await using var context = new NocturneDbContext(_contextOptions);
+        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        var logger = new Mock<ILogger<DeduplicationService>>();
+        var service = new DeduplicationService(context, scopeFactory, logger.Object);
+
+        var timestamp = new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc);
+
+        // Simulate Glooko and MyLife writing the same basal event
+        var glookoTempBasal = CreateTestTempBasalEntity(
+            startTimestamp: timestamp,
+            rate: 1.2,
+            origin: "Scheduled",
+            dataSource: "glooko-connector",
+            legacyId: "glooko_scheduledbasal_123"
+        );
+        var mylifeTempBasal = CreateTestTempBasalEntity(
+            startTimestamp: timestamp.AddSeconds(2), // 2 seconds later
+            rate: 1.2,
+            origin: "Scheduled",
+            dataSource: "mylife-connector",
+            legacyId: "mylife_basal_456"
+        );
+
+        context.TempBasals.AddRange(glookoTempBasal, mylifeTempBasal);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.DeduplicateAllAsync();
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.TempBasalsProcessed.Should().Be(2);
+
+        var linkedRecords = await context.LinkedRecords
+            .Where(lr => lr.RecordType == "tempbasal")
+            .ToListAsync();
+        linkedRecords.Should().HaveCount(2);
+        linkedRecords.Select(lr => lr.CanonicalId).Distinct().Should().HaveCount(1,
+            "both temp basals should share the same canonical ID");
+        linkedRecords.Select(lr => lr.DataSource).Should().BeEquivalentTo(
+            new[] { "glooko-connector", "mylife-connector" });
+
+        result.DuplicateGroupsFound.Should().BeGreaterThanOrEqualTo(1);
+    }
+
+    [Fact]
+    public async Task DeduplicateAllAsync_ShouldNotGroupTempBasals_WithDifferentRates()
+    {
+        // Arrange
+        await using var context = new NocturneDbContext(_contextOptions);
+        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        var logger = new Mock<ILogger<DeduplicationService>>();
+        var service = new DeduplicationService(context, scopeFactory, logger.Object);
+
+        var timestamp = new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc);
+
+        var tempBasal1 = CreateTestTempBasalEntity(
+            startTimestamp: timestamp,
+            rate: 1.2,
+            origin: "Scheduled",
+            dataSource: "glooko-connector"
+        );
+        var tempBasal2 = CreateTestTempBasalEntity(
+            startTimestamp: timestamp.AddSeconds(5),
+            rate: 0.8, // Different rate
+            origin: "Scheduled",
+            dataSource: "mylife-connector"
+        );
+
+        context.TempBasals.AddRange(tempBasal1, tempBasal2);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.DeduplicateAllAsync();
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.TempBasalsProcessed.Should().Be(2);
+
+        var linkedRecords = await context.LinkedRecords
+            .Where(lr => lr.RecordType == "tempbasal")
+            .ToListAsync();
+        linkedRecords.Should().HaveCount(2);
+        linkedRecords.Select(lr => lr.CanonicalId).Distinct().Should().HaveCount(2,
+            "temp basals with different rates should not be grouped");
+    }
+
+    [Fact]
+    public async Task DeduplicateAllAsync_ShouldNotGroupTempBasals_WithDifferentOrigins()
+    {
+        // Arrange
+        await using var context = new NocturneDbContext(_contextOptions);
+        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        var logger = new Mock<ILogger<DeduplicationService>>();
+        var service = new DeduplicationService(context, scopeFactory, logger.Object);
+
+        var timestamp = new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc);
+
+        var scheduledBasal = CreateTestTempBasalEntity(
+            startTimestamp: timestamp,
+            rate: 1.2,
+            origin: "Scheduled",
+            dataSource: "glooko-connector"
+        );
+        var algorithmBasal = CreateTestTempBasalEntity(
+            startTimestamp: timestamp.AddSeconds(5),
+            rate: 1.2, // Same rate
+            origin: "Algorithm", // Different origin
+            dataSource: "mylife-connector"
+        );
+
+        context.TempBasals.AddRange(scheduledBasal, algorithmBasal);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.DeduplicateAllAsync();
+
+        // Assert
+        result.Success.Should().BeTrue();
+
+        var linkedRecords = await context.LinkedRecords
+            .Where(lr => lr.RecordType == "tempbasal")
+            .ToListAsync();
+        linkedRecords.Should().HaveCount(2);
+        linkedRecords.Select(lr => lr.CanonicalId).Distinct().Should().HaveCount(2,
+            "temp basals with different origins should not be grouped");
+    }
+
+    [Fact]
+    public async Task DeduplicateAllAsync_ShouldNotGroupTempBasals_OutsideTimeWindow()
+    {
+        // Arrange
+        await using var context = new NocturneDbContext(_contextOptions);
+        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        var logger = new Mock<ILogger<DeduplicationService>>();
+        var service = new DeduplicationService(context, scopeFactory, logger.Object);
+
+        var timestamp = new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc);
+
+        var tempBasal1 = CreateTestTempBasalEntity(
+            startTimestamp: timestamp,
+            rate: 1.2,
+            origin: "Scheduled",
+            dataSource: "glooko-connector"
+        );
+        var tempBasal2 = CreateTestTempBasalEntity(
+            startTimestamp: timestamp.AddMinutes(2), // 2 minutes later, well outside 30s window
+            rate: 1.2,
+            origin: "Scheduled",
+            dataSource: "mylife-connector"
+        );
+
+        context.TempBasals.AddRange(tempBasal1, tempBasal2);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.DeduplicateAllAsync();
+
+        // Assert
+        result.Success.Should().BeTrue();
+
+        var linkedRecords = await context.LinkedRecords
+            .Where(lr => lr.RecordType == "tempbasal")
+            .ToListAsync();
+        linkedRecords.Should().HaveCount(2);
+        linkedRecords.Select(lr => lr.CanonicalId).Distinct().Should().HaveCount(2,
+            "temp basals outside the time window should not be grouped");
+    }
+
+    [Fact]
+    public async Task DeduplicateAllAsync_ShouldHandleSingleTempBasalEntity_WithoutError()
+    {
+        // Arrange
+        await using var context = new NocturneDbContext(_contextOptions);
+        var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        var logger = new Mock<ILogger<DeduplicationService>>();
+        var service = new DeduplicationService(context, scopeFactory, logger.Object);
+
+        var tempBasal = CreateTestTempBasalEntity(
+            startTimestamp: new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc),
+            rate: 1.2,
+            origin: "Scheduled",
+            dataSource: "glooko-connector"
+        );
+
+        context.TempBasals.Add(tempBasal);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.DeduplicateAllAsync();
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.TempBasalsProcessed.Should().Be(1);
+        // Single record should not be a duplicate group
+        var linkedRecords = await context.LinkedRecords
+            .Where(lr => lr.RecordType == "tempbasal")
+            .ToListAsync();
+        linkedRecords.Should().HaveCount(1);
+    }
+
+    #endregion
+
     #region Test Helper Methods
 
     private static Treatment CreateTestTreatment(
@@ -698,6 +908,27 @@ public class DeduplicationServiceTests : IDisposable
                 { "rate", 1.0 },
                 { "origin", "Manual" }
             }
+        };
+    }
+
+    private static TempBasalEntity CreateTestTempBasalEntity(
+        DateTime startTimestamp,
+        double rate,
+        string origin,
+        string dataSource,
+        string? legacyId = null
+    )
+    {
+        return new TempBasalEntity
+        {
+            Id = Guid.CreateVersion7(),
+            StartTimestamp = startTimestamp,
+            Rate = rate,
+            Origin = origin,
+            DataSource = dataSource,
+            LegacyId = legacyId ?? $"{dataSource}_{startTimestamp.Ticks}",
+            SysCreatedAt = DateTime.UtcNow,
+            SysUpdatedAt = DateTime.UtcNow
         };
     }
 

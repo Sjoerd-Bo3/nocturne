@@ -346,19 +346,27 @@ public class TreatmentService : ITreatmentService
         var tempBasalTreatments = TempBasalToTreatmentMapper.ToTreatments(tempBasals).ToList();
         var projectedTreatments = await projectedTask;
 
+        // Deduplicate temp basals from multiple connectors: group by 30s time window + rate,
+        // keeping the first record in each group (earliest by Mills).
+        const long windowMillis = 30_000;
+        var deduplicatedBasals = tempBasalTreatments
+            .GroupBy(t => (WindowKey: t.Mills / windowMillis, RateKey: t.Rate.HasValue ? Math.Round(t.Rate.Value * 20) / 20 : 0))
+            .Select(g => g.OrderBy(t => t.Mills).First())
+            .ToList();
+
         // Build a set of legacy treatment IDs for dedup; V4 projection only returns records
         // with LegacyId == null, so there will be no Id overlap with legacy treatments.
         // Dedup by Mills to guard against timestamp collisions.
         var legacyList = treatments.ToList();
         var legacyMillsSet = legacyList.Select(t => t.Mills).ToHashSet();
-        var basalMillsSet = tempBasalTreatments.Select(t => t.Mills).ToHashSet();
+        var basalMillsSet = deduplicatedBasals.Select(t => t.Mills).ToHashSet();
 
         var filteredProjected = projectedTreatments
             .Where(p => !legacyMillsSet.Contains(p.Mills) && !basalMillsSet.Contains(p.Mills));
 
         // Merge all sources and sort
         var allTreatments = legacyList
-            .Concat(tempBasalTreatments)
+            .Concat(deduplicatedBasals)
             .Concat(filteredProjected)
             .OrderByDescending(t => t.Mills)
             .Skip(skip)

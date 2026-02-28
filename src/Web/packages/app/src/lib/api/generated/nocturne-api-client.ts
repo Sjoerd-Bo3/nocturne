@@ -26048,6 +26048,7 @@ export interface DeduplicationResult {
     deviceEventsProcessed?: number;
     notesProcessed?: number;
     bolusCalculationsProcessed?: number;
+    tempBasalsProcessed?: number;
     success?: boolean;
     errorMessage?: string | undefined;
 }
@@ -26077,6 +26078,7 @@ export enum RecordType {
     DeviceEvent = "DeviceEvent",
     Note = "Note",
     BolusCalculation = "BolusCalculation",
+    TempBasal = "TempBasal",
 }
 
 export interface LinkedRecord {

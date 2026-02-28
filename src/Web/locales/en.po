@@ -2109,6 +2109,7 @@ msgstr "Unspecified: {0}g"
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
+#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/migration/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Completed"
@@ -2117,6 +2118,7 @@ msgstr "Completed"
 #: src/lib/components/trackers/TrackerCompletionDialog.svelte
 #: src/lib/components/trackers/TrackerStartDialog.svelte
 #: src/routes/notifications/+page.svelte
+#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -2170,6 +2172,7 @@ msgstr "Rescheduled"
 #: src/lib/components/trackers/TrackerCompletionDialog.svelte
 #: src/lib/components/trackers/TrackerStartDialog.svelte
 #: src/routes/notifications/+page.svelte
+#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -5315,6 +5318,9 @@ msgid "<0/> Credentials"
 msgstr "<0/> Credentials"
 
 #: src/lib/components/settings/ConnectorConfigForm.svelte
+#: src/routes/settings/connectors/+page.svelte
+#: src/routes/settings/connectors/+page.svelte
+#: src/routes/settings/connectors/+page.svelte
 msgid "Configured"
 msgstr "Configured"
 
@@ -17035,3 +17041,41 @@ msgstr ""
 #: src/routes/settings/admin/tenants/+page.svelte
 msgid "<0/> Remov"
 msgstr "<0/> Remov"
+
+#: src/routes/settings/connectors/+page.svelte
+msgid "Deduplication complete"
+msgstr "Deduplication complete"
+
+#. placeholder {0}: processed
+#. placeholder {1}: groups
+#: src/routes/settings/connectors/+page.svelte
+msgid "Processed {0} records, found {1} duplicate groups"
+msgstr "Processed {0} records, found {1} duplicate groups"
+
+#: src/routes/settings/connectors/+page.svelte
+msgid "Deduplication failed"
+msgstr "Deduplication failed"
+
+#: src/routes/settings/connectors/+page.svelte
+msgid "An unknown error occurred"
+msgstr "An unknown error occurred"
+
+#: src/routes/settings/connectors/+page.svelte
+msgid "Deduplication cancelled"
+msgstr "Deduplication cancelled"
+
+#: src/routes/settings/connectors/+page.svelte
+msgid "<0/> Deduplication Running..."
+msgstr "<0/> Deduplication Running..."
+
+#: src/routes/settings/connectors/+page.svelte
+msgid ""
+"You can close this dialog — the job will continue in the background\n"
+"and you'll be notified when it's done."
+msgstr ""
+"You can close this dialog — the job will continue in the background\n"
+"and you'll be notified when it's done."
+
+#: src/lib/components/settings/DataSourceRow.svelte
+msgid "<0/> Configured"
+msgstr "<0/> Configured"

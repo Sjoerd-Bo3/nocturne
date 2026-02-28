@@ -17,6 +17,7 @@ using Nocturne.Connectors.Nightscout.Services;
 using Nocturne.Connectors.Tidepool.Configurations;
 using Nocturne.Connectors.Tidepool.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 
 namespace Nocturne.API.Services;
 
@@ -39,14 +40,17 @@ public interface IConnectorSyncService
 public class ConnectorSyncService : IConnectorSyncService
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<ConnectorSyncService> _logger;
 
     public ConnectorSyncService(
         IServiceProvider serviceProvider,
+        ITenantAccessor tenantAccessor,
         ILogger<ConnectorSyncService> logger
     )
     {
         _serviceProvider = serviceProvider;
+        _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
 
@@ -138,6 +142,15 @@ public class ConnectorSyncService : IConnectorSyncService
         where TConfig : class, IConnectorConfiguration
     {
         using var scope = _serviceProvider.CreateScope();
+
+        // Propagate tenant context from the HTTP request scope into the child scope
+        // so that broadcast, cache invalidation, and DB services can resolve the tenant.
+        if (_tenantAccessor.Context is { } tenantContext)
+        {
+            var scopedTenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
+            scopedTenantAccessor.SetTenant(tenantContext);
+        }
+
         var service = scope.ServiceProvider.GetRequiredService<TService>();
         var config = scope.ServiceProvider.GetRequiredService<TConfig>();
 

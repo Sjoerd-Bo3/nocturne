@@ -102,7 +102,7 @@
               (d: SiteChangeImpactDataPointValid) => d.percentile25,
               (d: SiteChangeImpactDataPointValid) => d.percentile10,
             ],
-            color: "hsl(var(--chart-1) / 0.3)",
+            color: "color-mix(in oklch, var(--chart-1) 30%, transparent)",
             label: "10th-25th",
           },
           {
@@ -111,7 +111,7 @@
               (d: SiteChangeImpactDataPointValid) => d.medianGlucose,
               (d: SiteChangeImpactDataPointValid) => d.percentile25,
             ],
-            color: "hsl(var(--chart-2) / 0.5)",
+            color: "color-mix(in oklch, var(--chart-2) 50%, transparent)",
             label: "25th-Median",
           },
           {
@@ -120,7 +120,7 @@
               (d: SiteChangeImpactDataPointValid) => d.medianGlucose,
               (d: SiteChangeImpactDataPointValid) => d.medianGlucose,
             ],
-            color: "hsl(var(--primary))",
+            color: "var(--primary)",
             props: {
               line: { strokeWidth: 2 },
             },
@@ -132,7 +132,7 @@
               (d: SiteChangeImpactDataPointValid) => d.medianGlucose,
               (d: SiteChangeImpactDataPointValid) => d.percentile75,
             ],
-            color: "hsl(var(--chart-3) / 0.5)",
+            color: "color-mix(in oklch, var(--chart-3) 50%, transparent)",
             label: "Median-75th",
           },
           {
@@ -141,7 +141,7 @@
               (d: SiteChangeImpactDataPointValid) => d.percentile75,
               (d: SiteChangeImpactDataPointValid) => d.percentile90,
             ],
-            color: "hsl(var(--chart-4) / 0.3)",
+            color: "color-mix(in oklch, var(--chart-4) 30%, transparent)",
             label: "75th-90th",
           },
         ]}
@@ -178,21 +178,21 @@
       <div class="flex items-center gap-1.5">
         <div
           class="h-3 w-3 rounded-sm opacity-50"
-          style="background-color: hsl(var(--chart-1))"
+          style="background-color: var(--chart-1)"
         ></div>
         <span>10th-25th / 75th-90th percentile</span>
       </div>
       <div class="flex items-center gap-1.5">
         <div
           class="h-3 w-3 rounded-sm opacity-70"
-          style="background-color: hsl(var(--chart-2))"
+          style="background-color: var(--chart-2)"
         ></div>
         <span>25th-75th percentile</span>
       </div>
       <div class="flex items-center gap-1.5">
         <div
           class="h-0.5 w-4 rounded"
-          style="background-color: hsl(var(--primary))"
+          style="background-color: var(--primary)"
         ></div>
         <span>Median glucose</span>
       </div>

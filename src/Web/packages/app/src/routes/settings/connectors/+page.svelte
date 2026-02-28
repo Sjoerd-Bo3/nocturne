@@ -159,6 +159,7 @@
   let deduplicationJobId = $state<string | null>(null);
   let deduplicationStatus = $state<DeduplicationJobStatus | null>(null);
   let deduplicationError = $state<string | null>(null);
+  let deduplicationStartTime = $state<Date | null>(null);
   let deduplicationPollingInterval = $state<ReturnType<
     typeof setInterval
   > | null>(null);
@@ -258,6 +259,7 @@
     isDeduplicating = true;
     deduplicationError = null;
     deduplicationStatus = null;
+    deduplicationStartTime = new Date();
 
     try {
       const result = await startDeduplicationJob();
@@ -268,11 +270,13 @@
       } else {
         deduplicationError = "Failed to start deduplication job";
         isDeduplicating = false;
+        deduplicationStartTime = null;
       }
     } catch (e) {
       deduplicationError =
         e instanceof Error ? e.message : "Failed to start deduplication";
       isDeduplicating = false;
+      deduplicationStartTime = null;
     }
   }
 
@@ -298,6 +302,30 @@
             if (status.state === "Failed") {
               deduplicationError = status.result?.errorMessage ?? "Job failed";
             }
+
+            // Show toast if dialog is closed or job took longer than 2 minutes
+            const elapsed = deduplicationStartTime
+              ? Date.now() - deduplicationStartTime.getTime()
+              : 0;
+            const twoMinutes = 2 * 60 * 1000;
+
+            if (!showDeduplicationDialog || elapsed > twoMinutes) {
+              if (status.state === "Completed") {
+                const processed = status.result?.totalRecordsProcessed?.toLocaleString() ?? "0";
+                const groups = status.result?.duplicateGroupsFound?.toLocaleString() ?? "0";
+                toast.success("Deduplication complete", {
+                  description: `Processed ${processed} records, found ${groups} duplicate groups`,
+                });
+              } else if (status.state === "Failed") {
+                toast.error("Deduplication failed", {
+                  description: status.result?.errorMessage ?? "An unknown error occurred",
+                });
+              } else if (status.state === "Cancelled") {
+                toast.info("Deduplication cancelled");
+              }
+            }
+
+            deduplicationStartTime = null;
           }
         }
       } catch (e) {
@@ -329,12 +357,14 @@
 
   function closeDeduplicationDialog() {
     showDeduplicationDialog = false;
-    stopDeduplicationPolling();
-    // Reset state for next time
+    // If not running, reset state for next time
+    // If running, keep polling in the background — toast will notify on completion
     if (!isDeduplicating) {
+      stopDeduplicationPolling();
       deduplicationJobId = null;
       deduplicationStatus = null;
       deduplicationError = null;
+      deduplicationStartTime = null;
     }
   }
 
@@ -834,8 +864,9 @@
   ): DataSourceStatus {
     if (connectorStatus.state === "Syncing") return "syncing";
     if (connectorStatus.state === "BackingOff") return "backing-off";
-    if (connectorStatus.state === "Error" || !connectorStatus.isHealthy)
+    if (connectorStatus.state === "Error" || !connectorStatus.isHealthy && connectorStatus.state !== "Configured")
       return "error";
+    if (connectorStatus.state === "Configured") return "configured";
     if (connectorStatus.state === "Disabled") return "disabled";
     if (connectorStatus.state === "Offline") return "offline";
     return "active";
@@ -1169,7 +1200,7 @@
             {@const connectorStatus = connectorStatuses.find(
               (cs) => cs.id === connector.id
             )}
-            {@const isConnected = connectorStatus?.isHealthy === true}
+            {@const isConnected = connectorStatus?.isHealthy === true || connectorStatus?.state === "Configured"}
             {@const isDisabledWithData =
               connectorStatus?.state === "Disabled" &&
               (connectorStatus?.totalEntries ?? 0) > 0}
@@ -1450,8 +1481,13 @@
               class="mt-3 gap-2"
               onclick={() => (showDeduplicationDialog = true)}
             >
-              <Link2 class="h-4 w-4" />
-              Run Deduplication
+              {#if isDeduplicating}
+                <Loader2 class="h-4 w-4 animate-spin" />
+                Deduplication Running...
+              {:else}
+                <Link2 class="h-4 w-4" />
+                Run Deduplication
+              {/if}
             </Button>
           </div>
         </div>
@@ -2489,6 +2525,11 @@
               </div>
             </div>
           {/if}
+
+          <p class="text-xs text-muted-foreground">
+            You can close this dialog — the job will continue in the background
+            and you'll be notified when it's done.
+          </p>
         </div>
       {:else}
         <div class="rounded-lg border bg-muted/50 p-4">

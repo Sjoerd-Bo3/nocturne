@@ -29,16 +29,25 @@ export const getPunchCardData = query(punchCardSchema, async ({
   startDate.setHours(0, 0, 0, 0);
   endDate.setHours(23, 59, 59, 999);
 
-  // Fetch glucose readings, boluses, and carb intakes for the full range
-  const [glucoseResponse, bolusResponse, carbResponse] = await Promise.all([
+  // Fetch glucose readings, boluses, carb intakes, and daily basal/bolus ratios for the full range
+  const [glucoseResponse, bolusResponse, carbResponse, dailyBasalBolus] = await Promise.all([
     apiClient.glucose.getSensorGlucose(startDate, endDate, 100000),
     apiClient.insulin.getBoluses(startDate, endDate, 10000),
     apiClient.nutrition.getCarbIntakes(startDate, endDate, 10000),
+    apiClient.statistics.getDailyBasalBolusRatios(startDate, endDate),
   ]);
 
   const allEntries = glucoseResponse.data ?? [];
   const allBoluses = bolusResponse.data ?? [];
   const allCarbs = carbResponse.data ?? [];
+
+  // Build a lookup of per-day basal totals from the daily basal/bolus ratio endpoint
+  const dailyBasalMap = new Map<string, number>();
+  for (const day of dailyBasalBolus?.dailyData ?? []) {
+    if (day.date) {
+      dailyBasalMap.set(day.date, day.basal ?? 0);
+    }
+  }
 
   // Group by month
   const monthsMap = new Map<string, {
@@ -146,15 +155,15 @@ export const getPunchCardData = query(punchCardSchema, async ({
     const rangeStats = tirMetrics?.rangeStats;
     const averageGlucose = rangeStats?.target?.mean ?? rangeStats?.low?.mean ?? 0;
 
+    const dateStr = currentDate.toISOString().split("T")[0];
+
     const totals = treatmentSummary?.totals;
     const totalCarbs = totals?.food?.carbs ?? 0;
     const totalBolus = totals?.insulin?.bolus ?? 0;
-    const totalBasal = totals?.insulin?.basal ?? 0;
+    const totalBasal = dailyBasalMap.get(dateStr) ?? 0;
     const totalInsulin = totalBolus + totalBasal;
 
     const carbToInsulinRatio = treatmentSummary?.carbToInsulinRatio ?? 0;
-
-    const dateStr = currentDate.toISOString().split("T")[0];
 
     // Extract raw glucose entries for profile view (sorted by time)
     const entries = dayEntries
