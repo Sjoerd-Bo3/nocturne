@@ -16,8 +16,8 @@ export const getEntries = query(entriesSchema, async (props) => {
   if (!from || !to) throw new Error("Invalid date range");
 
   const response = await apiClient.glucose.getSensorGlucose(
-    from.getTime(),
-    to.getTime(),
+    from,
+    to,
     10000
   );
   return response.data ?? [];
@@ -30,12 +30,9 @@ export const getBolusesAndCarbs = query(entriesSchema, async (props) => {
   const { from = new Date(), to = new Date() } = props.dateRange;
   if (!from || !to) throw new Error("Invalid date range");
 
-  const fromMs = from.getTime();
-  const toMs = to.getTime();
-
   const [bolusResponse, carbResponse] = await Promise.all([
-    apiClient.insulin.getBoluses(fromMs, toMs, 10000),
-    apiClient.nutrition.getCarbIntakes(fromMs, toMs, 10000),
+    apiClient.insulin.getBoluses(from, to, 10000),
+    apiClient.nutrition.getCarbIntakes(from, to, 10000),
   ]);
 
   return {
@@ -51,13 +48,10 @@ export const getStats = query(entriesSchema, async (props) => {
   const { from = new Date(), to = new Date() } = props.dateRange;
   if (!from || !to) throw new Error("Invalid date range");
 
-  const fromMs = from.getTime();
-  const toMs = to.getTime();
-
   const [entriesResponse, bolusResponse, carbResponse] = await Promise.all([
-    apiClient.glucose.getSensorGlucose(fromMs, toMs, 10000),
-    apiClient.insulin.getBoluses(fromMs, toMs, 10000),
-    apiClient.nutrition.getCarbIntakes(fromMs, toMs, 10000),
+    apiClient.glucose.getSensorGlucose(from, to, 10000),
+    apiClient.insulin.getBoluses(from, to, 10000),
+    apiClient.nutrition.getCarbIntakes(from, to, 10000),
   ]);
 
   const entries = entriesResponse.data ?? [];

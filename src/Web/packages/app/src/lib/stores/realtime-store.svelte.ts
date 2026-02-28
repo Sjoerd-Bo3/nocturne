@@ -240,8 +240,8 @@ export class RealtimeStore {
     try {
       // Fetch historical data using the properly configured API client
       const apiClient = getApiClient();
-      const oneDayAgoMs = Date.now() - 24 * 60 * 60 * 1000;
-      const nowMs = Date.now();
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const now = new Date();
       const [
         historicalEntries,
         deviceStatusData,
@@ -261,11 +261,11 @@ export class RealtimeStore {
         apiClient.trackers.getDefinitions().catch(() => []),
         apiClient.trackers.getActiveInstances().catch(() => []),
         apiClient.notifications.getNotifications().catch(() => []),
-        apiClient.insulin.getBoluses(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load boluses:", e); return []; }),
-        apiClient.nutrition.getCarbIntakes(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load carbIntakes:", e); return []; }),
-        apiClient.observations.getBGChecks(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load bgChecks:", e); return []; }),
-        apiClient.observations.getNotes(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load notes:", e); return []; }),
-        apiClient.observations.getDeviceEvents(oneDayAgoMs, nowMs, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load deviceEvents:", e); return []; }),
+        apiClient.insulin.getBoluses(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load boluses:", e); return []; }),
+        apiClient.nutrition.getCarbIntakes(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load carbIntakes:", e); return []; }),
+        apiClient.observations.getBGChecks(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load bgChecks:", e); return []; }),
+        apiClient.observations.getNotes(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load notes:", e); return []; }),
+        apiClient.observations.getDeviceEvents(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load deviceEvents:", e); return []; }),
       ]);
 
       // Defer all state updates to a microtask to completely break out of the
@@ -761,15 +761,16 @@ export class RealtimeStore {
 
       // Fetch all data types since last received using existing API methods
       // Note: getDeviceStatus2 doesn't support find queries, so we fetch recent and filter client-side
-      const nowMs = Date.now();
+      const backfillFromDate = new Date(backfillFrom);
+      const nowDate = new Date();
       const [entries, deviceStatuses, boluses, carbIntakes, bgChecks, notes, devEvents] = await Promise.all([
         apiClient.entries.getEntries2(findQuery, 1000).catch(() => []),
         apiClient.deviceStatus.getDeviceStatus2(100).catch(() => []),
-        apiClient.insulin.getBoluses(backfillFrom, nowMs, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.nutrition.getCarbIntakes(backfillFrom, nowMs, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.observations.getBGChecks(backfillFrom, nowMs, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.observations.getNotes(backfillFrom, nowMs, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.observations.getDeviceEvents(backfillFrom, nowMs, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.insulin.getBoluses(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.nutrition.getCarbIntakes(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.observations.getBGChecks(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.observations.getNotes(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.observations.getDeviceEvents(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
       ]);
 
       let backfilledCount = 0;

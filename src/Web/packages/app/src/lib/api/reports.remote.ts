@@ -64,7 +64,7 @@ export const getEntries = query(
 		const { apiClient } = locals;
 		const { startDate, endDate } = calculateDateRange(input);
 
-		const result = await apiClient.glucose.getSensorGlucose(startDate.getTime(), endDate.getTime(), 10000);
+		const result = await apiClient.glucose.getSensorGlucose(startDate, endDate, 10000);
 		const entries = result.data ?? [];
 
 		return {
@@ -87,8 +87,6 @@ export const getBolusesAndCarbs = query(
 		const { apiClient } = locals;
 		const { startDate, endDate } = calculateDateRange(input);
 
-		const fromMs = startDate.getTime();
-		const toMs = endDate.getTime();
 		const pageSize = 1000;
 
 		// Fetch all boluses by paginating through results
@@ -97,7 +95,7 @@ export const getBolusesAndCarbs = query(
 		let hasMore = true;
 
 		while (hasMore) {
-			const batch = await apiClient.insulin.getBoluses(fromMs, toMs, pageSize, offset);
+			const batch = await apiClient.insulin.getBoluses(startDate, endDate, pageSize, offset);
 			allBoluses = allBoluses!.concat(batch.data ?? []);
 
 			if ((batch.data?.length ?? 0) < pageSize) {
@@ -119,7 +117,7 @@ export const getBolusesAndCarbs = query(
 		hasMore = true;
 
 		while (hasMore) {
-			const batch = await apiClient.nutrition.getCarbIntakes(fromMs, toMs, pageSize, offset);
+			const batch = await apiClient.nutrition.getCarbIntakes(startDate, endDate, pageSize, offset);
 			allCarbIntakes = allCarbIntakes!.concat(batch.data ?? []);
 
 			if ((batch.data?.length ?? 0) < pageSize) {
@@ -188,13 +186,10 @@ export const getReportsData = query(
 		const { apiClient } = locals;
 		const { startDate, endDate } = calculateDateRange(input);
 
-		const fromMs = startDate.getTime();
-		const toMs = endDate.getTime();
 		const pageSize = 1000;
 
-		console.log(JSON.stringify({ from: new Date(fromMs).toISOString(), to: new Date(toMs).toISOString() }))
 		// Fetch sensor glucose readings
-		const glucoseResult = await apiClient.glucose.getSensorGlucose(fromMs, toMs, 10000);
+		const glucoseResult = await apiClient.glucose.getSensorGlucose(startDate, endDate, 10000);
 		const entries = glucoseResult.data ?? [];
 
 		// Paginate boluses
@@ -203,7 +198,7 @@ export const getReportsData = query(
 		let hasMore = true;
 
 		while (hasMore) {
-			const batch = await apiClient.insulin.getBoluses(fromMs, toMs, pageSize, offset);
+			const batch = await apiClient.insulin.getBoluses(startDate, endDate, pageSize, offset);
 			allBoluses = allBoluses!.concat(batch.data ?? []);
 
 			if ((batch.data?.length ?? 0) < pageSize) {
@@ -224,7 +219,7 @@ export const getReportsData = query(
 		hasMore = true;
 
 		while (hasMore) {
-			const batch = await apiClient.nutrition.getCarbIntakes(fromMs, toMs, pageSize, offset);
+			const batch = await apiClient.nutrition.getCarbIntakes(startDate, endDate, pageSize, offset);
 			allCarbIntakes = allCarbIntakes!.concat(batch.data ?? []);
 
 			if ((batch.data?.length ?? 0) < pageSize) {
@@ -303,11 +298,8 @@ export const getSiteChangeImpact = query(
 		const { apiClient } = locals;
 		const { startDate, endDate } = calculateDateRange(input);
 
-		const fromMs = startDate.getTime();
-		const toMs = endDate.getTime();
-
 		// Fetch sensor glucose readings
-		const glucoseResult = await apiClient.glucose.getSensorGlucose(fromMs, toMs, 10000);
+		const glucoseResult = await apiClient.glucose.getSensorGlucose(startDate, endDate, 10000);
 		const entries = glucoseResult.data ?? [];
 
 		// Paginate device events to get all site changes
@@ -317,7 +309,7 @@ export const getSiteChangeImpact = query(
 		let hasMore = true;
 
 		while (hasMore) {
-			const batch = await apiClient.observations.getDeviceEvents(fromMs, toMs, pageSize, offset);
+			const batch = await apiClient.observations.getDeviceEvents(startDate, endDate, pageSize, offset);
 			allDeviceEvents = allDeviceEvents!.concat(batch.data ?? []);
 
 			if ((batch.data?.length ?? 0) < pageSize) {

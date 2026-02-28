@@ -30,13 +30,10 @@ export const getPunchCardData = query(punchCardSchema, async ({
   endDate.setHours(23, 59, 59, 999);
 
   // Fetch glucose readings, boluses, and carb intakes for the full range
-  const fromMs = startDate.getTime();
-  const toMs = endDate.getTime();
-
   const [glucoseResponse, bolusResponse, carbResponse] = await Promise.all([
-    apiClient.glucose.getSensorGlucose(fromMs, toMs, 100000),
-    apiClient.insulin.getBoluses(fromMs, toMs, 10000),
-    apiClient.nutrition.getCarbIntakes(fromMs, toMs, 10000),
+    apiClient.glucose.getSensorGlucose(startDate, endDate, 100000),
+    apiClient.insulin.getBoluses(startDate, endDate, 10000),
+    apiClient.nutrition.getCarbIntakes(startDate, endDate, 10000),
   ]);
 
   const allEntries = glucoseResponse.data ?? [];

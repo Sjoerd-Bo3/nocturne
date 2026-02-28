@@ -50,16 +50,13 @@ export const getTreatmentsData = query(
 		const { locals } = getRequestEvent();
 		const { apiClient } = locals;
 		const { startDate, endDate } = calculateDateRange(input);
-		const fromMs = startDate.getTime();
-		const toMs = endDate.getTime();
-
 		const [bolusResponse, carbResponse, bgCheckResponse, noteResponse, deviceEventResponse] =
 			await Promise.all([
-				apiClient.insulin.getBoluses(fromMs, toMs, 10000),
-				apiClient.nutrition.getCarbIntakes(fromMs, toMs, 10000),
-				apiClient.observations.getBGChecks(fromMs, toMs, 10000),
-				apiClient.observations.getNotes(fromMs, toMs, 10000),
-				apiClient.observations.getDeviceEvents(fromMs, toMs, 10000),
+				apiClient.insulin.getBoluses(startDate, endDate, 10000),
+				apiClient.nutrition.getCarbIntakes(startDate, endDate, 10000),
+				apiClient.observations.getBGChecks(startDate, endDate, 10000),
+				apiClient.observations.getNotes(startDate, endDate, 10000),
+				apiClient.observations.getDeviceEvents(startDate, endDate, 10000),
 			]);
 
 		const boluses = bolusResponse.data ?? [];
