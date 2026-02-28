@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Models;
@@ -5,6 +6,7 @@ using Nocturne.API.Services;
 
 namespace Nocturne.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/v1/connectors")]
 [Tags("V1 Connector Status")]

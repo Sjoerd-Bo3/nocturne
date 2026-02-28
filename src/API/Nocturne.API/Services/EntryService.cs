@@ -27,7 +27,8 @@ public class EntryService : IEntryService
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<EntryService> _logger;
     private const string CollectionName = "entries";
-    private string TenantSlug => _tenantAccessor.Context?.Slug ?? "default";
+    private string TenantSlug => _tenantAccessor.Context?.Slug
+        ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public EntryService(
         IPostgreSqlService postgreSqlService,
@@ -450,9 +451,11 @@ public class EntryService : IEntryService
         // Invalidate current entry cache since new entries were created
         try
         {
-            await _cacheService.RemoveAsync("entries:current", cancellationToken);
+            var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantSlug);
+            await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
             _logger.LogInformation(
-                "Cache INVALIDATION: entries:current after creating {Count} entries",
+                "Cache INVALIDATION: {CacheKey} after creating {Count} entries",
+                currentEntryKey,
                 createdEntries.Count()
             );
 
@@ -540,9 +543,11 @@ public class EntryService : IEntryService
             // Invalidate current entry cache since an entry was updated
             try
             {
-                await _cacheService.RemoveAsync("entries:current", cancellationToken);
+                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantSlug);
+                await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
                 _logger.LogInformation(
-                    "Cache INVALIDATION: entries:current after updating entry {EntryId}",
+                    "Cache INVALIDATION: {CacheKey} after updating entry {EntryId}",
+                    currentEntryKey,
                     id
                 );
 
@@ -626,9 +631,11 @@ public class EntryService : IEntryService
             // Invalidate current entry cache since an entry was deleted
             try
             {
-                await _cacheService.RemoveAsync("entries:current", cancellationToken);
+                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantSlug);
+                await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
                 _logger.LogInformation(
-                    "Cache INVALIDATION: entries:current after deleting entry {EntryId}",
+                    "Cache INVALIDATION: {CacheKey} after deleting entry {EntryId}",
+                    currentEntryKey,
                     id
                 );
 
@@ -693,9 +700,11 @@ public class EntryService : IEntryService
             // Invalidate current entry cache since entries were deleted
             try
             {
-                await _cacheService.RemoveAsync("entries:current", cancellationToken);
+                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantSlug);
+                await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
                 _logger.LogDebug(
-                    "Invalidated current entry cache after bulk deleting {Count} entries",
+                    "Invalidated {CacheKey} cache after bulk deleting {Count} entries",
+                    currentEntryKey,
                     deletedCount
                 );
 
@@ -723,7 +732,7 @@ public class EntryService : IEntryService
     public async Task<Entry?> GetCurrentEntryAsync(CancellationToken cancellationToken = default)
     {
         var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
-        var cacheKey = "entries:current" + demoSuffix;
+        var cacheKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantSlug) + demoSuffix;
         var cacheTtl = TimeSpan.FromSeconds(CacheConstants.Defaults.CurrentEntryExpirationSeconds);
 
         var cachedEntry = await _cacheService.GetAsync<Entry>(cacheKey, cancellationToken);

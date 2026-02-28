@@ -113,7 +113,14 @@ public static class CacheKeyBuilder
     /// <param name="tenantId">Tenant ID</param>
     /// <param name="suffix">Optional suffix</param>
     public static string BuildCurrentEntriesKey(string tenantId, string? suffix = null) =>
-        BuildKey("current", tenantId, suffix);
+        BuildKey("entries", "current", tenantId, suffix);
+
+    /// <summary>
+    /// Builds a cache key for current profile
+    /// </summary>
+    /// <param name="tenantId">Tenant ID</param>
+    public static string BuildCurrentProfileKey(string tenantId) =>
+        BuildKey("profiles", "current", tenantId);
 
     /// <summary>
     /// Builds a cache key for recent entries with count and type filters

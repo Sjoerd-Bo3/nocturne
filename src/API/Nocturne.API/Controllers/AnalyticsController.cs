@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
@@ -8,6 +9,7 @@ namespace Nocturne.API.Controllers;
 /// Controller for managing analytics collection and providing transparency
 /// Allows users to view, configure, and control their analytics data
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]

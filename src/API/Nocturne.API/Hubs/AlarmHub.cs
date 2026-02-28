@@ -8,7 +8,7 @@ namespace Nocturne.API.Hubs;
 /// <summary>
 /// SignalR hub for alarm notifications, replacing socket.io alarm namespace
 /// </summary>
-public class AlarmHub : Hub
+public class AlarmHub : TenantAwareHub
 {
     private readonly ILogger<AlarmHub> _logger;
     private readonly IAuthorizationService _authorizationService;
@@ -230,8 +230,13 @@ public class AlarmHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        _logger.LogInformation("Client {ConnectionId} connected to AlarmHub", Context.ConnectionId);
+        // base.OnConnectedAsync() validates tenant context from the HTTP upgrade handshake
         await base.OnConnectedAsync();
+        _logger.LogInformation(
+            "Client {ConnectionId} connected to AlarmHub for tenant {TenantSlug}",
+            Context.ConnectionId,
+            TenantContext?.Slug
+        );
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)

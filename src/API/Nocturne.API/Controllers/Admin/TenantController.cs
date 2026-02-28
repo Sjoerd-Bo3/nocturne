@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts.Multitenancy;
+using Nocturne.Core.Models.Authorization;
+using Nocturne.Infrastructure.Data.Entities;
 
 namespace Nocturne.API.Controllers.Admin;
 
@@ -12,10 +14,12 @@ namespace Nocturne.API.Controllers.Admin;
 public class TenantController : ControllerBase
 {
     private readonly ITenantService _tenantService;
+    private readonly ITenantMemberService _tenantMemberService;
 
-    public TenantController(ITenantService tenantService)
+    public TenantController(ITenantService tenantService, ITenantMemberService tenantMemberService)
     {
         _tenantService = tenantService;
+        _tenantMemberService = tenantMemberService;
     }
 
     [HttpGet]
@@ -27,8 +31,12 @@ public class TenantController : ControllerBase
     [HttpGet("{id:guid}")]
     [RemoteQuery]
     [ProducesResponseType(typeof(TenantDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
+        if (!await IsCallerTenantOwnerAsync(id, ct))
+            return Forbid();
+
         var tenant = await _tenantService.GetByIdAsync(id, ct);
         return tenant == null ? NotFound() : Ok(tenant);
     }
@@ -46,9 +54,13 @@ public class TenantController : ControllerBase
     [HttpPut("{id:guid}")]
     [RemoteCommand(Invalidates = ["GetAll", "GetById"])]
     [ProducesResponseType(typeof(TenantDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Update(
         Guid id, [FromBody] UpdateTenantRequest request, CancellationToken ct)
     {
+        if (!await IsCallerTenantOwnerAsync(id, ct))
+            return Forbid();
+
         var tenant = await _tenantService.UpdateAsync(id, request.DisplayName, request.IsActive, ct);
         return Ok(tenant);
     }
@@ -56,9 +68,13 @@ public class TenantController : ControllerBase
     [HttpPost("{id:guid}/members")]
     [RemoteCommand(Invalidates = ["GetById"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddMember(
         Guid id, [FromBody] AddMemberRequest request, CancellationToken ct)
     {
+        if (!await IsCallerTenantOwnerAsync(id, ct))
+            return Forbid();
+
         await _tenantService.AddMemberAsync(id, request.SubjectId, request.Role, ct);
         return NoContent();
     }
@@ -66,10 +82,28 @@ public class TenantController : ControllerBase
     [HttpDelete("{id:guid}/members/{subjectId:guid}")]
     [RemoteCommand(Invalidates = ["GetById"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> RemoveMember(Guid id, Guid subjectId, CancellationToken ct)
     {
+        if (!await IsCallerTenantOwnerAsync(id, ct))
+            return Forbid();
+
         await _tenantService.RemoveMemberAsync(id, subjectId, ct);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Verifies the authenticated caller is a member of the specified tenant
+    /// with the Owner role.
+    /// </summary>
+    private async Task<bool> IsCallerTenantOwnerAsync(Guid tenantId, CancellationToken ct)
+    {
+        var authContext = HttpContext.Items["AuthContext"] as AuthContext;
+        if (authContext?.SubjectId is not { } subjectId)
+            return false;
+
+        var role = await _tenantMemberService.GetMemberRoleAsync(subjectId, tenantId, ct);
+        return role == TenantRole.Owner;
     }
 }
 

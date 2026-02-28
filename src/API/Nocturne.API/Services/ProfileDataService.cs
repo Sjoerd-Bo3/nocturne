@@ -22,7 +22,8 @@ public class ProfileDataService : IProfileDataService
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<ProfileDataService> _logger;
     private const string CollectionName = "profiles";
-    private string TenantSlug => _tenantAccessor.Context?.Slug ?? "default";
+    private string TenantSlug => _tenantAccessor.Context?.Slug
+        ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public ProfileDataService(
         IPostgreSqlService postgreSqlService,
@@ -66,7 +67,7 @@ public class ProfileDataService : IProfileDataService
         CancellationToken cancellationToken = default
     )
     {
-        const string cacheKey = "profiles:current";
+        var cacheKey = CacheKeyBuilder.BuildCurrentProfileKey(TenantSlug);
         var cacheTtl = TimeSpan.FromMinutes(10);
 
         var cachedProfile = await _cacheService.GetAsync<Profile>(cacheKey, cancellationToken);
@@ -149,7 +150,7 @@ public class ProfileDataService : IProfileDataService
         // Invalidate current profile cache since new profiles were created
         try
         {
-            await _cacheService.RemoveAsync("profiles:current", cancellationToken);
+            await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantSlug), cancellationToken);
             _logger.LogDebug("Invalidated current profile cache after creating new profiles");
 
             // Invalidate all profile timestamp caches since profiles were created
@@ -210,7 +211,7 @@ public class ProfileDataService : IProfileDataService
             // Invalidate current profile cache since a profile was updated
             try
             {
-                await _cacheService.RemoveAsync("profiles:current", cancellationToken);
+                await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantSlug), cancellationToken);
                 _logger.LogDebug(
                     "Invalidated current profile cache after updating profile {ProfileId}",
                     id
@@ -275,7 +276,7 @@ public class ProfileDataService : IProfileDataService
             // Invalidate current profile cache since a profile was deleted
             try
             {
-                await _cacheService.RemoveAsync("profiles:current", cancellationToken);
+                await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantSlug), cancellationToken);
                 _logger.LogDebug(
                     "Invalidated current profile cache after deleting profile {ProfileId}",
                     id

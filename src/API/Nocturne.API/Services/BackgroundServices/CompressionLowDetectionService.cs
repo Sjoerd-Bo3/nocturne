@@ -6,6 +6,7 @@ using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
+using Nocturne.Infrastructure.Data.Entities;
 
 namespace Nocturne.API.Services.BackgroundServices;
 
@@ -43,35 +44,10 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
         {
             try
             {
-                // Get wake time and user timezone from settings to schedule detection
-                // Use default tenant settings for scheduling; per-tenant detection happens in RunForAllTenantsAsync
-                int wakeTimeHour;
-                TimeZoneInfo userTimeZone;
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var uiSettingsService = scope.ServiceProvider.GetRequiredService<IUISettingsService>();
-                    var profileDataService = scope.ServiceProvider.GetRequiredService<IProfileDataService>();
-                    var settings = await uiSettingsService.GetSettingsAsync(stoppingToken);
-                    wakeTimeHour = settings.DataQuality.SleepSchedule.WakeTimeHour;
-
-                    // Resolve user timezone so we schedule in their local time
-                    userTimeZone = await GetUserTimeZoneAsync(profileDataService, stoppingToken);
-                }
-
-                // Calculate next run time in user's local time, then convert to UTC for delay
-                var nowUtc = DateTime.UtcNow;
-                var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, userTimeZone);
-                var nextRunLocal = nowLocal.Date.AddHours(wakeTimeHour).AddMinutes(DetectionDelayMinutes);
-
-                if (nowLocal >= nextRunLocal)
-                    nextRunLocal = nextRunLocal.AddDays(1);
-
-                var nextRunUtc = TimeZoneInfo.ConvertTimeToUtc(nextRunLocal, userTimeZone);
-                var delay = nextRunUtc - nowUtc;
-                _logger.LogDebug(
-                    "Next compression low detection scheduled for {NextRunLocal} ({Timezone})",
-                    nextRunLocal, userTimeZone.Id);
-
+                // Compute the next run time by finding the earliest wake time across all tenants.
+                // Each tenant has its own sleep schedule and timezone, so we iterate them to find
+                // the soonest upcoming wake-time + detection delay.
+                var delay = await ComputeNextRunDelayAsync(stoppingToken);
                 await Task.Delay(delay, stoppingToken);
 
                 // Run detection for all tenants
@@ -89,6 +65,74 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
         }
 
         _logger.LogInformation("Compression Low Detection Service stopped");
+    }
+
+    /// <summary>
+    /// Iterates all active tenants and computes the earliest next detection time
+    /// based on each tenant's wake-time setting and timezone. Returns the delay
+    /// until that time. Falls back to a 1-hour delay if no tenants are configured.
+    /// </summary>
+    private async Task<TimeSpan> ComputeNextRunDelayAsync(CancellationToken cancellationToken)
+    {
+        var nowUtc = DateTime.UtcNow;
+        DateTime? earliestNextRunUtc = null;
+        string? earliestTimezoneId = null;
+
+        using var lookupScope = _serviceProvider.CreateScope();
+        var factory = lookupScope.ServiceProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+        await using var lookupContext = await factory.CreateDbContextAsync(cancellationToken);
+        var tenants = await lookupContext.Tenants.AsNoTracking()
+            .Where(t => t.IsActive)
+            .Select(t => new { t.Id, t.Slug, t.DisplayName })
+            .ToListAsync(cancellationToken);
+
+        foreach (var tenant in tenants)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var tenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
+                tenantAccessor.SetTenant(new TenantContext(tenant.Id, tenant.Slug, tenant.DisplayName, true));
+
+                var uiSettingsService = scope.ServiceProvider.GetRequiredService<IUISettingsService>();
+                var profileDataService = scope.ServiceProvider.GetRequiredService<IProfileDataService>();
+
+                var settings = await uiSettingsService.GetSettingsAsync(cancellationToken);
+                var wakeTimeHour = settings.DataQuality.SleepSchedule.WakeTimeHour;
+                var userTimeZone = await GetUserTimeZoneAsync(profileDataService, cancellationToken);
+
+                var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, userTimeZone);
+                var nextRunLocal = nowLocal.Date.AddHours(wakeTimeHour).AddMinutes(DetectionDelayMinutes);
+
+                if (nowLocal >= nextRunLocal)
+                    nextRunLocal = nextRunLocal.AddDays(1);
+
+                var nextRunUtc = TimeZoneInfo.ConvertTimeToUtc(nextRunLocal, userTimeZone);
+
+                if (earliestNextRunUtc == null || nextRunUtc < earliestNextRunUtc)
+                {
+                    earliestNextRunUtc = nextRunUtc;
+                    earliestTimezoneId = userTimeZone.Id;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to compute next run time for tenant {TenantSlug}, skipping", tenant.Slug);
+            }
+        }
+
+        if (earliestNextRunUtc == null)
+        {
+            _logger.LogDebug("No active tenants found for scheduling; retrying in 1 hour");
+            return TimeSpan.FromHours(1);
+        }
+
+        var delay = earliestNextRunUtc.Value - nowUtc;
+        _logger.LogDebug(
+            "Next compression low detection scheduled for {NextRunUtc:u} (earliest tenant timezone: {Timezone})",
+            earliestNextRunUtc.Value, earliestTimezoneId);
+
+        return delay;
     }
 
     private async Task RunForAllTenantsAsync(CancellationToken cancellationToken)
@@ -229,10 +273,23 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
 
         // Create notification if any suggestions found.
         // Notification uses i18n keys so the frontend can render localized text.
+        // Notifications are keyed by subject ID (not tenant ID). Look up the tenant
+        // owner so the notification is attributed to an actual user.
         if (suggestions.Count > 0)
         {
-            var userId = tenantAccessor.TenantId.ToString();
-            await CreateNotificationAsync(nightOf, suggestions.Count, userId, notificationService, cancellationToken);
+            var ownerId = await GetTenantOwnerSubjectIdAsync(
+                tenantAccessor.TenantId, scopedProvider, cancellationToken);
+
+            if (ownerId != null)
+            {
+                await CreateNotificationAsync(nightOf, suggestions.Count, ownerId, notificationService, cancellationToken);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "No owner found for tenant {TenantId}; skipping compression low notification for night {NightOf}",
+                    tenantAccessor.TenantId, nightOf);
+            }
         }
 
         _logger.LogInformation(
@@ -515,5 +572,26 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
         }
 
         return TimeZoneInfo.Utc;
+    }
+
+    /// <summary>
+    /// Looks up the subject ID of the tenant owner. Notifications require a real
+    /// subject/user ID (not a tenant ID) so they can be queried by the authenticated
+    /// user on the frontend.
+    /// </summary>
+    private async Task<string?> GetTenantOwnerSubjectIdAsync(
+        Guid tenantId,
+        IServiceProvider scopedProvider,
+        CancellationToken cancellationToken)
+    {
+        var factory = scopedProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+        await using var context = await factory.CreateDbContextAsync(cancellationToken);
+
+        var ownerSubjectId = await context.TenantMembers.AsNoTracking()
+            .Where(tm => tm.TenantId == tenantId && tm.Role == TenantRole.Owner)
+            .Select(tm => tm.SubjectId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return ownerSubjectId == Guid.Empty ? null : ownerSubjectId.ToString();
     }
 }

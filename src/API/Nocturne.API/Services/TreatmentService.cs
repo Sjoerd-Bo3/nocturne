@@ -32,7 +32,8 @@ public class TreatmentService : ITreatmentService
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<TreatmentService> _logger;
     private const string CollectionName = "treatments";
-    private string TenantSlug => _tenantAccessor.Context?.Slug ?? "default";
+    private string TenantSlug => _tenantAccessor.Context?.Slug
+        ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public TreatmentService(
         IPostgreSqlService postgreSqlService,

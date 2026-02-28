@@ -420,6 +420,9 @@ builder.Services.AddHttpClient(
 // Add SignalR for real-time communication
 builder.Services.AddSignalR();
 
+// Register tenant-aware hub filter to set ITenantAccessor on each hub method invocation
+builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IHubFilter, Nocturne.API.Hubs.TenantHubFilter>();
+
 // Register SignalR broadcast service
 builder.Services.AddScoped<ISignalRBroadcastService, SignalRBroadcastService>();
 

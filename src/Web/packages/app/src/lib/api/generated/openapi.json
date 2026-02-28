@@ -20682,6 +20682,16 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "x-remote-type": "query"
@@ -20722,6 +20732,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TenantDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -20767,6 +20787,16 @@
         "responses": {
           "204": {
             "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "x-remote-type": "command",
@@ -20806,6 +20836,16 @@
         "responses": {
           "204": {
             "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "x-remote-type": "command",

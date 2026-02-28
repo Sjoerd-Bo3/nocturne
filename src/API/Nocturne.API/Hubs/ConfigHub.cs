@@ -8,7 +8,7 @@ namespace Nocturne.API.Hubs;
 /// Connectors can subscribe to receive notifications when their configuration changes.
 /// </summary>
 [Authorize]
-public class ConfigHub : Hub
+public class ConfigHub : TenantAwareHub
 {
     private readonly ILogger<ConfigHub> _logger;
 
@@ -63,8 +63,13 @@ public class ConfigHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        _logger.LogDebug("ConfigHub client connected: {ConnectionId}", Context.ConnectionId);
+        // base.OnConnectedAsync() validates tenant context from the HTTP upgrade handshake
         await base.OnConnectedAsync();
+        _logger.LogDebug(
+            "ConfigHub client connected: {ConnectionId} for tenant {TenantSlug}",
+            Context.ConnectionId,
+            TenantContext?.Slug
+        );
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)

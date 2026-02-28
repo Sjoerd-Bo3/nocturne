@@ -554,9 +554,9 @@ public class NocturneDbContext : DbContext
         // Settings indexes - optimized for common queries
         modelBuilder
             .Entity<SettingsEntity>()
-            .HasIndex(s => s.Key)
-            .HasDatabaseName("ix_settings_key")
-            .IsUnique(); // Settings keys should be unique
+            .HasIndex(s => new { s.TenantId, s.Key })
+            .HasDatabaseName("ix_settings_tenant_id_key")
+            .IsUnique(); // Settings keys should be unique per tenant
 
         modelBuilder
             .Entity<SettingsEntity>()
