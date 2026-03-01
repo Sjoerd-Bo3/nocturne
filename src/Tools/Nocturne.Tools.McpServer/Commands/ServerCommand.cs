@@ -9,6 +9,7 @@ using Nocturne.Tools.Abstractions.Services;
 using Nocturne.Tools.Core.Commands;
 using Nocturne.Tools.McpServer.Configuration;
 using Nocturne.Tools.McpServer.Services;
+using Nocturne.Tools.McpServer.Tools;
 using Spectre.Console.Cli;
 
 namespace Nocturne.Tools.McpServer.Commands;
@@ -140,6 +141,17 @@ public class ServerCommand : AsyncCommand<ServerCommand.Settings>
         }
     }
 
+    /// <summary>
+    /// Initialize all tool classes with the DI service provider.
+    /// ToolBase provides the shared IApiService for all v4 tools.
+    /// EntryTools has its own initialization for backward compatibility.
+    /// </summary>
+    private static void InitializeTools(IServiceProvider services)
+    {
+        ToolBase.Initialize(services);
+        EntryTools.Initialize(services);
+    }
+
     private async Task<int> StartWebServerAsync(
         McpServerConfiguration config,
         CancellationToken cancellationToken
@@ -175,8 +187,8 @@ public class ServerCommand : AsyncCommand<ServerCommand.Settings>
 
             var app = builder.Build();
 
-            // Initialize static tools with DI services
-            Nocturne.Tools.McpServer.Tools.EntryTools.Initialize(app.Services);
+            // Initialize all tool classes
+            InitializeTools(app.Services);
 
             // Configure the app
             ConfigureWebApp(app);
@@ -237,8 +249,8 @@ public class ServerCommand : AsyncCommand<ServerCommand.Settings>
 
             var host = builder.Build();
 
-            // Initialize static tools with DI services
-            Nocturne.Tools.McpServer.Tools.EntryTools.Initialize(host.Services);
+            // Initialize all tool classes
+            InitializeTools(host.Services);
 
             _progressReporter.ReportProgress(
                 new ProgressInfo("Server", 3, 3, "Starting console server")
@@ -312,18 +324,21 @@ public class ServerCommand : AsyncCommand<ServerCommand.Settings>
                     service = "Nocturne MCP Server",
                     transport = "SSE",
                     endpoints = new { sse = "/sse", health = "/health" },
-                    tools = new[]
+                    toolGroups = new
                     {
-                        "GetCurrentEntry",
-                        "GetRecentEntries",
-                        "GetEntriesByDateRange",
-                        "GetEntryById",
-                        "CreateEntry",
-                        "GetGlucoseStatistics",
-                        "GetEntryCount",
+                        glucose = new[] { "GetRecentGlucose", "GetGlucoseByDateRange", "GetGlucoseStatistics", "GetMeterReadings", "GetGlucoseById" },
+                        treatments = new[] { "GetRecentTreatments", "GetTreatment" },
+                        insulin = new[] { "GetRecentBoluses", "GetBolusCalculations" },
+                        stateSpans = new[] { "GetStateSpans", "GetPumpModes", "GetActivities", "GetConnectivity" },
+                        profile = new[] { "GetProfileSummary", "GetTherapySettings", "GetBasalSchedule", "GetCarbRatioSchedule", "GetSensitivitySchedule" },
+                        nutrition = new[] { "GetRecentCarbs", "GetRecentMeals", "GetFavoriteFoods" },
+                        observations = new[] { "GetRecentNotes", "GetBgChecks", "GetDeviceEvents" },
+                        deviceStatus = new[] { "GetApsSnapshots", "GetPumpSnapshots", "GetUploaderSnapshots" },
+                        system = new[] { "GetSystemStatus", "HealthCheck", "GetSystemEvents" },
+                        chartData = new[] { "GetDashboardData" },
+                        legacy = new[] { "GetCurrentEntry", "GetRecentEntries", "GetEntriesByDateRange", "GetEntryById", "GetLegacyGlucoseStatistics", "CreateEntry", "GetEntryCount" },
                     },
                 }
         );
     }
 }
-

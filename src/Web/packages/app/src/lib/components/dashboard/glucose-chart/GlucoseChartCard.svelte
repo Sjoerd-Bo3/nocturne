@@ -739,7 +739,7 @@
   ): T | undefined {
     if (!series || series.length === 0) return undefined;
     const timeMs = time.getTime();
-    const i = bisectTimestamp(series, { timestamp: timeMs }, 1);
+    const i = bisectTimestamp(series, timeMs, 1);
     return series[i - 1];
   }
 

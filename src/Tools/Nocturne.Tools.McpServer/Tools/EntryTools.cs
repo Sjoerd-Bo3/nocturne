@@ -8,7 +8,8 @@ using Nocturne.Tools.McpServer.Services;
 namespace Nocturne.Tools.McpServer.Tools;
 
 /// <summary>
-/// MCP tools for interacting with Nocturne entries (glucose readings)
+/// Legacy MCP tools for v1 entries API. Prefer the v4 tools (GlucoseTools, TreatmentTools, etc.) for new queries.
+/// These are retained for backward compatibility with the original Nightscout v1 API.
 /// </summary>
 [McpServerToolType]
 public static class EntryTools
@@ -26,11 +27,8 @@ public static class EntryTools
     private static IApiService ApiService =>
         _apiService ?? throw new InvalidOperationException("EntryTools not initialized");
 
-    /// <summary>
-    /// Get current glucose reading (most recent entry)
-    /// </summary>
     [McpServerTool]
-    [Description("Get the most recent glucose reading from the Nocturne API")]
+    [Description("[Legacy v1] Get the most recent glucose reading. Prefer GetRecentGlucose (v4) for new queries.")]
     public static async Task<string> GetCurrentEntry()
     {
         try
@@ -44,11 +42,8 @@ public static class EntryTools
         }
     }
 
-    /// <summary>
-    /// Get recent glucose entries
-    /// </summary>
     [McpServerTool]
-    [Description("Get recent glucose entries from the Nocturne API")]
+    [Description("[Legacy v1] Get recent entries. Prefer GetRecentGlucose (v4) for new queries.")]
     public static async Task<string> GetRecentEntries(
         [Description("Number of entries to retrieve (default: 24)")] int count = 24,
         [Description("Entry type filter (sgv, mbg, cal)")] string? type = null
@@ -90,11 +85,8 @@ public static class EntryTools
         }
     }
 
-    /// <summary>
-    /// Get entries within a date range
-    /// </summary>
     [McpServerTool]
-    [Description("Get glucose entries within a specific date range")]
+    [Description("[Legacy v1] Get entries by date range. Prefer GetGlucoseByDateRange (v4) for new queries.")]
     public static async Task<string> GetEntriesByDateRange(
         [Description("Start date (ISO 8601 format, e.g., 2024-01-01T00:00:00Z)")] string startDate,
         [Description("End date (ISO 8601 format, e.g., 2024-01-02T00:00:00Z)")] string endDate,
@@ -146,11 +138,8 @@ public static class EntryTools
         }
     }
 
-    /// <summary>
-    /// Get entry by ID
-    /// </summary>
     [McpServerTool]
-    [Description("Get a specific glucose entry by its ID")]
+    [Description("[Legacy v1] Get a specific entry by ID. Prefer GetGlucoseById (v4) for new queries.")]
     public static async Task<string> GetEntryById(
         [Description("The entry ID to retrieve")] string entryId
     )
@@ -170,14 +159,9 @@ public static class EntryTools
         }
     }
 
-    /// <summary>
-    /// Get glucose statistics for recent data
-    /// </summary>
     [McpServerTool]
-    [Description(
-        "Get glucose statistics including averages, time in range, and variability metrics"
-    )]
-    public static async Task<string> GetGlucoseStatistics(
+    [Description("[Legacy v1] Get glucose statistics. Prefer GetGlucoseStatistics in GlucoseTools (v4) for new queries.")]
+    public static async Task<string> GetLegacyGlucoseStatistics(
         [Description("Number of hours to analyze (default: 24)")] int hours = 24,
         [Description("Entry type to analyze (default: sgv)")] string type = "sgv"
     )
@@ -263,11 +247,8 @@ public static class EntryTools
         }
     }
 
-    /// <summary>
-    /// Create a new glucose entry
-    /// </summary>
     [McpServerTool]
-    [Description("Create a new glucose entry in the Nocturne API")]
+    [Description("[Legacy v1] Create a new glucose entry via the v1 API.")]
     public static async Task<string> CreateEntry(
         [Description("Glucose value in mg/dL")] double glucose,
         [Description("Entry type (sgv, mbg, cal)")] string type = "sgv",
@@ -313,11 +294,8 @@ public static class EntryTools
         }
     }
 
-    /// <summary>
-    /// Get entry count statistics
-    /// </summary>
     [McpServerTool]
-    [Description("Get count of entries by type and time period")]
+    [Description("[Legacy v1] Get entry count by type. Prefer v4 glucose endpoints for new queries.")]
     public static async Task<string> GetEntryCount(
         [Description("Number of hours to look back (default: 24)")] int hours = 24,
         [Description("Group by type (true/false, default: true)")] bool groupByType = true
