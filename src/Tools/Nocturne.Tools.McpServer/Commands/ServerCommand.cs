@@ -98,8 +98,6 @@ public class ServerCommand : AsyncCommand<ServerCommand.Settings>
     {
         try
         {
-            _logger.LogInformation("Starting MCP server configuration...");
-
             var config = new McpServerConfiguration
             {
                 UseWebServer = settings.Web,
@@ -114,29 +112,31 @@ public class ServerCommand : AsyncCommand<ServerCommand.Settings>
             var validationResult = config.ValidateConfiguration();
             if (validationResult != System.ComponentModel.DataAnnotations.ValidationResult.Success)
             {
-                _logger.LogError(
-                    "Configuration validation failed: {ErrorMessage}",
-                    validationResult.ErrorMessage
+                Console.Error.WriteLine(
+                    $"Configuration validation failed: {validationResult.ErrorMessage}"
                 );
                 return 1;
             }
 
-            _progressReporter.ReportProgress(
-                new ProgressInfo("Server", 1, 3, "Configuring MCP server")
-            );
-
             if (config.UseWebServer)
             {
+                // Web/SSE mode can safely log to stdout
+                _logger.LogInformation("Starting MCP server configuration...");
+                _progressReporter.ReportProgress(
+                    new ProgressInfo("Server", 1, 3, "Configuring MCP server")
+                );
                 return await StartWebServerAsync(config, CancellationToken.None);
             }
             else
             {
+                // stdio mode: stdout is reserved for JSON-RPC, no logging here
                 return await StartConsoleServerAsync(config, CancellationToken.None);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to start MCP server: {Message}", ex.Message);
+            // Use stderr to avoid corrupting stdio transport
+            Console.Error.WriteLine($"Failed to start MCP server: {ex.Message}");
             return 1;
         }
     }
@@ -224,19 +224,21 @@ public class ServerCommand : AsyncCommand<ServerCommand.Settings>
     {
         try
         {
-            _logger.LogInformation("Starting MCP server with stdio transport");
-
-            _progressReporter.ReportProgress(
-                new ProgressInfo("Server", 2, 3, "Building console host")
-            );
-
+            // stdio transport: stdout is reserved for JSON-RPC messages only.
+            // All logging and progress output must go to stderr or be suppressed.
             var builder = Host.CreateApplicationBuilder();
 
-            // Configure logging level
-            if (config.VerboseLogging)
+            // Clear all default logging providers (they write to stdout) and
+            // redirect to stderr so diagnostics are still visible without
+            // corrupting the MCP protocol.
+            builder.Logging.ClearProviders();
+            builder.Logging.SetMinimumLevel(
+                config.VerboseLogging ? LogLevel.Debug : LogLevel.Warning
+            );
+            builder.Logging.AddConsole(options =>
             {
-                builder.Logging.SetMinimumLevel(LogLevel.Debug);
-            }
+                options.LogToStandardErrorThreshold = LogLevel.Trace;
+            });
 
             // Add configuration sources
             ConfigureAppConfiguration(builder.Configuration, config);
@@ -252,19 +254,13 @@ public class ServerCommand : AsyncCommand<ServerCommand.Settings>
             // Initialize all tool classes
             InitializeTools(host.Services);
 
-            _progressReporter.ReportProgress(
-                new ProgressInfo("Server", 3, 3, "Starting console server")
-            );
-
-            _logger.LogInformation("MCP Server started successfully with stdio transport");
-
             await host.RunAsync(cancellationToken);
 
             return 0;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to start console server: {Message}", ex.Message);
+            Console.Error.WriteLine($"Failed to start MCP server: {ex.Message}");
             return 1;
         }
     }
