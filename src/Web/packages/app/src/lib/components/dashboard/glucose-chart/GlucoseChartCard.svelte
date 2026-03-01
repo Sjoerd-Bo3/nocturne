@@ -1082,12 +1082,12 @@
             <Highlight
               x={(d) => d.time}
               y={(d) => {
-                const basalDelivery = findActiveBasalDelivery(d.time);
-                if (basalDelivery) {
-                  return basalScale(basalDelivery.rate ?? 0);
-                }
                 const basal = findBasalValue(basalData, d.time);
-                return basalScale(basal?.rate ?? 0);
+                if (basal) {
+                  return basalScale(basal.rate ?? 0);
+                }
+                const basalDelivery = findActiveBasalDelivery(d.time);
+                return basalScale(basalDelivery?.rate ?? 0);
               }}
               points={{ class: "fill-insulin-basal" }}
             />

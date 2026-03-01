@@ -75,7 +75,9 @@
     findActiveProfile: (time: Date) => ProfileSpan | undefined;
     findActiveActivities: (time: Date) => DisplaySpan<StateSpan>[];
     findActiveTempBasal: (time: Date) => TempBasalSpan | undefined;
-    findActiveBasalDelivery: (time: Date) => DisplaySpan<BasalDeliverySpan> | undefined;
+    findActiveBasalDelivery: (
+      time: Date
+    ) => DisplaySpan<BasalDeliverySpan> | undefined;
     findNearbySystemEvent: (time: Date) => SystemEvent | undefined;
     // Visibility toggles
     showBolus: boolean;
@@ -195,35 +197,8 @@
           color="var(--carbs)"
         />
       {/if}
-      {#if showBasal && (activeBasalDelivery || activeBasal || activeTempBasal)}
-        {#if activeBasalDelivery}
-          <!-- Prefer state spans (basalDeliverySpans) as they have accurate span-based rates -->
-          {@const isAdjusted =
-            activeBasalDelivery.origin === BasalDeliveryOrigin.Algorithm ||
-            activeBasalDelivery.origin === BasalDeliveryOrigin.Manual}
-          {@const basalLabel =
-            activeBasalDelivery.origin === BasalDeliveryOrigin.Suspended
-              ? "Suspended"
-              : activeBasalDelivery.origin === BasalDeliveryOrigin.Algorithm
-                ? "Auto Basal"
-                : activeBasalDelivery.origin === BasalDeliveryOrigin.Manual
-                  ? "Temp Basal"
-                  : "Basal"}
-          <Tooltip.Item
-            label={basalLabel}
-            value={activeBasalDelivery.rate ?? 0}
-            format={"decimal"}
-            color={isAdjusted || activeBasalDelivery.origin === BasalDeliveryOrigin.Suspended
-              ? "var(--insulin-temp-basal)"
-              : "var(--insulin-basal)"}
-            class={cn(
-              staleBasalData && data.time >= staleBasalData.start
-                ? "text-yellow-500 font-bold"
-                : ""
-            )}
-          />
-        {:else if activeBasal}
-          <!-- Fallback to chart data series -->
+      {#if showBasal && (activeBasal || activeBasalDelivery || activeTempBasal)}
+        {#if activeBasal}
           {@const isAdjusted =
             (activeBasal.origin === BasalDeliveryOrigin.Algorithm ||
               activeBasal.origin === BasalDeliveryOrigin.Manual) &&
@@ -240,7 +215,8 @@
             label={basalLabel}
             value={activeBasal.rate}
             format={"decimal"}
-            color={isAdjusted || activeBasal.origin === BasalDeliveryOrigin.Suspended
+            color={isAdjusted ||
+            activeBasal.origin === BasalDeliveryOrigin.Suspended
               ? "var(--insulin-temp-basal)"
               : "var(--insulin-basal)"}
             class={cn(
@@ -257,6 +233,33 @@
               color="var(--muted-foreground)"
             />
           {/if}
+        {:else if activeBasalDelivery}
+          <!-- Fallback to delivery spans when basalSeries has no data -->
+          {@const isAdjusted =
+            activeBasalDelivery.origin === BasalDeliveryOrigin.Algorithm ||
+            activeBasalDelivery.origin === BasalDeliveryOrigin.Manual}
+          {@const basalLabel =
+            activeBasalDelivery.origin === BasalDeliveryOrigin.Suspended
+              ? "Suspended"
+              : activeBasalDelivery.origin === BasalDeliveryOrigin.Algorithm
+                ? "Auto Basal"
+                : activeBasalDelivery.origin === BasalDeliveryOrigin.Manual
+                  ? "Temp Basal"
+                  : "Basal"}
+          <Tooltip.Item
+            label={basalLabel}
+            value={activeBasalDelivery.rate ?? 0}
+            format={"decimal"}
+            color={isAdjusted ||
+            activeBasalDelivery.origin === BasalDeliveryOrigin.Suspended
+              ? "var(--insulin-temp-basal)"
+              : "var(--insulin-basal)"}
+            class={cn(
+              staleBasalData && data.time >= staleBasalData.start
+                ? "text-yellow-500 font-bold"
+                : ""
+            )}
+          />
         {:else if activeTempBasal && activeTempBasal.rate != null}
           <Tooltip.Item
             label="Temp Basal"
