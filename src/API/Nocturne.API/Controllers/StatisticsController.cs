@@ -629,7 +629,8 @@ public class StatisticsController : ControllerBase
                     );
 
                     // Fetch TempBasals and algorithm boluses for basal data
-                    var tempBasals = (await _tempBasalRepository.GetAsync(
+                    // Deduplicate by 30s window + rate to eliminate duplicates from multiple connectors
+                    var tempBasals = DeduplicateTempBasals((await _tempBasalRepository.GetAsync(
                         from: startTimestamp,
                         to: endTimestamp,
                         device: null,
@@ -637,7 +638,7 @@ public class StatisticsController : ControllerBase
                         limit: 10000,
                         descending: false,
                         ct: cancellationToken
-                    )).ToList();
+                    )).ToList());
 
                     var algorithmBoluses = (await _bolusRepository.GetAsync(
                         from: startTimestamp,
@@ -805,6 +806,25 @@ public class StatisticsController : ControllerBase
     }
 
     /// <summary>
+    /// Deduplicate temp basals from multiple connectors by grouping within a 30-second
+    /// time window with matching rate (±0.05 u/hr), keeping the first record per group.
+    /// </summary>
+    private static List<TempBasal> DeduplicateTempBasals(List<TempBasal> tempBasals)
+    {
+        if (tempBasals.Count <= 1)
+            return tempBasals;
+
+        const long windowMillis = 30_000;
+        return tempBasals
+            .GroupBy(tb => (
+                WindowKey: tb.StartMills / windowMillis,
+                RateKey: Math.Round(tb.Rate * 20) / 20))
+            .Select(g => g.OrderBy(tb => tb.StartMills).First())
+            .OrderBy(tb => tb.StartMills)
+            .ToList();
+    }
+
+    /// <summary>
     /// Analyze glucose patterns around site changes to identify impact of site age on control
     /// </summary>
     /// <param name="request">Request containing sensor glucose readings, device events, and analysis parameters</param>
@@ -862,14 +882,14 @@ public class StatisticsController : ControllerBase
                 kind: BolusKind.Manual
             );
 
-            var tempBasals = await _tempBasalRepository.GetAsync(
+            var tempBasals = DeduplicateTempBasals((await _tempBasalRepository.GetAsync(
                 from: startDt,
                 to: endDt,
                 device: null,
                 source: null,
                 limit: 10000,
                 descending: false
-            );
+            )).ToList());
 
             var algorithmBoluses = await _bolusRepository.GetAsync(
                 from: startDt,
@@ -923,14 +943,14 @@ public class StatisticsController : ControllerBase
                 kind: BolusKind.Manual
             );
 
-            var tempBasals = await _tempBasalRepository.GetAsync(
+            var tempBasals = DeduplicateTempBasals((await _tempBasalRepository.GetAsync(
                 from: startDt,
                 to: endDt,
                 device: null,
                 source: null,
                 limit: 10000,
                 descending: false
-            );
+            )).ToList());
 
             var algorithmBoluses = await _bolusRepository.GetAsync(
                 from: startDt,
@@ -985,14 +1005,15 @@ public class StatisticsController : ControllerBase
             var endUtc = DateTime.SpecifyKind(endDate.Value, DateTimeKind.Utc);
 
             // Fetch TempBasals and algorithm boluses
-            var tempBasals = (await _tempBasalRepository.GetAsync(
+            // Deduplicate by 30s window + rate to eliminate duplicates from multiple connectors
+            var tempBasals = DeduplicateTempBasals((await _tempBasalRepository.GetAsync(
                 from: (DateTime?)startUtc,
                 to: (DateTime?)endUtc,
                 device: null,
                 source: null,
                 limit: 10000,
                 descending: false
-            )).ToList();
+            )).ToList());
 
             var algorithmBoluses = await _bolusRepository.GetAsync(
                 from: (DateTime?)startUtc,

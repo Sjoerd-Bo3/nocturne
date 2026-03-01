@@ -238,8 +238,9 @@ public class ChartDataService : IChartDataService
             .ToList();
 
         // Fetch TempBasal records from v4 table (replaces BasalDelivery StateSpans)
-        var tempBasalList = (
-            await _tempBasalRepository.GetAsync(
+        // Deduplicate by 30s window + rate to eliminate duplicates from multiple connectors
+        var tempBasalList = DeduplicateByWindow(
+            (await _tempBasalRepository.GetAsync(
                 from: MillsToDateTime(startTime),
                 to: MillsToDateTime(endTime),
                 device: null,
@@ -248,8 +249,10 @@ public class ChartDataService : IChartDataService
                 offset: 0,
                 descending: false,
                 ct: cancellationToken
-            )
-        ).ToList();
+            )).ToList(),
+            tb => tb.StartMills,
+            (a, b) => Math.Abs(a.Rate - b.Rate) <= 0.05
+        );
 
         // Fetch all state spans in a single batched query (BasalDelivery now comes from TempBasal table)
         var stateSpanCategories = new[]
