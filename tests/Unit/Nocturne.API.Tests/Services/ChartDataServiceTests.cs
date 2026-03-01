@@ -1871,4 +1871,108 @@ public class ChartDataServiceTests
     }
 
     #endregion
+
+    #region BuildIobCobSeries Tests
+
+    [Fact]
+    public void BuildIobCobSeries_WithTempBasals_ShouldIncludeBasalIob()
+    {
+        // Arrange — a bolus treatment and a high temp basal
+        var startTime = TestMills;
+        var endTime = TestMills + 60 * 60 * 1000; // 1 hour
+        var intervalMinutes = 5;
+
+        var treatments = new List<Treatment>
+        {
+            new() { Mills = TestMills, Insulin = 1.0 },
+        };
+
+        var tempBasals = new List<TempBasal>
+        {
+            new()
+            {
+                StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills).UtcDateTime,
+                EndTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(TestMills + 30 * 60 * 1000).UtcDateTime,
+                Rate = 2.0,
+                ScheduledRate = 0.5,
+                Origin = TempBasalOrigin.Algorithm,
+            },
+        };
+
+        // Mock FromTreatments to return bolus IOB
+        _mockIobService
+            .Setup(x => x.FromTreatments(It.IsAny<List<Treatment>>(), It.IsAny<IProfileService?>(), It.IsAny<long?>(), It.IsAny<string?>()))
+            .Returns(new IobResult { Iob = 0.8 });
+
+        // Mock FromTempBasals to return basal IOB
+        _mockIobService
+            .Setup(x => x.FromTempBasals(It.IsAny<List<TempBasal>>(), It.IsAny<IProfileService?>(), It.IsAny<long?>(), It.IsAny<string?>()))
+            .Returns(new IobResult { Iob = 0.0, BasalIob = 0.3 });
+
+        _mockCobService
+            .Setup(x => x.CobTotal(It.IsAny<List<Treatment>>(), It.IsAny<List<DeviceStatus>>(), It.IsAny<IProfileService?>(), It.IsAny<long?>(), It.IsAny<string?>()))
+            .Returns(new CobResult { Cob = 0 });
+
+        _mockProfileService.Setup(x => x.HasData()).Returns(false);
+
+        // Act
+        var (iobSeries, _, maxIob, _) = _service.BuildIobCobSeries(
+            treatments,
+            new List<DeviceStatus>(),
+            startTime,
+            endTime,
+            intervalMinutes,
+            tempBasals
+        );
+
+        // Assert — IOB values should include both bolus and basal IOB (0.8 + 0.3 = 1.1)
+        iobSeries.Should().NotBeEmpty();
+        var firstPoint = iobSeries.First();
+        firstPoint.Value.Should().BeApproximately(1.1, 0.001);
+        maxIob.Should().BeGreaterThanOrEqualTo(1.1);
+    }
+
+    [Fact]
+    public void BuildIobCobSeries_WithoutTempBasals_ShouldOnlyIncludeBolusIob()
+    {
+        // Arrange
+        var startTime = TestMills;
+        var endTime = TestMills + 60 * 60 * 1000;
+        var intervalMinutes = 5;
+
+        var treatments = new List<Treatment>
+        {
+            new() { Mills = TestMills, Insulin = 1.0 },
+        };
+
+        _mockIobService
+            .Setup(x => x.FromTreatments(It.IsAny<List<Treatment>>(), It.IsAny<IProfileService?>(), It.IsAny<long?>(), It.IsAny<string?>()))
+            .Returns(new IobResult { Iob = 0.8 });
+
+        _mockCobService
+            .Setup(x => x.CobTotal(It.IsAny<List<Treatment>>(), It.IsAny<List<DeviceStatus>>(), It.IsAny<IProfileService?>(), It.IsAny<long?>(), It.IsAny<string?>()))
+            .Returns(new CobResult { Cob = 0 });
+
+        _mockProfileService.Setup(x => x.HasData()).Returns(false);
+
+        // Act — no temp basals passed
+        var (iobSeries, _, maxIob, _) = _service.BuildIobCobSeries(
+            treatments,
+            new List<DeviceStatus>(),
+            startTime,
+            endTime,
+            intervalMinutes
+        );
+
+        // Assert — should only have bolus IOB
+        iobSeries.Should().NotBeEmpty();
+        iobSeries.First().Value.Should().BeApproximately(0.8, 0.001);
+
+        // FromTempBasals should never be called
+        _mockIobService.Verify(
+            x => x.FromTempBasals(It.IsAny<List<TempBasal>>(), It.IsAny<IProfileService?>(), It.IsAny<long?>(), It.IsAny<string?>()),
+            Times.Never);
+    }
+
+    #endregion
 }

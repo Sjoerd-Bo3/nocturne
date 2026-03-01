@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { getRequestEvent, form, command, query } from '$app/server';
 import { invalid } from '@sveltejs/kit';
 import type { Bolus, CarbIntake, BGCheck, Note, DeviceEvent } from '$lib/api';
+import { getProfileSummary } from '$api/generated/profiles.generated.remote';
+import { getLocalDayBoundariesUtc } from '$lib/utils/timezone';
 
 /**
  * Input schema for date range queries (matches reports layout pattern)
@@ -16,25 +18,29 @@ const DateRangeSchema = z.object({
 	to: z.string().nullish(),
 });
 
-function calculateDateRange(input?: z.infer<typeof DateRangeSchema>) {
-	let startDate: Date;
-	let endDate: Date;
+function calculateDateRange(input: z.infer<typeof DateRangeSchema> | undefined, timezone?: string | null) {
+	let startDateStr: string;
+	let endDateStr: string;
 
 	if (input?.from && input?.to) {
-		startDate = new Date(input.from);
-		endDate = new Date(input.to);
+		startDateStr = input.from.split('T')[0];
+		endDateStr = input.to.split('T')[0];
 	} else if (input?.days) {
-		endDate = new Date();
-		startDate = new Date(endDate);
-		startDate.setDate(endDate.getDate() - (input.days - 1));
+		const end = new Date();
+		const start = new Date(end);
+		start.setDate(end.getDate() - (input.days - 1));
+		startDateStr = start.toISOString().split('T')[0];
+		endDateStr = end.toISOString().split('T')[0];
 	} else {
-		endDate = new Date();
-		startDate = new Date(endDate);
-		startDate.setDate(endDate.getDate() - 7);
+		const end = new Date();
+		const start = new Date(end);
+		start.setDate(end.getDate() - 7);
+		startDateStr = start.toISOString().split('T')[0];
+		endDateStr = end.toISOString().split('T')[0];
 	}
 
-	startDate.setHours(0, 0, 0, 0);
-	endDate.setHours(23, 59, 59, 999);
+	const { start: startDate } = getLocalDayBoundariesUtc(startDateStr, timezone);
+	const { end: endDate } = getLocalDayBoundariesUtc(endDateStr, timezone);
 
 	return { startDate, endDate };
 }
@@ -49,7 +55,9 @@ export const getTreatmentsData = query(
 	async (input) => {
 		const { locals } = getRequestEvent();
 		const { apiClient } = locals;
-		const { startDate, endDate } = calculateDateRange(input);
+		const profile = await getProfileSummary();
+		const timezone = profile?.therapySettings?.[0]?.timezone;
+		const { startDate, endDate } = calculateDateRange(input, timezone);
 		const [bolusResponse, carbResponse, bgCheckResponse, noteResponse, deviceEventResponse] =
 			await Promise.all([
 				apiClient.insulin.getBoluses(startDate, endDate, 10000),

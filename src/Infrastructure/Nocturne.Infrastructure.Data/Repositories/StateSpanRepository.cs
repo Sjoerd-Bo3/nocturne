@@ -73,6 +73,12 @@ public class StateSpanRepository
                 query = query.Where(s => s.EndTimestamp != null);
         }
 
+        // Exclude non-primary duplicates from cross-connector deduplication
+        var nonPrimaryIds = _context.LinkedRecords
+            .Where(lr => lr.RecordType == "statespan" && !lr.IsPrimary)
+            .Select(lr => lr.RecordId);
+        query = query.Where(s => !nonPrimaryIds.Contains(s.Id));
+
         var entities = await query
             .OrderByDescending(s => s.StartTimestamp)
             .Skip(skip)

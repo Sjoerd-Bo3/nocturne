@@ -62,10 +62,14 @@ public class TenantResolutionMiddleware
         if (string.IsNullOrEmpty(_config.BaseDomain))
             return null;
 
-        if (!hostname.EndsWith($".{_config.BaseDomain}", StringComparison.OrdinalIgnoreCase))
+        // Strip port from BaseDomain for hostname comparison
+        // (Host.Host already excludes port, but BaseDomain may include it for frontend URL construction)
+        var baseDomainHost = _config.BaseDomain.Split(':')[0];
+
+        if (!hostname.EndsWith($".{baseDomainHost}", StringComparison.OrdinalIgnoreCase))
             return null;
 
-        var subdomain = hostname[..^(_config.BaseDomain.Length + 1)];
+        var subdomain = hostname[..^(baseDomainHost.Length + 1)];
         return string.IsNullOrEmpty(subdomain) ? null : subdomain;
     }
 

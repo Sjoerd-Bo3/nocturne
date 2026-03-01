@@ -590,19 +590,56 @@ public class TenantIsolationTests
         tenant!.TenantId.Should().Be(defaultTenantId);
     }
 
-    private static TenantResolutionMiddleware CreateMiddleware(
-        (string slug, Guid id, bool active, bool isDefault)[]? tenants = null)
+    [Fact]
+    public async Task TenantResolutionMiddleware_BaseDomainWithPort_StripsPortForSubdomainExtraction()
     {
-        return CreateMiddlewareWithNext(_ => Task.CompletedTask, tenants);
+        var middleware = CreateMiddlewareWithNext(
+            _ => Task.CompletedTask,
+            tenants: new[] { ("alice", TenantAId, true, false) },
+            baseDomain: "localhost:1612");
+
+        // Host.Host strips port, so "alice.localhost" not "alice.localhost:1612"
+        var context = CreateMiddlewareHttpContext("alice.localhost");
+        await middleware.InvokeAsync(context);
+
+        var tenant = context.Items["TenantContext"] as TenantContext;
+        tenant.Should().NotBeNull();
+        tenant!.TenantId.Should().Be(TenantAId);
+        tenant.Slug.Should().Be("alice");
+    }
+
+    [Fact]
+    public async Task TenantResolutionMiddleware_BaseDomainWithPort_NoSubdomain_ResolvesDefault()
+    {
+        var defaultId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+        var middleware = CreateMiddlewareWithNext(
+            _ => Task.CompletedTask,
+            tenants: new[] { ("default", defaultId, true, true) },
+            baseDomain: "localhost:1612");
+
+        var context = CreateMiddlewareHttpContext("localhost");
+        await middleware.InvokeAsync(context);
+
+        var tenant = context.Items["TenantContext"] as TenantContext;
+        tenant.Should().NotBeNull();
+        tenant!.TenantId.Should().Be(defaultId);
+    }
+
+    private static TenantResolutionMiddleware CreateMiddleware(
+        (string slug, Guid id, bool active, bool isDefault)[]? tenants = null,
+        string baseDomain = "nocturnecgm.com")
+    {
+        return CreateMiddlewareWithNext(_ => Task.CompletedTask, tenants, baseDomain);
     }
 
     private static TenantResolutionMiddleware CreateMiddlewareWithNext(
         RequestDelegate next,
-        (string slug, Guid id, bool active, bool isDefault)[]? tenants = null)
+        (string slug, Guid id, bool active, bool isDefault)[]? tenants = null,
+        string baseDomain = "nocturnecgm.com")
     {
         var config = Options.Create(new MultitenancyConfiguration
         {
-            BaseDomain = "nocturnecgm.com"
+            BaseDomain = baseDomain
         });
         var logger = Mock.Of<ILogger<TenantResolutionMiddleware>>();
         var cache = new MemoryCache(new MemoryCacheOptions());

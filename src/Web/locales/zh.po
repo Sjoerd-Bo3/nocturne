@@ -221,6 +221,7 @@ msgstr ""
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
+#: src/routes/tenants/+page.svelte
 msgid "Cancel"
 msgstr ""
 
@@ -2697,8 +2698,9 @@ msgstr ""
 #~ msgid "<0/> Clinical"
 #~ msgstr ""
 
-#~ msgid "Available"
-#~ msgstr ""
+#: src/routes/tenants/+page.svelte
+msgid "Available"
+msgstr ""
 
 #~ msgid "Coming Soon"
 #~ msgstr ""
@@ -17712,21 +17714,18 @@ msgstr ""
 msgid "Tenants"
 msgstr ""
 
-#: src/routes/tenants/+page.svelte
-msgid "Switch between your Nocturne instances"
-msgstr ""
+#~ msgid "Switch between your Nocturne instances"
+#~ msgstr ""
 
 #: src/routes/tenants/+page.svelte
 msgid "Failed to load tenants"
 msgstr ""
 
-#: src/routes/tenants/+page.svelte
-msgid "Subdomain resolution not configured"
-msgstr ""
+#~ msgid "Subdomain resolution not configured"
+#~ msgstr ""
 
-#: src/routes/tenants/+page.svelte
-msgid "A base domain must be configured to enable URL-based tenant switching."
-msgstr ""
+#~ msgid "A base domain must be configured to enable URL-based tenant switching."
+#~ msgstr ""
 
 #: src/routes/tenants/+page.svelte
 msgid "You are not a member of any tenants."
@@ -17949,4 +17948,88 @@ msgstr ""
 
 #: src/lib/components/settings/DataSourceRow.svelte
 msgid "<0/> Configured"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Slug must be at least 3 characters"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Invalid slug"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Could not validate slug"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Failed to create tenant. Please try again."
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Manage and switch between your Nocturne instances"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Multitenancy not configured"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid ""
+"A base domain must be configured to enable URL-based tenant switching\n"
+"and tenant creation."
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Tenant creation managed externally"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid ""
+"New tenants are managed by your service provider. Contact your\n"
+"administrator to request a new instance."
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Create new tenant"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Create new tenant"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Set up a new Nocturne instance with its own subdomain"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Subdomain"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Checking availability..."
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Display name"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "My Nocturne Instance"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "API secret (optional)"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "For Nightscout compatibility"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "Only needed for legacy Nightscout client compatibility"
+msgstr ""
+
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Create tenant"
 msgstr ""

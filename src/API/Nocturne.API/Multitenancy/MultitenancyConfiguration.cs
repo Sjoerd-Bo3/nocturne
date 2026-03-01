@@ -19,4 +19,17 @@ public class MultitenancyConfiguration
     /// Slug used for the auto-created default tenant.
     /// </summary>
     public string DefaultTenantSlug { get; set; } = "default";
+
+    /// <summary>
+    /// Whether authenticated users can create their own tenants.
+    /// SaaS operators set this to false to gate tenant creation behind billing.
+    /// </summary>
+    public bool AllowSelfServiceCreation { get; set; } = true;
+
+    /// <summary>
+    /// Optional webhook URL for custom slug validation.
+    /// When configured, Nocturne POSTs { "slug": "xxx" } and expects { "isValid": bool, "message"?: string }.
+    /// Used by SaaS operators to enforce custom naming rules or billing checks.
+    /// </summary>
+    public string? SlugValidationWebhookUrl { get; set; }
 }

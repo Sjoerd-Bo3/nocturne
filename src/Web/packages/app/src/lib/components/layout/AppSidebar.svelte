@@ -48,9 +48,11 @@
   interface Props {
     /** Current authenticated user (passed from layout data) */
     user?: AuthUser | null;
+    /** Number of tenants the user is a member of */
+    tenantCount?: number;
   }
 
-  const { user = null }: Props = $props();
+  const { user = null, tenantCount = 0 }: Props = $props();
   const sidebar = Sidebar.useSidebar();
 
   type NavItem = {
@@ -62,7 +64,8 @@
     children?: NavItem[];
   };
 
-  const navigation: NavItem[] = [
+  const navigation: NavItem[] = $derived.by(() => {
+    const items: NavItem[] = [
     {
       title: "Dashboard",
       href: "/",
@@ -159,11 +162,17 @@
       href: "/meals",
       icon: Utensils,
     },
-    {
-      title: "Tenants",
-      href: "/tenants",
-      icon: Building2,
-    },
+    ];
+
+    if (tenantCount >= 2) {
+      items.push({
+        title: "Tenants",
+        href: "/tenants",
+        icon: Building2,
+      });
+    }
+
+    items.push(
     {
       title: "Dev Tools",
       icon: Terminal,
@@ -212,8 +221,10 @@
           icon: Building2,
         },
       ],
-    },
-  ];
+    });
+
+    return items;
+  });
 
   // Track which collapsible menus are open
   let openMenus = $state<Record<string, boolean>>({});

@@ -427,7 +427,7 @@
           59
         ),
     }}
-    showPredictions={hasApsSnapshots}
+    showPredictions={hasApsSnapshots && selectedPredictionData != null}
     externalPredictionData={selectedPredictionData}
   />
 

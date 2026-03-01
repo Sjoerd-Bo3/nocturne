@@ -1966,51 +1966,6 @@ export class MetadataClient {
     }
 }
 
-export class MyTenantsClient {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    getMyTenants(signal?: AbortSignal): Promise<TenantDto[]> {
-        let url_ = this.baseUrl + "/api/me/tenants";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetMyTenants(_response);
-        });
-    }
-
-    protected processGetMyTenants(response: Response): Promise<TenantDto[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TenantDto[];
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<TenantDto[]>(null as any);
-    }
-}
-
 export class OidcClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -10369,6 +10324,133 @@ export class MyFitnessPalSettingsClient {
             });
         }
         return Promise.resolve<MyFitnessPalMatchingSettings>(null as any);
+    }
+}
+
+export class MyTenantsClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getMyTenants(signal?: AbortSignal): Promise<TenantDto[]> {
+        let url_ = this.baseUrl + "/api/v4/me/tenants";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMyTenants(_response);
+        });
+    }
+
+    protected processGetMyTenants(response: Response): Promise<TenantDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TenantDto[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TenantDto[]>(null as any);
+    }
+
+    createTenant(request: CreateMyTenantRequest, signal?: AbortSignal): Promise<TenantDto> {
+        let url_ = this.baseUrl + "/api/v4/me/tenants";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateTenant(_response);
+        });
+    }
+
+    protected processCreateTenant(response: Response): Promise<TenantDto> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TenantDto;
+            return result201;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TenantDto>(null as any);
+    }
+
+    validateSlug(slug?: string | undefined, signal?: AbortSignal): Promise<SlugValidationResult> {
+        let url_ = this.baseUrl + "/api/v4/me/tenants/validate-slug?";
+        if (slug === null)
+            throw new globalThis.Error("The parameter 'slug' cannot be null.");
+        else if (slug !== undefined)
+            url_ += "slug=" + encodeURIComponent("" + slug) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processValidateSlug(_response);
+        });
+    }
+
+    protected processValidateSlug(response: Response): Promise<SlugValidationResult> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as SlugValidationResult;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SlugValidationResult>(null as any);
     }
 }
 
@@ -24076,15 +24158,8 @@ export interface MultitenancyInfo {
     currentTenantId?: string | undefined;
     /** Display name of the tenant resolved for the current request */
     currentTenantDisplayName?: string | undefined;
-}
-
-export interface TenantDto {
-    id?: string;
-    slug?: string;
-    displayName?: string;
-    isActive?: boolean;
-    isDefault?: boolean;
-    sysCreatedAt?: Date;
+    /** Whether self-service tenant creation is allowed */
+    allowSelfServiceCreation?: boolean;
 }
 
 /** OIDC provider info for login page */
@@ -26684,6 +26759,26 @@ export interface MyFitnessPalMatchingSettings {
     matchCarbTolerancePercent?: number;
     matchCarbToleranceGrams?: number;
     enableMatchNotifications?: boolean;
+}
+
+export interface TenantDto {
+    id?: string;
+    slug?: string;
+    displayName?: string;
+    isActive?: boolean;
+    isDefault?: boolean;
+    sysCreatedAt?: Date;
+}
+
+export interface CreateMyTenantRequest {
+    slug?: string;
+    displayName?: string;
+    apiSecret?: string | undefined;
+}
+
+export interface SlugValidationResult {
+    isValid?: boolean;
+    message?: string | undefined;
 }
 
 export interface PaginatedResponseOfCarbIntake {

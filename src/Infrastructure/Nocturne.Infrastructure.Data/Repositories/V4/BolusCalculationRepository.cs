@@ -45,6 +45,13 @@ public class BolusCalculationRepository : IBolusCalculationRepository
             query = query.Where(e => e.Device == device);
         if (source != null)
             query = query.Where(e => e.DataSource == source);
+
+        // Exclude non-primary duplicates from cross-connector deduplication
+        var nonPrimaryIds = _context.LinkedRecords
+            .Where(lr => lr.RecordType == "boluscalculation" && !lr.IsPrimary)
+            .Select(lr => lr.RecordId);
+        query = query.Where(b => !nonPrimaryIds.Contains(b.Id));
+
         query = descending ? query.OrderByDescending(e => e.Timestamp) : query.OrderBy(e => e.Timestamp);
         var entities = await query.Skip(offset).Take(limit).ToListAsync(ct);
         return entities.Select(BolusCalculationMapper.ToDomainModel);

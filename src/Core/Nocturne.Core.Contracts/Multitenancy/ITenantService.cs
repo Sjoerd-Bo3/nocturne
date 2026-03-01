@@ -9,6 +9,7 @@ public interface ITenantService
     Task AddMemberAsync(Guid tenantId, Guid subjectId, string role, CancellationToken ct = default);
     Task RemoveMemberAsync(Guid tenantId, Guid subjectId, CancellationToken ct = default);
     Task<List<TenantDto>> GetTenantsForSubjectAsync(Guid subjectId, CancellationToken ct = default);
+    Task<SlugValidationResult> ValidateSlugAsync(string slug, CancellationToken ct = default);
 }
 
 public record TenantDto(Guid Id, string Slug, string DisplayName, bool IsActive, bool IsDefault, DateTime SysCreatedAt);
@@ -16,3 +17,5 @@ public record TenantDto(Guid Id, string Slug, string DisplayName, bool IsActive,
 public record TenantDetailDto(Guid Id, string Slug, string DisplayName, bool IsActive, bool IsDefault, DateTime SysCreatedAt, List<TenantMemberDto> Members);
 
 public record TenantMemberDto(Guid SubjectId, string Role, DateTime SysCreatedAt);
+
+public record SlugValidationResult(bool IsValid, string? Message = null);

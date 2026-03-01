@@ -183,6 +183,7 @@ public class MetadataController : ControllerBase
             BaseDomain = config.Value.BaseDomain,
             DefaultTenantSlug = config.Value.DefaultTenantSlug,
             SubdomainResolution = !string.IsNullOrEmpty(config.Value.BaseDomain),
+            AllowSelfServiceCreation = config.Value.AllowSelfServiceCreation,
             CurrentTenantSlug = tenantContext?.Slug,
             CurrentTenantId = tenantContext?.TenantId,
             CurrentTenantDisplayName = tenantContext?.DisplayName,
@@ -541,4 +542,9 @@ public class MultitenancyInfo
     /// Display name of the tenant resolved for the current request
     /// </summary>
     public string? CurrentTenantDisplayName { get; set; }
+
+    /// <summary>
+    /// Whether self-service tenant creation is allowed
+    /// </summary>
+    public bool AllowSelfServiceCreation { get; set; }
 }

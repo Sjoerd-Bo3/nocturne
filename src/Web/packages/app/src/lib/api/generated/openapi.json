@@ -1486,30 +1486,6 @@
         "x-remote-type": "query"
       }
     },
-    "/api/me/tenants": {
-      "get": {
-        "tags": [
-          "MyTenants"
-        ],
-        "operationId": "MyTenants_GetMyTenants",
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TenantDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "query"
-      }
-    },
     "/auth/providers": {
       "get": {
         "tags": [
@@ -8544,6 +8520,105 @@
             }
           }
         }
+      }
+    },
+    "/api/v4/me/tenants": {
+      "get": {
+        "tags": [
+          "MyTenants"
+        ],
+        "operationId": "MyTenants_GetMyTenants",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "post": {
+        "tags": [
+          "MyTenants"
+        ],
+        "operationId": "MyTenants_CreateTenant",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMyTenantRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetMyTenants"
+        ]
+      }
+    },
+    "/api/v4/me/tenants/validate-slug": {
+      "get": {
+        "tags": [
+          "MyTenants"
+        ],
+        "operationId": "MyTenants_ValidateSlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlugValidationResult"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
       }
     },
     "/api/v4/notifications": {
@@ -23038,32 +23113,10 @@
             "type": "string",
             "description": "Display name of the tenant resolved for the current request",
             "nullable": true
-          }
-        }
-      },
-      "TenantDto": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "guid"
           },
-          "slug": {
-            "type": "string"
-          },
-          "displayName": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "isDefault": {
-            "type": "boolean"
-          },
-          "sysCreatedAt": {
-            "type": "string",
-            "format": "date-time"
+          "allowSelfServiceCreation": {
+            "type": "boolean",
+            "description": "Whether self-service tenant creation is allowed"
           }
         }
       },
@@ -31488,6 +31541,61 @@
           },
           "enableMatchNotifications": {
             "type": "boolean"
+          }
+        }
+      },
+      "TenantDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "sysCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateMyTenantRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "apiSecret": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SlugValidationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "isValid": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
           }
         }
       },

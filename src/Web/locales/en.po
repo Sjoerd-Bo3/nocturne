@@ -214,6 +214,7 @@ msgstr "Reason for this treatment"
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
+#: src/routes/tenants/+page.svelte
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -11807,8 +11808,9 @@ msgstr "Loading basal data..."
 #~ msgid "Failed to stop connector"
 #~ msgstr "Failed to stop connector"
 
-#~ msgid "Available"
-#~ msgstr "Available"
+#: src/routes/tenants/+page.svelte
+msgid "Available"
+msgstr "Available"
 
 #~ msgid "Stopped"
 #~ msgstr "Stopped"
@@ -16838,21 +16840,18 @@ msgstr "To start fresh, stop all services and remove volumes:"
 msgid "Tenants"
 msgstr "Tenants"
 
-#: src/routes/tenants/+page.svelte
-msgid "Switch between your Nocturne instances"
-msgstr "Switch between your Nocturne instances"
+#~ msgid "Switch between your Nocturne instances"
+#~ msgstr "Switch between your Nocturne instances"
 
 #: src/routes/tenants/+page.svelte
 msgid "Failed to load tenants"
 msgstr "Failed to load tenants"
 
-#: src/routes/tenants/+page.svelte
-msgid "Subdomain resolution not configured"
-msgstr "Subdomain resolution not configured"
+#~ msgid "Subdomain resolution not configured"
+#~ msgstr "Subdomain resolution not configured"
 
-#: src/routes/tenants/+page.svelte
-msgid "A base domain must be configured to enable URL-based tenant switching."
-msgstr "A base domain must be configured to enable URL-based tenant switching."
+#~ msgid "A base domain must be configured to enable URL-based tenant switching."
+#~ msgstr "A base domain must be configured to enable URL-based tenant switching."
 
 #: src/routes/tenants/+page.svelte
 msgid "You are not a member of any tenants."
@@ -17080,3 +17079,91 @@ msgstr ""
 #: src/lib/components/settings/DataSourceRow.svelte
 msgid "<0/> Configured"
 msgstr "<0/> Configured"
+
+#: src/routes/tenants/+page.svelte
+msgid "Slug must be at least 3 characters"
+msgstr "Slug must be at least 3 characters"
+
+#: src/routes/tenants/+page.svelte
+msgid "Invalid slug"
+msgstr "Invalid slug"
+
+#: src/routes/tenants/+page.svelte
+msgid "Could not validate slug"
+msgstr "Could not validate slug"
+
+#: src/routes/tenants/+page.svelte
+msgid "Failed to create tenant. Please try again."
+msgstr "Failed to create tenant. Please try again."
+
+#: src/routes/tenants/+page.svelte
+msgid "Manage and switch between your Nocturne instances"
+msgstr "Manage and switch between your Nocturne instances"
+
+#: src/routes/tenants/+page.svelte
+msgid "Multitenancy not configured"
+msgstr "Multitenancy not configured"
+
+#: src/routes/tenants/+page.svelte
+msgid ""
+"A base domain must be configured to enable URL-based tenant switching\n"
+"and tenant creation."
+msgstr ""
+"A base domain must be configured to enable URL-based tenant switching\n"
+"and tenant creation."
+
+#: src/routes/tenants/+page.svelte
+msgid "Tenant creation managed externally"
+msgstr "Tenant creation managed externally"
+
+#: src/routes/tenants/+page.svelte
+msgid ""
+"New tenants are managed by your service provider. Contact your\n"
+"administrator to request a new instance."
+msgstr ""
+"New tenants are managed by your service provider. Contact your\n"
+"administrator to request a new instance."
+
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Create new tenant"
+msgstr "<0/> Create new tenant"
+
+#: src/routes/tenants/+page.svelte
+msgid "Create new tenant"
+msgstr "Create new tenant"
+
+#: src/routes/tenants/+page.svelte
+msgid "Set up a new Nocturne instance with its own subdomain"
+msgstr "Set up a new Nocturne instance with its own subdomain"
+
+#: src/routes/tenants/+page.svelte
+msgid "Subdomain"
+msgstr "Subdomain"
+
+#: src/routes/tenants/+page.svelte
+msgid "Checking availability..."
+msgstr "Checking availability..."
+
+#: src/routes/tenants/+page.svelte
+msgid "Display name"
+msgstr "Display name"
+
+#: src/routes/tenants/+page.svelte
+msgid "My Nocturne Instance"
+msgstr "My Nocturne Instance"
+
+#: src/routes/tenants/+page.svelte
+msgid "API secret (optional)"
+msgstr "API secret (optional)"
+
+#: src/routes/tenants/+page.svelte
+msgid "For Nightscout compatibility"
+msgstr "For Nightscout compatibility"
+
+#: src/routes/tenants/+page.svelte
+msgid "Only needed for legacy Nightscout client compatibility"
+msgstr "Only needed for legacy Nightscout client compatibility"
+
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Create tenant"
+msgstr "<0/> Create tenant"

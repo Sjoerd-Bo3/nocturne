@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { getRequestEvent, query } from '$app/server';
 import { error } from '@sveltejs/kit';
 import { getApsSnapshots } from '$api/generated/deviceStatus.generated.remote';
+import { getProfileSummary } from '$api/generated/profiles.generated.remote';
+import { getLocalDayBoundariesUtc } from '$lib/utils/timezone';
 
 /**
  * Get day-in-review data for a specific date
@@ -25,21 +27,17 @@ export const getDayInReviewData = query(
 		const { locals } = getRequestEvent();
 		const { apiClient } = locals;
 
-		// Calculate day boundaries in local time
-		// Using the date string directly to avoid timezone confusion -
-		// if someone in Australia wants to see Dec 10th, they should see Dec 10th data
-		const dayStart = new Date(date);
-		dayStart.setHours(0, 0, 0, 0);
-
-		const dayEnd = new Date(date);
-		dayEnd.setHours(23, 59, 59, 999);
+		// Resolve the user's timezone from their profile to compute correct day boundaries
+		const profile = await getProfileSummary();
+		const timezone = profile?.therapySettings?.[0]?.timezone;
+		const { start: dayStart, end: dayEnd } = getLocalDayBoundariesUtc(dateParam, timezone);
 
 		// Fetch v4 data + APS snapshots for historical predictions
 		const [entriesResponse, bolusResponse, carbResponse, apsResponse] = await Promise.all([
 			apiClient.glucose.getSensorGlucose(dayStart, dayEnd, 10000),
 			apiClient.insulin.getBoluses(dayStart, dayEnd, 1000),
 			apiClient.nutrition.getCarbIntakes(dayStart, dayEnd, 1000),
-			getApsSnapshots({ from: dayStart.getTime(), to: dayEnd.getTime(), limit: 1000, sort: 'mills_asc' }),
+			getApsSnapshots({ from: dayStart.getTime(), to: dayEnd.getTime(), limit: 1000, sort: 'timestamp_asc' }),
 		]);
 
 		const entries = entriesResponse.data ?? [];

@@ -224,7 +224,7 @@
   {@render children()}
 {:else}
   <Sidebar.Provider>
-    <AppSidebar user={data.user} />
+    <AppSidebar user={data.user} tenantCount={data.tenantCount} />
     <MobileHeader />
     <Sidebar.Inset>
       <main class="flex-1 overflow-auto">

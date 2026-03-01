@@ -238,21 +238,16 @@ public class ChartDataService : IChartDataService
             .ToList();
 
         // Fetch TempBasal records from v4 table (replaces BasalDelivery StateSpans)
-        // Deduplicate by 30s window + rate to eliminate duplicates from multiple connectors
-        var tempBasalList = DeduplicateByWindow(
-            (await _tempBasalRepository.GetAsync(
-                from: MillsToDateTime(startTime),
-                to: MillsToDateTime(endTime),
-                device: null,
-                source: null,
-                limit: displayRangeLimit,
-                offset: 0,
-                descending: false,
-                ct: cancellationToken
-            )).ToList(),
-            tb => tb.StartMills,
-            (a, b) => Math.Abs(a.Rate - b.Rate) <= 0.05
-        );
+        var tempBasalList = (await _tempBasalRepository.GetAsync(
+            from: MillsToDateTime(startTime),
+            to: MillsToDateTime(endTime),
+            device: null,
+            source: null,
+            limit: displayRangeLimit,
+            offset: 0,
+            descending: false,
+            ct: cancellationToken
+        )).ToList();
 
         // Fetch all state spans in a single batched query (BasalDelivery now comes from TempBasal table)
         var stateSpanCategories = new[]
@@ -311,7 +306,8 @@ public class ChartDataService : IChartDataService
             deviceStatusList,
             startTime,
             endTime,
-            intervalMinutes
+            intervalMinutes,
+            tempBasalList
         );
 
         var basalSeries = BuildBasalSeriesFromTempBasals(
@@ -392,40 +388,6 @@ public class ChartDataService : IChartDataService
 
     #region Internal Helpers
 
-    /// <summary>
-    /// Deduplicates a time-sorted list by removing items within a time window that match a value predicate.
-    /// Keeps the first occurrence in each window. Input must be sorted by time ascending.
-    /// </summary>
-    private static List<T> DeduplicateByWindow<T>(
-        List<T> items,
-        Func<T, long> getTime,
-        Func<T, T, bool> valuesMatch,
-        long windowMillis = 30_000
-    )
-    {
-        if (items.Count <= 1)
-            return items;
-
-        var result = new List<T>(items.Count);
-        foreach (var item in items)
-        {
-            var isDuplicate = false;
-            for (var i = result.Count - 1; i >= 0; i--)
-            {
-                if (getTime(item) - getTime(result[i]) > windowMillis)
-                    break;
-                if (valuesMatch(item, result[i]))
-                {
-                    isDuplicate = true;
-                    break;
-                }
-            }
-            if (!isDuplicate)
-                result.Add(item);
-        }
-        return result;
-    }
-
     internal ChartThresholdsDto GetProfileThresholds(long time)
     {
         if (!_profileService.HasData())
@@ -458,11 +420,12 @@ public class ChartDataService : IChartDataService
         List<DeviceStatus> deviceStatuses,
         long startTime,
         long endTime,
-        int intervalMinutes
+        int intervalMinutes,
+        List<TempBasal>? tempBasals = null
     )
     {
         // Generate cache key based on treatment data hash and time range
-        var cacheKey = GenerateIobCobCacheKey(treatments, startTime, endTime, intervalMinutes);
+        var cacheKey = GenerateIobCobCacheKey(treatments, startTime, endTime, intervalMinutes, tempBasals);
 
         // Try to get from cache
         if (
@@ -521,7 +484,22 @@ public class ChartDataService : IChartDataService
                     ? _iobService.FromTreatments(relevantIobTreatments, profile, t, null)
                     : new IobResult { Iob = 0 };
 
-            var iob = iobResult.Iob;
+            // Calculate basal IOB from V4 TempBasal records
+            var basalIob = 0.0;
+            if (tempBasals?.Count > 0)
+            {
+                var relevantTempBasals = tempBasals
+                    .Where(tb => tb.StartMills <= t && tb.StartMills >= t - diaMs)
+                    .ToList();
+
+                if (relevantTempBasals.Count > 0)
+                {
+                    var basalResult = _iobService.FromTempBasals(relevantTempBasals, profile, t, null);
+                    basalIob = basalResult.BasalIob ?? 0;
+                }
+            }
+
+            var iob = iobResult.Iob + basalIob;
             iobSeries.Add(new TimeSeriesPoint { Timestamp = t, Value = iob });
             if (iob > maxIob)
                 maxIob = iob;
@@ -558,7 +536,8 @@ public class ChartDataService : IChartDataService
         List<Treatment> treatments,
         long startTime,
         long endTime,
-        int intervalMinutes
+        int intervalMinutes,
+        List<TempBasal>? tempBasals = null
     )
     {
         // Round start/end times to interval boundaries for better cache hits
@@ -584,6 +563,20 @@ public class ChartDataService : IChartDataService
             }
         }
 
+        // Include temp basal data in cache key
+        if (tempBasals != null)
+        {
+            foreach (var tb in tempBasals)
+            {
+                sb.Append(tb.StartMills)
+                    .Append(':')
+                    .Append(tb.Rate)
+                    .Append(':')
+                    .Append(tb.EndMills ?? 0)
+                    .Append('|');
+            }
+        }
+
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sb.ToString())))[
             ..16
         ]; // First 16 hex chars (64 bits) is sufficient
@@ -596,13 +589,8 @@ public class ChartDataService : IChartDataService
     )
     {
         var sorted = readings.OrderBy(r => r.Mills).ToList();
-        var deduped = DeduplicateByWindow(
-            sorted,
-            r => r.Mills,
-            (a, b) => Math.Abs(a.Mgdl - b.Mgdl) <= 1.0
-        );
 
-        var glucoseData = deduped
+        var glucoseData = sorted
             .Select(r => new GlucosePointDto
             {
                 Time = r.Mills,
@@ -621,13 +609,7 @@ public class ChartDataService : IChartDataService
     {
         var sorted = boluses.Where(b => b.Insulin > 0).OrderBy(b => b.Mills).ToList();
 
-        var deduped = DeduplicateByWindow(
-            sorted,
-            b => b.Mills,
-            (a, b) => Math.Abs(a.Insulin - b.Insulin) <= 0.05
-        );
-
-        return deduped
+        return sorted
             .Select(b => new BolusMarkerDto
             {
                 Time = b.Mills,
@@ -646,13 +628,7 @@ public class ChartDataService : IChartDataService
     {
         var sorted = carbIntakes.Where(c => c.Carbs > 0).OrderBy(c => c.Mills).ToList();
 
-        var deduped = DeduplicateByWindow(
-            sorted,
-            c => c.Mills,
-            (a, b) => Math.Abs(a.Carbs - b.Carbs) <= 1.0
-        );
-
-        return deduped
+        return sorted
             .Select(c => new CarbMarkerDto
             {
                 Time = c.Mills,
@@ -670,13 +646,7 @@ public class ChartDataService : IChartDataService
     {
         var sorted = deviceEvents.OrderBy(e => e.Mills).ToList();
 
-        var deduped = DeduplicateByWindow(
-            sorted,
-            e => e.Mills,
-            (a, b) => a.EventType == b.EventType
-        );
-
-        return deduped
+        return sorted
             .Select(e => new DeviceEventMarkerDto
             {
                 Time = e.Mills,
@@ -692,13 +662,7 @@ public class ChartDataService : IChartDataService
     {
         var sorted = bgChecks.Where(b => b.Mgdl > 0).OrderBy(b => b.Mills).ToList();
 
-        var deduped = DeduplicateByWindow(
-            sorted,
-            b => b.Mills,
-            (a, b) => Math.Abs(a.Mgdl - b.Mgdl) <= 1.0
-        );
-
-        return deduped
+        return sorted
             .Select(b => new BgCheckMarkerDto
             {
                 Time = b.Mills,

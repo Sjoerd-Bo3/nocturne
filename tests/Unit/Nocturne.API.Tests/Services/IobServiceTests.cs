@@ -1,6 +1,7 @@
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services;
@@ -253,6 +254,238 @@ public class IobServiceTests
         Assert.True(result.Iob > 0);
         Assert.Equal("Care Portal", result.Source);
     }
+
+    #region CalcTempBasalIob Tests
+
+    [Fact]
+    public void CalcTempBasalIob_AboveScheduled_ShouldReturnPositiveIob()
+    {
+        // Arrange — temp basal at 1.5 U/hr vs scheduled 0.5 U/hr, ran for 30 minutes
+        var now = DateTimeOffset.UtcNow;
+        var tempBasal = new TempBasal
+        {
+            StartTimestamp = now.AddMinutes(-30).UtcDateTime,
+            EndTimestamp = now.AddMinutes(-1).UtcDateTime,
+            Rate = 1.5,
+            ScheduledRate = 0.5,
+            Origin = TempBasalOrigin.Algorithm,
+        };
+        var time = now.ToUnixTimeMilliseconds();
+
+        // Act
+        var result = _iobService.CalcTempBasalIob(tempBasal, _testProfile, time);
+
+        // Assert — excess insulin = (1.5 - 0.5) * (29/60) ≈ 0.483 U, with linear decay
+        Assert.True(result.IobContrib > 0);
+    }
+
+    [Fact]
+    public void CalcTempBasalIob_AtScheduledRate_ShouldReturnZero()
+    {
+        // Arrange — rate equals scheduled, no excess
+        var now = DateTimeOffset.UtcNow;
+        var tempBasal = new TempBasal
+        {
+            StartTimestamp = now.AddMinutes(-30).UtcDateTime,
+            EndTimestamp = now.AddMinutes(-1).UtcDateTime,
+            Rate = 1.0,
+            ScheduledRate = 1.0,
+            Origin = TempBasalOrigin.Algorithm,
+        };
+
+        // Act
+        var result = _iobService.CalcTempBasalIob(tempBasal, _testProfile, now.ToUnixTimeMilliseconds());
+
+        // Assert
+        Assert.Equal(0.0, result.IobContrib);
+    }
+
+    [Fact]
+    public void CalcTempBasalIob_BelowScheduled_ShouldReturnZero()
+    {
+        // Arrange — rate below scheduled, clamped to 0
+        var now = DateTimeOffset.UtcNow;
+        var tempBasal = new TempBasal
+        {
+            StartTimestamp = now.AddMinutes(-30).UtcDateTime,
+            EndTimestamp = now.AddMinutes(-1).UtcDateTime,
+            Rate = 0.3,
+            ScheduledRate = 1.0,
+            Origin = TempBasalOrigin.Algorithm,
+        };
+
+        // Act
+        var result = _iobService.CalcTempBasalIob(tempBasal, _testProfile, now.ToUnixTimeMilliseconds());
+
+        // Assert
+        Assert.Equal(0.0, result.IobContrib);
+    }
+
+    [Fact]
+    public void CalcTempBasalIob_Suspended_ShouldReturnZero()
+    {
+        // Arrange — suspended origin treats rate as 0
+        var now = DateTimeOffset.UtcNow;
+        var tempBasal = new TempBasal
+        {
+            StartTimestamp = now.AddMinutes(-30).UtcDateTime,
+            EndTimestamp = now.AddMinutes(-1).UtcDateTime,
+            Rate = 1.5,
+            ScheduledRate = 0.5,
+            Origin = TempBasalOrigin.Suspended,
+        };
+
+        // Act
+        var result = _iobService.CalcTempBasalIob(tempBasal, _testProfile, now.ToUnixTimeMilliseconds());
+
+        // Assert — suspended overrides rate to 0, so 0 - 0.5 < 0, clamped to 0
+        Assert.Equal(0.0, result.IobContrib);
+    }
+
+    [Fact]
+    public void CalcTempBasalIob_NoEndTime_ShouldReturnZero()
+    {
+        // Arrange — active temp basal with null EndTimestamp
+        var now = DateTimeOffset.UtcNow;
+        var tempBasal = new TempBasal
+        {
+            StartTimestamp = now.AddMinutes(-30).UtcDateTime,
+            EndTimestamp = null,
+            Rate = 2.0,
+            ScheduledRate = 0.5,
+            Origin = TempBasalOrigin.Algorithm,
+        };
+
+        // Act
+        var result = _iobService.CalcTempBasalIob(tempBasal, _testProfile, now.ToUnixTimeMilliseconds());
+
+        // Assert
+        Assert.Equal(0.0, result.IobContrib);
+    }
+
+    [Fact]
+    public void CalcTempBasalIob_AfterDIA_ShouldReturnZero()
+    {
+        // Arrange — temp basal started > DIA hours ago, fully decayed
+        var now = DateTimeOffset.UtcNow;
+        var tempBasal = new TempBasal
+        {
+            StartTimestamp = now.AddHours(-4).UtcDateTime,
+            EndTimestamp = now.AddHours(-3.5).UtcDateTime,
+            Rate = 2.0,
+            ScheduledRate = 0.5,
+            Origin = TempBasalOrigin.Algorithm,
+        };
+
+        // Act — with default 3-hour DIA, 4 hours ago is fully decayed
+        var result = _iobService.CalcTempBasalIob(tempBasal, _testProfile, now.ToUnixTimeMilliseconds());
+
+        // Assert
+        Assert.Equal(0.0, result.IobContrib);
+    }
+
+    [Fact]
+    public void CalcTempBasalIob_LinearDecay_ShouldDecreaseOverTime()
+    {
+        // Arrange — same temp basal measured at two different times
+        var now = DateTimeOffset.UtcNow;
+        var tempBasal = new TempBasal
+        {
+            StartTimestamp = now.AddMinutes(-60).UtcDateTime,
+            EndTimestamp = now.AddMinutes(-30).UtcDateTime,
+            Rate = 2.0,
+            ScheduledRate = 0.5,
+            Origin = TempBasalOrigin.Algorithm,
+        };
+
+        // Act — measure at 30 min after start vs 90 min after start
+        var earlier = _iobService.CalcTempBasalIob(tempBasal, _testProfile, now.AddMinutes(-30).ToUnixTimeMilliseconds());
+        var later = _iobService.CalcTempBasalIob(tempBasal, _testProfile, now.ToUnixTimeMilliseconds());
+
+        // Assert — IOB should be lower at the later time
+        Assert.True(earlier.IobContrib > later.IobContrib);
+        Assert.True(later.IobContrib > 0); // Still within DIA window
+    }
+
+    #endregion
+
+    #region FromTempBasals Tests
+
+    [Fact]
+    public void FromTempBasals_MultipleTempBasals_ShouldAggregateBasalIob()
+    {
+        // Arrange — two high temp basals
+        var now = DateTimeOffset.UtcNow;
+        var tempBasals = new List<TempBasal>
+        {
+            new()
+            {
+                StartTimestamp = now.AddMinutes(-60).UtcDateTime,
+                EndTimestamp = now.AddMinutes(-30).UtcDateTime,
+                Rate = 2.0,
+                ScheduledRate = 0.5,
+                Origin = TempBasalOrigin.Algorithm,
+            },
+            new()
+            {
+                StartTimestamp = now.AddMinutes(-30).UtcDateTime,
+                EndTimestamp = now.AddMinutes(-5).UtcDateTime,
+                Rate = 1.8,
+                ScheduledRate = 0.5,
+                Origin = TempBasalOrigin.Algorithm,
+            },
+        };
+
+        // Act
+        var result = _iobService.FromTempBasals(tempBasals, _testProfile, now.ToUnixTimeMilliseconds());
+
+        // Assert — combined BasalIob from both temp basals
+        Assert.True(result.BasalIob.HasValue);
+        Assert.True(result.BasalIob!.Value > 0);
+    }
+
+    [Fact]
+    public void FromTempBasals_EmptyList_ShouldReturnZero()
+    {
+        // Act
+        var result = _iobService.FromTempBasals(
+            new List<TempBasal>(),
+            _testProfile,
+            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+        );
+
+        // Assert
+        Assert.Equal(0.0, result.Iob);
+        Assert.Null(result.BasalIob);
+    }
+
+    [Fact]
+    public void FromTempBasals_SetsBasalIobNotBolus()
+    {
+        // Arrange
+        var now = DateTimeOffset.UtcNow;
+        var tempBasals = new List<TempBasal>
+        {
+            new()
+            {
+                StartTimestamp = now.AddMinutes(-30).UtcDateTime,
+                EndTimestamp = now.AddMinutes(-5).UtcDateTime,
+                Rate = 2.0,
+                ScheduledRate = 0.5,
+                Origin = TempBasalOrigin.Algorithm,
+            },
+        };
+
+        // Act
+        var result = _iobService.FromTempBasals(tempBasals, _testProfile, now.ToUnixTimeMilliseconds());
+
+        // Assert — Iob (bolus) should be 0, BasalIob should have the value
+        Assert.Equal(0.0, result.Iob);
+        Assert.True(result.BasalIob.HasValue);
+        Assert.True(result.BasalIob!.Value > 0);
+    }
+
+    #endregion
 
     #region Exact Legacy Test Cases
 

@@ -50,6 +50,13 @@ public class BolusRepository : IBolusRepository
             query = query.Where(e => e.LegacyId == null);
         if (kind.HasValue)
             query = query.Where(e => e.BolusKind == kind.Value.ToString());
+
+        // Exclude non-primary duplicates from cross-connector deduplication
+        var nonPrimaryIds = _context.LinkedRecords
+            .Where(lr => lr.RecordType == "bolus" && !lr.IsPrimary)
+            .Select(lr => lr.RecordId);
+        query = query.Where(b => !nonPrimaryIds.Contains(b.Id));
+
         query = descending ? query.OrderByDescending(e => e.Timestamp) : query.OrderBy(e => e.Timestamp);
         var entities = await query.Skip(offset).Take(limit).ToListAsync(ct);
         return entities.Select(BolusMapper.ToDomainModel);

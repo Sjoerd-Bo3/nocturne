@@ -5,7 +5,6 @@ export * from './authorizations.generated.remote';
 // './connectorStatus.generated.remote' - all exports collide, import directly
 export * from './localauths.generated.remote';
 export * from './metadatas.generated.remote';
-export * from './mytenants.generated.remote';
 export * from './oidcs.generated.remote';
 export * from './statistics.generated.remote';
 export * from './batteries.generated.remote';
@@ -21,6 +20,7 @@ export * from './heartrates.generated.remote';
 export * from './insulins.generated.remote';
 export { getFoodEntry, acceptMatch, dismissMatch } from './mealMatchings.generated.remote';
 export { testConnection, startMigration, cancelMigration, getHistory, getPendingConfig, getSources } from './migrations.generated.remote';
+export * from './mytenants.generated.remote';
 export * from './notifications.generated.remote';
 export * from './nutritions.generated.remote';
 export * from './observations.generated.remote';
