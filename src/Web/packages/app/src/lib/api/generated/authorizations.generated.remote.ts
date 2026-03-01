@@ -16,7 +16,7 @@ export const getAllPermissions = query(async () => {
     return await apiClient.authorization.getAllPermissions();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in authorization.getAllPermissions:', err);
     throw error(500, 'Failed to get all permissions');
@@ -31,7 +31,7 @@ export const getPermissionTrie = query(async () => {
     return await apiClient.authorization.getPermissionTrie();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in authorization.getPermissionTrie:', err);
     throw error(500, 'Failed to get permission trie');
@@ -46,7 +46,7 @@ export const getAllSubjects = query(async () => {
     return await apiClient.authorization.getAllSubjects();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in authorization.getAllSubjects:', err);
     throw error(500, 'Failed to get all subjects');
@@ -65,7 +65,7 @@ export const createSubject = command(SubjectSchema, async (request) => {
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in authorization.createSubject:', err);
     throw error(500, 'Failed to create subject');
@@ -84,7 +84,7 @@ export const updateSubject = command(SubjectSchema, async (request) => {
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in authorization.updateSubject:', err);
     throw error(500, 'Failed to update subject');
@@ -103,7 +103,7 @@ export const deleteSubject = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in authorization.deleteSubject:', err);
     throw error(500, 'Failed to delete subject');
@@ -118,7 +118,7 @@ export const getAllRoles = query(async () => {
     return await apiClient.authorization.getAllRoles();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in authorization.getAllRoles:', err);
     throw error(500, 'Failed to get all roles');
@@ -137,7 +137,7 @@ export const createRole = command(RoleSchema, async (request) => {
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in authorization.createRole:', err);
     throw error(500, 'Failed to create role');
@@ -156,7 +156,7 @@ export const updateRole = command(RoleSchema, async (request) => {
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in authorization.updateRole:', err);
     throw error(500, 'Failed to update role');
@@ -175,7 +175,7 @@ export const deleteRole = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in authorization.deleteRole:', err);
     throw error(500, 'Failed to delete role');

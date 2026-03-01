@@ -15,7 +15,7 @@ export const getRetrospectiveData = query(z.object({ time: z.number().optional()
     return await apiClient.retrospective.getRetrospectiveData(params?.time);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in retrospective.getRetrospectiveData:', err);
     throw error(500, 'Failed to get retrospective data');
@@ -31,7 +31,7 @@ export const getRetrospectiveTimeline = query(z.object({ date: z.string().option
     return await apiClient.retrospective.getRetrospectiveTimeline(params?.date, params?.intervalMinutes);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in retrospective.getRetrospectiveTimeline:', err);
     throw error(500, 'Failed to get retrospective timeline');
@@ -47,7 +47,7 @@ export const getBasalTimeline = query(z.object({ date: z.string().optional(), in
     return await apiClient.retrospective.getBasalTimeline(params?.date, params?.intervalMinutes);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in retrospective.getBasalTimeline:', err);
     throw error(500, 'Failed to get basal timeline');

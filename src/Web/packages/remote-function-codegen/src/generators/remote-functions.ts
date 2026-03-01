@@ -123,7 +123,7 @@ function generateQueryFunction(
     return await apiClient.${clientProperty}.${methodName}(${apiCallArgs});
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, \`/login?redirectTo=\${encodeURIComponent(url.pathname + url.search)}\`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, \`/auth/login?returnUrl=\${encodeURIComponent(url.pathname + url.search)}\`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in ${clientProperty}.${methodName}:', err);
     throw error(500, 'Failed to ${functionName.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}');
@@ -138,7 +138,7 @@ function generateQueryFunction(
     return await apiClient.${clientProperty}.${methodName}();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, \`/login?redirectTo=\${encodeURIComponent(url.pathname + url.search)}\`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, \`/auth/login?returnUrl=\${encodeURIComponent(url.pathname + url.search)}\`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in ${clientProperty}.${methodName}:', err);
     throw error(500, 'Failed to ${functionName.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}');
@@ -220,7 +220,7 @@ function generateCommandFunction(
 ${apiCall}
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, \`/login?redirectTo=\${encodeURIComponent(url.pathname + url.search)}\`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, \`/auth/login?returnUrl=\${encodeURIComponent(url.pathname + url.search)}\`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in ${clientProperty}.${methodName}:', err);
     throw error(500, 'Failed to ${functionName.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}');
@@ -235,7 +235,7 @@ ${apiCall}
 ${apiCall}
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, \`/login?redirectTo=\${encodeURIComponent(url.pathname + url.search)}\`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, \`/auth/login?returnUrl=\${encodeURIComponent(url.pathname + url.search)}\`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in ${clientProperty}.${methodName}:', err);
     throw error(500, 'Failed to ${functionName.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}');

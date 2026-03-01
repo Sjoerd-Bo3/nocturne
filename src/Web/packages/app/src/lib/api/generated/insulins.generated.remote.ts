@@ -16,7 +16,7 @@ export const getBoluses = query(z.object({ from: z.coerce.date().optional(), to:
     return await apiClient.insulin.getBoluses(params?.from, params?.to, params?.limit, params?.offset, params?.sort, params?.device, params?.source);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in insulin.getBoluses:', err);
     throw error(500, 'Failed to get boluses');
@@ -35,7 +35,7 @@ export const createBolus = command(BolusSchema, async (request) => {
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in insulin.createBolus:', err);
     throw error(500, 'Failed to create bolus');
@@ -50,7 +50,7 @@ export const getBolusById = query(z.string(), async (id) => {
     return await apiClient.insulin.getBolusById(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in insulin.getBolusById:', err);
     throw error(500, 'Failed to get bolus by id');
@@ -70,7 +70,7 @@ export const updateBolus = command(z.object({ id: z.string(), request: BolusSche
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in insulin.updateBolus:', err);
     throw error(500, 'Failed to update bolus');
@@ -89,7 +89,7 @@ export const deleteBolus = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in insulin.deleteBolus:', err);
     throw error(500, 'Failed to delete bolus');
@@ -104,7 +104,7 @@ export const getBolusCalculations = query(z.object({ from: z.coerce.date().optio
     return await apiClient.insulin.getBolusCalculations(params?.from, params?.to, params?.limit, params?.offset, params?.sort, params?.device, params?.source);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in insulin.getBolusCalculations:', err);
     throw error(500, 'Failed to get bolus calculations');
@@ -123,7 +123,7 @@ export const createBolusCalculation = command(BolusCalculationSchema, async (req
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in insulin.createBolusCalculation:', err);
     throw error(500, 'Failed to create bolus calculation');
@@ -138,7 +138,7 @@ export const getBolusCalculationById = query(z.string(), async (id) => {
     return await apiClient.insulin.getBolusCalculationById(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in insulin.getBolusCalculationById:', err);
     throw error(500, 'Failed to get bolus calculation by id');
@@ -158,7 +158,7 @@ export const updateBolusCalculation = command(z.object({ id: z.string(), request
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in insulin.updateBolusCalculation:', err);
     throw error(500, 'Failed to update bolus calculation');
@@ -177,7 +177,7 @@ export const deleteBolusCalculation = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in insulin.deleteBolusCalculation:', err);
     throw error(500, 'Failed to delete bolus calculation');

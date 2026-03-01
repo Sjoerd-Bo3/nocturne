@@ -16,7 +16,7 @@ export const getProfileSummary = query(async () => {
     return await apiClient.profile.getProfileSummary();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getProfileSummary:', err);
     throw error(500, 'Failed to get profile summary');
@@ -31,7 +31,7 @@ export const getTherapySettings = query(z.object({ from: z.coerce.date().optiona
     return await apiClient.profile.getTherapySettings(params?.from, params?.to, params?.limit, params?.offset, params?.sort, params?.device, params?.source);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getTherapySettings:', err);
     throw error(500, 'Failed to get therapy settings');
@@ -51,7 +51,7 @@ export const createTherapySettings = command(TherapySettingsSchema, async (reque
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.createTherapySettings:', err);
     throw error(500, 'Failed to create therapy settings');
@@ -66,7 +66,7 @@ export const getTherapySettingsByName = query(z.string(), async (profileName) =>
     return await apiClient.profile.getTherapySettingsByName(profileName);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getTherapySettingsByName:', err);
     throw error(500, 'Failed to get therapy settings by name');
@@ -81,7 +81,7 @@ export const getTherapySettingsById = query(z.string(), async (id) => {
     return await apiClient.profile.getTherapySettingsById(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getTherapySettingsById:', err);
     throw error(500, 'Failed to get therapy settings by id');
@@ -102,7 +102,7 @@ export const updateTherapySettings = command(z.object({ id: z.string(), request:
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.updateTherapySettings:', err);
     throw error(500, 'Failed to update therapy settings');
@@ -122,7 +122,7 @@ export const deleteTherapySettings = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.deleteTherapySettings:', err);
     throw error(500, 'Failed to delete therapy settings');
@@ -137,7 +137,7 @@ export const getBasalSchedulesByName = query(z.string(), async (profileName) => 
     return await apiClient.profile.getBasalSchedulesByName(profileName);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getBasalSchedulesByName:', err);
     throw error(500, 'Failed to get basal schedules by name');
@@ -152,7 +152,7 @@ export const getBasalScheduleById = query(z.string(), async (id) => {
     return await apiClient.profile.getBasalScheduleById(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getBasalScheduleById:', err);
     throw error(500, 'Failed to get basal schedule by id');
@@ -171,7 +171,7 @@ export const createBasalSchedule = command(BasalScheduleSchema, async (request) 
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.createBasalSchedule:', err);
     throw error(500, 'Failed to create basal schedule');
@@ -191,7 +191,7 @@ export const updateBasalSchedule = command(z.object({ id: z.string(), request: B
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.updateBasalSchedule:', err);
     throw error(500, 'Failed to update basal schedule');
@@ -210,7 +210,7 @@ export const deleteBasalSchedule = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.deleteBasalSchedule:', err);
     throw error(500, 'Failed to delete basal schedule');
@@ -225,7 +225,7 @@ export const getCarbRatioSchedulesByName = query(z.string(), async (profileName)
     return await apiClient.profile.getCarbRatioSchedulesByName(profileName);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getCarbRatioSchedulesByName:', err);
     throw error(500, 'Failed to get carb ratio schedules by name');
@@ -240,7 +240,7 @@ export const getCarbRatioScheduleById = query(z.string(), async (id) => {
     return await apiClient.profile.getCarbRatioScheduleById(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getCarbRatioScheduleById:', err);
     throw error(500, 'Failed to get carb ratio schedule by id');
@@ -259,7 +259,7 @@ export const createCarbRatioSchedule = command(CarbRatioScheduleSchema, async (r
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.createCarbRatioSchedule:', err);
     throw error(500, 'Failed to create carb ratio schedule');
@@ -279,7 +279,7 @@ export const updateCarbRatioSchedule = command(z.object({ id: z.string(), reques
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.updateCarbRatioSchedule:', err);
     throw error(500, 'Failed to update carb ratio schedule');
@@ -298,7 +298,7 @@ export const deleteCarbRatioSchedule = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.deleteCarbRatioSchedule:', err);
     throw error(500, 'Failed to delete carb ratio schedule');
@@ -313,7 +313,7 @@ export const getSensitivitySchedulesByName = query(z.string(), async (profileNam
     return await apiClient.profile.getSensitivitySchedulesByName(profileName);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getSensitivitySchedulesByName:', err);
     throw error(500, 'Failed to get sensitivity schedules by name');
@@ -328,7 +328,7 @@ export const getSensitivityScheduleById = query(z.string(), async (id) => {
     return await apiClient.profile.getSensitivityScheduleById(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getSensitivityScheduleById:', err);
     throw error(500, 'Failed to get sensitivity schedule by id');
@@ -347,7 +347,7 @@ export const createSensitivitySchedule = command(SensitivityScheduleSchema, asyn
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.createSensitivitySchedule:', err);
     throw error(500, 'Failed to create sensitivity schedule');
@@ -367,7 +367,7 @@ export const updateSensitivitySchedule = command(z.object({ id: z.string(), requ
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.updateSensitivitySchedule:', err);
     throw error(500, 'Failed to update sensitivity schedule');
@@ -386,7 +386,7 @@ export const deleteSensitivitySchedule = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.deleteSensitivitySchedule:', err);
     throw error(500, 'Failed to delete sensitivity schedule');
@@ -401,7 +401,7 @@ export const getTargetRangeSchedulesByName = query(z.string(), async (profileNam
     return await apiClient.profile.getTargetRangeSchedulesByName(profileName);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getTargetRangeSchedulesByName:', err);
     throw error(500, 'Failed to get target range schedules by name');
@@ -416,7 +416,7 @@ export const getTargetRangeScheduleById = query(z.string(), async (id) => {
     return await apiClient.profile.getTargetRangeScheduleById(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.getTargetRangeScheduleById:', err);
     throw error(500, 'Failed to get target range schedule by id');
@@ -435,7 +435,7 @@ export const createTargetRangeSchedule = command(TargetRangeScheduleSchema, asyn
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.createTargetRangeSchedule:', err);
     throw error(500, 'Failed to create target range schedule');
@@ -455,7 +455,7 @@ export const updateTargetRangeSchedule = command(z.object({ id: z.string(), requ
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.updateTargetRangeSchedule:', err);
     throw error(500, 'Failed to update target range schedule');
@@ -474,7 +474,7 @@ export const deleteTargetRangeSchedule = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in profile.deleteTargetRangeSchedule:', err);
     throw error(500, 'Failed to delete target range schedule');

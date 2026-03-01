@@ -16,7 +16,7 @@ export const getFoodEntry = query(z.string(), async (id) => {
     return await apiClient.mealMatching.getFoodEntry(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in mealMatching.getFoodEntry:', err);
     throw error(500, 'Failed to get food entry');
@@ -31,7 +31,7 @@ export const getSuggestions = query(z.object({ from: z.coerce.date().optional(),
     return await apiClient.mealMatching.getSuggestions(params?.from, params?.to);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in mealMatching.getSuggestions:', err);
     throw error(500, 'Failed to get suggestions');
@@ -50,7 +50,7 @@ export const acceptMatch = command(AcceptMatchRequestSchema, async (request) => 
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in mealMatching.acceptMatch:', err);
     throw error(500, 'Failed to accept match');
@@ -69,7 +69,7 @@ export const dismissMatch = command(DismissMatchRequestSchema, async (request) =
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in mealMatching.dismissMatch:', err);
     throw error(500, 'Failed to dismiss match');

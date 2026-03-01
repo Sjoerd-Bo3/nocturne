@@ -16,7 +16,7 @@ export const getSuggestions = query(z.object({ status: z.enum(CompressionLowStat
     return await apiClient.compressionLows.getSuggestions(params?.status, params?.nightOf);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in compressionLows.getSuggestions:', err);
     throw error(500, 'Failed to get suggestions');
@@ -31,7 +31,7 @@ export const getSuggestion = query(z.string(), async (id) => {
     return await apiClient.compressionLows.getSuggestion(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in compressionLows.getSuggestion:', err);
     throw error(500, 'Failed to get suggestion');
@@ -50,7 +50,7 @@ export const deleteSuggestion = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in compressionLows.deleteSuggestion:', err);
     throw error(500, 'Failed to delete suggestion');
@@ -69,7 +69,7 @@ export const acceptSuggestion = command(z.object({ id: z.string(), request: Acce
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in compressionLows.acceptSuggestion:', err);
     throw error(500, 'Failed to accept suggestion');
@@ -88,7 +88,7 @@ export const dismissSuggestion = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in compressionLows.dismissSuggestion:', err);
     throw error(500, 'Failed to dismiss suggestion');
@@ -107,7 +107,7 @@ export const triggerDetection = command(TriggerDetectionRequestSchema, async (re
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in compressionLows.triggerDetection:', err);
     throw error(500, 'Failed to trigger detection');

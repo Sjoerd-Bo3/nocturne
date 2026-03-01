@@ -16,7 +16,7 @@ export const calculateTimeInRange = query(TimeInRangeRequestSchema, async (reque
     return await apiClient.statistics.calculateTimeInRange(request as TimeInRangeRequest);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in statistics.calculateTimeInRange:', err);
     throw error(500, 'Failed to calculate time in range');
@@ -31,7 +31,7 @@ export const calculateAveragedStats = query(z.array(SensorGlucoseSchema), async 
     return await apiClient.statistics.calculateAveragedStats(request as SensorGlucose[]);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in statistics.calculateAveragedStats:', err);
     throw error(500, 'Failed to calculate averaged stats');
@@ -47,7 +47,7 @@ export const getMultiPeriodStatistics = query(async () => {
     return await apiClient.statistics.getMultiPeriodStatistics();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in statistics.getMultiPeriodStatistics:', err);
     throw error(500, 'Failed to get multi period statistics');
@@ -62,7 +62,7 @@ export const getDailyBasalBolusRatios = query(z.object({ startDate: z.coerce.dat
     return await apiClient.statistics.getDailyBasalBolusRatios(params?.startDate, params?.endDate);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in statistics.getDailyBasalBolusRatios:', err);
     throw error(500, 'Failed to get daily basal bolus ratios');
@@ -77,7 +77,7 @@ export const getInsulinDeliveryStatistics = query(z.object({ startDate: z.coerce
     return await apiClient.statistics.getInsulinDeliveryStatistics(params?.startDate, params?.endDate);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in statistics.getInsulinDeliveryStatistics:', err);
     throw error(500, 'Failed to get insulin delivery statistics');
@@ -92,7 +92,7 @@ export const getBasalAnalysis = query(z.object({ startDate: z.coerce.date().opti
     return await apiClient.statistics.getBasalAnalysis(params?.startDate, params?.endDate);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in statistics.getBasalAnalysis:', err);
     throw error(500, 'Failed to get basal analysis');

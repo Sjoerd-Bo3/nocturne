@@ -14,7 +14,7 @@ export const getStepCounts = query(z.object({ count: z.number().optional(), skip
     return await apiClient.stepCount.getStepCounts(params?.count, params?.skip);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in stepCount.getStepCounts:', err);
     throw error(500, 'Failed to get step counts');
@@ -29,7 +29,7 @@ export const getStepCount = query(z.string(), async (id) => {
     return await apiClient.stepCount.getStepCount(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in stepCount.getStepCount:', err);
     throw error(500, 'Failed to get step count');

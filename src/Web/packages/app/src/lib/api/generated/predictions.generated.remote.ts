@@ -15,7 +15,7 @@ export const getPredictions = query(z.object({ profileId: z.string().optional() 
     return await apiClient.predictions.getPredictions(params?.profileId);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in predictions.getPredictions:', err);
     throw error(500, 'Failed to get predictions');
@@ -30,7 +30,7 @@ export const getStatus = query(async () => {
     return await apiClient.predictions.getStatus();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in predictions.getStatus:', err);
     throw error(500, 'Failed to get status');

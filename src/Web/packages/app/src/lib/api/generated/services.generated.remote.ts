@@ -16,7 +16,7 @@ export const getServicesOverview = query(async () => {
     return await apiClient.services.getServicesOverview();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.getServicesOverview:', err);
     throw error(500, 'Failed to get services overview');
@@ -32,7 +32,7 @@ export const getActiveDataSources = query(async () => {
     return await apiClient.services.getActiveDataSources();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.getActiveDataSources:', err);
     throw error(500, 'Failed to get active data sources');
@@ -47,7 +47,7 @@ export const getDataSource = query(z.string(), async (id) => {
     return await apiClient.services.getDataSource(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.getDataSource:', err);
     throw error(500, 'Failed to get data source');
@@ -68,7 +68,7 @@ export const deleteDataSourceData = command(z.string(), async (id) => {
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.deleteDataSourceData:', err);
     throw error(500, 'Failed to delete data source data');
@@ -83,7 +83,7 @@ export const getAvailableConnectors = query(async () => {
     return await apiClient.services.getAvailableConnectors();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.getAvailableConnectors:', err);
     throw error(500, 'Failed to get available connectors');
@@ -98,7 +98,7 @@ export const getConnectorCapabilities = query(z.string(), async (id) => {
     return await apiClient.services.getConnectorCapabilities(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.getConnectorCapabilities:', err);
     throw error(500, 'Failed to get connector capabilities');
@@ -113,7 +113,7 @@ export const getUploaderApps = query(async () => {
     return await apiClient.services.getUploaderApps();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.getUploaderApps:', err);
     throw error(500, 'Failed to get uploader apps');
@@ -129,7 +129,7 @@ export const getApiInfo = query(async () => {
     return await apiClient.services.getApiInfo();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.getApiInfo:', err);
     throw error(500, 'Failed to get api info');
@@ -144,7 +144,7 @@ export const getUploaderSetup = query(z.string(), async (appId) => {
     return await apiClient.services.getUploaderSetup(appId);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.getUploaderSetup:', err);
     throw error(500, 'Failed to get uploader setup');
@@ -164,7 +164,7 @@ export const deleteDemoData = command(async () => {
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.deleteDemoData:', err);
     throw error(500, 'Failed to delete demo data');
@@ -180,7 +180,7 @@ export const getConnectorDataSummary = query(z.string(), async (id) => {
     return await apiClient.services.getConnectorDataSummary(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.getConnectorDataSummary:', err);
     throw error(500, 'Failed to get connector data summary');
@@ -202,7 +202,7 @@ export const deleteConnectorData = command(z.string(), async (id) => {
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.deleteConnectorData:', err);
     throw error(500, 'Failed to delete connector data');
@@ -218,7 +218,7 @@ export const triggerConnectorSync = command(z.object({ id: z.string(), request: 
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.triggerConnectorSync:', err);
     throw error(500, 'Failed to trigger connector sync');
@@ -234,7 +234,7 @@ export const getConnectorSyncStatus = query(z.string(), async (id) => {
     return await apiClient.services.getConnectorSyncStatus(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in services.getConnectorSyncStatus:', err);
     throw error(500, 'Failed to get connector sync status');

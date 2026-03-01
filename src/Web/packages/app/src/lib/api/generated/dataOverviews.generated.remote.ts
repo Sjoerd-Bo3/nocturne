@@ -14,7 +14,7 @@ export const getAvailableYears = query(async () => {
     return await apiClient.dataOverview.getAvailableYears();
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in dataOverview.getAvailableYears:', err);
     throw error(500, 'Failed to get available years');
@@ -29,7 +29,7 @@ export const getDailySummary = query(z.object({ year: z.number().optional(), dat
     return await apiClient.dataOverview.getDailySummary(params?.year, params?.dataSources);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in dataOverview.getDailySummary:', err);
     throw error(500, 'Failed to get daily summary');

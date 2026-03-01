@@ -16,7 +16,7 @@ export const getStateSpans = query(z.object({ category: z.enum(StateSpanCategory
     return await apiClient.stateSpans.getStateSpans(params?.category, params?.state, params?.from, params?.to, params?.source, params?.active, params?.count, params?.skip);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in stateSpans.getStateSpans:', err);
     throw error(500, 'Failed to get state spans');
@@ -35,7 +35,7 @@ export const createStateSpan = command(CreateStateSpanRequestSchema, async (requ
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in stateSpans.createStateSpan:', err);
     throw error(500, 'Failed to create state span');
@@ -50,7 +50,7 @@ export const getStateSpan = query(z.string(), async (id) => {
     return await apiClient.stateSpans.getStateSpan(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in stateSpans.getStateSpan:', err);
     throw error(500, 'Failed to get state span');
@@ -70,7 +70,7 @@ export const updateStateSpan = command(z.object({ id: z.string(), request: Updat
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in stateSpans.updateStateSpan:', err);
     throw error(500, 'Failed to update state span');
@@ -89,7 +89,7 @@ export const deleteStateSpan = command(z.string(), async (id) => {
     return { success: true };
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in stateSpans.deleteStateSpan:', err);
     throw error(500, 'Failed to delete state span');

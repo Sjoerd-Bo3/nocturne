@@ -16,7 +16,7 @@ export const startDeduplicationJob = command(async () => {
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in deduplication.startDeduplicationJob:', err);
     throw error(500, 'Failed to start deduplication job');
@@ -31,7 +31,7 @@ export const getJobStatus = query(z.string(), async (jobId) => {
     return await apiClient.deduplication.getJobStatus(jobId);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in deduplication.getJobStatus:', err);
     throw error(500, 'Failed to get job status');
@@ -47,7 +47,7 @@ export const cancelJob = command(z.string(), async (jobId) => {
     return result;
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in deduplication.cancelJob:', err);
     throw error(500, 'Failed to cancel job');
@@ -62,7 +62,7 @@ export const getEntryLinkedRecords = query(z.string(), async (entryId) => {
     return await apiClient.deduplication.getEntryLinkedRecords(entryId);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in deduplication.getEntryLinkedRecords:', err);
     throw error(500, 'Failed to get entry linked records');
@@ -77,7 +77,7 @@ export const getTreatmentLinkedRecords = query(z.string(), async (treatmentId) =
     return await apiClient.deduplication.getTreatmentLinkedRecords(treatmentId);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in deduplication.getTreatmentLinkedRecords:', err);
     throw error(500, 'Failed to get treatment linked records');
@@ -92,7 +92,7 @@ export const getStateSpanLinkedRecords = query(z.string(), async (stateSpanId) =
     return await apiClient.deduplication.getStateSpanLinkedRecords(stateSpanId);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in deduplication.getStateSpanLinkedRecords:', err);
     throw error(500, 'Failed to get state span linked records');

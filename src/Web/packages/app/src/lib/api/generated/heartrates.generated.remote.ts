@@ -14,7 +14,7 @@ export const getHeartRates = query(z.object({ count: z.number().optional(), skip
     return await apiClient.heartRate.getHeartRates(params?.count, params?.skip);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in heartRate.getHeartRates:', err);
     throw error(500, 'Failed to get heart rates');
@@ -29,7 +29,7 @@ export const getHeartRate = query(z.string(), async (id) => {
     return await apiClient.heartRate.getHeartRate(id);
   } catch (err) {
     const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in heartRate.getHeartRate:', err);
     throw error(500, 'Failed to get heart rate');
