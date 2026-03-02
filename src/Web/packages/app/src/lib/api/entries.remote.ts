@@ -66,3 +66,35 @@ export const getStats = query(entriesSchema, async (props) => {
 
   return stats;
 });
+
+const treatmentIdSchema = z.object({
+  treatmentId: z.string(),
+});
+
+/**
+ * Look up a v4 entry record by treatmentId, trying each entity type sequentially.
+ * Returns the matching record or null if not found in any collection.
+ */
+export const getEntryByTreatmentId = query(treatmentIdSchema, async ({ treatmentId }) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+
+  const fetchers = [
+    { kind: "bolus" as const, fetch: () => apiClient.insulin.getBolusById(treatmentId) },
+    { kind: "carbs" as const, fetch: () => apiClient.nutrition.getCarbIntakeById(treatmentId) },
+    { kind: "bgCheck" as const, fetch: () => apiClient.observations.getBGCheckById(treatmentId) },
+    { kind: "note" as const, fetch: () => apiClient.observations.getNoteById(treatmentId) },
+    { kind: "deviceEvent" as const, fetch: () => apiClient.observations.getDeviceEventById(treatmentId) },
+  ];
+
+  for (const { kind, fetch } of fetchers) {
+    try {
+      const data = await fetch();
+      if (data?.id) return { kind, data };
+    } catch {
+      // 404 or other error — try the next type
+    }
+  }
+
+  return null;
+});

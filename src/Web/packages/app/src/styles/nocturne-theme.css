@@ -22,6 +22,8 @@
   --insulin-basal: rgba(100, 180, 255, 0.3);
   --insulin-temp-basal: rgba(140, 200, 255, 0.4);
   --insulin-manual-temp-basal: rgba(30, 150, 252, 0.8);
+  --insulin-scheduled-basal: rgb(100, 180, 255); /* Opaque --insulin-basal for chart fills */
+  --insulin-additional-basal: rgb(140, 200, 255); /* Opaque --insulin-temp-basal for chart fills */
 
   /* Carbohydrates */
   --carbs: oklch(0.769 0.188 70.08);
@@ -104,6 +106,8 @@
   --color-insulin-basal: var(--insulin-basal);
   --color-insulin-temp-basal: var(--insulin-temp-basal);
   --color-insulin-manual-temp-basal: var(--insulin-manual-temp-basal);
+  --color-insulin-scheduled-basal: var(--insulin-scheduled-basal);
+  --color-insulin-additional-basal: var(--insulin-additional-basal);
 
   /* Carbohydrates */
   --color-carbs: var(--carbs);

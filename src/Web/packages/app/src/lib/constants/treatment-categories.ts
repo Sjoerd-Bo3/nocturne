@@ -242,8 +242,8 @@ export function countTreatmentsByCategory(treatments: Treatment[]): TreatmentCou
 
 // ─── V4 Decomposed Types ────────────────────────────────────────────────────
 
-export type BolusRow = Bolus & { kind: "bolus" };
-export type CarbIntakeRow = CarbIntake & { kind: "carbIntake" };
+export type BolusRow = Bolus & { rowType: "bolus" };
+export type CarbIntakeRow = CarbIntake & { rowType: "carbIntake" };
 export type TreatmentRow = BolusRow | CarbIntakeRow;
 
 export const V4_CATEGORIES = {
@@ -272,8 +272,8 @@ export interface V4TreatmentCounts {
 }
 
 export function mergeTreatmentRows(boluses: Bolus[], carbIntakes: CarbIntake[]): TreatmentRow[] {
-  const bolusRows: TreatmentRow[] = boluses.map((b) => ({ ...b, kind: "bolus" as const }));
-  const carbRows: TreatmentRow[] = carbIntakes.map((c) => ({ ...c, kind: "carbIntake" as const }));
+  const bolusRows: BolusRow[] = boluses.map((b) => ({ ...b, rowType: "bolus" as const }));
+  const carbRows: CarbIntakeRow[] = carbIntakes.map((c) => ({ ...c, rowType: "carbIntake" as const }));
   return [...bolusRows, ...carbRows].sort((a, b) => (b.mills ?? 0) - (a.mills ?? 0));
 }
 
@@ -281,17 +281,17 @@ export function countV4Rows(rows: TreatmentRow[]): V4TreatmentCounts {
   let bolus = 0;
   let carbs = 0;
   for (const r of rows) {
-    if (r.kind === "bolus") bolus++;
+    if (r.rowType === "bolus") bolus++;
     else carbs++;
   }
   return { total: rows.length, bolus, carbs };
 }
 
-export function getRowTypeStyle(kind: "bolus" | "carbIntake"): {
+export function getRowTypeStyle(rowType: "bolus" | "carbIntake"): {
   colorClass: string;
   bgClass: string;
   borderClass: string;
 } {
-  if (kind === "bolus") return V4_CATEGORIES.bolus;
+  if (rowType === "bolus") return V4_CATEGORIES.bolus;
   return V4_CATEGORIES.carbs;
 }

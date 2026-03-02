@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
-  import { Chart, Calendar, Tooltip, ColorRamp, Layer, Rect } from "layerchart";
+  import { Chart, Calendar, Tooltip, Layer, Rect } from "layerchart";
   import { scaleLinear, scaleThreshold } from "d3-scale";
   import { timeWeek, timeMonths } from "d3-time";
   import {
@@ -77,58 +77,36 @@
       "var(--glucose-very-high)",
     ]);
 
-  const GLUCOSE_RANGE_LABELS = [
-    "Very Low",
-    "Low",
-    "In Range",
-    "High",
-    "Very High",
+  /** Multi-hue heatmap scale — maximises perceptual distinction in the 70–250 range */
+  const HEATMAP_DOMAIN = [40, 54, 70, 100, 140, 180, 220, 260, 350];
+  const HEATMAP_COLORS = [
+    "#2563eb", // blue-600   — critically low
+    "#3b82f6", // blue-500   — very low
+    "#06b6d4", // cyan-500   — low
+    "#10b981", // emerald-500 — on target
+    "#84cc16", // lime-500   — upper in-range
+    "#eab308", // yellow-500  — entering high
+    "#f97316", // orange-500  — high
+    "#ef4444", // red-500    — very high
+    "#b91c1c", // red-700    — critically high
   ];
-  const GLUCOSE_THRESHOLDS_MGDL = [54, 70, 180, 250].map((t) => t);
-  const RAMP_BAND_COUNT = 5;
-  const RAMP_W = 420;
-  const RAMP_BAND_W = RAMP_W / RAMP_BAND_COUNT;
 
-  /** Resolved CSS variable colors for canvas rendering (ColorRamp uses canvas) */
-  let resolvedGlucoseColors = $state<string[]>([]);
+  const heatmapScale = scaleLinear<string>()
+    .domain(HEATMAP_DOMAIN)
+    .range(HEATMAP_COLORS)
+    .clamp(true);
 
-  /** Discrete-band interpolator for ColorRamp */
-  const glucoseRampInterpolator = $derived.by(() => {
-    const colors = [...resolvedGlucoseColors];
-    return (t: number): string => {
-      if (colors.length === 0) return "#888";
-      return colors[
-        Math.min(Math.floor(t * RAMP_BAND_COUNT), RAMP_BAND_COUNT - 1)
-      ];
-    };
-  });
+  const LEGEND_W = 420;
+  const LEGEND_THRESHOLDS = [70, 180, 250];
 
-  /** Continuous glucose color scale for smooth heatmap gradients */
-  const continuousGlucoseScale = $derived.by(() => {
-    if (resolvedGlucoseColors.length < 5) return null;
-    return scaleLinear<string>()
-      .domain([40, 54, 70, 125, 180, 250, 350])
-      .range([
-        resolvedGlucoseColors[0], // very low extreme
-        resolvedGlucoseColors[0], // very low boundary
-        resolvedGlucoseColors[1], // low boundary
-        resolvedGlucoseColors[2], // in range center
-        resolvedGlucoseColors[3], // high boundary
-        resolvedGlucoseColors[4], // very high boundary
-        resolvedGlucoseColors[4], // very high extreme
-      ])
-      .clamp(true);
-  });
+  function legendX(mgdl: number): number {
+    return ((mgdl - 40) / 310) * LEGEND_W;
+  }
 
-  /** Compute cell fill using continuous scale, with fallbacks for non-glucose data */
   function getCellFill(data: CalendarDatum | undefined): string {
     if (!data) return "rgb(0 0 0 / 5%)";
-    if (data.value != null && continuousGlucoseScale) {
-      return continuousGlucoseScale(data.value);
-    }
-    if (data.filteredCount > 0) {
-      return "hsl(var(--muted))";
-    }
+    if (data.value != null) return heatmapScale(data.value);
+    if (data.filteredCount > 0) return "hsl(var(--muted))";
     return "rgb(0 0 0 / 5%)";
   }
 
@@ -350,19 +328,6 @@
   // =========================================================================
   // Lifecycle
   // =========================================================================
-
-  // Resolve CSS variable colors for ColorRamp (canvas can't use CSS vars)
-  $effect(() => {
-    if (!browser) return;
-    const style = getComputedStyle(document.documentElement);
-    resolvedGlucoseColors = [
-      "--glucose-very-low",
-      "--glucose-low",
-      "--glucose-in-range",
-      "--glucose-high",
-      "--glucose-very-high",
-    ].map((v) => style.getPropertyValue(v).trim() || "#888");
-  });
 
   $effect(() => {
     if (browser && !metadataLoaded && !metadataLoading) {
@@ -608,37 +573,35 @@
           Avg Glucose ({unitLabel}):
         </div>
         <svg
-          viewBox="0 0 {RAMP_W} 48"
+          viewBox="0 0 {LEGEND_W} 48"
           class="h-12 w-full max-w-[420px] text-muted-foreground"
           overflow="visible"
           role="img"
           aria-label="Glucose color scale legend"
         >
-          <!-- Range name labels -->
-          {#each GLUCOSE_RANGE_LABELS as label, i}
-            <text
-              x={i * RAMP_BAND_W + RAMP_BAND_W / 2}
-              y={10}
-              text-anchor="middle"
-              font-size="10"
-              fill="currentColor"
-            >
-              {label}
-            </text>
-          {/each}
+          <defs>
+            <linearGradient id="heatmap-grad">
+              {#each HEATMAP_DOMAIN as v, i}
+                <stop
+                  offset="{((v - 40) / 310) * 100}%"
+                  stop-color={HEATMAP_COLORS[i]}
+                />
+              {/each}
+            </linearGradient>
+          </defs>
 
-          <!-- Color ramp bar -->
-          <ColorRamp
-            interpolator={glucoseRampInterpolator}
-            steps={RAMP_BAND_COUNT}
-            height={14}
-            width={RAMP_W}
-            y={14}
-          />
+          <!-- Zone labels -->
+          <text x={legendX(55)} y="10" text-anchor="middle" font-size="10" fill="currentColor">Low</text>
+          <text x={legendX(125)} y="10" text-anchor="middle" font-size="10" fill="currentColor">In Range</text>
+          <text x={legendX(215)} y="10" text-anchor="middle" font-size="10" fill="currentColor">High</text>
+          <text x={legendX(300)} y="10" text-anchor="middle" font-size="10" fill="currentColor">Very High</text>
 
-          <!-- Threshold boundaries + values -->
-          {#each GLUCOSE_THRESHOLDS_MGDL as threshold, i}
-            {@const x = (i + 1) * RAMP_BAND_W}
+          <!-- Gradient bar -->
+          <rect x="0" y="14" width={LEGEND_W} height="14" rx="2" fill="url(#heatmap-grad)" />
+
+          <!-- Threshold markers -->
+          {#each LEGEND_THRESHOLDS as threshold}
+            {@const x = legendX(threshold)}
             <line
               x1={x}
               y1={14}
@@ -753,7 +716,7 @@
                     x="date"
                     c="value"
                     cScale={scaleThreshold().unknown("transparent")}
-                    cDomain={GLUCOSE_THRESHOLDS_MGDL}
+                    cDomain={[54, 70, 180, 250]}
                     cRange={[
                       "var(--glucose-very-low)",
                       "var(--glucose-low)",

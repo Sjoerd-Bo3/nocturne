@@ -356,6 +356,7 @@ msgstr "Select"
 #: src/lib/components/profile/ProfileEditDialog.svelte
 #: src/lib/components/treatments/TreatmentsDataTable.svelte
 #: src/routes/compatibility/+page.svelte
+#: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/settings/profile/+page.svelte
 #: src/routes/settings/profile/+page.svelte
 msgid "Time"
@@ -367,6 +368,7 @@ msgstr "Blood Glucose"
 
 #: src/lib/components/TreatmentsTable.svelte
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
+#: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -782,8 +784,8 @@ msgstr "Carbs:"
 #. placeholder {0}: formatMacro(scaledCarbs)
 #. placeholder {0}: dayTotalCarbs
 #. placeholder {0}: totalCarbs
-#. placeholder {0}: treatmentStats.totalCarbs.toFixed(0)
-#. placeholder {0}: treatment.carbs
+#. placeholder {0}: (summary?.totals?.food?.carbs ?? 0).toFixed(0)
+#. placeholder {0}: row.carbs
 #. placeholder {0}: d.totalCarbs.toFixed(0)
 #. placeholder {0}: selectedDay.totalCarbs.toFixed(0)
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
@@ -834,6 +836,7 @@ msgstr "{0}g"
 #. placeholder {0}: morning.toFixed(1)
 #. placeholder {0}: afternoon.toFixed(1)
 #. placeholder {0}: evening.toFixed(1)
+#. placeholder {0}: d.value.toFixed(2)
 #. placeholder {0}: formatInsulinDisplay(averages.avgTotalDaily)
 #. placeholder {0}: totalInsulin.toFixed(1)
 #. placeholder {0}: day.totalBolus.toFixed(1)
@@ -841,7 +844,7 @@ msgstr "{0}g"
 #. placeholder {0}: monthSummary.tdd.toFixed(1)
 #. placeholder {0}: dayTotalInsulin.toFixed(1)
 #. placeholder {0}: meal.correlatedBolus.insulin.toFixed(1)
-#. placeholder {0}: treatment.insulin.toFixed(2)
+#. placeholder {0}: (row.insulin ?? 0).toFixed(2)
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
 #: src/lib/components/dashboard/glucose-chart/markers/BolusMarker.svelte
 #: src/lib/components/reports/ApsStateCard.svelte
@@ -854,6 +857,7 @@ msgstr "{0}g"
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
+#: src/lib/components/reports/InsulinDonutChart.svelte
 #: src/lib/components/reports/PeriodAverages.svelte
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
 #: src/routes/calendar/+page.svelte
@@ -1727,6 +1731,7 @@ msgstr "Your database"
 #: src/lib/components/treatments/TreatmentStatsCard.svelte
 #: src/routes/food/FoodList.svelte
 #: src/routes/food/QuickPickItem.svelte
+#: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -2044,7 +2049,6 @@ msgid "No meals match the current filters."
 msgstr "No meals match the current filters."
 
 #: src/routes/meals/+page.svelte
-#: src/routes/reports/day-in-review/+page.svelte
 msgid "Time <0/>"
 msgstr "Time <0/>"
 
@@ -2053,12 +2057,10 @@ msgid "Meal <0/>"
 msgstr "Meal <0/>"
 
 #: src/routes/meals/+page.svelte
-#: src/routes/reports/day-in-review/+page.svelte
 msgid "Carbs <0/>"
 msgstr "Carbs <0/>"
 
 #: src/routes/meals/+page.svelte
-#: src/routes/reports/day-in-review/+page.svelte
 msgid "Insulin <0/>"
 msgstr "Insulin <0/>"
 
@@ -2837,6 +2839,7 @@ msgstr "No recent entries"
 
 #. placeholder {0}: food.displayCarbs
 #. placeholder {0}: foodEntry.carbs
+#. placeholder {0}: d.linkedCarbs
 #. placeholder {0}: food.carbs
 #. placeholder {0}: food.carbs
 #. placeholder {0}: food.carbs
@@ -2844,6 +2847,7 @@ msgstr "No recent entries"
 #. placeholder {0}: (insulinStats.totalCarbs ?? 0).toFixed(0)
 #: src/lib/components/entries/CarbIntakeSection.svelte
 #: src/lib/components/meal-matching/MealMatchReviewDialog.svelte
+#: src/lib/components/reports/InsulinDonutChart.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
@@ -2877,7 +2881,6 @@ msgstr "Temp Basal"
 #: src/lib/components/dashboard/widgets/TddWidget.svelte
 #: src/lib/components/icons/TreatmentTypeIcon.svelte
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
-#: src/lib/components/reports/InsulinDonutChart.svelte
 #: src/lib/components/treatments/TreatmentsDataTable.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
@@ -3037,7 +3040,6 @@ msgstr "Glucose"
 #: src/lib/components/icons/TreatmentTypeIcon.svelte
 #: src/lib/components/profile/ProfileEditDialog.svelte
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
-#: src/lib/components/reports/InsulinDonutChart.svelte
 #: src/lib/components/reports/RetrospectiveStats.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
@@ -3073,7 +3075,6 @@ msgstr "Very High"
 #: src/lib/components/dashboard/glucose-chart/ChartLegend.svelte
 #: src/lib/components/reports/TIRStackedChart.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
-#: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 msgid "Very Low"
 msgstr "Very Low"
@@ -3440,7 +3441,6 @@ msgid "Readings"
 msgstr "Readings"
 
 #: src/lib/components/layout/AppSidebar.svelte
-#: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
 msgid "Treatments"
 msgstr "Treatments"
@@ -4246,6 +4246,7 @@ msgid "Source: {0}"
 msgstr "Source: {0}"
 
 #: src/lib/components/reports/InsulinDeliveryChart.svelte
+#: src/lib/components/reports/InsulinDonutChart.svelte
 msgid "Scheduled Basal"
 msgstr "Scheduled Basal"
 
@@ -5319,6 +5320,7 @@ msgid "<0/> Credentials"
 msgstr "<0/> Credentials"
 
 #: src/lib/components/settings/ConnectorConfigForm.svelte
+#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -8513,14 +8515,11 @@ msgstr "All Types"
 msgid "Click on a treatment to edit it"
 msgstr "Click on a treatment to edit it"
 
-#: src/routes/reports/day-in-review/+page.svelte
-msgid "Type <0/>"
-msgstr "Type <0/>"
+#~ msgid "Type <0/>"
+#~ msgstr "Type <0/>"
 
-#. placeholder {0}: treatment.rate.toFixed(2)
-#: src/routes/reports/day-in-review/+page.svelte
-msgid "{0}U/hr"
-msgstr "{0}U/hr"
+#~ msgid "{0}U/hr"
+#~ msgstr "{0}U/hr"
 
 #. placeholder {0}: filterEventType
 #: src/routes/reports/day-in-review/+page.svelte
@@ -13411,6 +13410,7 @@ msgid "<0/> BG Check"
 msgstr "<0/> BG Check"
 
 #: src/lib/components/entries/BGCheckSection.svelte
+#: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 msgid "Type"
 msgstr "Type"
@@ -14612,6 +14612,7 @@ msgstr "These terms are effective as of February 21, 2026."
 msgid "ManualBG"
 msgstr "ManualBG"
 
+#: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Boluses"
 msgstr "Boluses"
@@ -17167,3 +17168,16 @@ msgstr "Only needed for legacy Nightscout client compatibility"
 #: src/routes/tenants/+page.svelte
 msgid "<0/> Create tenant"
 msgstr "<0/> Create tenant"
+
+#. placeholder {0}: time ? ` @ ${time}` : ""
+#: src/lib/components/reports/InsulinDonutChart.svelte
+msgid "Bolus{0}"
+msgstr "Bolus{0}"
+
+#: src/lib/components/reports/InsulinDonutChart.svelte
+msgid "Additional Basal"
+msgstr "Additional Basal"
+
+#: src/lib/components/reports/InsulinDonutChart.svelte
+msgid "Click to view"
+msgstr "Click to view"

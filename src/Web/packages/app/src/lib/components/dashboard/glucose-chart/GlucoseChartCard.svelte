@@ -27,6 +27,7 @@
     type PredictionData,
   } from "$api/predictions.remote";
   import { getChartData } from "$api/chart-data.remote";
+  import { getEntryByTreatmentId } from "$api/entries.remote";
   import {
     predictionMinutes,
     predictionEnabled,
@@ -798,9 +799,20 @@
     return nearby;
   }
 
-  function handleMarkerClick(treatmentId: string) {
-    const entry = realtimeStore.findEntryByTreatmentId(treatmentId);
-    if (!entry) return;
+  async function handleMarkerClick(treatmentId: string) {
+    // Fast path: check in-memory store first
+    let entry: EntryRecord | null = realtimeStore.findEntryByTreatmentId(treatmentId) ?? null;
+
+    // Slow path: fetch from API via remote function
+    if (!entry) {
+      const result = await getEntryByTreatmentId({ treatmentId });
+      entry = result as EntryRecord | null;
+    }
+
+    if (!entry) {
+      console.warn(`[GlucoseChart] No entry found for treatmentId: ${treatmentId}`);
+      return;
+    }
 
     const time = new Date(entry.data.mills ?? 0);
     const nearby = findAllNearbyEntries(time);

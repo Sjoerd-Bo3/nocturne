@@ -49,7 +49,7 @@ describe('generateRemoteFunctions', () => {
 
       const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
       expect(content).toContain("const status = (err as any)?.status;");
-      expect(content).toContain("if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }");
+      expect(content).toContain("if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }");
       expect(content).toContain("if (status === 403) throw error(403, 'Forbidden');");
     });
 
@@ -64,7 +64,7 @@ describe('generateRemoteFunctions', () => {
 
       const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
       expect(content).toContain("const status = (err as any)?.status;");
-      expect(content).toContain("if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }");
+      expect(content).toContain("if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }");
       expect(content).toContain("if (status === 403) throw error(403, 'Forbidden');");
     });
 
@@ -92,7 +92,7 @@ describe('generateRemoteFunctions', () => {
 
       const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
       expect(content).toContain("const status = (err as any)?.status;");
-      expect(content).toContain("if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }");
+      expect(content).toContain("if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }");
       expect(content).toContain("if (status === 403) throw error(403, 'Forbidden');");
     });
 
@@ -109,7 +109,7 @@ describe('generateRemoteFunctions', () => {
 
       const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
       expect(content).toContain("const status = (err as any)?.status;");
-      expect(content).toContain("if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname + url.search)}`); }");
+      expect(content).toContain("if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }");
       expect(content).toContain("if (status === 403) throw error(403, 'Forbidden');");
     });
 

@@ -515,9 +515,19 @@ public class InsulinTotals
     public double Bolus { get; set; }
 
     /// <summary>
-    /// Total basal insulin in units
+    /// Total basal insulin in units (scheduled + additional)
     /// </summary>
     public double Basal { get; set; }
+
+    /// <summary>
+    /// Scheduled (profile) basal insulin in units
+    /// </summary>
+    public double ScheduledBasal { get; set; }
+
+    /// <summary>
+    /// Additional basal insulin above scheduled rate (TBR - scheduled)
+    /// </summary>
+    public double AdditionalBasal { get; set; }
 }
 
 /// <summary>
@@ -1790,9 +1800,19 @@ public class InsulinDeliveryStatistics
     public double TotalBolus { get; set; }
 
     /// <summary>
-    /// Total basal insulin in units for the period
+    /// Total basal insulin in units for the period (scheduled + additional)
     /// </summary>
     public double TotalBasal { get; set; }
+
+    /// <summary>
+    /// Scheduled (profile) basal insulin in units for the period
+    /// </summary>
+    public double ScheduledBasal { get; set; }
+
+    /// <summary>
+    /// Additional basal insulin above scheduled rate (TBR - scheduled) for the period
+    /// </summary>
+    public double AdditionalBasal { get; set; }
 
     /// <summary>
     /// Total insulin (bolus + basal) for the period

@@ -194,7 +194,7 @@ function processBasalSpans(
     })
     .map((span) => ({
       id: span.id ?? randomUUID(),
-      category: span.category ?? StateSpanCategory.BasalDelivery,
+      category: span.category ?? StateSpanCategory.PumpMode,
       state: span.state ?? "Unknown",
       startTime: new Date(Math.max(span.startMills ?? 0, rangeStart)),
       endTime: new Date(Math.min(span.endMills ?? rangeEnd, rangeEnd)),
@@ -244,11 +244,11 @@ export const getTimeSpansData = query(
       // Fetch all state span categories in parallel
       const [pumpModeSpans, profileSpans, tempBasalSpans, overrideSpans, activitySpans] =
         await Promise.all([
-          apiClient.stateSpans.getPumpModes(startTime, endTime),
-          apiClient.stateSpans.getProfiles(startTime, endTime),
-          apiClient.stateSpans.getBasalDelivery(startTime, endTime),
-          apiClient.stateSpans.getOverrides(startTime, endTime),
-          apiClient.stateSpans.getActivities(startTime, endTime),
+          apiClient.stateSpans.getPumpModes(startOfRange, endOfRange),
+          apiClient.stateSpans.getProfiles(startOfRange, endOfRange),
+          apiClient.stateSpans.getStateSpans(undefined, undefined, startOfRange, endOfRange),
+          apiClient.stateSpans.getOverrides(startOfRange, endOfRange),
+          apiClient.stateSpans.getActivities(startOfRange, endOfRange),
         ]);
 
       return {

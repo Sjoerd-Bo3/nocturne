@@ -22729,6 +22729,14 @@
             "type": "number",
             "format": "double"
           },
+          "scheduledBasal": {
+            "type": "number",
+            "format": "double"
+          },
+          "additionalBasal": {
+            "type": "number",
+            "format": "double"
+          },
           "totalInsulin": {
             "type": "number",
             "format": "double"
@@ -24186,6 +24194,14 @@
             "format": "double"
           },
           "basal": {
+            "type": "number",
+            "format": "double"
+          },
+          "scheduledBasal": {
+            "type": "number",
+            "format": "double"
+          },
+          "additionalBasal": {
             "type": "number",
             "format": "double"
           }

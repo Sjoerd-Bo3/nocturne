@@ -40,7 +40,7 @@
   const mtInfo = $derived(
     multitenancyQuery.current as MultitenancyInfo | undefined,
   );
-  const loading = $derived(tenantsQuery.isPending || multitenancyQuery.isPending);
+  const loading = $derived(tenantsQuery.loading || multitenancyQuery.loading);
   const queryError = $derived(tenantsQuery.error || multitenancyQuery.error);
 
   // Creation form state
@@ -72,7 +72,7 @@
     validating = true;
     validationTimeout = setTimeout(async () => {
       try {
-        const result = await validateSlug(value);
+        const result = await validateSlug({ slug: value });
         if (result?.isValid) {
           slugValid = true;
           slugError = null;

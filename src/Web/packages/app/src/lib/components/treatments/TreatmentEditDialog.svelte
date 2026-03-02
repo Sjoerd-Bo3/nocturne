@@ -128,7 +128,7 @@
           duration: d.duration ?? undefined,
           automatic: d.automatic ?? false,
           insulinType: d.insulinType ?? "",
-          isBasalInsulin: d.isBasalInsulin ?? false,
+          isBasalInsulin: (d.additionalProperties?.["isBasalInsulin"] as boolean) ?? false,
         };
         break;
       }

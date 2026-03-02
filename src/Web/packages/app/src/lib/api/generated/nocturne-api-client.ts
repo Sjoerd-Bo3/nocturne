@@ -24007,6 +24007,8 @@ export interface DailyBasalBolusRatioData {
 export interface InsulinDeliveryStatistics {
     totalBolus?: number;
     totalBasal?: number;
+    scheduledBasal?: number;
+    additionalBasal?: number;
     totalInsulin?: number;
     totalCarbs?: number;
     bolusCount?: number;
@@ -24521,6 +24523,8 @@ export interface FoodTotals {
 export interface InsulinTotals {
     bolus?: number;
     basal?: number;
+    scheduledBasal?: number;
+    additionalBasal?: number;
 }
 
 /** Request model for treatment summary calculation */

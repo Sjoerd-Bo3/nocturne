@@ -1867,22 +1867,50 @@ public class StatisticsService : IStatisticsService
         // Start with bolus-based calculation (includes carb stats)
         var stats = CalculateBolusDeliveryStatistics(boluses, carbIntakes, startDate, endDate);
 
-        // Sum basal from TempBasals + algorithm boluses
+        // Sum basal from TempBasals + algorithm boluses, splitting scheduled vs additional
         var tempBasalInsulin = 0.0;
+        var scheduledBasalInsulin = 0.0;
+        var additionalBasalInsulin = 0.0;
         foreach (var tb in tempBasals)
         {
             var insulin = GetTempBasalInsulin(tb);
-            if (insulin > 0)
-                tempBasalInsulin += insulin;
+            if (insulin <= 0)
+                continue;
+            tempBasalInsulin += insulin;
+
+            // Split into scheduled vs additional using ScheduledRate when available
+            if (tb.ScheduledRate.HasValue)
+            {
+                var endMills = tb.EndMills ?? tb.StartMills + (5 * 60 * 1000);
+                var durationHours = (endMills - tb.StartMills) / (1000.0 * 60 * 60);
+                var scheduled = tb.ScheduledRate.Value * durationHours;
+                scheduledBasalInsulin += scheduled;
+                additionalBasalInsulin += insulin - scheduled;
+            }
+            else if (tb.Origin == TempBasalOrigin.Scheduled)
+            {
+                // Scheduled origin without explicit ScheduledRate — entire amount is scheduled
+                scheduledBasalInsulin += insulin;
+            }
+            else
+            {
+                // No ScheduledRate and non-scheduled origin — attribute to additional
+                additionalBasalInsulin += insulin;
+            }
         }
 
         var algorithmBolusList = algorithmBoluses.ToList();
         var algorithmBolusInsulin = algorithmBolusList.Sum(ab => ab.Insulin);
 
+        // Algorithm (micro) boluses are additional basal above scheduled
+        additionalBasalInsulin += algorithmBolusInsulin;
+
         var totalBasal = tempBasalInsulin + algorithmBolusInsulin;
         var totalInsulin = stats.TotalBolus + totalBasal;
 
         stats.TotalBasal = Math.Round(totalBasal * 100) / 100;
+        stats.ScheduledBasal = Math.Round(scheduledBasalInsulin * 100) / 100;
+        stats.AdditionalBasal = Math.Round(additionalBasalInsulin * 100) / 100;
         stats.TotalInsulin = Math.Round(totalInsulin * 100) / 100;
         stats.Tdd = Math.Round(totalInsulin / Math.Max(1, stats.DayCount) * 10) / 10;
         stats.BasalPercent =

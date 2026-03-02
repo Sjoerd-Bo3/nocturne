@@ -364,6 +364,26 @@ function buildParameterMapping(op: OperationInfo): {
     };
   }
 
+  // Path param(s) + query param(s), no body (e.g., DELETE /foods/{foodId}?attributionMode=clear)
+  if (pathParams.length >= 1 && queryParams.length > 0 && !hasBody) {
+    const pathFields = pathParams.map(p => {
+      const zodType = p.enumName ? `z.enum(${p.enumName})` : 'z.string()';
+      return `${p.name}: ${zodType}`;
+    });
+    const queryFields = queryParams.map(p => {
+      const zodType = p.enumName ? `z.enum(${p.enumName})` : getZodTypeForParam(p);
+      return `${p.name}: ${zodType}${p.required ? '' : '.optional()'}`;
+    });
+    const allFields = [...pathFields, ...queryFields];
+    const pathParamNames = pathParams.map(p => p.name);
+    const queryParamAccess = queryParams.map(p => `params.${p.name}`);
+    return {
+      schemaArg: `z.object({ ${allFields.join(', ')} })`,
+      paramList: 'params',
+      apiCallArgs: [...pathParamNames.map(n => `params.${n}`), ...queryParamAccess].join(', '),
+    };
+  }
+
   // Query params only (e.g., GET /trackers?category=X)
   if (queryParams.length > 0 && !hasBody) {
     const fields = queryParams.map(p => {

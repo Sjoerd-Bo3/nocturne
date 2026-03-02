@@ -167,7 +167,7 @@
                     {
                       key: "scheduledBasal",
                       value: (d: HourlyInsulinData) => d.scheduledBasal,
-                      color: "hsl(38, 70%, 45%)",
+                      color: "var(--insulin-scheduled-basal)",
                       label: "Scheduled Basal",
                     },
                   ]
@@ -177,7 +177,7 @@
                     {
                       key: "tempBasal",
                       value: (d: HourlyInsulinData) => d.tempBasal,
-                      color: "hsl(38, 92%, 60%)",
+                      color: "var(--insulin-additional-basal)",
                       label: "Temp Basal",
                     },
                   ]
@@ -188,7 +188,7 @@
                     {
                       key: "basal",
                       value: (d: HourlyInsulinData) => d.basal,
-                      color: "hsl(38, 92%, 50%)",
+                      color: "var(--insulin-scheduled-basal)",
                       label: "Basal",
                     },
                   ]
@@ -196,7 +196,7 @@
               {
                 key: "bolus",
                 value: (d: HourlyInsulinData) => d.bolus,
-                color: "hsl(217, 91%, 60%)",
+                color: "var(--insulin-bolus)",
                 label: "Bolus",
               },
             ]

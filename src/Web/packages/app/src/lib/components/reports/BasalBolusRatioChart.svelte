@@ -57,12 +57,12 @@
         series={[
           {
             key: "basal",
-            color: "hsl(38, 92%, 50%)",
+            color: "var(--insulin-scheduled-basal)",
             label: "Basal (U)",
           },
           {
             key: "bolus",
-            color: "hsl(217, 91%, 60%)",
+            color: "var(--insulin-bolus)",
             label: "Bolus (U)",
           },
         ]}

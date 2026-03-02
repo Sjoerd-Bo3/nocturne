@@ -49,10 +49,6 @@ async function main() {
   mkdirSync(dirname(apiClientPath), { recursive: true });
   writeFileSync(apiClientPath, apiClientContent, 'utf-8');
   console.log(`  Generated: ${defaultConfig.apiClientOutput}`);
-
-  console.log('\nDone!');
-  console.log('\nNote: The generated ApiClient is a reference. The existing api-client.ts');
-  console.log('has custom property names and should be maintained manually.');
 }
 
 main().catch(console.error);

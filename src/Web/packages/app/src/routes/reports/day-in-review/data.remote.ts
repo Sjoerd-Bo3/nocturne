@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { getRequestEvent, query } from '$app/server';
 import { error } from '@sveltejs/kit';
 import { getApsSnapshots } from '$api/generated/deviceStatus.generated.remote';
+import { getInsulinDeliveryStatistics } from '$api/generated/statistics.generated.remote';
 import { getProfileSummary } from '$api/generated/profiles.generated.remote';
 import { getLocalDayBoundariesUtc } from '$lib/utils/timezone';
 
@@ -63,6 +64,12 @@ export const getDayInReviewData = query(
 				? await apiClient.statistics.calculateTreatmentSummary({ boluses, carbIntakes })
 				: null);
 
+		// Fetch insulin delivery stats (includes scheduled vs additional basal breakdown)
+		const insulinDelivery = await getInsulinDeliveryStatistics({
+			startDate: dayStart,
+			endDate: dayEnd,
+		});
+
 		return {
 			date: dateParam,
 			entries,
@@ -70,6 +77,7 @@ export const getDayInReviewData = query(
 			carbIntakes,
 			analysis,
 			treatmentSummary,
+			insulinDelivery,
 			apsSnapshots,
 			dateRange: {
 				from: dayStart.toISOString(),

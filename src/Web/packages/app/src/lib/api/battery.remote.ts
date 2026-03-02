@@ -34,22 +34,25 @@ export const getBatteryReportData = query(batteryReportSchema, async (props) => 
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
 
+  const fromDate = new Date(props.from);
+  const toDate = new Date(props.to);
+
   const [statistics, cycles, readings] = await Promise.all([
     apiClient.battery.getBatteryStatistics(
       props.device ?? undefined,
-      props.from,
-      props.to
+      fromDate,
+      toDate
     ),
     apiClient.battery.getChargeCycles(
       props.device ?? undefined,
-      props.from,
-      props.to,
+      fromDate,
+      toDate,
       props.cycleLimit
     ),
     apiClient.battery.getBatteryReadings(
       props.device ?? undefined,
-      props.from,
-      props.to
+      fromDate,
+      toDate
     ),
   ]);
 

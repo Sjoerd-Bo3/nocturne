@@ -669,6 +669,8 @@ public class StatisticsController : ControllerBase
                         );
                         var totalWithProfile = insulinDelivery.TotalBolus + profileBasal;
                         insulinDelivery.TotalBasal = Math.Round(profileBasal * 100) / 100;
+                        insulinDelivery.ScheduledBasal = Math.Round(profileBasal * 100) / 100;
+                        insulinDelivery.AdditionalBasal = 0;
                         insulinDelivery.TotalInsulin = Math.Round(totalWithProfile * 100) / 100;
                         insulinDelivery.Tdd = Math.Round(totalWithProfile / Math.Max(1, insulinDelivery.DayCount) * 10) / 10;
                         insulinDelivery.BasalPercent = totalWithProfile > 0
@@ -681,6 +683,8 @@ public class StatisticsController : ControllerBase
 
                     // Keep treatment summary basal consistent
                     treatmentSummary.Totals.Insulin.Basal = insulinDelivery.TotalBasal;
+                    treatmentSummary.Totals.Insulin.ScheduledBasal = insulinDelivery.ScheduledBasal;
+                    treatmentSummary.Totals.Insulin.AdditionalBasal = insulinDelivery.AdditionalBasal;
                 }
 
                 // Compute GMI and reliability for this period
@@ -970,6 +974,22 @@ public class StatisticsController : ControllerBase
                 limit: 10000,
                 descending: false
             );
+
+            // Load basal rate profile so we can fill in ScheduledRate on temp basals
+            // that don't have it (e.g. MyLife/CamAPS algorithm adjustments)
+            var profiles = await _postgreSqlService.GetProfilesAsync(count: 10, skip: 0);
+            var profileList = profiles.ToList();
+            if (profileList.Any())
+            {
+                _profileService.LoadData(profileList);
+                foreach (var tb in tempBasals)
+                {
+                    if (!tb.ScheduledRate.HasValue && tb.Origin != TempBasalOrigin.Scheduled)
+                    {
+                        tb.ScheduledRate = _profileService.GetBasalRate(tb.StartMills);
+                    }
+                }
+            }
 
             var result = _statisticsService.CalculateInsulinDeliveryStatistics(
                 boluses, algorithmBoluses, tempBasals, carbs, startDate, endDate);

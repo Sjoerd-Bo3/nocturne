@@ -2251,8 +2251,8 @@
           </div>
         {/if}
 
-        <!-- Only show sync controls for healthy/online connectors -->
-        {#if selectedConnector.isHealthy &&
+        <!-- Only show sync controls for healthy/online/configured connectors -->
+        {#if (selectedConnector.isHealthy || selectedConnector.state === "Configured") &&
         selectedConnector.state !== "Offline" &&
         (selectedConnectorCapabilities?.supportsManualSync ?? true)}
           <Separator />
