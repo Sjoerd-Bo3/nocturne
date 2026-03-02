@@ -53,6 +53,39 @@ public class MyLifeSyncService(MyLifeSoapClient soapClient, ILogger<MyLifeSyncSe
         return results;
     }
 
+    public async Task<IReadOnlyList<MyLifePumpSettingsReadout>> FetchPumpSettingsAsync(
+        string serviceUrl,
+        string authToken,
+        string patientId,
+        CancellationToken cancellationToken)
+    {
+        logger.LogInformation("MyLife fetching pump settings for patient {PatientId}", patientId);
+
+        var encrypted = await soapClient.SyncPumpSettingsAsync(
+            serviceUrl,
+            patientId,
+            authToken,
+            cancellationToken
+        );
+
+        if (string.IsNullOrWhiteSpace(encrypted))
+        {
+            logger.LogDebug("MyLife pump settings returned empty");
+            return [];
+        }
+
+        var decrypted = MyLifeDecryptor.Decrypt(encrypted);
+        if (!IsZip(decrypted))
+        {
+            logger.LogWarning("MyLife pump settings decrypted data is not a ZIP");
+            return [];
+        }
+
+        var readouts = MyLifeArchiveReader.ReadPumpSettings(decrypted);
+        logger.LogInformation("MyLife pump settings returned {Count} readouts", readouts.Count);
+        return readouts;
+    }
+
     private static List<string> BuildMonths(DateTime since, DateTime now)
     {
         var months = new List<string>();

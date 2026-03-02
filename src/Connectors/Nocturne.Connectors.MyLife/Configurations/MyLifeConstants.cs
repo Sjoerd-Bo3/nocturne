@@ -11,12 +11,18 @@ public static class MyLifeConstants
         public const string Login = "http://tempuri.org/IMylifeAuthService/Login";
         public const string SyncPatientList = "http://tempuri.org/IMylifeSyncService/SyncPatientList";
         public const string SyncEvents = "http://tempuri.org/IMylifeSyncService/SyncEvents";
+        public const string SyncPumpSettings = "http://tempuri.org/IMylifeSyncService/SyncPumpSettings";
     }
 
     public static class ServicePaths
     {
         public const string AuthService = "mylifeAuthService/MylifeMobileAuthService.svc";
         public const string SyncService = "mylifeSyncService/MylifeMobileSyncService.svc";
+    }
+
+    public static class RestPaths
+    {
+        public const string Auth = "api/v1/auth";
     }
 
     /// <summary>

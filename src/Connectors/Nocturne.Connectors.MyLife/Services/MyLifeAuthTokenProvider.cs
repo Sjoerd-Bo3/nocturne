@@ -56,8 +56,11 @@ public class MyLifeAuthTokenProvider(
         var patient = ResolvePatient(patients, _config.PatientId);
         if (patient == null) return (null, DateTime.MinValue);
 
+        var restServiceUrl = location.Country20?.RestServiceUrl ?? string.Empty;
+
         _sessionStore.SetSession(
             serviceUrl,
+            restServiceUrl,
             login.AuthToken,
             login.UserId ?? string.Empty,
             patient.OnlinePatientId ?? string.Empty

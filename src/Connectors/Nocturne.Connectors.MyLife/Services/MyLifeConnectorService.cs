@@ -25,6 +25,7 @@ public class MyLifeConnectorService(
     MyLifeEventsCache eventsCache,
     MyLifeEventProcessor eventProcessor,
     MyLifeSessionStore sessionStore,
+    MyLifeSyncService syncService,
     IConnectorPublisher? publisher = null
 ) : BaseConnectorService<MyLifeConnectorConfiguration>(httpClient, logger, publisher)
 {
@@ -42,7 +43,8 @@ public class MyLifeConnectorService(
         SyncDataType.BolusCalculations,
         SyncDataType.Notes,
         SyncDataType.DeviceEvents,
-        SyncDataType.StateSpans
+        SyncDataType.StateSpans,
+        SyncDataType.Profiles
     ];
 
     public override bool IsHealthy =>
@@ -129,6 +131,29 @@ public class MyLifeConnectorService(
             _config.EnableTempBasalConsolidation,
             _config.TempBasalConsolidationWindowMinutes
         );
+    }
+
+    /// <summary>
+    /// Fetches pump settings from MyLife and maps them to Profile records.
+    /// </summary>
+    public async Task<IEnumerable<Profile>> FetchPumpSettingsProfileAsync(
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(sessionStore.ServiceUrl)
+            || string.IsNullOrWhiteSpace(sessionStore.AuthToken)
+            || string.IsNullOrWhiteSpace(sessionStore.PatientId))
+        {
+            return [];
+        }
+
+        var readouts = await syncService.FetchPumpSettingsAsync(
+            sessionStore.ServiceUrl,
+            sessionStore.AuthToken,
+            sessionStore.PatientId,
+            cancellationToken
+        );
+
+        return MyLifePumpSettingsMapper.MapToProfiles(readouts);
     }
 
     /// <summary>
@@ -360,6 +385,35 @@ public class MyLifeConnectorService(
                     {
                         result.Success = false;
                         result.Errors.Add("TempBasal publish failed");
+                    }
+                }
+            }
+
+            // Publish Profile records from pump settings
+            if (activeTypes.Contains(SyncDataType.Profiles))
+            {
+                var profiles = await FetchPumpSettingsProfileAsync(cancellationToken);
+                var profileList = profiles.ToList();
+
+                if (profileList.Count > 0)
+                {
+                    var success = await PublishProfileDataAsync(
+                        profileList,
+                        config,
+                        cancellationToken
+                    );
+                    if (success)
+                    {
+                        _logger.LogInformation(
+                            "Synced {Count} Profile records from pump settings",
+                            profileList.Count
+                        );
+                        result.ItemsSynced[SyncDataType.Profiles] = profileList.Count;
+                    }
+                    else
+                    {
+                        result.Success = false;
+                        result.Errors.Add("Profile publish failed");
                     }
                 }
             }

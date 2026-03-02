@@ -30,4 +30,23 @@ public class MyLifeArchiveReader
 
         return results;
     }
+
+    public static IReadOnlyList<MyLifePumpSettingsReadout> ReadPumpSettings(byte[] zipBytes)
+    {
+        using var memory = new MemoryStream(zipBytes);
+        using var archive = new ZipArchive(memory, ZipArchiveMode.Read);
+        var results = new List<MyLifePumpSettingsReadout>();
+
+        foreach (var entry in archive.Entries)
+        {
+            using var entryStream = entry.Open();
+            using var reader = new StreamReader(entryStream, Encoding.UTF8);
+            var json = reader.ReadToEnd();
+            var readouts = JsonSerializer.Deserialize<List<MyLifePumpSettingsReadout>>(json, JsonOptions);
+            if (readouts == null) continue;
+            results.AddRange(readouts);
+        }
+
+        return results;
+    }
 }

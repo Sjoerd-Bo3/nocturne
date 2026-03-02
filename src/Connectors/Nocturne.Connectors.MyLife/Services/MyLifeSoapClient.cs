@@ -143,6 +143,37 @@ public class MyLifeSoapClient(HttpClient httpClient, ILogger<MyLifeSoapClient> l
         return ExtractSoapResult(response, "SyncEventsResult");
     }
 
+    public async Task<string?> SyncPumpSettingsAsync(
+        string serviceUrl,
+        string patientId,
+        string authToken,
+        CancellationToken cancellationToken)
+    {
+        var body =
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+            "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+            "<s:Body>" +
+            "<SyncPumpSettings xmlns=\"http://tempuri.org/\">" +
+            $"<patientId>{SecurityElement.Escape(patientId)}</patientId>" +
+            $"<authToken>{SecurityElement.Escape(authToken)}</authToken>" +
+            "</SyncPumpSettings>" +
+            "</s:Body>" +
+            "</s:Envelope>";
+
+        var url = CombineUrl(serviceUrl, MyLifeConstants.ServicePaths.SyncService);
+
+        var response = await PostSoapAsync(
+            url,
+            MyLifeConstants.SoapActions.SyncPumpSettings,
+            body,
+            cancellationToken
+        );
+
+        if (string.IsNullOrWhiteSpace(response)) return null;
+
+        return ExtractSoapResult(response, "SyncPumpSettingsResult");
+    }
+
     private async Task<string> PostSoapAsync(
         string url,
         string action,
