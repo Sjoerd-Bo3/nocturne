@@ -5,6 +5,7 @@
   import { Syringe, Utensils } from "lucide-svelte";
   import { BasalDeliveryOrigin } from "$lib/api";
   import { bg, bgLabel, bgDelta } from "$lib/utils/formatting";
+  import { getDataSourceDisplayName } from "$lib/utils/data-source-display";
   import type { PredictionData } from "$api/predictions.remote";
   import { getApsSnapshots } from "$lib/api/generated/deviceStatus.generated.remote";
   import { apsSnapshotToPrediction } from "$lib/utils/aps-snapshot-to-prediction";
@@ -17,6 +18,7 @@
     glucoseColor: string;
     direction?: string;
     previousGlucoseValue?: number;
+    dataSource?: string;
     glucoseData: { time: Date; sgv: number; color: string }[];
     highThreshold: number;
     lowThreshold: number;
@@ -43,6 +45,7 @@
     glucoseColor,
     direction,
     previousGlucoseValue,
+    dataSource,
     glucoseData,
     highThreshold,
     lowThreshold,
@@ -61,6 +64,8 @@
     onNavigateDelivery,
     onNavigateTreatment,
   }: Props = $props();
+
+  const sourceDisplayName = $derived(getDataSourceDisplayName(dataSource));
 
   let predictionData: PredictionData | null = $state(null);
 
@@ -199,6 +204,11 @@
       {#if activityStates && activityStates.length > 0}
         <span class="text-muted-foreground">Activities</span>
         <span class="font-medium">{activityStates.join(", ")}</span>
+      {/if}
+
+      {#if sourceDisplayName}
+        <span class="text-muted-foreground">Source</span>
+        <span class="font-medium">{sourceDisplayName}</span>
       {/if}
     </div>
 

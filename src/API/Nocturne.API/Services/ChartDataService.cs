@@ -596,6 +596,7 @@ public class ChartDataService : IChartDataService
                 Time = r.Mills,
                 Sgv = r.Mgdl,
                 Direction = r.Direction?.ToString(),
+                DataSource = r.DataSource ?? r.Device,
             })
             .ToList(); // Already sorted
 
@@ -617,6 +618,7 @@ public class ChartDataService : IChartDataService
                 TreatmentId = b.LegacyId ?? b.Id.ToString(),
                 BolusType = MapV4BolusType(b.BolusType, b.Automatic),
                 IsOverride = false,
+                DataSource = b.DataSource ?? b.Device,
             })
             .ToList();
     }
@@ -636,6 +638,7 @@ public class ChartDataService : IChartDataService
                 Label = GetMealNameForTime(c.Mills, timezone),
                 TreatmentId = c.LegacyId ?? c.Id.ToString(),
                 IsOffset = false,
+                DataSource = c.DataSource ?? c.Device,
             })
             .ToList();
     }

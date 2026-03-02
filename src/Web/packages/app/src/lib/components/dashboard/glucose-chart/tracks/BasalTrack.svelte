@@ -6,6 +6,7 @@
     Text,
     Group,
     ChartClipPath,
+    Highlight,
     AnnotationRange,
     AnnotationLine,
     AnnotationPoint,
@@ -52,6 +53,7 @@
       yScale: (value: number) => number;
     };
     showBasal: boolean;
+    onPointClick?: (time: Date) => void;
   }
 
   let {
@@ -66,6 +68,7 @@
     basalAxisScale,
     context,
     showBasal,
+    onPointClick,
   }: Props = $props();
 
   // Group consecutive basal points by origin for proper layered rendering
@@ -271,4 +274,27 @@
       {/if}
     {/each}
   {/if}
+
+  <!-- Basal highlight for point click -->
+  <ChartClipPath>
+    <Highlight
+      x={(d) => d.time}
+      y={(d) => {
+        const timeMs = d.time.getTime();
+        let nearest: BasalDataPoint | undefined;
+        for (let i = basalData.length - 1; i >= 0; i--) {
+          if ((basalData[i].timestamp ?? 0) <= timeMs) {
+            nearest = basalData[i];
+            break;
+          }
+        }
+        if (!nearest || nearest.rate == null) return null;
+        return basalScale(nearest.rate);
+      }}
+      points={{ class: "fill-iob-basal" }}
+      onPointClick={onPointClick
+        ? (_e, { data }) => onPointClick(data.time)
+        : undefined}
+    />
+  </ChartClipPath>
 {/if}

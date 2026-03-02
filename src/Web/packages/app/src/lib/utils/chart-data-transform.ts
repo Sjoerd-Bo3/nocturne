@@ -48,6 +48,7 @@ export function transformChartData(data: DashboardChartData) {
 			time: new Date(p.time ?? 0),
 			sgv: p.sgv ?? 0,
 			direction: p.direction,
+			dataSource: p.dataSource,
 			color: getGlucoseColor(p.sgv ?? 0, {
 				low: data.thresholds?.low ?? 55,
 				high: data.thresholds?.high ?? 180,

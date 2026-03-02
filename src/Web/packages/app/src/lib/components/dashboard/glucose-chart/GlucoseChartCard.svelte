@@ -212,9 +212,10 @@
     profileName?: string;
     activityStates?: string[];
     isStaleBasal: boolean;
-    nearbyBolus?: { insulin?: number; bolusType?: string; treatmentId?: string };
-    nearbyCarbs?: { carbs?: number; label?: string; treatmentId?: string };
+    nearbyBolus?: { insulin?: number; bolusType?: string; treatmentId?: string; dataSource?: string };
+    nearbyCarbs?: { carbs?: number; label?: string; treatmentId?: string; dataSource?: string };
     previousGlucoseValue?: number;
+    dataSource?: string;
   } | null>(null);
   let isPickerOpen = $state(false);
   let isGlucoseInspectionOpen = $state(false);
@@ -934,13 +935,26 @@
   }
 
   // ===== POINT INSPECTION =====
-  function handlePointClick(data: { time: Date; sgv: number; color: string }) {
-    const time = data.time;
+  function handlePointClick(data: { time: Date; sgv: number; color: string; dataSource?: string }) {
+    openInspection(data.time, { sgv: data.sgv, color: data.color }, data.dataSource);
+  }
+
+  function handleTrackPointClick(time: Date) {
+    // Find nearest glucose point for the clicked time
+    const nearest = findSeriesValue(glucoseData, time);
+    const glucosePoint = nearest
+      ? { sgv: nearest.sgv, color: nearest.color }
+      : { sgv: 0, color: "var(--color-muted)" };
+    openInspection(time, glucosePoint, nearest?.dataSource);
+  }
+
+  function openInspection(
+    time: Date,
+    glucosePoint: { sgv: number; color: string },
+    dataSource?: string
+  ) {
     inspectionTimestamp = time;
-    inspectionGlucosePoint = {
-      sgv: data.sgv,
-      color: data.color,
-    };
+    inspectionGlucosePoint = glucosePoint;
 
     // Gather context at click time using existing finders
     const basal = findBasalValue(basalData, time) as BasalPoint | undefined;
@@ -980,6 +994,7 @@
             insulin: nearbyBol.insulin,
             bolusType: nearbyBol.bolusType,
             treatmentId: nearbyBol.treatmentId,
+            dataSource: nearbyBol.dataSource,
           }
         : undefined,
       nearbyCarbs: nearbyCarb
@@ -987,14 +1002,15 @@
             carbs: nearbyCarb.carbs,
             label: nearbyCarb.label,
             treatmentId: nearbyCarb.treatmentId,
+            dataSource: nearbyCarb.dataSource,
           }
         : undefined,
       previousGlucoseValue: prevPoint?.sgv,
+      dataSource,
     };
 
     // Determine available contexts
-    const hasDelivery =
-      basal != null || basalDelivery != null;
+    const hasDelivery = basal != null || basalDelivery != null;
     const hasTreatment = nearbyBol != null || nearbyCarb != null;
 
     if (!hasDelivery && !hasTreatment) {
@@ -1158,6 +1174,7 @@
             {basalAxisScale}
             {context}
             {showBasal}
+            onPointClick={handleTrackPointClick}
           />
         </ChartClipPath>
 
@@ -1209,6 +1226,7 @@
           {context}
           onMarkerClick={handleMarkerClick}
           {showIobTrack}
+          onPointClick={handleTrackPointClick}
         />
 
         <!-- X-Axis -->
@@ -1496,6 +1514,7 @@
     glucoseValue={inspectionGlucosePoint.sgv}
     glucoseColor={inspectionGlucosePoint.color}
     previousGlucoseValue={inspectionContext.previousGlucoseValue}
+    dataSource={inspectionContext.dataSource}
     {glucoseData}
     {highThreshold}
     {lowThreshold}
@@ -1533,6 +1552,7 @@
     activityStates={inspectionContext.activityStates}
     iob={inspectionContext.iob}
     isStaleBasal={inspectionContext.isStaleBasal}
+    dataSource={inspectionContext.dataSource}
     {glucoseData}
     {highThreshold}
     {lowThreshold}
@@ -1554,8 +1574,10 @@
     timestamp={inspectionTimestamp}
     bolusInsulin={inspectionContext.nearbyBolus?.insulin}
     bolusType={inspectionContext.nearbyBolus?.bolusType}
+    bolusDataSource={inspectionContext.nearbyBolus?.dataSource}
     carbGrams={inspectionContext.nearbyCarbs?.carbs}
     carbLabel={inspectionContext.nearbyCarbs?.label}
+    carbDataSource={inspectionContext.nearbyCarbs?.dataSource}
     iob={inspectionContext.iob}
     cob={inspectionContext.cob}
     glucoseValue={inspectionGlucosePoint.sgv}

@@ -5,6 +5,7 @@
 import { getRequestEvent, query, command } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
+import { RecordType } from '$api';
 
 /** Start a deduplication job to link related records from different data sources.
 The job runs in the background and can be monitored using the status endpoint. */
@@ -96,5 +97,20 @@ export const getStateSpanLinkedRecords = query(z.string(), async (stateSpanId) =
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in deduplication.getStateSpanLinkedRecords:', err);
     throw error(500, 'Failed to get state span linked records');
+  }
+});
+
+/** Get linked records for any V4 record type by its canonical group. */
+export const getRecordLinkedRecords = query(z.object({ recordType: z.enum(RecordType), recordId: z.string() }), async ({ recordType, recordId }) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    return await apiClient.deduplication.getRecordLinkedRecords(recordType, recordId);
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in deduplication.getRecordLinkedRecords:', err);
+    throw error(500, 'Failed to get record linked records');
   }
 });

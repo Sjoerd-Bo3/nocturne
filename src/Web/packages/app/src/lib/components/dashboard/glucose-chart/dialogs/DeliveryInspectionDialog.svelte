@@ -5,6 +5,7 @@
   import { Activity, Syringe, Utensils, AlertTriangle } from "lucide-svelte";
   import { BasalDeliveryOrigin, type ApsSnapshot } from "$lib/api";
   import { bg, bgLabel } from "$lib/utils/formatting";
+  import { getDataSourceDisplayName } from "$lib/utils/data-source-display";
   import type { PredictionData } from "$api/predictions.remote";
   import { getApsSnapshots } from "$lib/api/generated/deviceStatus.generated.remote";
   import { apsSnapshotToPrediction } from "$lib/utils/aps-snapshot-to-prediction";
@@ -24,6 +25,7 @@
     activityStates?: string[];
     iob?: number;
     isStaleBasal: boolean;
+    dataSource?: string;
     glucoseData: { time: Date; sgv: number; color: string }[];
     highThreshold: number;
     lowThreshold: number;
@@ -48,6 +50,7 @@
     activityStates,
     iob,
     isStaleBasal,
+    dataSource,
     glucoseData,
     highThreshold,
     lowThreshold,
@@ -57,6 +60,8 @@
     onNavigateGlucose,
     onNavigateTreatment,
   }: Props = $props();
+
+  const sourceDisplayName = $derived(getDataSourceDisplayName(dataSource));
 
   let snapshot: ApsSnapshot | null = $state(null);
   let predictionData: PredictionData | null = $state(null);
@@ -338,6 +343,13 @@
       <div class="flex items-center gap-2 py-2 text-yellow-500 text-sm">
         <AlertTriangle class="h-4 w-4" />
         <span>Basal data may be stale. The last update was received some time ago.</span>
+      </div>
+    {/if}
+
+    {#if sourceDisplayName}
+      <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm py-2">
+        <span class="text-muted-foreground">Source</span>
+        <span class="font-medium">{sourceDisplayName}</span>
       </div>
     {/if}
 

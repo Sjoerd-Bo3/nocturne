@@ -5834,6 +5834,62 @@ export class DeduplicationClient {
         }
         return Promise.resolve<LinkedRecordsResponse>(null as any);
     }
+
+    /**
+     * Get linked records for any V4 record type by its canonical group.
+     * @param recordType The record type (e.g. SensorGlucose, Bolus, CarbIntake)
+     * @param recordId The record ID
+     * @return All linked records in the same canonical group
+     */
+    getRecordLinkedRecords(recordType: RecordType, recordId: string, signal?: AbortSignal): Promise<LinkedRecordsResponse> {
+        let url_ = this.baseUrl + "/api/v4/admin/deduplication/records/{recordType}/{recordId}/sources";
+        if (recordType === undefined || recordType === null)
+            throw new globalThis.Error("The parameter 'recordType' must be defined.");
+        url_ = url_.replace("{recordType}", encodeURIComponent("" + recordType));
+        if (recordId === undefined || recordId === null)
+            throw new globalThis.Error("The parameter 'recordId' must be defined.");
+        url_ = url_.replace("{recordId}", encodeURIComponent("" + recordId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetRecordLinkedRecords(_response);
+        });
+    }
+
+    protected processGetRecordLinkedRecords(response: Response): Promise<LinkedRecordsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as LinkedRecordsResponse;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<LinkedRecordsResponse>(null as any);
+    }
 }
 
 export class DeviceAgeClient {
@@ -25416,6 +25472,7 @@ export interface GlucosePointDto {
     time?: number;
     sgv?: number;
     direction?: string | undefined;
+    dataSource?: string | undefined;
 }
 
 export interface ChartThresholdsDto {
@@ -25432,6 +25489,7 @@ export interface BolusMarkerDto {
     treatmentId?: string | undefined;
     bolusType?: BolusType2;
     isOverride?: boolean;
+    dataSource?: string | undefined;
 }
 
 export enum BolusType2 {
@@ -25451,6 +25509,7 @@ export interface CarbMarkerDto {
     label?: string | undefined;
     treatmentId?: string | undefined;
     isOffset?: boolean;
+    dataSource?: string | undefined;
 }
 
 export interface DeviceEventMarkerDto {

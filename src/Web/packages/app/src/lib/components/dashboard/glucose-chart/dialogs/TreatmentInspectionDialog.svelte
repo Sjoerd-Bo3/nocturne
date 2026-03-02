@@ -4,6 +4,7 @@
   import { Button } from "$lib/components/ui/button";
   import { Activity, Syringe, Pencil } from "lucide-svelte";
   import { bg, bgLabel } from "$lib/utils/formatting";
+  import { getDataSourceDisplayName } from "$lib/utils/data-source-display";
   import type { PredictionData } from "$api/predictions.remote";
   import type { BolusCalculation } from "$lib/api";
   import { CalculationType2 } from "$lib/api";
@@ -19,8 +20,10 @@
     timestamp: Date;
     bolusInsulin?: number;
     bolusType?: string;
+    bolusDataSource?: string;
     carbGrams?: number;
     carbLabel?: string;
+    carbDataSource?: string;
     entry?: EntryRecord | null;
     correlatedRecords?: EntryRecord[];
     iob?: number;
@@ -42,8 +45,10 @@
     timestamp,
     bolusInsulin,
     bolusType,
+    bolusDataSource,
     carbGrams,
     carbLabel,
+    carbDataSource,
     entry: _entry,
     correlatedRecords,
     iob,
@@ -59,6 +64,15 @@
     onNavigateDelivery,
     onEditEntry,
   }: Props = $props();
+
+  const bolusSourceName = $derived(getDataSourceDisplayName(bolusDataSource));
+  const carbSourceName = $derived(getDataSourceDisplayName(carbDataSource));
+  // Show a single "Source" row if both come from the same source, otherwise per-treatment sources
+  const unifiedSourceName = $derived(
+    bolusSourceName && carbSourceName && bolusSourceName === carbSourceName
+      ? bolusSourceName
+      : null,
+  );
 
   let bolusCalc: BolusCalculation | null = $state(null);
   let predictionData: PredictionData | null = $state(null);
@@ -232,8 +246,8 @@
       </Dialog.Description>
     </Dialog.Header>
 
-    <!-- Context row: IOB, COB, glucose -->
-    {#if iob != null || cob != null || glucoseValue != null}
+    <!-- Context row: IOB, COB, glucose, source -->
+    {#if iob != null || cob != null || glucoseValue != null || bolusSourceName || carbSourceName}
       <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm py-3">
         {#if glucoseValue != null}
           <span class="text-muted-foreground">BG at time</span>
@@ -248,6 +262,20 @@
         {#if cob != null && cob > 0}
           <span class="text-muted-foreground">COB</span>
           <span class="font-medium">{cob.toFixed(0)} g</span>
+        {/if}
+
+        {#if unifiedSourceName}
+          <span class="text-muted-foreground">Source</span>
+          <span class="font-medium">{unifiedSourceName}</span>
+        {:else}
+          {#if bolusSourceName}
+            <span class="text-muted-foreground">Bolus Source</span>
+            <span class="font-medium">{bolusSourceName}</span>
+          {/if}
+          {#if carbSourceName}
+            <span class="text-muted-foreground">Carb Source</span>
+            <span class="font-medium">{carbSourceName}</span>
+          {/if}
         {/if}
       </div>
     {/if}

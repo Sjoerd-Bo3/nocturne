@@ -4702,6 +4702,63 @@
         "x-remote-type": "query"
       }
     },
+    "/api/v4/admin/deduplication/records/{recordType}/{recordId}/sources": {
+      "get": {
+        "tags": [
+          "V4 Deduplication"
+        ],
+        "summary": "Get linked records for any V4 record type by its canonical group.",
+        "operationId": "Deduplication_GetRecordLinkedRecords",
+        "parameters": [
+          {
+            "name": "recordType",
+            "in": "path",
+            "required": true,
+            "description": "The record type (e.g. SensorGlucose, Bolus, CarbIntake)",
+            "schema": {
+              "$ref": "#/components/schemas/RecordType"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "description": "The record ID",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All linked records in the same canonical group",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedRecordsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
     "/api/v4/deviceage/cannula": {
       "get": {
         "tags": [
@@ -27245,6 +27302,10 @@
           "direction": {
             "type": "string",
             "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -27295,6 +27356,10 @@
           },
           "isOverride": {
             "type": "boolean"
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -27344,6 +27409,10 @@
           },
           "isOffset": {
             "type": "boolean"
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
           }
         }
       },

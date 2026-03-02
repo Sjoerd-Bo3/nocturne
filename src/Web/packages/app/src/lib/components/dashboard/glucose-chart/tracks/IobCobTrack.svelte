@@ -45,6 +45,7 @@
     };
     onMarkerClick: (treatmentId: string) => void;
     showIobTrack: boolean;
+    onPointClick?: (time: Date) => void;
   }
 
   let {
@@ -64,6 +65,7 @@
     context,
     onMarkerClick,
     showIobTrack,
+    onPointClick,
   }: Props = $props();
 
   // Bisector for finding nearest data point
@@ -179,6 +181,9 @@
         return iobScale(cob.value / carbRatio);
       }}
       points={{ class: "fill-carbs" }}
+      onPointClick={onPointClick
+        ? (_e, { data }) => onPointClick(data.time)
+        : undefined}
     />
   {/if}
 
@@ -192,6 +197,9 @@
         return iobScale(iob.value);
       }}
       points={{ class: "fill-iob-basal" }}
+      onPointClick={onPointClick
+        ? (_e, { data }) => onPointClick(data.time)
+        : undefined}
     />
   {/if}
 </ChartClipPath>

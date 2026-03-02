@@ -23,6 +23,7 @@
     FileText,
     Smartphone,
   } from "lucide-svelte";
+  import { getDataSourceDisplayName } from "$lib/utils/data-source-display";
   import { toast } from "svelte-sonner";
   import {
     createBolus,
@@ -83,6 +84,9 @@
   let carbsPendingFoods = $state<PendingFood[]>([]);
 
   let isEditing = $derived(entry != null);
+  let sourceDisplayName = $derived(
+    entry ? getDataSourceDisplayName(entry.data.dataSource ?? entry.data.device) : null,
+  );
 
   let activeSectionCount = $derived(
     Object.values(sections).filter((s) => s != null).length,
@@ -410,6 +414,13 @@
           }}
         />
       </div>
+
+      {#if isEditing && sourceDisplayName}
+        <div class="flex items-center gap-2 text-sm">
+          <span class="text-muted-foreground">Source:</span>
+          <span class="font-medium">{sourceDisplayName}</span>
+        </div>
+      {/if}
 
       <Separator />
 

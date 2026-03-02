@@ -274,6 +274,55 @@ public class DeduplicationController : ControllerBase
             return StatusCode(500, new { error = "Failed to get linked records" });
         }
     }
+
+    /// <summary>
+    /// Get linked records for any V4 record type by its canonical group.
+    /// </summary>
+    /// <param name="recordType">The record type (e.g. SensorGlucose, Bolus, CarbIntake)</param>
+    /// <param name="recordId">The record ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>All linked records in the same canonical group</returns>
+    [HttpGet("records/{recordType}/{recordId}/sources")]
+    [RemoteQuery]
+    [ProducesResponseType(typeof(LinkedRecordsResponse), 200)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(500)]
+    public async Task<ActionResult<LinkedRecordsResponse>> GetRecordLinkedRecords(
+        RecordType recordType,
+        string recordId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (!Guid.TryParse(recordId, out var recordGuid))
+            {
+                return BadRequest(new { error = "Invalid record ID format" });
+            }
+
+            var linkedRecord = await _deduplicationService.GetLinkedRecordAsync(
+                recordType, recordGuid, cancellationToken);
+
+            if (linkedRecord == null)
+            {
+                return NotFound(new { error = "Record not found or not linked" });
+            }
+
+            var allLinked = await _deduplicationService.GetLinkedRecordsAsync(
+                linkedRecord.CanonicalId, cancellationToken);
+
+            return Ok(new LinkedRecordsResponse
+            {
+                CanonicalId = linkedRecord.CanonicalId,
+                RecordType = recordType,
+                LinkedRecords = allLinked.ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get linked records for {RecordType} {RecordId}", recordType, recordId);
+            return StatusCode(500, new { error = "Failed to get linked records" });
+        }
+    }
 }
 
 /// <summary>
