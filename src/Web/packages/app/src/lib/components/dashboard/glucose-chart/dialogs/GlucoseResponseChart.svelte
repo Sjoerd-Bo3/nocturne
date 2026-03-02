@@ -164,7 +164,7 @@
               x={(d: { time: Date; sgv: number }) => d.time}
               y="sgv"
               curve={curveMonotoneX}
-              class="stroke-purple-400/60 stroke-1.5 fill-none"
+              class="stroke-purple-400/60 stroke-1 fill-none"
               stroke-dasharray="4,2"
             />
           {/if}
@@ -199,7 +199,6 @@
         <!-- Left Y-axis with glucose values -->
         <Axis
           placement="left"
-          scale={scaleLinear().domain([yDomain[0], yDomain[1]]).range([0, 1])}
           ticks={4}
           format={(v) => String(bg(v as number))}
           tickLabelProps={{ class: "text-[10px] fill-muted-foreground" }}
