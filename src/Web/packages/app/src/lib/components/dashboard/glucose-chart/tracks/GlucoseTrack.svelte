@@ -28,6 +28,8 @@
     predictionDisplayMode: PredictionDisplayMode;
     predictionError: string | null;
     chartXDomain: { from: Date; to: Date };
+    // Point click handler
+    onPointClick?: (data: GlucoseDataPoint) => void;
   }
 
   let {
@@ -44,6 +46,7 @@
     predictionDisplayMode,
     predictionError,
     chartXDomain,
+    onPointClick,
   }: Props = $props();
 
   // Only show points when density is reasonable (less than 0.5 points per pixel)
@@ -112,5 +115,8 @@
     y={(d) => glucoseScale(d.sgv)}
     points
     lines
+    onPointClick={onPointClick
+      ? (_e, { data }) => onPointClick(data)
+      : undefined}
   />
 </ChartClipPath>
