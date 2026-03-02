@@ -35,7 +35,7 @@
   <CardContent class="px-3 @md:px-6">
     {#if recentEntries.length > 0}
       <div class="space-y-2 @md:space-y-3">
-        {#each recentEntries as entry (entry._id || entry.mills)}
+        {#each recentEntries as entry, i (entry._id || `${entry.mills}-${i}`)}
           {@const directionInfo = getDirectionInfo(entry.direction)}
           {@const Icon = directionInfo.icon}
           <div

@@ -92,7 +92,7 @@
     <CardContent class="px-3 @md:px-6">
       {#if displayEntries.length > 0}
         <div class="space-y-2 @md:space-y-3">
-          {#each displayEntries as entry (entry.data.id ?? entry.data.mills)}
+          {#each displayEntries as entry, i (entry.data.id ?? `${entry.data.mills}-${i}`)}
             {@const category = ENTRY_CATEGORIES[entry.kind]}
             <div
               class="flex items-center justify-between p-2 @md:p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"

@@ -368,7 +368,7 @@
           Related Entries
         </p>
         <div class="space-y-2">
-          {#each correlatedRecords as record (record.data.id ?? record.data.mills)}
+          {#each correlatedRecords as record, i (record.data.id ?? `${record.data.mills}-${i}`)}
             {@const category = ENTRY_CATEGORIES[record.kind]}
             <button
               type="button"

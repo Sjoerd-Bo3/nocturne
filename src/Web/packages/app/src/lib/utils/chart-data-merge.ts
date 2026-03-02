@@ -27,6 +27,30 @@ export function mergeChartData(
 		return [...uniqueHistorical, ...initialArr];
 	};
 
+	// Helper to merge span arrays by id, falling back to startTime dedup.
+	// Spans that straddle the initial/historical boundary can appear in both
+	// datasets with the same id but different startTime, so time-based dedup
+	// alone would let duplicates through and cause Svelte each_key_duplicate.
+	const mergeSpansById = <T extends Record<string, any>>(
+		initialArr: T[],
+		historicalArr: T[]
+	): T[] => {
+		if (!initialArr || !historicalArr) return initialArr || historicalArr || [];
+		const seenIds = new Set(
+			initialArr.map((item) => item.id).filter((id: unknown) => id != null)
+		);
+		const uniqueHistorical = historicalArr.filter((item) => {
+			if (item.id != null) {
+				if (seenIds.has(item.id)) return false;
+				seenIds.add(item.id);
+				return true;
+			}
+			// No id — fall back to startTime dedup
+			return true;
+		});
+		return [...uniqueHistorical, ...initialArr];
+	};
+
 	return {
 		...initial,
 		// Merge time-series data
@@ -35,23 +59,22 @@ export function mergeChartData(
 		basalSeries: mergeByTime(initial.basalSeries, historical.basalSeries, 'timestamp'),
 		glucoseData: mergeByTime(initial.glucoseData, historical.glucoseData),
 
-		// Merge markers
+		// Merge markers (keyed by time)
 		bolusMarkers: mergeByTime(initial.bolusMarkers, historical.bolusMarkers),
 		carbMarkers: mergeByTime(initial.carbMarkers, historical.carbMarkers),
 		deviceEventMarkers: mergeByTime(initial.deviceEventMarkers, historical.deviceEventMarkers),
-		systemEventMarkers: mergeByTime(initial.systemEventMarkers, historical.systemEventMarkers),
-		trackerMarkers: mergeByTime(initial.trackerMarkers, historical.trackerMarkers),
+		systemEventMarkers: mergeSpansById(initial.systemEventMarkers, historical.systemEventMarkers),
+		trackerMarkers: mergeSpansById(initial.trackerMarkers, historical.trackerMarkers),
 
-		// Merge spans
-		pumpModeSpans: mergeByTime(initial.pumpModeSpans, historical.pumpModeSpans, 'startTime'),
-		profileSpans: mergeByTime(initial.profileSpans, historical.profileSpans, 'startTime'),
-		overrideSpans: mergeByTime(initial.overrideSpans, historical.overrideSpans, 'startTime'),
-		activitySpans: mergeByTime(initial.activitySpans, historical.activitySpans, 'startTime'),
-		tempBasalSpans: mergeByTime(initial.tempBasalSpans, historical.tempBasalSpans, 'startTime'),
-		basalDeliverySpans: mergeByTime(
+		// Merge spans (keyed by id in {#each} blocks — must dedup by id)
+		pumpModeSpans: mergeSpansById(initial.pumpModeSpans, historical.pumpModeSpans),
+		profileSpans: mergeSpansById(initial.profileSpans, historical.profileSpans),
+		overrideSpans: mergeSpansById(initial.overrideSpans, historical.overrideSpans),
+		activitySpans: mergeSpansById(initial.activitySpans, historical.activitySpans),
+		tempBasalSpans: mergeSpansById(initial.tempBasalSpans, historical.tempBasalSpans),
+		basalDeliverySpans: mergeSpansById(
 			initial.basalDeliverySpans,
-			historical.basalDeliverySpans,
-			'startTime'
+			historical.basalDeliverySpans
 		),
 
 		// Take the max values from either dataset

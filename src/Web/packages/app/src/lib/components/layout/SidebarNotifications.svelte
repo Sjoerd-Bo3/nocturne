@@ -100,86 +100,100 @@
   }
 </script>
 
-<Popover.Root bind:open={isOpen}>
-  <Popover.Trigger>
-    {#snippet child({ props })}
-      <Button
-        {...props}
-        variant="ghost"
-        size="icon"
-        class="relative h-8 w-8"
-        aria-label="Notifications"
-      >
-        <Bell class="h-4 w-4" />
-        {#if badgeCount > 0}
-          <span
-            class={cn(
-              "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium",
-              badgeVariant === "destructive" && "bg-red-500 text-white",
-              badgeVariant === "warning" && "bg-orange-500 text-white",
-              badgeVariant === "secondary" && "bg-yellow-500 text-black"
-            )}
+<svelte:boundary>
+  <Popover.Root bind:open={isOpen}>
+    <Popover.Trigger>
+      {#snippet child({ props })}
+        <Button
+          {...props}
+          variant="ghost"
+          size="icon"
+          class="relative h-8 w-8"
+          aria-label="Notifications"
+        >
+          <Bell class="h-4 w-4" />
+          {#if badgeCount > 0}
+            <span
+              class={cn(
+                "absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium",
+                badgeVariant === "destructive" && "bg-red-500 text-white",
+                badgeVariant === "warning" && "bg-orange-500 text-white",
+                badgeVariant === "secondary" && "bg-yellow-500 text-black"
+              )}
+            >
+              {badgeCount}
+            </span>
+          {/if}
+        </Button>
+      {/snippet}
+    </Popover.Trigger>
+    <Popover.Content align="end" class="w-80 p-0">
+      <div class="flex items-center justify-between border-b px-4 py-3">
+        <h4 class="text-sm font-semibold">Notifications</h4>
+        {#if sortedNotifications.length > 0}
+          <a
+            href="/settings/trackers"
+            class="text-xs text-muted-foreground hover:underline"
           >
-            {badgeCount}
-          </span>
+            Manage
+          </a>
         {/if}
-      </Button>
-    {/snippet}
-  </Popover.Trigger>
-  <Popover.Content align="end" class="w-80 p-0">
-    <div class="flex items-center justify-between border-b px-4 py-3">
-      <h4 class="text-sm font-semibold">Notifications</h4>
-      {#if sortedNotifications.length > 0}
-        <a
-          href="/settings/trackers"
-          class="text-xs text-muted-foreground hover:underline"
-        >
-          Manage
-        </a>
+      </div>
+
+      {#if badgeCount === 0}
+        <div class="flex flex-col items-center justify-center py-8 text-center">
+          <Bell class="h-8 w-8 text-muted-foreground/50 mb-2" />
+          <p class="text-sm text-muted-foreground">No active notifications</p>
+          <a
+            href="/settings/trackers"
+            class="mt-2 text-xs text-primary hover:underline"
+          >
+            Set up trackers
+          </a>
+        </div>
+      {:else}
+        <div class="max-h-[350px] overflow-y-auto">
+          {#each sortedNotifications as notification (notification.id)}
+            <NotificationItem
+              {notification}
+              onAction={(actionId) => handleAction(notification, actionId)}
+            />
+          {/each}
+        </div>
       {/if}
-    </div>
 
-    {#if badgeCount === 0}
-      <div class="flex flex-col items-center justify-center py-8 text-center">
-        <Bell class="h-8 w-8 text-muted-foreground/50 mb-2" />
-        <p class="text-sm text-muted-foreground">No active notifications</p>
+      <div class="border-t p-2">
         <a
-          href="/settings/trackers"
-          class="mt-2 text-xs text-primary hover:underline"
+          href="/notifications"
+          class="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+          onclick={() => (isOpen = false)}
         >
-          Set up trackers
+          <span>View all notifications</span>
+          <ChevronRight class="h-4 w-4" />
         </a>
       </div>
-    {:else}
-      <div class="max-h-[350px] overflow-y-auto">
-        {#each sortedNotifications as notification (notification.id)}
-          <NotificationItem
-            {notification}
-            onAction={(actionId) => handleAction(notification, actionId)}
-          />
-        {/each}
-      </div>
-    {/if}
+    </Popover.Content>
+  </Popover.Root>
 
-    <div class="border-t p-2">
-      <a
-        href="/notifications"
-        class="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted"
-        onclick={() => (isOpen = false)}
-      >
-        <span>View all notifications</span>
-        <ChevronRight class="h-4 w-4" />
-      </a>
-    </div>
-  </Popover.Content>
-</Popover.Root>
+  <MealMatchReviewDialog
+    bind:open={reviewDialogOpen}
+    onOpenChange={(value) => {
+      reviewDialogOpen = value;
+      if (!value) reviewNotification = null;
+    }}
+    notification={reviewNotification}
+    onComplete={handleReviewComplete}
+  />
 
-<MealMatchReviewDialog
-  bind:open={reviewDialogOpen}
-  onOpenChange={(value) => {
-    reviewDialogOpen = value;
-    if (!value) reviewNotification = null;
-  }}
-  notification={reviewNotification}
-  onComplete={handleReviewComplete}
-/>
+  {#snippet failed()}
+    <Button
+      variant="ghost"
+      size="icon"
+      class="relative h-8 w-8"
+      aria-label="Notifications unavailable"
+      disabled
+    >
+      <Bell class="h-4 w-4 text-muted-foreground" />
+    </Button>
+  {/snippet}
+</svelte:boundary>

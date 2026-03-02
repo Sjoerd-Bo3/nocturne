@@ -46,7 +46,7 @@
       </Dialog.Description>
     </Dialog.Header>
     <div class="space-y-2 py-2">
-      {#each entries as entry (entry.data.id ?? entry.data.mills)}
+      {#each entries as entry, i (entry.data.id ?? `${entry.data.mills}-${i}`)}
         {@const category = ENTRY_CATEGORIES[entry.kind]}
         <button
           type="button"
