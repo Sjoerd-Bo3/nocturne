@@ -64,16 +64,16 @@
 
   let predictionData: PredictionData | null = $state(null);
 
-  // Determine range status
+  // Determine range status (at-threshold is "In Range", matching getGlucoseColor)
   const rangeStatus = $derived.by(() => {
-    if (glucoseValue >= highThreshold) return "High";
-    if (glucoseValue <= lowThreshold) return "Low";
+    if (glucoseValue > highThreshold) return "High";
+    if (glucoseValue < lowThreshold) return "Low";
     return "In Range";
   });
 
   const rangeBadgeClass = $derived.by(() => {
-    if (glucoseValue >= highThreshold) return "bg-glucose-high/20 text-glucose-high border-glucose-high/30";
-    if (glucoseValue <= lowThreshold) return "bg-glucose-very-low/20 text-glucose-very-low border-glucose-very-low/30";
+    if (glucoseValue > highThreshold) return "bg-glucose-high/20 text-glucose-high border-glucose-high/30";
+    if (glucoseValue < lowThreshold) return "bg-glucose-very-low/20 text-glucose-very-low border-glucose-very-low/30";
     return "bg-glucose-in-range/20 text-glucose-in-range border-glucose-in-range/30";
   });
 
@@ -92,15 +92,16 @@
     return text;
   });
 
-  // Filter glucose data for the prediction chart window
+  // Filter glucose data for the chart window (-15 min to +3 hours, extended by predictions)
   const chartGlucoseData = $derived.by(() => {
     const centerMs = timestamp.getTime();
     const minMs = centerMs - 15 * 60 * 1000;
+    const threeHoursMs = centerMs + 3 * 60 * 60 * 1000;
     // If we have prediction data, extend the window to cover predictions
     const predictionHorizonMs = predictionData?.curves.main.length
       ? Math.max(...predictionData.curves.main.map((p) => p.timestamp))
-      : centerMs + 15 * 60 * 1000;
-    const maxMs = Math.max(centerMs + 15 * 60 * 1000, predictionHorizonMs);
+      : threeHoursMs;
+    const maxMs = Math.max(threeHoursMs, predictionHorizonMs);
     return glucoseData.filter((d) => {
       const t = d.time.getTime();
       return t >= minMs && t <= maxMs;
@@ -201,8 +202,8 @@
       {/if}
     </div>
 
-    <!-- Prediction chart (conditional) -->
-    {#if predictionData && chartGlucoseData.length > 0}
+    <!-- Glucose response chart (shows glucose trace, with prediction overlay when available) -->
+    {#if chartGlucoseData.length > 0}
       <div class="py-2">
         <p class="text-xs text-muted-foreground mb-1">Glucose Response</p>
         <GlucoseResponseChart

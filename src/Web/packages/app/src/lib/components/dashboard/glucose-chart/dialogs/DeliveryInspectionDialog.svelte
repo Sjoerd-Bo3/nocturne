@@ -92,12 +92,14 @@
     }
   });
 
-  // Format sensitivity ratio as percentage deviation
+  // Format sensitivity ratio as percentage deviation with semantic label
   function formatSensitivity(ratio: number | undefined | null): string | null {
     if (ratio == null) return null;
     const deviation = Math.round((ratio - 1) * 100);
-    if (deviation === 0) return "0%";
-    return deviation > 0 ? `+${deviation}%` : `${deviation}%`;
+    if (deviation === 0) return "0% (nominal)";
+    const label = deviation > 0 ? "more sensitive" : "less sensitive";
+    const prefix = deviation > 0 ? `+${deviation}%` : `${deviation}%`;
+    return `${prefix} (${label})`;
   }
 
   // Filter glucose data for the prediction chart window (+-30 min)
@@ -271,8 +273,8 @@
       </div>
     {/if}
 
-    <!-- Prediction chart (conditional on prediction curves) -->
-    {#if predictionData && chartGlucoseData.length > 0}
+    <!-- Glucose response chart (shows glucose trace, with prediction overlay when available) -->
+    {#if chartGlucoseData.length > 0}
       <div class="py-2">
         <p class="text-xs text-muted-foreground mb-1">Glucose Response</p>
         <GlucoseResponseChart
