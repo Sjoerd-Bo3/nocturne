@@ -1,7 +1,6 @@
 <script lang="ts">
   import {
     Card,
-    CardContent,
     CardDescription,
     CardHeader,
     CardTitle,

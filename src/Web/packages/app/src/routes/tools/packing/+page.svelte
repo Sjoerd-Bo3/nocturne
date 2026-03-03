@@ -1,13 +1,7 @@
 <script lang="ts">
-  import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-  } from "$lib/components/ui/card";
+  import { Card, CardContent } from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { Badge } from "$lib/components/ui/badge";
   import {
     Luggage,
     Syringe,
@@ -19,12 +13,12 @@
   } from "lucide-svelte";
   import SupplyCategory from "$lib/components/tools/packing/supply-category.svelte";
   import { categories } from "$lib/components/tools/packing/packing-config";
-  import type { Component } from "svelte";
 
   const { data } = $props();
   let tripDays = $state(7);
 
-  const iconMap: Record<string, Component<{ class?: string }>> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const iconMap: Record<string, any> = {
     Syringe,
     Activity,
     Cpu,
