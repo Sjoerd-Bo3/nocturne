@@ -42,6 +42,7 @@
     Layers,
     ShieldCheck,
     Building2,
+    Luggage,
   } from "lucide-svelte";
   import type { AuthUser } from "$lib/stores/auth-store.svelte";
 
@@ -161,6 +162,13 @@
       title: "Meals",
       href: "/meals",
       icon: Utensils,
+    },
+    {
+      title: "Tools",
+      icon: Luggage,
+      children: [
+        { title: "Packing", href: "/tools/packing", icon: Luggage },
+      ],
     },
     ];
 
