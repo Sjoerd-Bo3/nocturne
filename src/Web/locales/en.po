@@ -17134,114 +17134,9 @@ msgstr ""
 msgid "<0/> Configured"
 msgstr "<0/> Configured"
 
-#: src/routes/tenants/+page.svelte
-msgid "Slug must be at least 3 characters"
-msgstr "Slug must be at least 3 characters"
-
-#: src/routes/tenants/+page.svelte
-msgid "Invalid slug"
-msgstr "Invalid slug"
-
-#: src/routes/tenants/+page.svelte
-msgid "Could not validate slug"
-msgstr "Could not validate slug"
-
-#: src/routes/tenants/+page.svelte
-msgid "Failed to create tenant. Please try again."
-msgstr "Failed to create tenant. Please try again."
-
-#: src/routes/tenants/+page.svelte
-msgid "Manage and switch between your Nocturne instances"
-msgstr "Manage and switch between your Nocturne instances"
-
-#: src/routes/tenants/+page.svelte
-msgid "Multitenancy not configured"
-msgstr "Multitenancy not configured"
-
-#: src/routes/tenants/+page.svelte
-msgid ""
-"A base domain must be configured to enable URL-based tenant switching\n"
-"and tenant creation."
-msgstr ""
-"A base domain must be configured to enable URL-based tenant switching\n"
-"and tenant creation."
-
-#: src/routes/tenants/+page.svelte
-msgid "Tenant creation managed externally"
-msgstr "Tenant creation managed externally"
-
-#: src/routes/tenants/+page.svelte
-msgid ""
-"New tenants are managed by your service provider. Contact your\n"
-"administrator to request a new instance."
-msgstr ""
-"New tenants are managed by your service provider. Contact your\n"
-"administrator to request a new instance."
-
-#: src/routes/tenants/+page.svelte
-msgid "<0/> Create new tenant"
-msgstr "<0/> Create new tenant"
-
-#: src/routes/tenants/+page.svelte
-msgid "Create new tenant"
-msgstr "Create new tenant"
-
-#: src/routes/tenants/+page.svelte
-msgid "Set up a new Nocturne instance with its own subdomain"
-msgstr "Set up a new Nocturne instance with its own subdomain"
-
-#: src/routes/tenants/+page.svelte
-msgid "Subdomain"
-msgstr "Subdomain"
-
-#: src/routes/tenants/+page.svelte
-msgid "Checking availability..."
-msgstr "Checking availability..."
-
-#: src/routes/tenants/+page.svelte
-msgid "Display name"
-msgstr "Display name"
-
-#: src/routes/tenants/+page.svelte
-msgid "My Nocturne Instance"
-msgstr "My Nocturne Instance"
-
-#: src/routes/tenants/+page.svelte
-msgid "API secret (optional)"
-msgstr "API secret (optional)"
-
-#: src/routes/tenants/+page.svelte
-msgid "For Nightscout compatibility"
-msgstr "For Nightscout compatibility"
-
-#: src/routes/tenants/+page.svelte
-msgid "Only needed for legacy Nightscout client compatibility"
-msgstr "Only needed for legacy Nightscout client compatibility"
-
-#: src/routes/tenants/+page.svelte
-msgid "<0/> Create tenant"
-msgstr "<0/> Create tenant"
-
-#. placeholder {0}: time ? ` @ ${time}` : ""
-#: src/lib/components/reports/InsulinDonutChart.svelte
-msgid "Bolus{0}"
-msgstr "Bolus{0}"
-
-#: src/lib/components/reports/InsulinDonutChart.svelte
-msgid "Additional Basal"
-msgstr "Additional Basal"
-
-#: src/lib/components/reports/InsulinDonutChart.svelte
-msgid "Click to view"
-msgstr "Click to view"
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
-msgid "Inspect Point"
-msgstr "Inspect Point"
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
-msgid "Multiple data types available at this time. Choose what to inspect."
-msgstr "Multiple data types available at this time. Choose what to inspect."
+#: src/lib/components/dashboard/glucose-chart/GlucoseChartCard.svelte
+msgid "Delivery"
+msgstr "Delivery"
 
 #: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
 msgid "Inferred"
@@ -17364,6 +17259,14 @@ msgstr "Basal data may be stale. The last update was received some time ago."
 msgid "<0/> Treatments"
 msgstr "<0/> Treatments"
 
+#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
+msgid "Inspect Point"
+msgstr "Inspect Point"
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
+msgid "Multiple data types available at this time. Choose what to inspect."
+msgstr "Multiple data types available at this time. Choose what to inspect."
+
 #: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
 msgid "Activities"
 msgstr "Activities"
@@ -17372,6 +17275,10 @@ msgstr "Activities"
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
 msgid "<0/> Delivery"
 msgstr "<0/> Delivery"
+
+#: src/lib/components/entries/EntryEditDialog.svelte
+msgid "Source:"
+msgstr "Source:"
 
 #. placeholder {0}: bolusInsulin
 #. placeholder {1}: bolusType ? ` ${bolusType}` : ""
@@ -17388,6 +17295,14 @@ msgstr "{0}g{1}"
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
 msgid "BG at time"
 msgstr "BG at time"
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Bolus Source"
+msgstr "Bolus Source"
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Carb Source"
+msgstr "Carb Source"
 
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
 msgid "Decision Audit"
@@ -17431,18 +17346,107 @@ msgstr "Pre-bolus"
 msgid "Related Entries"
 msgstr "Related Entries"
 
-#: src/lib/components/dashboard/glucose-chart/GlucoseChartCard.svelte
-msgid "Delivery"
-msgstr "Delivery"
+#: src/routes/tenants/+page.svelte
+msgid "Slug must be at least 3 characters"
+msgstr "Slug must be at least 3 characters"
 
-#: src/lib/components/entries/EntryEditDialog.svelte
-msgid "Source:"
-msgstr "Source:"
+#: src/routes/tenants/+page.svelte
+msgid "Invalid slug"
+msgstr "Invalid slug"
 
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Bolus Source"
-msgstr "Bolus Source"
+#: src/routes/tenants/+page.svelte
+msgid "Could not validate slug"
+msgstr "Could not validate slug"
 
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Carb Source"
-msgstr "Carb Source"
+#: src/routes/tenants/+page.svelte
+msgid "Failed to create tenant. Please try again."
+msgstr "Failed to create tenant. Please try again."
+
+#: src/routes/tenants/+page.svelte
+msgid "Manage and switch between your Nocturne instances"
+msgstr "Manage and switch between your Nocturne instances"
+
+#: src/routes/tenants/+page.svelte
+msgid "Multitenancy not configured"
+msgstr "Multitenancy not configured"
+
+#: src/routes/tenants/+page.svelte
+msgid ""
+"A base domain must be configured to enable URL-based tenant switching\n"
+"and tenant creation."
+msgstr ""
+"A base domain must be configured to enable URL-based tenant switching\n"
+"and tenant creation."
+
+#: src/routes/tenants/+page.svelte
+msgid "Tenant creation managed externally"
+msgstr "Tenant creation managed externally"
+
+#: src/routes/tenants/+page.svelte
+msgid ""
+"New tenants are managed by your service provider. Contact your\n"
+"administrator to request a new instance."
+msgstr ""
+"New tenants are managed by your service provider. Contact your\n"
+"administrator to request a new instance."
+
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Create new tenant"
+msgstr "<0/> Create new tenant"
+
+#: src/routes/tenants/+page.svelte
+msgid "Create new tenant"
+msgstr "Create new tenant"
+
+#: src/routes/tenants/+page.svelte
+msgid "Set up a new Nocturne instance with its own subdomain"
+msgstr "Set up a new Nocturne instance with its own subdomain"
+
+#: src/routes/tenants/+page.svelte
+msgid "Subdomain"
+msgstr "Subdomain"
+
+#: src/routes/tenants/+page.svelte
+msgid "Checking availability..."
+msgstr "Checking availability..."
+
+#: src/routes/tenants/+page.svelte
+msgid "Display name"
+msgstr "Display name"
+
+#: src/routes/tenants/+page.svelte
+msgid "My Nocturne Instance"
+msgstr "My Nocturne Instance"
+
+#: src/routes/tenants/+page.svelte
+msgid "API secret (optional)"
+msgstr "API secret (optional)"
+
+#: src/routes/tenants/+page.svelte
+msgid "For Nightscout compatibility"
+msgstr "For Nightscout compatibility"
+
+#: src/routes/tenants/+page.svelte
+msgid "Only needed for legacy Nightscout client compatibility"
+msgstr "Only needed for legacy Nightscout client compatibility"
+
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Create tenant"
+msgstr "<0/> Create tenant"
+
+#: src/lib/components/layout/SidebarNotifications.svelte
+msgid "Notifications unavailable"
+msgstr "Notifications unavailable"
+
+#. placeholder {0}: time ? ` @ ${time}` : ""
+#: src/lib/components/reports/InsulinDonutChart.svelte
+msgid "Bolus{0}"
+msgstr "Bolus{0}"
+
+#: src/lib/components/reports/InsulinDonutChart.svelte
+msgid "Additional Basal"
+msgstr "Additional Basal"
+
+#: src/lib/components/reports/InsulinDonutChart.svelte
+msgid "Click to view"
+msgstr "Click to view"

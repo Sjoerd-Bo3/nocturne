@@ -1009,14 +1009,13 @@ msgstr ""
 #. placeholder {0}: afternoon.toFixed(1)
 #. placeholder {0}: evening.toFixed(1)
 #. placeholder {0}: d.value.toFixed(2)
-#. placeholder {0}: formatInsulinDisplay(averages.avgTotalDaily)
+#. placeholder {0}: totalInsulin.toFixed(1)
 #. placeholder {0}: totalInsulin.toFixed(1)
 #. placeholder {0}: day.totalBolus.toFixed(1)
 #. placeholder {0}: day.totalBasal.toFixed(1)
 #. placeholder {0}: monthSummary.tdd.toFixed(1)
 #. placeholder {0}: dayTotalInsulin.toFixed(1)
 #. placeholder {0}: meal.correlatedBolus.insulin.toFixed(1)
-#. placeholder {0}: (row.insulin ?? 0).toFixed(2)
 #: src/lib/components/dashboard/GlucoseChartCard.svelte
 #: src/lib/components/dashboard/glucose-chart/markers/BolusMarker.svelte
 #: src/lib/components/reports/ApsStateCard.svelte
@@ -18004,6 +18003,218 @@ msgstr ""
 msgid "<0/> Configured"
 msgstr ""
 
+#: src/lib/components/dashboard/glucose-chart/GlucoseChartCard.svelte
+msgid "Delivery"
+msgstr ""
+
+#. placeholder {0}: snapshot.enactedBolusVolume.toFixed(2)
+#. placeholder {0}: iob.toFixed(2)
+#. placeholder {0}: iob.toFixed(1)
+#. placeholder {0}: iob.toFixed(1)
+#. placeholder {0}: bolusCalc.insulinRecommendation.toFixed(2)
+#. placeholder {0}: bolusCalc.insulinProgrammed.toFixed(2)
+#. placeholder {0}: bolusCalc.insulinOnBoard.toFixed(2)
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+#: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "{0} U"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
+msgid "Activities"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+#: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Glucose Response"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "<0/> Delivery"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+#: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
+msgid "<0/> Treatments"
+msgstr ""
+
+#. placeholder {0}: bolusInsulin
+#. placeholder {1}: bolusType ? ` ${bolusType}` : ""
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "<0/> {0}U{1}"
+msgstr ""
+
+#. placeholder {0}: carbGrams
+#. placeholder {1}: carbLabel ? ` ${carbLabel}` : " carbs"
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "{0}g{1}"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "BG at time"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Bolus Source"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Carb Source"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Decision Audit"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "BG Input"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Carb Input"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Carb Ratio"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "IOB Correction"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Calculation Type"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Split Bolus"
+msgstr ""
+
+#. placeholder {0}: bolusCalc.splitNow
+#. placeholder {1}: bolusCalc.splitExt
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "{0}% now / {1}% ext"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Pre-bolus"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Related Entries"
+msgstr ""
+
+#: src/lib/components/entries/EntryEditDialog.svelte
+msgid "Source:"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Inferred"
+msgstr ""
+
+#. placeholder {0}: scheduledBasalRate.toFixed(2)
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "· Scheduled: {0} U/hr"
+msgstr ""
+
+#. placeholder {0}: tempBasalRate.toFixed(2)
+#. placeholder {1}: tempBasalPercent != null ? ` (${tempBasalPercent}%)` : ""
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Temp: {0} U/hr{1} <0/>"
+msgstr ""
+
+#. placeholder {0}: scheduledBasalRate.toFixed(2)
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Scheduled: {0} U/hr"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Loop Decision"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Enacted"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Suggested Only"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Enacted Rate"
+msgstr ""
+
+#. placeholder {0}: snapshot.enactedDuration
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "for {0} min"
+msgstr ""
+
+#. placeholder {0}: snapshot.enactedRate.toFixed(2)
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "{0} U/hr <0/>"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "SMB / Auto-bolus"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Eventual BG"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Target BG"
+msgstr ""
+
+#. placeholder {0}: snapshot.basalIob.toFixed(2)
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "basal {0}"
+msgstr ""
+
+#. placeholder {0}: snapshot.bolusIob.toFixed(2)
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "bolus {0}"
+msgstr ""
+
+#. placeholder {0}: snapshot.iob.toFixed(2)
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "{0} U <0/>"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Active Modifiers"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Override: <0/>"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Profile: <0/>"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Temp Basal: <0>{0} U/hr{1}</0>"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
+msgid "Basal data may be stale. The last update was received some time ago."
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
+msgid "Inspect Point"
+msgstr ""
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
+msgid "Multiple data types available at this time. Choose what to inspect."
+msgstr ""
+
 #: src/routes/tenants/+page.svelte
 msgid "Slug must be at least 3 characters"
 msgstr ""
@@ -18088,6 +18299,10 @@ msgstr ""
 msgid "<0/> Create tenant"
 msgstr ""
 
+#: src/lib/components/layout/SidebarNotifications.svelte
+msgid "Notifications unavailable"
+msgstr ""
+
 #. placeholder {0}: time ? ` @ ${time}` : ""
 #: src/lib/components/reports/InsulinDonutChart.svelte
 msgid "Bolus{0}"
@@ -18099,216 +18314,4 @@ msgstr ""
 
 #: src/lib/components/reports/InsulinDonutChart.svelte
 msgid "Click to view"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Inferred"
-msgstr ""
-
-#. placeholder {0}: scheduledBasalRate.toFixed(2)
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "· Scheduled: {0} U/hr"
-msgstr ""
-
-#. placeholder {0}: tempBasalRate.toFixed(2)
-#. placeholder {1}: tempBasalPercent != null ? ` (${tempBasalPercent}%)` : ""
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Temp: {0} U/hr{1} <0/>"
-msgstr ""
-
-#. placeholder {0}: scheduledBasalRate.toFixed(2)
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Scheduled: {0} U/hr"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Loop Decision"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Enacted"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Suggested Only"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Enacted Rate"
-msgstr ""
-
-#. placeholder {0}: snapshot.enactedDuration
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "for {0} min"
-msgstr ""
-
-#. placeholder {0}: snapshot.enactedRate.toFixed(2)
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "{0} U/hr <0/>"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "SMB / Auto-bolus"
-msgstr ""
-
-#. placeholder {0}: snapshot.enactedBolusVolume.toFixed(2)
-#. placeholder {0}: iob.toFixed(2)
-#. placeholder {0}: iob.toFixed(1)
-#. placeholder {0}: iob.toFixed(1)
-#. placeholder {0}: bolusCalc.insulinRecommendation.toFixed(2)
-#. placeholder {0}: bolusCalc.insulinProgrammed.toFixed(2)
-#. placeholder {0}: bolusCalc.insulinOnBoard.toFixed(2)
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-#: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "{0} U"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Eventual BG"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Target BG"
-msgstr ""
-
-#. placeholder {0}: snapshot.basalIob.toFixed(2)
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "basal {0}"
-msgstr ""
-
-#. placeholder {0}: snapshot.bolusIob.toFixed(2)
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "bolus {0}"
-msgstr ""
-
-#. placeholder {0}: snapshot.iob.toFixed(2)
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "{0} U <0/>"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-#: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Glucose Response"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Active Modifiers"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Override: <0/>"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Profile: <0/>"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Temp Basal: <0>{0} U/hr{1}</0>"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-msgid "Basal data may be stale. The last update was received some time ago."
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
-#: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
-msgid "<0/> Treatments"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
-msgid "Activities"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "<0/> Delivery"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
-msgid "Inspect Point"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
-msgid "Multiple data types available at this time. Choose what to inspect."
-msgstr ""
-
-#. placeholder {0}: bolusInsulin
-#. placeholder {1}: bolusType ? ` ${bolusType}` : ""
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "<0/> {0}U{1}"
-msgstr ""
-
-#. placeholder {0}: carbGrams
-#. placeholder {1}: carbLabel ? ` ${carbLabel}` : " carbs"
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "{0}g{1}"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "BG at time"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Decision Audit"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "BG Input"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Carb Input"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Carb Ratio"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "IOB Correction"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Calculation Type"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Split Bolus"
-msgstr ""
-
-#. placeholder {0}: bolusCalc.splitNow
-#. placeholder {1}: bolusCalc.splitExt
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "{0}% now / {1}% ext"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Pre-bolus"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Related Entries"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/GlucoseChartCard.svelte
-msgid "Delivery"
-msgstr ""
-
-#: src/lib/components/entries/EntryEditDialog.svelte
-msgid "Source:"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Bolus Source"
-msgstr ""
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Carb Source"
 msgstr ""

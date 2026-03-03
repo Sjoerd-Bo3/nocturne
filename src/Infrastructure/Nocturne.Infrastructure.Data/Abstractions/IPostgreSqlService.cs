@@ -25,14 +25,19 @@ public record DataSourceStats(
 )
 {
     /// <summary>
-    /// Total items (entries + treatments + state spans) from this data source
+    /// Total items across all tables (legacy + V4) from this data source.
+    /// Uses TypeBreakdown which already combines legacy and V4 counts.
     /// </summary>
-    public long TotalItems => TotalEntries + TotalTreatments + TotalStateSpans;
+    public long TotalItems => TypeBreakdown.Count > 0
+        ? TypeBreakdown.Values.Sum()
+        : TotalEntries + TotalTreatments + TotalStateSpans;
 
     /// <summary>
-    /// Total items in the last 24 hours
+    /// Total items in the last 24 hours across all tables (legacy + V4)
     /// </summary>
-    public int ItemsLast24Hours => EntriesLast24Hours + TreatmentsLast24Hours + StateSpansLast24Hours;
+    public int ItemsLast24Hours => TypeBreakdownLast24Hours.Count > 0
+        ? TypeBreakdownLast24Hours.Values.Sum()
+        : EntriesLast24Hours + TreatmentsLast24Hours + StateSpansLast24Hours;
 
     /// <summary>
     /// Most recent item time (entry, treatment, or state span)
