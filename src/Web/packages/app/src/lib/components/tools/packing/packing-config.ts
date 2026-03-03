@@ -89,11 +89,20 @@ export const categories: SupplyCategoryConfig[] = [
     items: [
       {
         id: "infusion-sets",
-        label: "Infusion sets / cannulas",
+        label: "Infusion sets",
         mode: "interval",
         defaultInterval: 3,
         defaultBuffer: 1,
-        hintEventTypes: ["SiteChange", "CannulaChange"],
+        hintEventTypes: ["SiteChange"],
+        defaultEnabled: true,
+      },
+      {
+        id: "cannulas",
+        label: "Cannulas",
+        mode: "interval",
+        defaultInterval: 3,
+        defaultBuffer: 1,
+        hintEventTypes: ["CannulaChange"],
         defaultEnabled: true,
       },
       {

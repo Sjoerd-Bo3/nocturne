@@ -30,7 +30,7 @@
       normal: s.timeInRange?.normal ?? 0,
       aboveTarget: s.timeInRange?.aboveTarget ?? 0,
       high: s.timeInRange?.high ?? 0,
-      veryHigh: (s.timeInRange?.veryHigh ?? 0) + (s.timeInRange?.veryHigh ?? 0),
+      veryHigh: s.timeInRange?.veryHigh ?? 0,
       count: s.count ?? 0,
     }));
   }

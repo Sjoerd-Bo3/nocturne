@@ -155,7 +155,7 @@ export const getPunchCardData = query(punchCardSchema, async ({
     const rangeStats = tirMetrics?.rangeStats;
     const averageGlucose = rangeStats?.target?.mean ?? rangeStats?.low?.mean ?? 0;
 
-    const dateStr = currentDate.toISOString().split("T")[0];
+    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(currentDate.getDate()).padStart(2, "0")}`;
 
     const totals = treatmentSummary?.totals;
     const totalCarbs = totals?.food?.carbs ?? 0;

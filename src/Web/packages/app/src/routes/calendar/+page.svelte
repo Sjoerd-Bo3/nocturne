@@ -78,11 +78,10 @@
   // Calculate date range for current view (full month)
   // Use full ISO timestamps to ensure the entire day is included
   const dateRangeInput = $derived.by(() => {
-    const firstDay = new Date(currentYear, currentMonth, 1, 0, 0, 0, 0);
-    const lastDay = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     return {
-      fromDate: firstDay.toISOString().split("T")[0],
-      toDate: lastDay.toISOString().split("T")[0],
+      fromDate: `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`,
+      toDate: `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDayOfMonth).padStart(2, "0")}`,
     };
   });
 
@@ -250,7 +249,9 @@
 
   // Check if a day is today
   function isToday(date: string): boolean {
-    return date === new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return date === todayStr;
   }
 
   // Get cell classes based on day state

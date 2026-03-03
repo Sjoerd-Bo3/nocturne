@@ -86,6 +86,9 @@
   --chart-3: rgb(255, 240, 23); /* Lemon/Carbs */
   --chart-4: rgb(255, 132, 69); /* UAM */
   --chart-5: rgb(113, 97, 239); /* ZT */
+  --percentile-outer: oklch(0.90 0.04 250);
+  --percentile-inner: oklch(0.78 0.08 250);
+  --percentile-median: oklch(0.45 0.15 250);
 }
 
 /* Dark mode - applied when both .trio-theme and .dark are on document */
@@ -122,4 +125,7 @@
   --chart-3: rgb(255, 240, 23);
   --chart-4: rgb(255, 132, 69);
   --chart-5: rgb(113, 97, 239);
+  --percentile-outer: oklch(0.28 0.05 250);
+  --percentile-inner: oklch(0.38 0.10 250);
+  --percentile-median: oklch(0.75 0.15 250);
 }

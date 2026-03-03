@@ -1395,14 +1395,14 @@
                 <code
                   class="flex-1 px-3 py-2 rounded-md bg-muted text-sm font-mono truncate"
                 >
-                  {servicesOverview.apiEndpoint.baseUrl}
+                  {window.location.origin}
                 </code>
                 <Button
                   variant="outline"
                   size="icon"
                   onclick={() =>
                     copyToClipboard(
-                      servicesOverview!.apiEndpoint!.baseUrl!,
+                      window.location.origin,
                       "baseUrl"
                     )}
                 >
@@ -1420,14 +1420,14 @@
                 <code
                   class="flex-1 px-3 py-2 rounded-md bg-muted text-sm font-mono truncate"
                 >
-                  {servicesOverview.apiEndpoint.entriesEndpoint}
+                  {`${window.location.origin}/api/v1/entries`}
                 </code>
                 <Button
                   variant="outline"
                   size="icon"
                   onclick={() =>
                     copyToClipboard(
-                      servicesOverview!.apiEndpoint!.entriesEndpoint!,
+                      `${window.location.origin}/api/v1/entries`,
                       "entries"
                     )}
                 >
@@ -1500,9 +1500,9 @@
 <Dialog.Root bind:open={showSetupDialog}>
   <Dialog.Content class="max-w-2xl max-h-[80vh] overflow-y-auto">
     {#if selectedUploader && uploaderSetup}
+      {@const PlatformIcon = getPlatformIcon(selectedUploader.platform)}
       <Dialog.Header>
         <Dialog.Title class="flex items-center gap-2">
-          {@const PlatformIcon = getPlatformIcon(selectedUploader.platform)}
           <PlatformIcon class="h-5 w-5" />
           Set up {selectedUploader.name}
         </Dialog.Title>
@@ -1522,13 +1522,13 @@
               <code
                 class="flex-1 px-3 py-2 rounded-md bg-muted text-sm font-mono break-all"
               >
-                {uploaderSetup.baseUrl}
+                {window.location.origin}
               </code>
               <Button
                 variant="outline"
                 size="icon"
                 onclick={() =>
-                  copyToClipboard(uploaderSetup!.baseUrl!, "dialogUrl")}
+                  copyToClipboard(window.location.origin, "dialogUrl")}
               >
                 {#if copiedField === "dialogUrl"}
                   <Check class="h-4 w-4 text-green-500" />
@@ -1548,13 +1548,13 @@
                 <code
                   class="flex-1 px-3 py-2 rounded-md bg-muted text-sm font-mono break-all"
                 >
-                  {uploaderSetup.xdripStyleUrl}
+                  {`https://YOUR-API-SECRET@${window.location.host}/api/v1`}
                 </code>
                 <Button
                   variant="outline"
                   size="icon"
                   onclick={() =>
-                    copyToClipboard(uploaderSetup!.xdripStyleUrl!, "xdripUrl")}
+                    copyToClipboard(`https://YOUR-API-SECRET@${window.location.host}/api/v1`, "xdripUrl")}
                 >
                   {#if copiedField === "xdripUrl"}
                     <Check class="h-4 w-4 text-green-500" />

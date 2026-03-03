@@ -7,11 +7,15 @@
   } from "$lib/components/ui/card";
   import * as Collapsible from "$lib/components/ui/collapsible";
   import { Badge } from "$lib/components/ui/badge";
-  import { Separator } from "$lib/components/ui/separator";
   import { ChevronDown, ChevronRight } from "lucide-svelte";
   import SupplyItem from "./supply-item.svelte";
   import type { SupplyCategoryConfig } from "./packing-config";
   import type { Component } from "svelte";
+
+  interface ItemState {
+    enabled: boolean;
+    quantity: number;
+  }
 
   interface Props {
     config: SupplyCategoryConfig;
@@ -19,11 +23,17 @@
     tripDays: number;
     avgTdd: number | null;
     eventIntervals: Record<string, number>;
+    itemStates: ItemState[];
   }
 
-  const { config, icon: Icon, tripDays, avgTdd, eventIntervals }: Props = $props();
+  const { config, icon: Icon, tripDays, avgTdd, eventIntervals, itemStates = $bindable([]) }: Props =
+    $props();
 
   let expanded = $state(true);
+
+  const categoryTotal = $derived(
+    itemStates.reduce((sum, s) => sum + (s.enabled ? s.quantity : 0), 0)
+  );
 
   function getHintInterval(item: SupplyCategoryConfig["items"][number]): number | null {
     if (!item.hintEventTypes) return null;
@@ -39,16 +49,16 @@
 <Collapsible.Root bind:open={expanded}>
   <Card>
     <Collapsible.Trigger class="w-full">
-      <CardHeader class="cursor-pointer hover:bg-muted/50 transition-colors">
+      <CardHeader class="cursor-pointer hover:bg-muted/50 transition-colors py-3">
         <div class="flex items-center justify-between">
-          <CardTitle class="flex items-center gap-2 text-base">
-            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <Icon class="h-4 w-4 text-primary" />
-            </div>
+          <CardTitle class="flex items-center gap-2 text-sm font-semibold">
+            <Icon class="h-4 w-4 text-muted-foreground" />
             {config.label}
-            <Badge variant="secondary" class="text-xs font-normal">
-              {config.items.length}
-            </Badge>
+            {#if categoryTotal > 0}
+              <Badge variant="secondary" class="text-xs font-normal tabular-nums">
+                {categoryTotal} items
+              </Badge>
+            {/if}
           </CardTitle>
           {#if expanded}
             <ChevronDown class="h-4 w-4 text-muted-foreground" />
@@ -59,17 +69,18 @@
       </CardHeader>
     </Collapsible.Trigger>
     <Collapsible.Content>
-      <CardContent class="pt-0">
+      <CardContent class="pt-0 pb-3">
         {#each config.items as item, i}
-          {#if i > 0}
-            <Separator />
+          {#if itemStates[i]}
+            <SupplyItem
+              config={item}
+              {tripDays}
+              {avgTdd}
+              hintInterval={getHintInterval(item)}
+              bind:enabled={itemStates[i].enabled}
+              bind:quantity={itemStates[i].quantity}
+            />
           {/if}
-          <SupplyItem
-            config={item}
-            {tripDays}
-            {avgTdd}
-            hintInterval={getHintInterval(item)}
-          />
         {/each}
       </CardContent>
     </Collapsible.Content>
