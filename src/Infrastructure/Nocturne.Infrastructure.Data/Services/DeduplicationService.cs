@@ -400,8 +400,39 @@ public class DeduplicationService : IDeduplicationService
 
         var isPrimary = existingInGroup == null || mills < existingInGroup.SourceTimestamp;
 
+        // If the existing primary references a record that no longer exists,
+        // clean up the orphaned entries and promote this record to primary.
+        if (!isPrimary && existingInGroup is { IsPrimary: true })
+        {
+            var primaryExists = await RecordExistsAsync(recordTypeStr, existingInGroup.RecordId, cancellationToken);
+            if (!primaryExists)
+            {
+                // Remove all orphaned linked records in this group
+                var orphaned = await _context.LinkedRecords
+                    .Where(lr => lr.CanonicalId == canonicalId)
+                    .ToListAsync(cancellationToken);
+                var orphanedIds = orphaned.Select(lr => lr.RecordId).ToHashSet();
+
+                foreach (var o in orphaned)
+                {
+                    var exists = orphanedIds.Contains(recordId) && o.RecordId == recordId
+                        ? true // The record we're about to link obviously exists
+                        : await RecordExistsAsync(recordTypeStr, o.RecordId, cancellationToken);
+                    if (!exists)
+                    {
+                        _context.LinkedRecords.Remove(o);
+                    }
+                }
+
+                isPrimary = true;
+                _logger.LogDebug(
+                    "Promoted {RecordType} {RecordId} to primary after orphaned primary cleanup in canonical {CanonicalId}",
+                    recordType, recordId, canonicalId);
+            }
+        }
+
         // If this is the new primary, demote the old primary
-        if (isPrimary && existingInGroup != null)
+        if (isPrimary && existingInGroup != null && _context.Entry(existingInGroup).State != Microsoft.EntityFrameworkCore.EntityState.Deleted)
         {
             existingInGroup.IsPrimary = false;
         }
@@ -422,6 +453,24 @@ public class DeduplicationService : IDeduplicationService
         _logger.LogDebug(
             "Linked {RecordType} {RecordId} to canonical {CanonicalId} (primary: {IsPrimary})",
             recordType, recordId, canonicalId, isPrimary);
+    }
+
+    private async Task<bool> RecordExistsAsync(string recordType, Guid recordId, CancellationToken ct)
+    {
+        return recordType switch
+        {
+            "bolus" => await _context.Boluses.AnyAsync(b => b.Id == recordId, ct),
+            "carbintake" => await _context.CarbIntakes.AnyAsync(c => c.Id == recordId, ct),
+            "sensorglucose" => await _context.SensorGlucose.AnyAsync(s => s.Id == recordId, ct),
+            "tempbasal" => await _context.TempBasals.AnyAsync(t => t.Id == recordId, ct),
+            "entry" => await _context.Entries.AnyAsync(e => e.Id == recordId, ct),
+            "treatment" => await _context.Treatments.AnyAsync(t => t.Id == recordId, ct),
+            "bgcheck" => await _context.BGChecks.AnyAsync(b => b.Id == recordId, ct),
+            "deviceevent" => await _context.DeviceEvents.AnyAsync(d => d.Id == recordId, ct),
+            "note" => await _context.Notes.AnyAsync(n => n.Id == recordId, ct),
+            "boluscalculation" => await _context.BolusCalculations.AnyAsync(b => b.Id == recordId, ct),
+            _ => true // Assume exists for unknown types to avoid accidental promotion
+        };
     }
 
     /// <inheritdoc />

@@ -1841,6 +1841,13 @@ public class StatisticsService : IStatisticsService
         };
     }
 
+    private static string MillsToLocalDateString(long mills, TimeZoneInfo tz)
+    {
+        var utc = DateTimeOffset.FromUnixTimeMilliseconds(mills);
+        var local = TimeZoneInfo.ConvertTime(utc, tz);
+        return local.ToString("yyyy-MM-dd");
+    }
+
     /// <summary>
     /// Calculate the insulin delivered (units) for a single TempBasal record.
     /// duration = (EndMills ?? StartMills + 5 min) - StartMills, converted to hours.
@@ -1929,9 +1936,11 @@ public class StatisticsService : IStatisticsService
     public DailyBasalBolusRatioResponse CalculateDailyBasalBolusRatios(
         IEnumerable<Bolus> boluses,
         IEnumerable<Bolus> algorithmBoluses,
-        IEnumerable<TempBasal> tempBasals
+        IEnumerable<TempBasal> tempBasals,
+        TimeZoneInfo? userTimeZone = null
     )
     {
+        var tz = userTimeZone ?? TimeZoneInfo.Utc;
         var bolusList = boluses.ToList();
         var dailyData = new Dictionary<string, (double Basal, double Bolus)>();
 
@@ -1941,8 +1950,7 @@ public class StatisticsService : IStatisticsService
             if (bolus.Insulin <= 0 || bolus.Mills <= 0)
                 continue;
 
-            var date = DateTimeOffset.FromUnixTimeMilliseconds(bolus.Mills).DateTime;
-            var dateKey = date.ToString("yyyy-MM-dd");
+            var dateKey = MillsToLocalDateString(bolus.Mills, tz);
             if (!dailyData.ContainsKey(dateKey))
                 dailyData[dateKey] = (0, 0);
 
@@ -1957,8 +1965,7 @@ public class StatisticsService : IStatisticsService
             if (basalInsulin <= 0)
                 continue;
 
-            var tbDate = DateTimeOffset.FromUnixTimeMilliseconds(tb.StartMills).DateTime;
-            var dateKey = tbDate.ToString("yyyy-MM-dd");
+            var dateKey = MillsToLocalDateString(tb.StartMills, tz);
             if (!dailyData.ContainsKey(dateKey))
                 dailyData[dateKey] = (0, 0);
 
@@ -1972,8 +1979,7 @@ public class StatisticsService : IStatisticsService
             if (ab.Insulin <= 0 || ab.Mills <= 0)
                 continue;
 
-            var abDate = DateTimeOffset.FromUnixTimeMilliseconds(ab.Mills).DateTime;
-            var dateKey = abDate.ToString("yyyy-MM-dd");
+            var dateKey = MillsToLocalDateString(ab.Mills, tz);
             if (!dailyData.ContainsKey(dateKey))
                 dailyData[dateKey] = (0, 0);
 

@@ -1,3 +1,4 @@
+using Nocturne.Connectors.MyLife.Mappers.Constants;
 using Nocturne.Connectors.MyLife.Mappers.Handlers;
 using Nocturne.Connectors.MyLife.Models;
 using Nocturne.Core.Models.V4;
@@ -32,17 +33,29 @@ internal sealed class MyLifeStateSpanMapper
     {
         // Create a context - we reuse the treatment context for consistency
         // with the temp basal consolidation logic
+        var eventList = events.ToList();
         var context = MyLifeContext.Create(
-            events,
+            eventList,
             false,
             enableTempBasalConsolidation,
             tempBasalConsolidationWindowMinutes
         );
 
+        // When BasalRate (17) events exist, skip Basal (22) events to avoid
+        // double-counting. BasalRate events are the authoritative rate source
+        // for algorithm pumps (CamAPS); Basal events are redundant delivery
+        // confirmations that overlap with the same time periods.
+        var hasBasalRateEvents = eventList.Any(e =>
+            !e.Deleted && e.EventTypeId == MyLifeEventType.BasalRate);
+
         var tempBasals = new List<TempBasal>();
-        foreach (var ev in events)
+        foreach (var ev in eventList)
         {
             if (ev.Deleted)
+                continue;
+
+            // Skip Basal amount events when BasalRate events are present
+            if (hasBasalRateEvents && ev.EventTypeId == MyLifeEventType.Basal)
                 continue;
 
             foreach (var handler in Handlers)

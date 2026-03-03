@@ -614,6 +614,20 @@ public class InProcessConnectorPublisher : IConnectorPublisher
             if (recordList.Count == 0)
                 return true;
 
+            // Delete existing TempBasals from the same source for the sync range
+            // before reinserting. This ensures stale records from previous processing
+            // logic (e.g. overlapping event types) are cleaned up on re-sync.
+            var minTimestamp = recordList.Min(r => r.StartTimestamp);
+            var maxTimestamp = recordList.Max(r => r.StartTimestamp);
+            var deleted = await _tempBasalRepository.DeleteBySourceAndDateRangeAsync(
+                source, minTimestamp, maxTimestamp, cancellationToken);
+            if (deleted > 0)
+            {
+                _logger.LogDebug(
+                    "Deleted {Count} existing TempBasal records for {Source} in range {From}-{To}",
+                    deleted, source, minTimestamp, maxTimestamp);
+            }
+
             await _tempBasalRepository.BulkCreateAsync(recordList, cancellationToken);
             _logger.LogDebug(
                 "Published {Count} TempBasal records for {Source}",

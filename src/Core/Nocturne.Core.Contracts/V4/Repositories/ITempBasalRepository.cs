@@ -25,4 +25,10 @@ public interface ITempBasalRepository
         IEnumerable<TempBasal> records,
         CancellationToken ct = default
     );
+    Task<int> DeleteBySourceAndDateRangeAsync(
+        string source,
+        DateTime from,
+        DateTime to,
+        CancellationToken ct = default
+    );
 }

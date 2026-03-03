@@ -178,7 +178,8 @@ public interface IStatisticsService
     DailyBasalBolusRatioResponse CalculateDailyBasalBolusRatios(
         IEnumerable<Bolus> boluses,
         IEnumerable<Bolus> algorithmBoluses,
-        IEnumerable<TempBasal> tempBasals);
+        IEnumerable<TempBasal> tempBasals,
+        TimeZoneInfo? userTimeZone = null);
 
     /// <summary>
     /// Calculate comprehensive basal analysis statistics from TempBasals.

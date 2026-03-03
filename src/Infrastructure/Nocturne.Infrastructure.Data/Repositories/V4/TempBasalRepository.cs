@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
+using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Mappers.V4;
 
@@ -9,13 +11,16 @@ namespace Nocturne.Infrastructure.Data.Repositories.V4;
 public class TempBasalRepository : ITempBasalRepository
 {
     private readonly NocturneDbContext _context;
+    private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<TempBasalRepository> _logger;
 
     public TempBasalRepository(
         NocturneDbContext context,
+        IDeduplicationService deduplicationService,
         ILogger<TempBasalRepository> logger)
     {
         _context = context;
+        _deduplicationService = deduplicationService;
         _logger = logger;
     }
 
@@ -153,6 +158,51 @@ public class TempBasalRepository : ITempBasalRepository
             _context.ChangeTracker.Clear();
         }
 
+        // Cross-connector deduplication: link saved records to canonical groups
+        foreach (var entity in entities)
+        {
+            try
+            {
+                var criteria = new MatchCriteria
+                {
+                    Rate = entity.Rate,
+                    RateTolerance = 0.05
+                };
+
+                var mills = new DateTimeOffset(entity.StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
+
+                var canonicalId = await _deduplicationService.GetOrCreateCanonicalIdAsync(
+                    RecordType.TempBasal,
+                    mills,
+                    criteria,
+                    ct);
+
+                await _deduplicationService.LinkRecordAsync(
+                    canonicalId,
+                    RecordType.TempBasal,
+                    entity.Id,
+                    mills,
+                    entity.DataSource ?? "unknown",
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to deduplicate TempBasal {Id}", entity.Id);
+            }
+        }
+
         return entities.Select(TempBasalMapper.ToDomainModel);
+    }
+
+    public async Task<int> DeleteBySourceAndDateRangeAsync(
+        string source,
+        DateTime from,
+        DateTime to,
+        CancellationToken ct = default
+    )
+    {
+        return await _context.TempBasals
+            .Where(e => e.DataSource == source && e.StartTimestamp >= from && e.StartTimestamp <= to)
+            .ExecuteDeleteAsync(ct);
     }
 }
