@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -96,10 +97,16 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
 
                 var uiSettingsService = scope.ServiceProvider.GetRequiredService<IUISettingsService>();
                 var profileDataService = scope.ServiceProvider.GetRequiredService<IProfileDataService>();
+                var entryService = scope.ServiceProvider.GetRequiredService<IEntryService>();
 
                 var settings = await uiSettingsService.GetSettingsAsync(cancellationToken);
-                var wakeTimeHour = settings.DataQuality.SleepSchedule.WakeTimeHour;
-                var userTimeZone = await GetUserTimeZoneAsync(profileDataService, cancellationToken);
+                var sleepSchedule = settings.DataQuality.SleepSchedule;
+                var wakeTimeHour = sleepSchedule.WakeTimeHour;
+                var lastNightGuess = DateOnly.FromDateTime(nowUtc.AddDays(-1));
+                var userTimeZone = ResolveTimeZone(sleepSchedule.Timezone)
+                    ?? await GetUserTimeZoneFromProfileAsync(profileDataService, cancellationToken)
+                    ?? await InferTimeZoneFromEntriesAsync(entryService, lastNightGuess, cancellationToken)
+                    ?? TimeZoneInfo.Utc;
 
                 var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, userTimeZone);
                 var nextRunLocal = nowLocal.Date.AddHours(wakeTimeHour).AddMinutes(DetectionDelayMinutes);
@@ -156,7 +163,14 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
 
                 // Determine "last night" in the user's local timezone
                 var profileDataService = scope.ServiceProvider.GetRequiredService<IProfileDataService>();
-                var userTimeZone = await GetUserTimeZoneAsync(profileDataService, cancellationToken);
+                var entryService = scope.ServiceProvider.GetRequiredService<IEntryService>();
+                var uiSettingsService = scope.ServiceProvider.GetRequiredService<IUISettingsService>();
+                var settings = await uiSettingsService.GetSettingsAsync(cancellationToken);
+                var lastNightGuess = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
+                var userTimeZone = ResolveTimeZone(settings.DataQuality.SleepSchedule.Timezone)
+                    ?? await GetUserTimeZoneFromProfileAsync(profileDataService, cancellationToken)
+                    ?? await InferTimeZoneFromEntriesAsync(entryService, lastNightGuess, cancellationToken)
+                    ?? TimeZoneInfo.Utc;
                 var detectionTimeLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, userTimeZone);
                 var lastNight = DateOnly.FromDateTime(detectionTimeLocal.AddDays(-1));
 
@@ -174,6 +188,17 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
         CancellationToken cancellationToken = default)
     {
         using var scope = _serviceProvider.CreateScope();
+
+        // When called from an HTTP endpoint, the tenant context lives in the request scope.
+        // Propagate it to the new scope so tenant-scoped services (EntryService, ProfileDataService, etc.) work.
+        var httpContextAccessor = scope.ServiceProvider.GetService<IHttpContextAccessor>();
+        var requestTenantAccessor = httpContextAccessor?.HttpContext?.RequestServices.GetService<ITenantAccessor>();
+        if (requestTenantAccessor is { IsResolved: true, Context: not null })
+        {
+            var scopedTenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
+            scopedTenantAccessor.SetTenant(requestTenantAccessor.Context);
+        }
+
         return await DetectForNightInternalAsync(nightOf, scope.ServiceProvider, cancellationToken);
     }
 
@@ -210,8 +235,12 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
             return 0;
         }
 
-        // Get user's timezone from profile that was active during the night in question
-        var userTimeZone = await GetUserTimeZoneForNightAsync(profileDataService, nightOf, cancellationToken);
+        // Get user's timezone: prefer UI settings, fall back to profile,
+        // then infer from entry UTC offsets, then UTC
+        var userTimeZone = ResolveTimeZone(sleepSchedule.Timezone)
+            ?? await GetUserTimeZoneFromProfileAsync(profileDataService, nightOf, cancellationToken)
+            ?? await InferTimeZoneFromEntriesAsync(entryService, nightOf, cancellationToken)
+            ?? TimeZoneInfo.Utc;
 
         // Get overnight window in user's local time
         var (windowStart, windowEnd) = TimeZoneHelper.GetOvernightWindow(nightOf, userTimeZone, bedtimeHour, wakeTimeHour);
@@ -347,6 +376,7 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
         var nadir = entries[nadirIndex];
         var maxDropRate = 0.0;
         var dropDurationMinutes = 0.0;
+        int? earliestSteepIndex = null;
 
         for (int i = nadirIndex - 1; i >= 0; i--)
         {
@@ -364,6 +394,7 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
             if (dropRate >= MinDropRateMgDlPerMin)
             {
                 dropDurationMinutes = timeDiffMinutes;
+                earliestSteepIndex = i;
             }
             else if (dropDurationMinutes > 0)
             {
@@ -373,6 +404,13 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
                 }
                 break;
             }
+        }
+
+        // The loop exhausted all entries while the drop rate stayed above the threshold.
+        // This is the typical compression low pattern — steep drop all the way through.
+        if (dropDurationMinutes >= MinDropDurationMinutes && earliestSteepIndex.HasValue)
+        {
+            return (earliestSteepIndex.Value, entries[earliestSteepIndex.Value].Sgv!.Value, maxDropRate);
         }
 
         return null;
@@ -529,7 +567,28 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
             cancellationToken: cancellationToken);
     }
 
-    private async Task<TimeZoneInfo> GetUserTimeZoneAsync(
+    /// <summary>
+    /// Resolves a timezone ID string to a TimeZoneInfo, returning null if the ID is empty or invalid.
+    /// </summary>
+    private static TimeZoneInfo? ResolveTimeZone(string? timezoneId)
+    {
+        if (string.IsNullOrEmpty(timezoneId))
+            return null;
+
+        var tz = TimeZoneHelper.GetTimeZoneInfoFromId(timezoneId);
+        // GetTimeZoneInfoFromId returns UTC as fallback for unknown IDs;
+        // only treat it as resolved if the input was explicitly "UTC"
+        if (tz == TimeZoneInfo.Utc && !timezoneId.Equals("UTC", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        return tz;
+    }
+
+    /// <summary>
+    /// Gets the user's timezone from the Nightscout profile active at the current time.
+    /// Returns null if the profile has no timezone set.
+    /// </summary>
+    private async Task<TimeZoneInfo?> GetUserTimeZoneFromProfileAsync(
         IProfileDataService profileDataService,
         CancellationToken cancellationToken)
     {
@@ -538,19 +597,20 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
             var profile = await profileDataService.GetProfileAtTimestampAsync(
                 DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), cancellationToken);
             var timezoneId = profile?.Store?.Values.FirstOrDefault()?.Timezone;
-
-            if (!string.IsNullOrEmpty(timezoneId))
-                return TimeZoneHelper.GetTimeZoneInfoFromId(timezoneId);
+            return ResolveTimeZone(timezoneId);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get user timezone, using UTC");
+            _logger.LogWarning(ex, "Failed to get user timezone from profile");
+            return null;
         }
-
-        return TimeZoneInfo.Utc;
     }
 
-    private async Task<TimeZoneInfo> GetUserTimeZoneForNightAsync(
+    /// <summary>
+    /// Gets the user's timezone from the Nightscout profile active during a specific night.
+    /// Returns null if the profile has no timezone set.
+    /// </summary>
+    private async Task<TimeZoneInfo?> GetUserTimeZoneFromProfileAsync(
         IProfileDataService profileDataService,
         DateOnly nightOf,
         CancellationToken cancellationToken)
@@ -562,16 +622,61 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
 
             var profile = await profileDataService.GetProfileAtTimestampAsync(approximateMills, cancellationToken);
             var timezoneId = profile?.Store?.Values.FirstOrDefault()?.Timezone;
-
-            if (!string.IsNullOrEmpty(timezoneId))
-                return TimeZoneHelper.GetTimeZoneInfoFromId(timezoneId);
+            return ResolveTimeZone(timezoneId);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get user timezone for night {NightOf}, using UTC", nightOf);
+            _logger.LogWarning(ex, "Failed to get user timezone from profile for night {NightOf}", nightOf);
+            return null;
         }
+    }
 
-        return TimeZoneInfo.Utc;
+    /// <summary>
+    /// Infers the user's timezone from the UtcOffset field on recent entries near the target night.
+    /// Returns null if no entries with offset data are found.
+    /// </summary>
+    private async Task<TimeZoneInfo?> InferTimeZoneFromEntriesAsync(
+        IEntryService entryService,
+        DateOnly nightOf,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Query a small number of entries around midnight of the target night (in UTC)
+            var midnightUtcMills = new DateTimeOffset(nightOf.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero)
+                .ToUnixTimeMilliseconds();
+            var entries = await entryService.GetEntriesAsync(
+                find: $"{{\"mills\":{{\"$gte\":{midnightUtcMills - 12 * 3600000},\"$lte\":{midnightUtcMills + 12 * 3600000}}}}}",
+                count: 10,
+                skip: 0,
+                cancellationToken: cancellationToken);
+
+            var utcOffset = entries
+                .Where(e => e.UtcOffset.HasValue && e.UtcOffset.Value != 0)
+                .Select(e => e.UtcOffset!.Value)
+                .FirstOrDefault();
+
+            if (utcOffset == 0)
+                return null;
+
+            var offset = TimeSpan.FromMinutes(utcOffset);
+            var tz = TimeZoneInfo.CreateCustomTimeZone(
+                $"Entry-UTC{(offset >= TimeSpan.Zero ? "+" : "")}{offset.Hours:D2}:{offset.Minutes:D2}",
+                offset,
+                $"UTC{(offset >= TimeSpan.Zero ? "+" : "")}{offset.Hours}:{offset.Minutes:D2}",
+                $"UTC{(offset >= TimeSpan.Zero ? "+" : "")}{offset.Hours}:{offset.Minutes:D2}");
+
+            _logger.LogInformation(
+                "Inferred timezone UTC{Offset} from entry data for night {NightOf}",
+                (offset >= TimeSpan.Zero ? "+" : "") + $"{offset.Hours}:{offset.Minutes:D2}", nightOf);
+
+            return tz;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to infer timezone from entries for night {NightOf}", nightOf);
+            return null;
+        }
     }
 
     /// <summary>

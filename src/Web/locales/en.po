@@ -4541,7 +4541,6 @@ msgstr "Avg Before"
 #: src/lib/components/reports/SiteChangeImpactChart.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
-#: src/routes/reports/agp/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 msgid "mg/dL"
 msgstr "mg/dL"
@@ -5913,6 +5912,7 @@ msgstr "Add notes..."
 #: src/lib/components/entries/EntryEditDialog.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
 #: src/routes/clock/+page.svelte
+#: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 msgid "<0/> Delete"
 msgstr "<0/> Delete"
@@ -9471,6 +9471,7 @@ msgid "24-hour"
 msgstr "24-hour"
 
 #: src/routes/settings/appearance/+page.svelte
+#: src/routes/settings/data-quality/+page.svelte
 msgid "<0/> Timezone"
 msgstr "<0/> Timezone"
 
@@ -17143,9 +17144,114 @@ msgstr ""
 msgid "<0/> Configured"
 msgstr "<0/> Configured"
 
-#: src/lib/components/dashboard/glucose-chart/GlucoseChartCard.svelte
-msgid "Delivery"
-msgstr "Delivery"
+#: src/routes/tenants/+page.svelte
+msgid "Slug must be at least 3 characters"
+msgstr "Slug must be at least 3 characters"
+
+#: src/routes/tenants/+page.svelte
+msgid "Invalid slug"
+msgstr "Invalid slug"
+
+#: src/routes/tenants/+page.svelte
+msgid "Could not validate slug"
+msgstr "Could not validate slug"
+
+#: src/routes/tenants/+page.svelte
+msgid "Failed to create tenant. Please try again."
+msgstr "Failed to create tenant. Please try again."
+
+#: src/routes/tenants/+page.svelte
+msgid "Manage and switch between your Nocturne instances"
+msgstr "Manage and switch between your Nocturne instances"
+
+#: src/routes/tenants/+page.svelte
+msgid "Multitenancy not configured"
+msgstr "Multitenancy not configured"
+
+#: src/routes/tenants/+page.svelte
+msgid ""
+"A base domain must be configured to enable URL-based tenant switching\n"
+"and tenant creation."
+msgstr ""
+"A base domain must be configured to enable URL-based tenant switching\n"
+"and tenant creation."
+
+#: src/routes/tenants/+page.svelte
+msgid "Tenant creation managed externally"
+msgstr "Tenant creation managed externally"
+
+#: src/routes/tenants/+page.svelte
+msgid ""
+"New tenants are managed by your service provider. Contact your\n"
+"administrator to request a new instance."
+msgstr ""
+"New tenants are managed by your service provider. Contact your\n"
+"administrator to request a new instance."
+
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Create new tenant"
+msgstr "<0/> Create new tenant"
+
+#: src/routes/tenants/+page.svelte
+msgid "Create new tenant"
+msgstr "Create new tenant"
+
+#: src/routes/tenants/+page.svelte
+msgid "Set up a new Nocturne instance with its own subdomain"
+msgstr "Set up a new Nocturne instance with its own subdomain"
+
+#: src/routes/tenants/+page.svelte
+msgid "Subdomain"
+msgstr "Subdomain"
+
+#: src/routes/tenants/+page.svelte
+msgid "Checking availability..."
+msgstr "Checking availability..."
+
+#: src/routes/tenants/+page.svelte
+msgid "Display name"
+msgstr "Display name"
+
+#: src/routes/tenants/+page.svelte
+msgid "My Nocturne Instance"
+msgstr "My Nocturne Instance"
+
+#: src/routes/tenants/+page.svelte
+msgid "API secret (optional)"
+msgstr "API secret (optional)"
+
+#: src/routes/tenants/+page.svelte
+msgid "For Nightscout compatibility"
+msgstr "For Nightscout compatibility"
+
+#: src/routes/tenants/+page.svelte
+msgid "Only needed for legacy Nightscout client compatibility"
+msgstr "Only needed for legacy Nightscout client compatibility"
+
+#: src/routes/tenants/+page.svelte
+msgid "<0/> Create tenant"
+msgstr "<0/> Create tenant"
+
+#. placeholder {0}: time ? ` @ ${time}` : ""
+#: src/lib/components/reports/InsulinDonutChart.svelte
+msgid "Bolus{0}"
+msgstr "Bolus{0}"
+
+#: src/lib/components/reports/InsulinDonutChart.svelte
+msgid "Additional Basal"
+msgstr "Additional Basal"
+
+#: src/lib/components/reports/InsulinDonutChart.svelte
+msgid "Click to view"
+msgstr "Click to view"
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
+msgid "Inspect Point"
+msgstr "Inspect Point"
+
+#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
+msgid "Multiple data types available at this time. Choose what to inspect."
+msgstr "Multiple data types available at this time. Choose what to inspect."
 
 #: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
 msgid "Inferred"
@@ -17268,14 +17374,6 @@ msgstr "Basal data may be stale. The last update was received some time ago."
 msgid "<0/> Treatments"
 msgstr "<0/> Treatments"
 
-#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
-msgid "Inspect Point"
-msgstr "Inspect Point"
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
-msgid "Multiple data types available at this time. Choose what to inspect."
-msgstr "Multiple data types available at this time. Choose what to inspect."
-
 #: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
 msgid "Activities"
 msgstr "Activities"
@@ -17284,10 +17382,6 @@ msgstr "Activities"
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
 msgid "<0/> Delivery"
 msgstr "<0/> Delivery"
-
-#: src/lib/components/entries/EntryEditDialog.svelte
-msgid "Source:"
-msgstr "Source:"
 
 #. placeholder {0}: bolusInsulin
 #. placeholder {1}: bolusType ? ` ${bolusType}` : ""
@@ -17304,14 +17398,6 @@ msgstr "{0}g{1}"
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
 msgid "BG at time"
 msgstr "BG at time"
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Bolus Source"
-msgstr "Bolus Source"
-
-#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
-msgid "Carb Source"
-msgstr "Carb Source"
 
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
 msgid "Decision Audit"
@@ -17355,110 +17441,21 @@ msgstr "Pre-bolus"
 msgid "Related Entries"
 msgstr "Related Entries"
 
-#: src/routes/tenants/+page.svelte
-msgid "Slug must be at least 3 characters"
-msgstr "Slug must be at least 3 characters"
+#: src/lib/components/dashboard/glucose-chart/GlucoseChartCard.svelte
+msgid "Delivery"
+msgstr "Delivery"
 
-#: src/routes/tenants/+page.svelte
-msgid "Invalid slug"
-msgstr "Invalid slug"
+#: src/lib/components/entries/EntryEditDialog.svelte
+msgid "Source:"
+msgstr "Source:"
 
-#: src/routes/tenants/+page.svelte
-msgid "Could not validate slug"
-msgstr "Could not validate slug"
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Bolus Source"
+msgstr "Bolus Source"
 
-#: src/routes/tenants/+page.svelte
-msgid "Failed to create tenant. Please try again."
-msgstr "Failed to create tenant. Please try again."
-
-#: src/routes/tenants/+page.svelte
-msgid "Manage and switch between your Nocturne instances"
-msgstr "Manage and switch between your Nocturne instances"
-
-#: src/routes/tenants/+page.svelte
-msgid "Multitenancy not configured"
-msgstr "Multitenancy not configured"
-
-#: src/routes/tenants/+page.svelte
-msgid ""
-"A base domain must be configured to enable URL-based tenant switching\n"
-"and tenant creation."
-msgstr ""
-"A base domain must be configured to enable URL-based tenant switching\n"
-"and tenant creation."
-
-#: src/routes/tenants/+page.svelte
-msgid "Tenant creation managed externally"
-msgstr "Tenant creation managed externally"
-
-#: src/routes/tenants/+page.svelte
-msgid ""
-"New tenants are managed by your service provider. Contact your\n"
-"administrator to request a new instance."
-msgstr ""
-"New tenants are managed by your service provider. Contact your\n"
-"administrator to request a new instance."
-
-#: src/routes/tenants/+page.svelte
-msgid "<0/> Create new tenant"
-msgstr "<0/> Create new tenant"
-
-#: src/routes/tenants/+page.svelte
-msgid "Create new tenant"
-msgstr "Create new tenant"
-
-#: src/routes/tenants/+page.svelte
-msgid "Set up a new Nocturne instance with its own subdomain"
-msgstr "Set up a new Nocturne instance with its own subdomain"
-
-#: src/routes/tenants/+page.svelte
-msgid "Subdomain"
-msgstr "Subdomain"
-
-#: src/routes/tenants/+page.svelte
-msgid "Checking availability..."
-msgstr "Checking availability..."
-
-#: src/routes/tenants/+page.svelte
-msgid "Display name"
-msgstr "Display name"
-
-#: src/routes/tenants/+page.svelte
-msgid "My Nocturne Instance"
-msgstr "My Nocturne Instance"
-
-#: src/routes/tenants/+page.svelte
-msgid "API secret (optional)"
-msgstr "API secret (optional)"
-
-#: src/routes/tenants/+page.svelte
-msgid "For Nightscout compatibility"
-msgstr "For Nightscout compatibility"
-
-#: src/routes/tenants/+page.svelte
-msgid "Only needed for legacy Nightscout client compatibility"
-msgstr "Only needed for legacy Nightscout client compatibility"
-
-#: src/routes/tenants/+page.svelte
-msgid "<0/> Create tenant"
-msgstr "<0/> Create tenant"
-
-#: src/lib/components/layout/SidebarNotifications.svelte
-msgid "Notifications unavailable"
-msgstr "Notifications unavailable"
-
-#. placeholder {0}: time ? ` @ ${time}` : ""
-#: src/lib/components/reports/InsulinDonutChart.svelte
-msgid "Bolus{0}"
-msgstr "Bolus{0}"
-
-#: src/lib/components/reports/InsulinDonutChart.svelte
-msgid "Additional Basal"
-msgstr "Additional Basal"
-
-#: src/lib/components/reports/InsulinDonutChart.svelte
-msgid "Click to view"
-msgstr "Click to view"
+#: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+msgid "Carb Source"
+msgstr "Carb Source"
 
 #: src/lib/components/layout/AppSidebar.svelte
 #: src/routes/tools/+page.svelte
@@ -17469,54 +17466,68 @@ msgstr "Tools"
 msgid "Packing"
 msgstr "Packing"
 
+#: src/lib/components/layout/SidebarNotifications.svelte
+msgid "Notifications unavailable"
+msgstr "Notifications unavailable"
+
+#: src/routes/tools/+page.svelte
+msgid "Utilities to help manage your diabetes."
+msgstr "Utilities to help manage your diabetes."
+
+#: src/routes/tools/+page.svelte
+msgid "Packing Calculator"
+msgstr "Packing Calculator"
+
+#: src/routes/tools/+page.svelte
+msgid "Calculate supplies needed for a trip"
+msgstr "Calculate supplies needed for a trip"
+
 #: src/routes/tools/+layout.svelte
 msgid "<0/> Tools"
 msgstr "<0/> Tools"
+
+#: src/routes/settings/data-quality/+page.svelte
+msgid "Detected from your browser. Save to confirm."
+msgstr "Detected from your browser. Save to confirm."
 
 #: src/routes/tools/packing/+page.svelte
 msgid "<0/> Packing Calculator"
 msgstr "<0/> Packing Calculator"
 
-#~ msgid "Calculate the supplies you need for your trip."
-#~ msgstr "Calculate the supplies you need for your trip."
+#: src/routes/tools/packing/+page.svelte
+msgid "Configure what you need, then generate a shareable packing list."
+msgstr "Configure what you need, then generate a shareable packing list."
 
-#~ msgid "Trip duration"
-#~ msgstr "Trip duration"
+#: src/routes/tools/packing/+page.svelte
+msgid "Trip"
+msgstr "Trip"
 
 #: src/lib/components/tools/packing/supply-item.svelte
 #: src/routes/tools/packing/+page.svelte
 msgid "days"
 msgstr "days"
 
-#~ msgid "Based on your last 14 days, your average daily insulin use is <0>~{0}u</0>."
-#~ msgstr "Based on your last 14 days, your average daily insulin use is <0>~{0}u</0>."
+#: src/routes/tools/packing/+page.svelte
+msgid "Your 14-day average insulin use is <0>~{0}u/day</0>."
+msgstr "Your 14-day average insulin use is <0>~{0}u/day</0>."
 
-#~ msgid "Every"
-#~ msgstr "Every"
+#. placeholder {0}: totalItems
+#: src/routes/tools/packing/+page.svelte
+msgid "{0} items across your selected supplies"
+msgstr "{0} items across your selected supplies"
 
-#~ msgid "(avg: {0}d)"
-#~ msgstr "(avg: {0}d)"
+#: src/routes/tools/packing/+page.svelte
+msgid "Enable some supplies above to generate your list"
+msgstr "Enable some supplies above to generate your list"
 
-#~ msgid "extra"
-#~ msgstr "extra"
+#: src/routes/tools/packing/+page.svelte
+msgid "<0/> Generate Packing List"
+msgstr "<0/> Generate Packing List"
 
-#~ msgid "Container"
-#~ msgstr "Container"
-
-#~ msgid "units"
-#~ msgstr "units"
-
-#~ msgid "Buffer"
-#~ msgstr "Buffer"
-
-#~ msgid "(TDD: ~{0}u/day)"
-#~ msgstr "(TDD: ~{0}u/day)"
-
-#~ msgid "= {0}u total"
-#~ msgstr "= {0}u total"
-
-#~ msgid "Qty"
-#~ msgstr "Qty"
+#. placeholder {0}: categoryTotal
+#: src/lib/components/tools/packing/supply-category.svelte
+msgid "{0} items"
+msgstr "{0} items"
 
 #: src/lib/components/tools/packing/supply-item.svelte
 msgid "Change every"
@@ -17554,48 +17565,6 @@ msgstr "<0/> {0}u total"
 msgid "Quantity"
 msgstr "Quantity"
 
-#: src/routes/tools/packing/+page.svelte
-msgid "Configure what you need, then generate a shareable packing list."
-msgstr "Configure what you need, then generate a shareable packing list."
-
-#: src/routes/tools/packing/+page.svelte
-msgid "Trip"
-msgstr "Trip"
-
-#: src/routes/tools/packing/+page.svelte
-msgid "Your 14-day average insulin use is <0>~{0}u/day</0>."
-msgstr "Your 14-day average insulin use is <0>~{0}u/day</0>."
-
-#. placeholder {0}: totalItems
-#: src/routes/tools/packing/+page.svelte
-msgid "{0} items across your selected supplies"
-msgstr "{0} items across your selected supplies"
-
-#: src/routes/tools/packing/+page.svelte
-msgid "Enable some supplies above to generate your list"
-msgstr "Enable some supplies above to generate your list"
-
-#: src/routes/tools/packing/+page.svelte
-msgid "<0/> Generate Packing List"
-msgstr "<0/> Generate Packing List"
-
-#. placeholder {0}: categoryTotal
-#: src/lib/components/tools/packing/supply-category.svelte
-msgid "{0} items"
-msgstr "{0} items"
-
-#: src/routes/tools/+page.svelte
-msgid "Utilities to help manage your diabetes."
-msgstr "Utilities to help manage your diabetes."
-
-#: src/routes/tools/+page.svelte
-msgid "Packing Calculator"
-msgstr "Packing Calculator"
-
-#: src/routes/tools/+page.svelte
-msgid "Calculate supplies needed for a trip"
-msgstr "Calculate supplies needed for a trip"
-
 #: src/routes/tools/packing/list/+page.svelte
 msgid "<0/> Back to calculator"
 msgstr "<0/> Back to calculator"
@@ -17626,3 +17595,20 @@ msgstr "Item name..."
 #: src/routes/tools/packing/list/+page.svelte
 msgid "<0/> Add custom item"
 msgstr "<0/> Add custom item"
+
+#. placeholder {0}: selectionCount
+#: src/routes/reports/data-quality/compression-lows/+page.svelte
+msgid "{0} selected"
+msgstr "{0} selected"
+
+#: src/routes/reports/data-quality/compression-lows/+page.svelte
+msgid "<0/> Accept All"
+msgstr "<0/> Accept All"
+
+#: src/routes/reports/data-quality/compression-lows/+page.svelte
+msgid "<0/> Dismiss All"
+msgstr "<0/> Dismiss All"
+
+#: src/routes/reports/data-quality/compression-lows/+page.svelte
+msgid "<0/> Delete All"
+msgstr "<0/> Delete All"

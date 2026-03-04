@@ -4,10 +4,13 @@
 	import { Switch } from '$lib/components/ui/switch';
 	import { Label } from '$lib/components/ui/label';
 	import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
-	import { Moon, Activity, AlertCircle } from 'lucide-svelte';
+	import { Moon, Activity, AlertCircle, Globe } from 'lucide-svelte';
 	import SettingsPageSkeleton from '$lib/components/settings/SettingsPageSkeleton.svelte';
 
 	const store = getSettingsStore();
+
+	const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+	const timezones = Intl.supportedValuesOf('timeZone');
 
 	// Hour options for bedtime (evening hours)
 	const bedtimeHours = [
@@ -72,6 +75,37 @@
 				</CardDescription>
 			</CardHeader>
 			<CardContent class="space-y-6">
+				<div class="space-y-2">
+					<Label class="flex items-center gap-1.5">
+						<Globe class="h-4 w-4" />
+						Timezone
+					</Label>
+					<Select
+						type="single"
+						value={store.dataQuality.sleepSchedule?.timezone || detectedTimezone}
+						onValueChange={(value) => {
+							if (store.dataQuality?.sleepSchedule) {
+								store.dataQuality.sleepSchedule.timezone = value;
+								store.markChanged();
+							}
+						}}
+					>
+						<SelectTrigger class="w-full">
+							{store.dataQuality.sleepSchedule?.timezone || detectedTimezone}
+						</SelectTrigger>
+						<SelectContent class="max-h-60">
+							{#each timezones as tz}
+								<SelectItem value={tz}>{tz.replaceAll('_', ' ')}</SelectItem>
+							{/each}
+						</SelectContent>
+					</Select>
+					{#if !store.dataQuality.sleepSchedule?.timezone}
+						<p class="text-sm text-muted-foreground">
+							Detected from your browser. Save to confirm.
+						</p>
+					{/if}
+				</div>
+
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div class="space-y-2">
 						<Label>Typical bedtime</Label>

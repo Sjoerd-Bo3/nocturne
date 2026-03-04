@@ -135,8 +135,10 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
         CancellationToken ct = default
     )
     {
-        // Fetch all V4 treatment record types in parallel (DB-level nativeOnly filter).
-        var bolusTask = FetchSafe(() =>
+        // Fetch all V4 treatment record types sequentially.
+        // These repositories share a scoped DbContext which is not thread-safe,
+        // so they cannot be run concurrently via Task.WhenAll.
+        var boluses = (await FetchSafe(() =>
             _bolusRepository.GetAsync(
                 from: MillsToDateTime(fromMills),
                 to: MillsToDateTime(toMills),
@@ -148,9 +150,9 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
                 nativeOnly: true,
                 ct: ct
             )
-        );
+        )).ToList();
 
-        var carbTask = FetchSafe(() =>
+        var carbs = (await FetchSafe(() =>
             _carbIntakeRepository.GetAsync(
                 from: MillsToDateTime(fromMills),
                 to: MillsToDateTime(toMills),
@@ -162,9 +164,9 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
                 nativeOnly: true,
                 ct: ct
             )
-        );
+        )).ToList();
 
-        var bgCheckTask = FetchSafe(() =>
+        var bgChecks = (await FetchSafe(() =>
             _bgCheckRepository.GetAsync(
                 from: MillsToDateTime(fromMills),
                 to: MillsToDateTime(toMills),
@@ -176,9 +178,9 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
                 nativeOnly: true,
                 ct: ct
             )
-        );
+        )).ToList();
 
-        var noteTask = FetchSafe(() =>
+        var notes = (await FetchSafe(() =>
             _noteRepository.GetAsync(
                 from: MillsToDateTime(fromMills),
                 to: MillsToDateTime(toMills),
@@ -190,9 +192,9 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
                 nativeOnly: true,
                 ct: ct
             )
-        );
+        )).ToList();
 
-        var deviceEventTask = FetchSafe(() =>
+        var deviceEvents = (await FetchSafe(() =>
             _deviceEventRepository.GetAsync(
                 from: MillsToDateTime(fromMills),
                 to: MillsToDateTime(toMills),
@@ -204,15 +206,7 @@ public class V4ToLegacyProjectionService : IV4ToLegacyProjectionService
                 nativeOnly: true,
                 ct: ct
             )
-        );
-
-        await Task.WhenAll(bolusTask, carbTask, bgCheckTask, noteTask, deviceEventTask);
-
-        var boluses = (await bolusTask).ToList();
-        var carbs = (await carbTask).ToList();
-        var bgChecks = (await bgCheckTask).ToList();
-        var notes = (await noteTask).ToList();
-        var deviceEvents = (await deviceEventTask).ToList();
+        )).ToList();
 
         // Load food breakdown entries for all carb intakes to populate legacy fields
         var carbIds = carbs.Select(c => c.Id).ToList();

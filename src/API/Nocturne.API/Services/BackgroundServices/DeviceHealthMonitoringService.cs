@@ -109,17 +109,25 @@ public class DeviceHealthMonitoringService : BackgroundService
     /// </summary>
     private async Task PerformHealthCheckForTenantAsync(IServiceProvider scopedProvider, CancellationToken cancellationToken)
     {
-        var dbContext = scopedProvider.GetRequiredService<NocturneDbContext>();
-        var deviceRegistry = scopedProvider.GetRequiredService<IDeviceRegistryService>();
-        var alertEngine = scopedProvider.GetRequiredService<IDeviceAlertEngine>();
-        var trackerSuggestionService = scopedProvider.GetRequiredService<ITrackerSuggestionService>();
+        var factory = scopedProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
 
         _logger.LogDebug("Starting device health check cycle");
 
         try
         {
-            // Get all active devices
-            var devices = await GetActiveDevicesAsync(dbContext, cancellationToken);
+            // Get all active devices using a short-lived context
+            List<string> devices;
+            await using (var dbContext = await factory.CreateDbContextAsync(cancellationToken))
+            {
+                devices = await dbContext
+                    .DeviceHealth.Where(d =>
+                        d.Status == DeviceStatusType.Active
+                        || d.Status == DeviceStatusType.Warning
+                        || d.Status == DeviceStatusType.Maintenance
+                    )
+                    .Select(d => d.DeviceId)
+                    .ToListAsync(cancellationToken);
+            }
 
             _logger.LogDebug("Checking health for {DeviceCount} devices", devices.Count);
 
@@ -130,9 +138,7 @@ public class DeviceHealthMonitoringService : BackgroundService
                 var batch = devices.Skip(i).Take(batchSize).ToList();
                 await ProcessDeviceBatchAsync(
                     batch,
-                    deviceRegistry,
-                    alertEngine,
-                    trackerSuggestionService,
+                    scopedProvider,
                     cancellationToken
                 );
             }
@@ -150,48 +156,25 @@ public class DeviceHealthMonitoringService : BackgroundService
     }
 
     /// <summary>
-    /// Get all active devices that need health monitoring
-    /// </summary>
-    /// <param name="dbContext">Database context</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of device IDs to check</returns>
-    private async Task<List<string>> GetActiveDevicesAsync(
-        NocturneDbContext dbContext,
-        CancellationToken cancellationToken
-    )
-    {
-        return await dbContext
-            .DeviceHealth.Where(d =>
-                d.Status == DeviceStatusType.Active
-                || d.Status == DeviceStatusType.Warning
-                || d.Status == DeviceStatusType.Maintenance
-            )
-            .Select(d => d.DeviceId)
-            .ToListAsync(cancellationToken);
-    }
-
-    /// <summary>
-    /// Process a batch of devices for health monitoring
+    /// Process a batch of devices for health monitoring.
+    /// Each device gets its own service scope to avoid concurrent DbContext access.
     /// </summary>
     private async Task ProcessDeviceBatchAsync(
         List<string> deviceIds,
-        IDeviceRegistryService deviceRegistry,
-        IDeviceAlertEngine alertEngine,
-        ITrackerSuggestionService trackerSuggestionService,
+        IServiceProvider scopedProvider,
         CancellationToken cancellationToken
     )
     {
-        var tasks = deviceIds.Select(deviceId =>
-            ProcessSingleDeviceAsync(
+        foreach (var deviceId in deviceIds)
+        {
+            await ProcessSingleDeviceAsync(
                 deviceId,
-                deviceRegistry,
-                alertEngine,
-                trackerSuggestionService,
+                scopedProvider.GetRequiredService<IDeviceRegistryService>(),
+                scopedProvider.GetRequiredService<IDeviceAlertEngine>(),
+                scopedProvider.GetRequiredService<ITrackerSuggestionService>(),
                 cancellationToken
-            )
-        );
-
-        await Task.WhenAll(tasks);
+            );
+        }
     }
 
     /// <summary>

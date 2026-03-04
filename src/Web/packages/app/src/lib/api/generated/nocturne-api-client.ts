@@ -28070,6 +28070,7 @@ export interface DataQualitySettings {
 export interface SleepScheduleSettings {
     bedtimeHour?: number;
     wakeTimeHour?: number;
+    timezone?: string | undefined;
 }
 
 export interface CompressionLowDetectionSettings {

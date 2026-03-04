@@ -18,6 +18,8 @@
     ChartClipPath,
     Highlight,
     BrushContext,
+    Rect,
+    Rule,
   } from "layerchart";
   import MiniOverviewChart from "../MiniOverviewChart.svelte";
   import { bisector } from "d3";
@@ -1207,6 +1209,22 @@
           {chartXDomain}
           onPointClick={handlePointClick}
         />
+
+        <!-- IOB/COB track separator and background -->
+        {#if trackConfig.showIobTrack}
+          <Rect
+            x={0}
+            y={iobTrackTop}
+            width={context.width}
+            height={iobTrackHeight}
+            class="fill-muted/6"
+          />
+          <Rule
+            y={pixelToGlucoseDomain(glucoseTrackBottom)}
+            class="stroke-border/50"
+            stroke-width="0.5"
+          />
+        {/if}
 
         <!-- IOB/COB Track -->
         <IobCobTrack

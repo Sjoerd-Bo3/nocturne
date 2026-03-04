@@ -750,21 +750,17 @@ public class EntryService : IEntryService
             _demoModeService.IsEnabled
         );
 
-        // Fetch from legacy entries table and V4 projection in parallel.
+        // Fetch from legacy entries table and V4 projection sequentially.
+        // They share a scoped DbContext which is not thread-safe for concurrent access.
         var findQuery = BuildDemoModeFilterQuery(null);
-        var legacyTask = _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+        var legacyEntry = (await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
             type: "sgv",
             count: 1,
             skip: 0,
             findQuery: findQuery,
             cancellationToken: cancellationToken
-        );
-        var projectedTask = _projectionService.GetLatestProjectedEntryAsync(cancellationToken);
-
-        await Task.WhenAll(legacyTask, projectedTask);
-
-        var legacyEntry = (await legacyTask).FirstOrDefault();
-        var projectedEntry = await projectedTask;
+        )).FirstOrDefault();
+        var projectedEntry = await _projectionService.GetLatestProjectedEntryAsync(cancellationToken);
 
         // Return whichever has the higher Mills timestamp.
         Entry? entry;

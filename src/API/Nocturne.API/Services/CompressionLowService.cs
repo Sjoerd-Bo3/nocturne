@@ -58,8 +58,10 @@ public class CompressionLowService : ICompressionLowService
         var settings = await _uiSettingsService.GetSettingsAsync(cancellationToken);
         var sleepSchedule = settings.DataQuality.SleepSchedule;
 
-        // Get user's timezone from the profile that was active during the night
-        var userTimeZone = await GetUserTimeZoneForNightAsync(suggestion.NightOf, cancellationToken);
+        // Get user's timezone: prefer UI settings, fall back to profile, then UTC
+        var userTimeZone = ResolveTimeZone(sleepSchedule.Timezone)
+            ?? await GetUserTimeZoneFromProfileAsync(suggestion.NightOf, cancellationToken)
+            ?? TimeZoneInfo.Utc;
 
         // Get overnight window for entries in user's local time
         var (windowStart, windowEnd) = TimeZoneHelper.GetOvernightWindow(
@@ -214,7 +216,19 @@ public class CompressionLowService : ICompressionLowService
         }
     }
 
-    private async Task<TimeZoneInfo> GetUserTimeZoneForNightAsync(
+    private static TimeZoneInfo? ResolveTimeZone(string? timezoneId)
+    {
+        if (string.IsNullOrEmpty(timezoneId))
+            return null;
+
+        var tz = TimeZoneHelper.GetTimeZoneInfoFromId(timezoneId);
+        if (tz == TimeZoneInfo.Utc && !timezoneId.Equals("UTC", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        return tz;
+    }
+
+    private async Task<TimeZoneInfo?> GetUserTimeZoneFromProfileAsync(
         DateOnly nightOf,
         CancellationToken cancellationToken)
     {
@@ -225,15 +239,12 @@ public class CompressionLowService : ICompressionLowService
 
             var profile = await _profileDataService.GetProfileAtTimestampAsync(approximateMills, cancellationToken);
             var timezoneId = profile?.Store?.Values.FirstOrDefault()?.Timezone;
-
-            if (!string.IsNullOrEmpty(timezoneId))
-                return TimeZoneHelper.GetTimeZoneInfoFromId(timezoneId);
+            return ResolveTimeZone(timezoneId);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get user timezone for night {NightOf}, using UTC", nightOf);
+            _logger.LogWarning(ex, "Failed to get user timezone from profile for night {NightOf}", nightOf);
+            return null;
         }
-
-        return TimeZoneInfo.Utc;
     }
 }

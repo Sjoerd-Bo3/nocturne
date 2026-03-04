@@ -35667,6 +35667,10 @@
           "wakeTimeHour": {
             "type": "integer",
             "format": "int32"
+          },
+          "timezone": {
+            "type": "string",
+            "nullable": true
           }
         }
       },

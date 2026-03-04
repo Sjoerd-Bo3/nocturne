@@ -321,7 +321,8 @@ public class TreatmentService : ITreatmentService
         var (fromMills, toMills) = ParseTimeRangeFromFind(findQuery);
 
         // Get temp basals from V4 TempBasal table
-        var tempBasalTask = _tempBasalRepository.GetAsync(
+        // Fetched sequentially — repositories share a scoped DbContext which is not thread-safe.
+        var tempBasals = await _tempBasalRepository.GetAsync(
             from: fromMills.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(fromMills.Value).UtcDateTime : null,
             to: toMills.HasValue ? DateTimeOffset.FromUnixTimeMilliseconds(toMills.Value).UtcDateTime : null,
             device: null,
@@ -333,18 +334,14 @@ public class TreatmentService : ITreatmentService
         );
 
         // Get V4-projected treatments (native V4 connector writes)
-        var projectedTask = _projectionService.GetProjectedTreatmentsAsync(
+        var projectedTreatments = await _projectionService.GetProjectedTreatmentsAsync(
             fromMills,
             toMills,
             count,
             cancellationToken
         );
 
-        await Task.WhenAll(tempBasalTask, projectedTask);
-
-        var tempBasals = await tempBasalTask;
         var tempBasalTreatments = TempBasalToTreatmentMapper.ToTreatments(tempBasals).ToList();
-        var projectedTreatments = await projectedTask;
 
         // Deduplicate temp basals from multiple connectors: group by 30s time window + rate,
         // keeping the first record in each group (earliest by Mills).

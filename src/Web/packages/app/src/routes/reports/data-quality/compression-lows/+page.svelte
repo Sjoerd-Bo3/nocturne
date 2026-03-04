@@ -37,7 +37,9 @@
 	const suggestions = $derived(suggestionsResource.current ?? []);
 
 	let statusFilter = $state<string>('all');
-	let selectedSuggestion = $state<string | null>(null);
+	let selectedSuggestions = $state<Set<string>>(new Set());
+	let activeSuggestion = $state<string | null>(null);
+	let lastClickedIndex = $state<number>(-1);
 	let suggestionDetail = $state<Awaited<ReturnType<typeof getCompressionLowSuggestion>> | null>(
 		null
 	);
@@ -62,9 +64,12 @@
 			.length
 	);
 
+	const selectionCount = $derived(selectedSuggestions.size);
+	const isBulkMode = $derived(selectionCount > 1);
+
 	// Auto-select first suggestion when list loads or filter changes
 	$effect(() => {
-		if (filteredSuggestions.length > 0 && !selectedSuggestion) {
+		if (filteredSuggestions.length > 0 && !activeSuggestion) {
 			const first = filteredSuggestions[0];
 			if (first?.id) {
 				loadSuggestionDetail(first.id);
@@ -72,8 +77,31 @@
 		}
 	});
 
+	function handleItemClick(suggestion: CompressionLowSuggestion, index: number, event: MouseEvent) {
+		if (!suggestion.id) return;
+
+		if (event.shiftKey && lastClickedIndex >= 0) {
+			const start = Math.min(lastClickedIndex, index);
+			const end = Math.max(lastClickedIndex, index);
+			const newSelection = new Set(selectedSuggestions);
+			for (let i = start; i <= end; i++) {
+				const id = filteredSuggestions[i]?.id;
+				if (id) newSelection.add(id);
+			}
+			selectedSuggestions = newSelection;
+		} else {
+			selectedSuggestions = new Set([suggestion.id]);
+		}
+
+		lastClickedIndex = index;
+		loadSuggestionDetail(suggestion.id);
+	}
+
 	async function loadSuggestionDetail(id: string) {
-		selectedSuggestion = id;
+		activeSuggestion = id;
+		if (selectedSuggestions.size === 0) {
+			selectedSuggestions = new Set([id]);
+		}
 		suggestionDetail = await getCompressionLowSuggestion(id);
 		if (suggestionDetail && suggestionDetail.suggestion?.startMills && suggestionDetail.suggestion?.endMills) {
 			brushDomain = [new Date(suggestionDetail.suggestion.startMills), new Date(suggestionDetail.suggestion.endMills)];
@@ -81,45 +109,67 @@
 	}
 
 	async function handleAccept() {
-		if (!selectedSuggestion || !brushDomain) return;
+		if (selectedSuggestions.size === 0) return;
 		isLoading = true;
 		try {
-			const currentIndex = filteredSuggestions.findIndex((s) => s.id === selectedSuggestion);
-			await acceptCompressionLow({
-				id: selectedSuggestion,
-				request: {
-					startMills: brushDomain[0].getTime(),
-					endMills: brushDomain[1].getTime()
+			const ids = [...selectedSuggestions];
+			const firstSelectedIndex = filteredSuggestions.findIndex((s) => s.id === ids[0]);
+			for (const id of ids) {
+				if (id === activeSuggestion && brushDomain) {
+					await acceptCompressionLow({
+						id,
+						request: {
+							startMills: brushDomain[0].getTime(),
+							endMills: brushDomain[1].getTime()
+						}
+					});
+				} else {
+					const s = suggestions.find((s) => s.id === id);
+					if (s?.startMills && s?.endMills) {
+						await acceptCompressionLow({
+							id,
+							request: { startMills: s.startMills, endMills: s.endMills }
+						});
+					}
 				}
-			});
+			}
 			suggestionsResource.refresh();
-			selectNextSuggestion(currentIndex);
+			selectedSuggestions = new Set();
+			selectNextSuggestion(firstSelectedIndex);
 		} finally {
 			isLoading = false;
 		}
 	}
 
 	async function handleDismiss() {
-		if (!selectedSuggestion) return;
+		if (selectedSuggestions.size === 0) return;
 		isLoading = true;
 		try {
-			const currentIndex = filteredSuggestions.findIndex((s) => s.id === selectedSuggestion);
-			await dismissCompressionLow(selectedSuggestion);
+			const ids = [...selectedSuggestions];
+			const firstSelectedIndex = filteredSuggestions.findIndex((s) => s.id === ids[0]);
+			for (const id of ids) {
+				await dismissCompressionLow(id);
+			}
 			suggestionsResource.refresh();
-			selectNextSuggestion(currentIndex);
+			selectedSuggestions = new Set();
+			selectNextSuggestion(firstSelectedIndex);
 		} finally {
 			isLoading = false;
 		}
 	}
 
 	async function handleDelete() {
-		if (!selectedSuggestion) return;
+		if (selectedSuggestions.size === 0) return;
 		isLoading = true;
 		try {
-			const currentIndex = filteredSuggestions.findIndex((s) => s.id === selectedSuggestion);
-			await deleteCompressionLow(selectedSuggestion);
+			const ids = [...selectedSuggestions];
+			const firstSelectedIndex = filteredSuggestions.findIndex((s) => s.id === ids[0]);
+			for (const id of ids) {
+				await deleteCompressionLow(id);
+			}
 			suggestionsResource.refresh();
-			selectNextSuggestion(currentIndex);
+			selectedSuggestions = new Set();
+			selectNextSuggestion(firstSelectedIndex);
 		} finally {
 			isLoading = false;
 		}
@@ -127,14 +177,17 @@
 
 	function selectNextSuggestion(previousIndex: number) {
 		if (filteredSuggestions.length === 0) {
-			selectedSuggestion = null;
+			activeSuggestion = null;
 			suggestionDetail = null;
 			brushDomain = null;
+			lastClickedIndex = -1;
 			return;
 		}
 		const nextIndex = Math.min(previousIndex, filteredSuggestions.length - 1);
 		const nextSuggestion = filteredSuggestions[nextIndex];
 		if (nextSuggestion?.id) {
+			lastClickedIndex = nextIndex;
+			selectedSuggestions = new Set([nextSuggestion.id]);
 			loadSuggestionDetail(nextSuggestion.id);
 		}
 	}
@@ -251,8 +304,10 @@
 					value={statusFilter}
 					onValueChange={(value) => {
 						statusFilter = value;
-						selectedSuggestion = null;
+						activeSuggestion = null;
+						selectedSuggestions = new Set();
 						suggestionDetail = null;
+						lastClickedIndex = -1;
 					}}
 				>
 					<SelectTrigger class="w-32">
@@ -331,18 +386,21 @@
 			<div class="grid gap-6 lg:grid-cols-3">
 				<!-- Suggestion List -->
 				<div class="max-h-[600px] space-y-2 overflow-y-auto pr-2">
-					{#each filteredSuggestions as suggestion (suggestion.id)}
+					{#each filteredSuggestions as suggestion, index (suggestion.id)}
 						{@const StatusIcon = getStatusIcon(suggestion.status)}
+						{@const isSelected = suggestion.id ? selectedSuggestions.has(suggestion.id) : false}
+						{@const isActive = suggestion.id === activeSuggestion}
 						<button
 							type="button"
 							class="w-full text-left"
-							onclick={() => suggestion.id && loadSuggestionDetail(suggestion.id)}
+							onclick={(e) => handleItemClick(suggestion, index, e)}
 						>
 							<div
-								class="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50 {selectedSuggestion ===
-								suggestion.id
+								class="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50 {isActive
 									? 'ring-2 ring-primary'
-									: ''}"
+									: isSelected
+										? 'ring-2 ring-primary/50 bg-primary/5'
+										: ''}"
 							>
 								<div class="flex items-center gap-3">
 									<div
@@ -451,39 +509,85 @@
 									</div>
 								{/if}
 
+								<!-- Bulk Selection Bar -->
+								{#if isBulkMode}
+									<div class="mb-4 flex items-center justify-between rounded-lg bg-primary/10 p-3">
+										<span class="text-sm font-medium">{selectionCount} selected</span>
+										<div class="flex gap-2">
+											<Button
+												size="sm"
+												onclick={handleAccept}
+												disabled={isLoading}
+											>
+												<Check class="mr-1 h-3 w-3" />
+												Accept All
+											</Button>
+											<Button
+												size="sm"
+												variant="outline"
+												onclick={handleDismiss}
+												disabled={isLoading}
+											>
+												<X class="mr-1 h-3 w-3" />
+												Dismiss All
+											</Button>
+											<Button
+												size="sm"
+												variant="destructive"
+												onclick={handleDelete}
+												disabled={isLoading}
+											>
+												<Trash2 class="mr-1 h-3 w-3" />
+												Delete All
+											</Button>
+										</div>
+									</div>
+								{/if}
+
 								<!-- Actions -->
-								{#if isPending}
-									<div class="flex gap-4">
-										<Button
-											class="flex-1"
-											onclick={handleAccept}
-											disabled={isLoading || !brushDomain}
-										>
-											<Check class="mr-2 h-4 w-4" />
-											Accept
-										</Button>
-										<Button
-											variant="outline"
-											class="flex-1"
-											onclick={handleDismiss}
-											disabled={isLoading}
-										>
-											<X class="mr-2 h-4 w-4" />
-											Dismiss
-										</Button>
-									</div>
-								{:else}
-									<div class="flex gap-4">
-										<Button
-											variant="destructive"
-											class="flex-1"
-											onclick={handleDelete}
-											disabled={isLoading}
-										>
-											<Trash2 class="mr-2 h-4 w-4" />
-											Delete
-										</Button>
-									</div>
+								{#if !isBulkMode}
+									{#if isPending}
+										<div class="flex gap-4">
+											<Button
+												class="flex-1"
+												onclick={handleAccept}
+												disabled={isLoading || !brushDomain}
+											>
+												<Check class="mr-2 h-4 w-4" />
+												Accept
+											</Button>
+											<Button
+												variant="outline"
+												class="flex-1"
+												onclick={handleDismiss}
+												disabled={isLoading}
+											>
+												<X class="mr-2 h-4 w-4" />
+												Dismiss
+											</Button>
+											<Button
+												variant="destructive"
+												class="flex-1"
+												onclick={handleDelete}
+												disabled={isLoading}
+											>
+												<Trash2 class="mr-2 h-4 w-4" />
+												Delete
+											</Button>
+										</div>
+									{:else}
+										<div class="flex gap-4">
+											<Button
+												variant="destructive"
+												class="flex-1"
+												onclick={handleDelete}
+												disabled={isLoading}
+											>
+												<Trash2 class="mr-2 h-4 w-4" />
+												Delete
+											</Button>
+										</div>
+									{/if}
 								{/if}
 							</CardContent>
 						</Card>

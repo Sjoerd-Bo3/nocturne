@@ -24,6 +24,7 @@
   import TIRStackedChart from "$lib/components/reports/TIRStackedChart.svelte";
   import ReliabilityBadge from "$lib/components/reports/ReliabilityBadge.svelte";
   import { getReportsData } from "$api/reports.remote";
+  import { bg, bgLabel } from "$lib/utils/formatting";
   import { requireDateParamsContext } from "$lib/hooks/date-params.svelte";
   import { contextResource } from "$lib/hooks/resource-context.svelte";
 
@@ -182,9 +183,9 @@
         <div class="text-[10px] text-green-600">Target: ≥70%</div>
       </Card>
       <Card class="p-4 text-center">
-        <div class="text-3xl font-bold">{stats.mean?.toFixed(0) ?? "–"}</div>
+        <div class="text-3xl font-bold">{stats.mean ? bg(stats.mean) : "–"}</div>
         <div class="text-xs text-muted-foreground">Average</div>
-        <div class="text-[10px] text-muted-foreground/70">mg/dL</div>
+        <div class="text-[10px] text-muted-foreground/70">{bgLabel()}</div>
       </Card>
       <Card class="p-4 text-center">
         <div class="text-3xl font-bold text-red-600">

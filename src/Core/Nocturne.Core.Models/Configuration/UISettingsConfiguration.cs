@@ -598,6 +598,14 @@ public class SleepScheduleSettings
     /// </summary>
     [JsonPropertyName("wakeTimeHour")]
     public int WakeTimeHour { get; set; } = 7;
+
+    /// <summary>
+    /// IANA timezone identifier (e.g., "America/New_York", "Europe/London").
+    /// Used for interpreting bedtime/wake hours and calculating overnight windows.
+    /// Falls back to Nightscout profile timezone, then UTC if not set.
+    /// </summary>
+    [JsonPropertyName("timezone")]
+    public string? Timezone { get; set; }
 }
 
 /// <summary>

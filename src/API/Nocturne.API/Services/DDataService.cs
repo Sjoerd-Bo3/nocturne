@@ -41,20 +41,18 @@ public class DDataService : IDDataService
     {
         var ddata = new DData { LastUpdated = timestamp };
 
-        // Load data from various collections based on timestamp
-        var tasks = new List<Task>
-        {
-            LoadSgvsAsync(ddata, timestamp, cancellationToken),
-            LoadTreatmentsAsync(ddata, timestamp, cancellationToken),
-            LoadMbgsAsync(ddata, timestamp, cancellationToken),
-            LoadCalsAsync(ddata, timestamp, cancellationToken),
-            LoadProfilesAsync(ddata, cancellationToken),
-            LoadDeviceStatusAsync(ddata, timestamp, cancellationToken),
-            LoadFoodAsync(ddata, cancellationToken),
-            LoadActivityAsync(ddata, timestamp, cancellationToken),
-            LoadDbStatsAsync(ddata, cancellationToken),
-        };
-        await Task.WhenAll(tasks);
+        // Load data from various collections based on timestamp.
+        // Fetched sequentially — the underlying service shares a scoped DbContext
+        // which is not thread-safe for concurrent access.
+        await LoadSgvsAsync(ddata, timestamp, cancellationToken);
+        await LoadTreatmentsAsync(ddata, timestamp, cancellationToken);
+        await LoadMbgsAsync(ddata, timestamp, cancellationToken);
+        await LoadCalsAsync(ddata, timestamp, cancellationToken);
+        await LoadProfilesAsync(ddata, cancellationToken);
+        await LoadDeviceStatusAsync(ddata, timestamp, cancellationToken);
+        await LoadFoodAsync(ddata, cancellationToken);
+        await LoadActivityAsync(ddata, timestamp, cancellationToken);
+        await LoadDbStatsAsync(ddata, cancellationToken);
 
         // Process treatments to create filtered lists
         var processedTreatments = ProcessTreatments(ddata.Treatments, false);
