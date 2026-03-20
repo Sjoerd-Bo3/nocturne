@@ -36,7 +36,7 @@ export const getDayInReviewData = query(
 		// Fetch v4 data + APS snapshots for historical predictions
 		const [entriesResponse, bolusResponse, carbResponse, apsResponse] = await Promise.all([
 			apiClient.glucose.getSensorGlucose(dayStart, dayEnd, 10000),
-			apiClient.insulin.getBoluses(dayStart, dayEnd, 1000),
+			apiClient.boluses.getAll(dayStart, dayEnd, 1000),
 			apiClient.nutrition.getCarbIntakes(dayStart, dayEnd, 1000),
 			getApsSnapshots({ from: dayStart.getTime(), to: dayEnd.getTime(), limit: 1000, sort: 'timestamp_asc' }),
 		]);

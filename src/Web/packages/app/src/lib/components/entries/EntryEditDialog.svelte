@@ -26,10 +26,10 @@
   import { getDataSourceDisplayName } from "$lib/utils/data-source-display";
   import { toast } from "svelte-sonner";
   import {
-    createBolus,
-    updateBolus,
-    deleteBolus,
-  } from "$api/generated/insulins.generated.remote";
+    create as createBolus,
+    update as updateBolus,
+    remove as deleteBolus,
+  } from "$api/generated/boluses.generated.remote";
   import {
     createCarbIntake,
     updateCarbIntake,

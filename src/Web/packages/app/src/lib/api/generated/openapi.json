@@ -2715,6 +2715,48 @@
         "x-remote-type": "query"
       }
     },
+    "/api/v1/Statistics/aid-system-metrics": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Calculate AID (Automated Insulin Delivery) system metrics for a date range.\nUses patient device data to segment the period and compute time-weighted metrics.",
+        "operationId": "Statistics_GetAidSystemMetrics",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AidSystemMetrics"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
     "/api/Versions": {
       "get": {
         "tags": [
@@ -3094,6 +3136,568 @@
           },
           "500": {
             "description": ""
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/insulin/calculations": {
+      "post": {
+        "tags": [
+          "V4 Bolus Calculations"
+        ],
+        "operationId": "BolusCalculation_Create",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BolusCalculation"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BolusCalculation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      },
+      "get": {
+        "tags": [
+          "V4 Bolus Calculations"
+        ],
+        "operationId": "BolusCalculation_GetAll",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            },
+            "x-position": 2
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            },
+            "x-position": 3
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "x-position": 4
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "timestamp_desc"
+            },
+            "x-position": 5
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 6
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 7
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseOfBolusCalculation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/insulin/calculations/{id}": {
+      "put": {
+        "tags": [
+          "V4 Bolus Calculations"
+        ],
+        "operationId": "BolusCalculation_Update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BolusCalculation"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BolusCalculation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      },
+      "delete": {
+        "tags": [
+          "V4 Bolus Calculations"
+        ],
+        "operationId": "BolusCalculation_Delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      },
+      "get": {
+        "tags": [
+          "V4 Bolus Calculations"
+        ],
+        "operationId": "BolusCalculation_GetById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BolusCalculation"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/insulin/boluses": {
+      "post": {
+        "tags": [
+          "V4 Boluses"
+        ],
+        "operationId": "Bolus_Create",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Bolus"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bolus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      },
+      "get": {
+        "tags": [
+          "V4 Boluses"
+        ],
+        "operationId": "Bolus_GetAll",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            },
+            "x-position": 2
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            },
+            "x-position": 3
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "x-position": 4
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "timestamp_desc"
+            },
+            "x-position": 5
+          },
+          {
+            "name": "device",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 6
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 7
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseOfBolus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/insulin/boluses/{id}": {
+      "put": {
+        "tags": [
+          "V4 Boluses"
+        ],
+        "operationId": "Bolus_Update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Bolus"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bolus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      },
+      "delete": {
+        "tags": [
+          "V4 Boluses"
+        ],
+        "operationId": "Bolus_Delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      },
+      "get": {
+        "tags": [
+          "V4 Boluses"
+        ],
+        "operationId": "Bolus_GetById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bolus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "x-remote-type": "query"
@@ -7596,598 +8200,6 @@
         }
       }
     },
-    "/api/v4/insulin/boluses": {
-      "get": {
-        "tags": [
-          "V4 Insulin"
-        ],
-        "summary": "Get boluses with optional filtering",
-        "operationId": "Insulin_GetBoluses",
-        "parameters": [
-          {
-            "name": "from",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date-time",
-              "nullable": true
-            },
-            "x-position": 1
-          },
-          {
-            "name": "to",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date-time",
-              "nullable": true
-            },
-            "x-position": 2
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 100
-            },
-            "x-position": 3
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 0
-            },
-            "x-position": 4
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "default": "timestamp_desc"
-            },
-            "x-position": 5
-          },
-          {
-            "name": "device",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "nullable": true
-            },
-            "x-position": 6
-          },
-          {
-            "name": "source",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "nullable": true
-            },
-            "x-position": 7
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponseOfBolus"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "query"
-      },
-      "post": {
-        "tags": [
-          "V4 Insulin"
-        ],
-        "summary": "Create a new bolus",
-        "operationId": "Insulin_CreateBolus",
-        "requestBody": {
-          "x-name": "model",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Bolus"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Bolus"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "command",
-        "x-remote-invalidates": [
-          "GetBoluses"
-        ]
-      }
-    },
-    "/api/v4/insulin/boluses/{id}": {
-      "get": {
-        "tags": [
-          "V4 Insulin"
-        ],
-        "summary": "Get a bolus by ID",
-        "operationId": "Insulin_GetBolusById",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "guid"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Bolus"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "query"
-      },
-      "put": {
-        "tags": [
-          "V4 Insulin"
-        ],
-        "summary": "Update an existing bolus",
-        "operationId": "Insulin_UpdateBolus",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "guid"
-            },
-            "x-position": 1
-          }
-        ],
-        "requestBody": {
-          "x-name": "model",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Bolus"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 2
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Bolus"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "command",
-        "x-remote-invalidates": [
-          "GetBoluses",
-          "GetBolusById"
-        ]
-      },
-      "delete": {
-        "tags": [
-          "V4 Insulin"
-        ],
-        "summary": "Delete a bolus",
-        "operationId": "Insulin_DeleteBolus",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "guid"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": ""
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "command",
-        "x-remote-invalidates": [
-          "GetBoluses"
-        ]
-      }
-    },
-    "/api/v4/insulin/calculations": {
-      "get": {
-        "tags": [
-          "V4 Insulin"
-        ],
-        "summary": "Get bolus calculations with optional filtering",
-        "operationId": "Insulin_GetBolusCalculations",
-        "parameters": [
-          {
-            "name": "from",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date-time",
-              "nullable": true
-            },
-            "x-position": 1
-          },
-          {
-            "name": "to",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date-time",
-              "nullable": true
-            },
-            "x-position": 2
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 100
-            },
-            "x-position": 3
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 0
-            },
-            "x-position": 4
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "default": "timestamp_desc"
-            },
-            "x-position": 5
-          },
-          {
-            "name": "device",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "nullable": true
-            },
-            "x-position": 6
-          },
-          {
-            "name": "source",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "nullable": true
-            },
-            "x-position": 7
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponseOfBolusCalculation"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "query"
-      },
-      "post": {
-        "tags": [
-          "V4 Insulin"
-        ],
-        "summary": "Create a new bolus calculation",
-        "operationId": "Insulin_CreateBolusCalculation",
-        "requestBody": {
-          "x-name": "model",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BolusCalculation"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BolusCalculation"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "command",
-        "x-remote-invalidates": [
-          "GetBolusCalculations"
-        ]
-      }
-    },
-    "/api/v4/insulin/calculations/{id}": {
-      "get": {
-        "tags": [
-          "V4 Insulin"
-        ],
-        "summary": "Get a bolus calculation by ID",
-        "operationId": "Insulin_GetBolusCalculationById",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "guid"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BolusCalculation"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "query"
-      },
-      "put": {
-        "tags": [
-          "V4 Insulin"
-        ],
-        "summary": "Update an existing bolus calculation",
-        "operationId": "Insulin_UpdateBolusCalculation",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "guid"
-            },
-            "x-position": 1
-          }
-        ],
-        "requestBody": {
-          "x-name": "model",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BolusCalculation"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 2
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BolusCalculation"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "command",
-        "x-remote-invalidates": [
-          "GetBolusCalculations",
-          "GetBolusCalculationById"
-        ]
-      },
-      "delete": {
-        "tags": [
-          "V4 Insulin"
-        ],
-        "summary": "Delete a bolus calculation",
-        "operationId": "Insulin_DeleteBolusCalculation",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "guid"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": ""
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "command",
-        "x-remote-invalidates": [
-          "GetBolusCalculations"
-        ]
-      }
-    },
     "/api/v4/meal-matching/food-entries/{id}": {
       "get": {
         "tags": [
@@ -10360,6 +10372,337 @@
         "x-remote-type": "command",
         "x-remote-invalidates": [
           "GetDeviceEvents"
+        ]
+      }
+    },
+    "/api/v4/patient-record": {
+      "get": {
+        "tags": [
+          "V4 Patient Record"
+        ],
+        "summary": "Get or create the patient record",
+        "operationId": "PatientRecord_GetPatientRecord",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientRecord"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "put": {
+        "tags": [
+          "V4 Patient Record"
+        ],
+        "summary": "Update the patient record",
+        "operationId": "PatientRecord_UpdatePatientRecord",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientRecord"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientRecord"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetPatientRecord"
+        ]
+      }
+    },
+    "/api/v4/patient-record/devices": {
+      "get": {
+        "tags": [
+          "V4 Patient Record"
+        ],
+        "summary": "Get all patient devices",
+        "operationId": "PatientRecord_GetDevices",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PatientDevice"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "post": {
+        "tags": [
+          "V4 Patient Record"
+        ],
+        "summary": "Create a new patient device",
+        "operationId": "PatientRecord_CreateDevice",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientDevice"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientDevice"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetDevices"
+        ]
+      }
+    },
+    "/api/v4/patient-record/devices/{id}": {
+      "put": {
+        "tags": [
+          "V4 Patient Record"
+        ],
+        "summary": "Update a patient device",
+        "operationId": "PatientRecord_UpdateDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientDevice"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientDevice"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetDevices"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "V4 Patient Record"
+        ],
+        "summary": "Delete a patient device",
+        "operationId": "PatientRecord_DeleteDevice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetDevices"
+        ]
+      }
+    },
+    "/api/v4/patient-record/insulins": {
+      "get": {
+        "tags": [
+          "V4 Patient Record"
+        ],
+        "summary": "Get all patient insulins",
+        "operationId": "PatientRecord_GetInsulins",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PatientInsulin"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "post": {
+        "tags": [
+          "V4 Patient Record"
+        ],
+        "summary": "Create a new patient insulin",
+        "operationId": "PatientRecord_CreateInsulin",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientInsulin"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientInsulin"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetInsulins"
+        ]
+      }
+    },
+    "/api/v4/patient-record/insulins/{id}": {
+      "put": {
+        "tags": [
+          "V4 Patient Record"
+        ],
+        "summary": "Update a patient insulin",
+        "operationId": "PatientRecord_UpdateInsulin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientInsulin"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientInsulin"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetInsulins"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "V4 Patient Record"
+        ],
+        "summary": "Delete a patient insulin",
+        "operationId": "PatientRecord_DeleteInsulin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetInsulins"
         ]
       }
     },
@@ -12839,6 +13182,52 @@
         ],
         "summary": "Get override state spans",
         "operationId": "StateSpans_GetOverrides",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StateSpan"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/state-spans/temporary-targets": {
+      "get": {
+        "tags": [
+          "StateSpans"
+        ],
+        "summary": "Get temporary target state spans (AAPS temporary glucose targets)",
+        "operationId": "StateSpans_GetTemporaryTargets",
         "parameters": [
           {
             "name": "from",
@@ -22555,7 +22944,8 @@
           "Exercise",
           "Illness",
           "Travel",
-          "DataExclusion"
+          "DataExclusion",
+          "TemporaryTarget"
         ],
         "enum": [
           "PumpMode",
@@ -22566,7 +22956,8 @@
           "Exercise",
           "Illness",
           "Travel",
-          "DataExclusion"
+          "DataExclusion",
+          "TemporaryTarget"
         ]
       },
       "BasalDeliveryOrigin": {
@@ -26601,6 +26992,133 @@
           "ProfileSwitch"
         ]
       },
+      "AidSystemMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "cgmUsePercent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pumpUsePercent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "aidActivePercent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "cgmActivePercent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "targetLow": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "targetHigh": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "siteChangeCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AidTimeSegment"
+            }
+          }
+        }
+      },
+      "AidTimeSegment": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "algorithm": {
+            "$ref": "#/components/schemas/AidAlgorithm"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "durationHours": {
+            "type": "number",
+            "format": "double"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/AidSegmentMetrics"
+          }
+        }
+      },
+      "AidAlgorithm": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "OpenAps",
+          "AndroidAps",
+          "Loop",
+          "Trio",
+          "IAPS",
+          "ControlIQ",
+          "CamAPSFX",
+          "Omnipod5Algorithm",
+          "MedtronicSmartGuard",
+          "None",
+          "Unknown"
+        ],
+        "enum": [
+          "OpenAps",
+          "AndroidAps",
+          "Loop",
+          "Trio",
+          "IAPS",
+          "ControlIQ",
+          "CamAPSFX",
+          "Omnipod5Algorithm",
+          "MedtronicSmartGuard",
+          "None",
+          "Unknown"
+        ]
+      },
+      "AidSegmentMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "aidActivePercent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "pumpUsePercent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "loopCycleCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "enactedCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
       "VersionsResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -27123,6 +27641,192 @@
           },
           "isComplete": {
             "type": "boolean"
+          }
+        }
+      },
+      "BolusCalculation": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "mills": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "legacyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bloodGlucoseInput": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "bloodGlucoseInputSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "carbInput": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "insulinOnBoard": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "insulinRecommendation": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "carbRatio": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "calculationType": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CalculationType2"
+              }
+            ]
+          },
+          "insulinRecommendationForCarbs": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "insulinProgrammed": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "enteredInsulin": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "splitNow": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "splitExt": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "preBolus": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "additionalProperties": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {}
+          }
+        }
+      },
+      "CalculationType2": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "Suggested",
+          "Manual",
+          "Automatic"
+        ],
+        "enum": [
+          "Suggested",
+          "Manual",
+          "Automatic"
+        ]
+      },
+      "PaginatedResponseOfBolusCalculation": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BolusCalculation"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationInfo"
+          }
+        }
+      },
+      "PaginationInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "offset": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PaginatedResponseOfBolus": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Bolus"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationInfo"
           }
         }
       },
@@ -28841,6 +29545,10 @@
             "format": "date-time",
             "nullable": true
           },
+          "supersededById": {
+            "type": "string",
+            "nullable": true
+          },
           "canonicalId": {
             "type": "string",
             "format": "guid",
@@ -30520,54 +31228,6 @@
           }
         }
       },
-      "AidAlgorithm": {
-        "type": "string",
-        "description": "",
-        "x-enumNames": [
-          "OpenAps",
-          "AndroidAps",
-          "Loop",
-          "Trio",
-          "IAPS",
-          "ControlIQ",
-          "CamAPSFX",
-          "Omnipod5Algorithm",
-          "MedtronicSmartGuard",
-          "None",
-          "Unknown"
-        ],
-        "enum": [
-          "OpenAps",
-          "AndroidAps",
-          "Loop",
-          "Trio",
-          "IAPS",
-          "ControlIQ",
-          "CamAPSFX",
-          "Omnipod5Algorithm",
-          "MedtronicSmartGuard",
-          "None",
-          "Unknown"
-        ]
-      },
-      "PaginationInfo": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "limit": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "offset": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "total": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
       "PaginatedResponseOfPumpSnapshot": {
         "type": "object",
         "additionalProperties": false,
@@ -31170,174 +31830,6 @@
               }
             }
           }
-        ]
-      },
-      "PaginatedResponseOfBolus": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Bolus"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/PaginationInfo"
-          }
-        }
-      },
-      "PaginatedResponseOfBolusCalculation": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BolusCalculation"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/PaginationInfo"
-          }
-        }
-      },
-      "BolusCalculation": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "guid"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "mills": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "utcOffset": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "device": {
-            "type": "string",
-            "nullable": true
-          },
-          "app": {
-            "type": "string",
-            "nullable": true
-          },
-          "dataSource": {
-            "type": "string",
-            "nullable": true
-          },
-          "correlationId": {
-            "type": "string",
-            "format": "guid",
-            "nullable": true
-          },
-          "legacyId": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "modifiedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "bloodGlucoseInput": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "bloodGlucoseInputSource": {
-            "type": "string",
-            "nullable": true
-          },
-          "carbInput": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "insulinOnBoard": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "insulinRecommendation": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "carbRatio": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "calculationType": {
-            "nullable": true,
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/CalculationType2"
-              }
-            ]
-          },
-          "insulinRecommendationForCarbs": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "insulinProgrammed": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "enteredInsulin": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "splitNow": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "splitExt": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "preBolus": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "additionalProperties": {
-            "type": "object",
-            "nullable": true,
-            "additionalProperties": {}
-          }
-        }
-      },
-      "CalculationType2": {
-        "type": "string",
-        "description": "",
-        "x-enumNames": [
-          "Suggested",
-          "Manual",
-          "Automatic"
-        ],
-        "enum": [
-          "Suggested",
-          "Manual",
-          "Automatic"
         ]
       },
       "SuggestedMealMatch": {
@@ -32246,6 +32738,215 @@
             "$ref": "#/components/schemas/PaginationInfo"
           }
         }
+      },
+      "PatientRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "diabetesType": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DiabetesType"
+              }
+            ]
+          },
+          "diabetesTypeOther": {
+            "type": "string",
+            "nullable": true
+          },
+          "diagnosisDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "preferredName": {
+            "type": "string",
+            "nullable": true
+          },
+          "pronouns": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DiabetesType": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "Type1",
+          "Type2",
+          "LADA",
+          "MODY",
+          "Gestational",
+          "Other"
+        ],
+        "enum": [
+          "Type1",
+          "Type2",
+          "LADA",
+          "MODY",
+          "Gestational",
+          "Other"
+        ]
+      },
+      "PatientDevice": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "deviceCategory": {
+            "$ref": "#/components/schemas/DeviceCategory"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "aidAlgorithm": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AidAlgorithm"
+              }
+            ]
+          },
+          "serialNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "isCurrent": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeviceCategory": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "InsulinPump",
+          "CGM",
+          "GlucoseMeter",
+          "InsulinPen",
+          "SmartPen",
+          "Uploader"
+        ],
+        "enum": [
+          "InsulinPump",
+          "CGM",
+          "GlucoseMeter",
+          "InsulinPen",
+          "SmartPen",
+          "Uploader"
+        ]
+      },
+      "PatientInsulin": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "insulinCategory": {
+            "$ref": "#/components/schemas/InsulinCategory"
+          },
+          "name": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "isCurrent": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "InsulinCategory": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "RapidActing",
+          "ShortActing",
+          "IntermediateActing",
+          "LongActing",
+          "UltraLongActing",
+          "Premixed"
+        ],
+        "enum": [
+          "RapidActing",
+          "ShortActing",
+          "IntermediateActing",
+          "LongActing",
+          "UltraLongActing",
+          "Premixed"
+        ]
       },
       "GlucosePredictionResponse": {
         "type": "object",
@@ -37770,6 +38471,10 @@
             "items": {
               "$ref": "#/components/schemas/Treatment"
             }
+          },
+          "lastProfileFromSwitch": {
+            "type": "string",
+            "nullable": true
           }
         }
       },

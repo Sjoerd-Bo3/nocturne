@@ -32,7 +32,7 @@ export const getPunchCardData = query(punchCardSchema, async ({
   // Fetch glucose readings, boluses, carb intakes, and daily basal/bolus ratios for the full range
   const [glucoseResponse, bolusResponse, carbResponse, dailyBasalBolus] = await Promise.all([
     apiClient.glucose.getSensorGlucose(startDate, endDate, 100000),
-    apiClient.insulin.getBoluses(startDate, endDate, 10000),
+    apiClient.boluses.getAll(startDate, endDate, 10000),
     apiClient.nutrition.getCarbIntakes(startDate, endDate, 10000),
     apiClient.statistics.getDailyBasalBolusRatios(startDate, endDate),
   ]);

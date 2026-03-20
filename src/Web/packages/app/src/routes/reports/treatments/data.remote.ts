@@ -60,7 +60,7 @@ export const getTreatmentsData = query(
 		const { startDate, endDate } = calculateDateRange(input, timezone);
 		const [bolusResponse, carbResponse, bgCheckResponse, noteResponse, deviceEventResponse] =
 			await Promise.all([
-				apiClient.insulin.getBoluses(startDate, endDate, 10000),
+				apiClient.boluses.getAll(startDate, endDate, 10000),
 				apiClient.nutrition.getCarbIntakes(startDate, endDate, 10000),
 				apiClient.observations.getBGChecks(startDate, endDate, 10000),
 				apiClient.observations.getNotes(startDate, endDate, 10000),
@@ -108,7 +108,7 @@ export const deleteEntryForm = form(
 		try {
 			switch (entryKind) {
 				case 'bolus':
-					await apiClient.insulin.deleteBolus(entryId);
+					await apiClient.boluses.delete(entryId);
 					break;
 				case 'carbs':
 					await apiClient.nutrition.deleteCarbIntake(entryId);
@@ -157,7 +157,7 @@ export const bulkDeleteEntries = command(
 			try {
 				switch (item.kind) {
 					case 'bolus':
-						await apiClient.insulin.deleteBolus(item.id);
+						await apiClient.boluses.delete(item.id);
 						break;
 					case 'carbs':
 						await apiClient.nutrition.deleteCarbIntake(item.id);
@@ -211,7 +211,7 @@ export const updateEntry = command(
 
 		switch (kind) {
 			case 'bolus':
-				return await apiClient.insulin.updateBolus(id, data as Bolus);
+				return await apiClient.boluses.update(id, data as Bolus);
 			case 'carbs':
 				return await apiClient.nutrition.updateCarbIntake(id, data as CarbIntake);
 			case 'bgCheck':

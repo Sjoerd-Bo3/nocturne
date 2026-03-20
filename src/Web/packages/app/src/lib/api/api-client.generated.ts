@@ -10,6 +10,8 @@ import {
   AuthenticationClient,
   AuthorizationClient,
   BatteryClient,
+  BolusCalculationClient,
+  BolusClient,
   ChartDataClient,
   ClockFacesClient,
   CompatibilityClient,
@@ -33,7 +35,6 @@ import {
   FoodsClient,
   GlucoseClient,
   HeartRateClient,
-  InsulinClient,
   IobClient,
   LastModifiedClient,
   LocalAuthClient,
@@ -47,6 +48,7 @@ import {
   ObservationsClient,
   OidcClient,
   WellKnownClient,
+  PatientRecordClient,
   PebbleClient,
   PredictionClient,
   ProcessingClient,
@@ -87,6 +89,8 @@ export class ApiClient {
   public readonly authentication: AuthenticationClient;
   public readonly authorization: AuthorizationClient;
   public readonly battery: BatteryClient;
+  public readonly bolusCalculations: BolusCalculationClient;
+  public readonly boluses: BolusClient;
   public readonly chartData: ChartDataClient;
   public readonly clockFaces: ClockFacesClient;
   public readonly compatibility: CompatibilityClient;
@@ -110,7 +114,6 @@ export class ApiClient {
   public readonly foodsV4: FoodsClient;
   public readonly glucose: GlucoseClient;
   public readonly heartRate: HeartRateClient;
-  public readonly insulin: InsulinClient;
   public readonly iob: IobClient;
   public readonly lastModified: LastModifiedClient;
   public readonly localAuth: LocalAuthClient;
@@ -124,6 +127,7 @@ export class ApiClient {
   public readonly observations: ObservationsClient;
   public readonly oidc: OidcClient;
   public readonly oidcDiscovery: WellKnownClient;
+  public readonly patientRecord: PatientRecordClient;
   public readonly pebble: PebbleClient;
   public readonly predictions: PredictionClient;
   public readonly processing: ProcessingClient;
@@ -164,6 +168,8 @@ export class ApiClient {
     this.authentication = new AuthenticationClient(apiBaseUrl, http);
     this.authorization = new AuthorizationClient(apiBaseUrl, http);
     this.battery = new BatteryClient(apiBaseUrl, http);
+    this.bolusCalculations = new BolusCalculationClient(apiBaseUrl, http);
+    this.boluses = new BolusClient(apiBaseUrl, http);
     this.chartData = new ChartDataClient(apiBaseUrl, http);
     this.clockFaces = new ClockFacesClient(apiBaseUrl, http);
     this.compatibility = new CompatibilityClient(apiBaseUrl, http);
@@ -187,7 +193,6 @@ export class ApiClient {
     this.foodsV4 = new FoodsClient(apiBaseUrl, http);
     this.glucose = new GlucoseClient(apiBaseUrl, http);
     this.heartRate = new HeartRateClient(apiBaseUrl, http);
-    this.insulin = new InsulinClient(apiBaseUrl, http);
     this.iob = new IobClient(apiBaseUrl, http);
     this.lastModified = new LastModifiedClient(apiBaseUrl, http);
     this.localAuth = new LocalAuthClient(apiBaseUrl, http);
@@ -201,6 +206,7 @@ export class ApiClient {
     this.observations = new ObservationsClient(apiBaseUrl, http);
     this.oidc = new OidcClient(apiBaseUrl, http);
     this.oidcDiscovery = new WellKnownClient(apiBaseUrl, http);
+    this.patientRecord = new PatientRecordClient(apiBaseUrl, http);
     this.pebble = new PebbleClient(apiBaseUrl, http);
     this.predictions = new PredictionClient(apiBaseUrl, http);
     this.processing = new ProcessingClient(apiBaseUrl, http);

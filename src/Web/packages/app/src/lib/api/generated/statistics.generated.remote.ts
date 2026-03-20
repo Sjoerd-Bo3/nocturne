@@ -98,3 +98,19 @@ export const getBasalAnalysis = query(z.object({ startDate: z.coerce.date().opti
     throw error(500, 'Failed to get basal analysis');
   }
 });
+
+/** Calculate AID (Automated Insulin Delivery) system metrics for a date range.
+Uses patient device data to segment the period and compute time-weighted metrics. */
+export const getAidSystemMetrics = query(z.object({ startDate: z.coerce.date().optional(), endDate: z.coerce.date().optional() }).optional(), async (params) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    return await apiClient.statistics.getAidSystemMetrics(params?.startDate, params?.endDate);
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in statistics.getAidSystemMetrics:', err);
+    throw error(500, 'Failed to get aid system metrics');
+  }
+});

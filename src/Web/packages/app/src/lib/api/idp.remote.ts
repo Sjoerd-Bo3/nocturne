@@ -72,12 +72,12 @@ export const getIdpData = query(
 		const entries = glucoseResult.data ?? [];
 
 		// Paginate boluses
-		let allBoluses: Awaited<ReturnType<typeof apiClient.insulin.getBoluses>>['data'] = [];
+		let allBoluses: Awaited<ReturnType<typeof apiClient.boluses.getAll>>['data'] = [];
 		let offset = 0;
 		let hasMore = true;
 
 		while (hasMore) {
-			const batch = await apiClient.insulin.getBoluses(startDate, endDate, pageSize, offset);
+			const batch = await apiClient.boluses.getAll(startDate, endDate, pageSize, offset);
 			allBoluses = allBoluses!.concat(batch.data ?? []);
 
 			if ((batch.data?.length ?? 0) < pageSize) {

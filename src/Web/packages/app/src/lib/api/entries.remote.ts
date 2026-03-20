@@ -31,7 +31,7 @@ export const getBolusesAndCarbs = query(entriesSchema, async (props) => {
   if (!from || !to) throw new Error("Invalid date range");
 
   const [bolusResponse, carbResponse] = await Promise.all([
-    apiClient.insulin.getBoluses(from, to, 10000),
+    apiClient.boluses.getAll(from, to, 10000),
     apiClient.nutrition.getCarbIntakes(from, to, 10000),
   ]);
 
@@ -50,7 +50,7 @@ export const getStats = query(entriesSchema, async (props) => {
 
   const [entriesResponse, bolusResponse, carbResponse] = await Promise.all([
     apiClient.glucose.getSensorGlucose(from, to, 10000),
-    apiClient.insulin.getBoluses(from, to, 10000),
+    apiClient.boluses.getAll(from, to, 10000),
     apiClient.nutrition.getCarbIntakes(from, to, 10000),
   ]);
 
@@ -80,7 +80,7 @@ export const getEntryByTreatmentId = query(treatmentIdSchema, async ({ treatment
   const { apiClient } = locals;
 
   const fetchers = [
-    { kind: "bolus" as const, fetch: () => apiClient.insulin.getBolusById(treatmentId) },
+    { kind: "bolus" as const, fetch: () => apiClient.boluses.getById(treatmentId) },
     { kind: "carbs" as const, fetch: () => apiClient.nutrition.getCarbIntakeById(treatmentId) },
     { kind: "bgCheck" as const, fetch: () => apiClient.observations.getBGCheckById(treatmentId) },
     { kind: "note" as const, fetch: () => apiClient.observations.getNoteById(treatmentId) },

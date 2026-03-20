@@ -261,7 +261,7 @@ export class RealtimeStore {
         apiClient.trackers.getDefinitions().catch(() => []),
         apiClient.trackers.getActiveInstances().catch(() => []),
         apiClient.notifications.getNotifications().catch(() => []),
-        apiClient.insulin.getBoluses(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load boluses:", e); return []; }),
+        apiClient.boluses.getAll(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load boluses:", e); return []; }),
         apiClient.nutrition.getCarbIntakes(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load carbIntakes:", e); return []; }),
         apiClient.observations.getBGChecks(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load bgChecks:", e); return []; }),
         apiClient.observations.getNotes(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load notes:", e); return []; }),
@@ -766,7 +766,7 @@ export class RealtimeStore {
       const [entries, deviceStatuses, boluses, carbIntakes, bgChecks, notes, devEvents] = await Promise.all([
         apiClient.entries.getEntries2(findQuery, 1000).catch(() => []),
         apiClient.deviceStatus.getDeviceStatus2(100).catch(() => []),
-        apiClient.insulin.getBoluses(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.boluses.getAll(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
         apiClient.nutrition.getCarbIntakes(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
         apiClient.observations.getBGChecks(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
         apiClient.observations.getNotes(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),

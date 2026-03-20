@@ -69,7 +69,7 @@ export const getPointInTimeData = query(pointInTimeSchema, async ({ timestamp })
   // Fetch glucose readings, boluses, and carb intakes for the time window
   const [glucoseResponse, bolusResponse, carbResponse] = await Promise.all([
     apiClient.glucose.getSensorGlucose(fromDate, toDate, 10000).catch(() => ({ data: [] as SensorGlucose[] })),
-    apiClient.insulin.getBoluses(fromDate, toDate, 10000).catch(() => ({ data: [] as Bolus[] })),
+    apiClient.boluses.getAll(fromDate, toDate, 10000).catch(() => ({ data: [] as Bolus[] })),
     apiClient.nutrition.getCarbIntakes(fromDate, toDate, 10000).catch(() => ({ data: [] as CarbIntake[] })),
   ]);
 
