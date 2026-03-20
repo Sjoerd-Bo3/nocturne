@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Connectors.Core.Models;
@@ -217,7 +218,14 @@ public static class ConnectorServiceCollectionExtensions
         ///     Discovers and registers all connector services via assembly scanning.
         ///     Replaces explicit per-connector AddXxxConnector() calls in Program.cs.
         /// </summary>
-        public IServiceCollection AddConnectors(IConfiguration configuration)
+        /// <param name="configuration">Application configuration</param>
+        /// <param name="backgroundServiceAssembly">
+        ///     Optional assembly to scan for ConnectorBackgroundService implementations.
+        ///     Typically the API assembly (typeof(Program).Assembly).
+        /// </param>
+        public IServiceCollection AddConnectors(
+            IConfiguration configuration,
+            Assembly? backgroundServiceAssembly = null)
         {
             var connectorAssemblies = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => a.FullName?.Contains("Nocturne.Connectors") == true)
@@ -243,6 +251,47 @@ public static class ConnectorServiceCollectionExtensions
                 catch (ReflectionTypeLoadException)
                 {
                     // Some types may not be loadable, skip them
+                }
+            }
+
+            // Auto-register background services
+            if (backgroundServiceAssembly != null)
+            {
+                foreach (var type in backgroundServiceAssembly.GetTypes())
+                {
+                    if (type.IsAbstract || type.IsInterface)
+                        continue;
+
+                    // Check if the type extends ConnectorBackgroundService<TConfig>
+                    var baseType = type.BaseType;
+                    if (baseType is not { IsGenericType: true })
+                        continue;
+
+                    if (baseType.GetGenericTypeDefinition().Name != "ConnectorBackgroundService`1")
+                        continue;
+
+                    // Get TConfig type and check for ConnectorRegistrationAttribute
+                    var configType = baseType.GetGenericArguments()[0];
+                    var registration = configType.GetCustomAttribute<ConnectorRegistrationAttribute>();
+                    if (registration == null)
+                        continue;
+
+                    // Check if the connector is enabled
+                    var connectorName = registration.ConnectorName;
+                    var section = configuration.GetSection($"Parameters:Connectors:{connectorName}");
+                    if (!section.Exists())
+                        section = configuration.GetSection($"Connectors:{connectorName}");
+
+                    if (!section.GetValue<bool>("Enabled"))
+                        continue;
+
+                    // Register the hosted service
+                    var addHostedServiceMethod = typeof(ServiceCollectionHostedServiceExtensions)
+                        .GetMethods()
+                        .First(m => m.Name == "AddHostedService" && m.GetParameters().Length == 1)
+                        .MakeGenericMethod(type);
+
+                    addHostedServiceMethod.Invoke(null, [services]);
                 }
             }
 
