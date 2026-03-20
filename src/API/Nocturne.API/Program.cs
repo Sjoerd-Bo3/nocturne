@@ -10,6 +10,7 @@ using Nocturne.API.Middleware;
 using Nocturne.API.Middleware.Handlers;
 using Nocturne.API.OpenApi;
 using Nocturne.API.Services;
+using Nocturne.API.Services.AidDetection;
 using Nocturne.API.Services.Alerts;
 using Nocturne.API.Services.Alerts.Notifiers;
 using Nocturne.API.Services.Alerts.Webhooks;
@@ -476,6 +477,12 @@ builder.Services.AddScoped<ITargetRangeScheduleRepository, TargetRangeScheduleRe
 builder.Services.AddScoped<IPatientRecordRepository, PatientRecordRepository>();
 builder.Services.AddScoped<IPatientDeviceRepository, PatientDeviceRepository>();
 builder.Services.AddScoped<IPatientInsulinRepository, PatientInsulinRepository>();
+
+// AID Detection Strategies and Metrics Service
+builder.Services.AddSingleton<IAidDetectionStrategy, ApsSnapshotStrategy>();
+builder.Services.AddSingleton<IAidDetectionStrategy, TbrBasedStrategy>();
+builder.Services.AddSingleton<IAidDetectionStrategy, NoAidStrategy>();
+builder.Services.AddScoped<IAidMetricsService, AidMetricsService>();
 
 // V4 Decomposers
 builder.Services.AddScoped<IEntryDecomposer, EntryDecomposer>();

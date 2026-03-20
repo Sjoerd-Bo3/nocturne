@@ -30,6 +30,11 @@ public class StatisticsController : ControllerBase
     private readonly ICarbIntakeRepository _carbIntakeRepository;
     private readonly ITempBasalRepository _tempBasalRepository;
     private readonly ITenantAccessor _tenantAccessor;
+    private readonly IAidMetricsService _aidMetricsService;
+    private readonly IPatientDeviceRepository _patientDeviceRepository;
+    private readonly IApsSnapshotRepository _apsSnapshotRepository;
+    private readonly IDeviceEventRepository _deviceEventRepository;
+    private readonly ITargetRangeScheduleRepository _targetRangeScheduleRepository;
 
     private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
         ?? throw new InvalidOperationException("Tenant context is not resolved");
@@ -43,7 +48,12 @@ public class StatisticsController : ControllerBase
         IBolusRepository bolusRepository,
         ICarbIntakeRepository carbIntakeRepository,
         ITempBasalRepository tempBasalRepository,
-        ITenantAccessor tenantAccessor
+        ITenantAccessor tenantAccessor,
+        IAidMetricsService aidMetricsService,
+        IPatientDeviceRepository patientDeviceRepository,
+        IApsSnapshotRepository apsSnapshotRepository,
+        IDeviceEventRepository deviceEventRepository,
+        ITargetRangeScheduleRepository targetRangeScheduleRepository
     )
     {
         _statisticsService = statisticsService;
@@ -55,6 +65,11 @@ public class StatisticsController : ControllerBase
         _carbIntakeRepository = carbIntakeRepository;
         _tempBasalRepository = tempBasalRepository;
         _tenantAccessor = tenantAccessor;
+        _aidMetricsService = aidMetricsService;
+        _patientDeviceRepository = patientDeviceRepository;
+        _apsSnapshotRepository = apsSnapshotRepository;
+        _deviceEventRepository = deviceEventRepository;
+        _targetRangeScheduleRepository = targetRangeScheduleRepository;
     }
 
     /// <summary>
@@ -1064,6 +1079,107 @@ public class StatisticsController : ControllerBase
                 startUtc,
                 endUtc
             );
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Calculate AID (Automated Insulin Delivery) system metrics for a date range.
+    /// Uses patient device data to segment the period and compute time-weighted metrics.
+    /// </summary>
+    [HttpGet("aid-system-metrics")]
+    [RemoteQuery]
+    public async Task<ActionResult<AidSystemMetrics>> GetAidSystemMetrics(
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate)
+    {
+        try
+        {
+            var startDt = DateTime.SpecifyKind(startDate, DateTimeKind.Utc);
+            var endDt = DateTime.SpecifyKind(endDate, DateTimeKind.Utc);
+
+            // Fetch patient devices overlapping the date range
+            var devices = await _patientDeviceRepository.GetByDateRangeAsync(startDt, endDt);
+
+            // Map patient devices to segment inputs
+            var deviceSegments = devices
+                .Where(d => d.DeviceCategory == DeviceCategory.InsulinPump && d.AidAlgorithm.HasValue)
+                .Select(d => new DeviceSegmentInput
+                {
+                    Algorithm = d.AidAlgorithm!.Value,
+                    StartDate = d.StartDate.HasValue
+                        ? d.StartDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
+                        : startDt,
+                    EndDate = d.EndDate.HasValue
+                        ? d.EndDate.Value.ToDateTime(new TimeOnly(23, 59, 59), DateTimeKind.Utc)
+                        : endDt,
+                })
+                .ToList();
+
+            // Fetch data sequentially (DbContext is not thread-safe)
+            var apsSnapshots = (await _apsSnapshotRepository.GetAsync(
+                from: startDt, to: endDt, device: null, source: null, limit: 50000, descending: false)).ToList();
+
+            var tempBasals = (await _tempBasalRepository.GetAsync(
+                from: startDt, to: endDt, device: null, source: null, limit: 50000, descending: false)).ToList();
+
+            var deviceEvents = (await _deviceEventRepository.GetAsync(
+                from: startDt, to: endDt, device: null, source: null, limit: 10000, descending: false)).ToList();
+
+            var glucose = (await _sensorGlucoseRepository.GetAsync(
+                from: startDt, to: endDt, device: null, source: null, limit: 50000, descending: false)).ToList();
+
+            // Count site changes
+            var siteChangeCount = deviceEvents.Count(e => e.EventType == DeviceEventType.SiteChange);
+
+            // Calculate CGM metrics using existing statistics service
+            double? cgmUsePercent = null;
+            double? cgmActivePercent = null;
+            if (glucose.Count > 0)
+            {
+                var analytics = _statisticsService.AnalyzeGlucoseData(
+                    glucose,
+                    Enumerable.Empty<Bolus>(),
+                    Enumerable.Empty<CarbIntake>());
+                cgmUsePercent = analytics.DataQuality.CgmActivePercent;
+                cgmActivePercent = analytics.DataQuality.DataCompleteness;
+            }
+
+            // Get target range from target range schedule repository
+            double? targetLow = null;
+            double? targetHigh = null;
+            try
+            {
+                var targetSchedules = await _targetRangeScheduleRepository.GetAsync(
+                    from: null, to: null, device: null, source: null, limit: 10, descending: true);
+                var firstSchedule = targetSchedules.FirstOrDefault();
+                if (firstSchedule?.Entries.Count > 0)
+                {
+                    targetLow = firstSchedule.Entries.Min(e => e.Low);
+                    targetHigh = firstSchedule.Entries.Max(e => e.High);
+                }
+            }
+            catch
+            {
+                // Target range is optional — continue without it
+            }
+
+            var result = _aidMetricsService.Calculate(
+                deviceSegments,
+                apsSnapshots,
+                tempBasals,
+                siteChangeCount,
+                cgmUsePercent,
+                cgmActivePercent,
+                targetLow,
+                targetHigh,
+                startDt,
+                endDt);
+
             return Ok(result);
         }
         catch (Exception ex)
