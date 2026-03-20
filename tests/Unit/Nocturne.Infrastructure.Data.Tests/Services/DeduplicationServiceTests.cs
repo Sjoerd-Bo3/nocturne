@@ -18,6 +18,7 @@ namespace Nocturne.Infrastructure.Data.Tests.Services;
 [Trait("Category", "Deduplication")]
 public class DeduplicationServiceTests : IDisposable
 {
+    private static readonly Guid TestTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
     private readonly DbConnection _connection;
     private readonly DbContextOptions<NocturneDbContext> _contextOptions;
     private readonly ServiceProvider _serviceProvider;
@@ -35,12 +36,17 @@ public class DeduplicationServiceTests : IDisposable
 
         // Create the database schema
         using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         context.Database.EnsureCreated();
 
         // Set up DI container for IServiceScopeFactory
         var services = new ServiceCollection();
-        services.AddDbContext<NocturneDbContext>(options =>
-            options.UseSqlite(_connection));
+        services.AddScoped(sp =>
+        {
+            var ctx = new NocturneDbContext(_contextOptions);
+            ctx.TenantId = TestTenantId;
+            return ctx;
+        });
         services.AddScoped<IDeduplicationService, DeduplicationService>();
         services.AddLogging();
         _serviceProvider = services.BuildServiceProvider();
@@ -53,6 +59,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -120,6 +127,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -172,6 +180,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -217,6 +226,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -262,6 +272,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -299,6 +310,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -359,6 +371,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -384,6 +397,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -412,6 +426,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -469,6 +484,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // This test directly verifies the grouping logic
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -537,6 +553,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -604,6 +621,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -656,6 +674,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -705,6 +724,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -747,6 +767,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -788,6 +809,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
@@ -829,6 +851,7 @@ public class DeduplicationServiceTests : IDisposable
     {
         // Arrange
         await using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = TestTenantId;
         var scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
         var logger = new Mock<ILogger<DeduplicationService>>();
         var service = new DeduplicationService(context, scopeFactory, logger.Object);
