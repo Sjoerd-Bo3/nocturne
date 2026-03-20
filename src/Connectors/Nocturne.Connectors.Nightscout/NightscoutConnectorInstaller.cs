@@ -1,16 +1,18 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Connectors.Core.Extensions;
+using Nocturne.Connectors.Core.Interfaces;
+using Nocturne.Connectors.Core.Services;
 using Nocturne.Connectors.Nightscout.Configurations;
 using Nocturne.Connectors.Nightscout.Services;
 
 namespace Nocturne.Connectors.Nightscout;
 
-public static class ServiceCollectionExtensions
+public class NightscoutConnectorInstaller : IConnectorInstaller
 {
-    public static void AddNightscoutConnector(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    public string ConnectorName => "Nightscout";
+
+    public void Install(IServiceCollection services, IConfiguration configuration)
     {
         var nightscoutConfig = services.AddConnectorConfiguration<NightscoutConnectorConfiguration>(
             configuration,
@@ -26,5 +28,15 @@ public static class ServiceCollectionExtensions
                 .ConfigureConnectorClient(nightscoutConfig.Url);
         else
             services.AddHttpClient<NightscoutConnectorService>();
+
+        services.AddScoped<IConnectorSyncExecutor, NightscoutSyncExecutor>();
     }
+}
+
+public class NightscoutSyncExecutor
+    : ConnectorSyncExecutor<NightscoutConnectorService, NightscoutConnectorConfiguration>
+{
+    public override string ConnectorId => "nightscout";
+
+    protected override string ConnectorName => "Nightscout";
 }
