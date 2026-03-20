@@ -151,6 +151,15 @@
     return max || 1;
   }
 
+  /** Memoized max for current metric — recomputed only when metric or data changes */
+  const metricMaxCached = $derived.by(() => {
+    // Depend on yearData and selectedMetric
+    void yearData;
+    if (selectedMetric === "avgGlucose") return 1;
+    if (selectedMetric === "tir") return 100;
+    return getMetricMax(selectedMetric);
+  });
+
   /** Get cell value for the selected metric */
   function getMetricCellValue(data: CalendarDatum): number | null {
     switch (selectedMetric) {
@@ -167,7 +176,7 @@
     const intensity = Math.min(value / maxVal, 1);
     // Scale from 15% opacity (min visible) to 100%
     const alpha = 0.15 + intensity * 0.85;
-    return `color-mix(in oklch, var(${cssVarName}) ${Math.round(alpha * 100)}%, transparent)`;
+    return `color-mix(in srgb, var(${cssVarName}) ${Math.round(alpha * 100)}%, transparent)`;
   }
 
   function getCellFill(data: CalendarDatum | undefined): string {
@@ -185,7 +194,7 @@
       return "rgb(0 0 0 / 5%)";
     }
 
-    const maxVal = selectedMetric === "tir" ? 100 : getMetricMax(selectedMetric);
+    const maxVal = metricMaxCached;
     const cssVar = METRIC_CSS_VARS[selectedMetric as Exclude<HeatmapMetric, "avgGlucose">];
     return getIntensityFill(metricValue, maxVal, cssVar);
   }
