@@ -7,7 +7,7 @@ using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Extensions;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers.V3;
 
@@ -20,18 +20,20 @@ namespace Nocturne.API.Controllers.V3;
 [Authorize]
 public class EntriesController : BaseV3Controller<Entry>
 {
+    private readonly IEntryRepository _entries;
     private readonly IEntryService _entryService;
     private readonly IAlertOrchestrator _alertOrchestrator;
 
     public EntriesController(
-        IPostgreSqlService postgreSqlService,
+        IEntryRepository entries,
         IDocumentProcessingService documentProcessingService,
         IEntryService entryService,
         IAlertOrchestrator alertOrchestrator,
         ILogger<EntriesController> logger
     )
-        : base(postgreSqlService, documentProcessingService, logger)
+        : base(documentProcessingService, logger)
     {
+        _entries = entries;
         _entryService = entryService;
         _alertOrchestrator = alertOrchestrator;
     }
@@ -73,7 +75,7 @@ public class EntriesController : BaseV3Controller<Entry>
             var reverseResults = !hasSortDesc && ExtractSortDirection(parameters.Sort);
 
             // Get entries using existing V1 backend with V3 parameters
-            var entries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+            var entries = await _entries.GetEntriesWithAdvancedFilterAsync(
                 type: type,
                 count: parameters.Limit,
                 skip: parameters.Offset,
@@ -138,7 +140,7 @@ public class EntriesController : BaseV3Controller<Entry>
 
         try
         {
-            var entry = await _postgreSqlService.GetEntryByIdAsync(id, cancellationToken);
+            var entry = await _entries.GetEntryByIdAsync(id, cancellationToken);
 
             if (entry == null)
             {
@@ -396,7 +398,7 @@ public class EntriesController : BaseV3Controller<Entry>
             var processedEntry = _documentProcessingService.ProcessEntry(entry);
 
             // Update in database
-            var updatedEntry = await _postgreSqlService.UpdateEntryAsync(
+            var updatedEntry = await _entries.UpdateEntryAsync(
                 id,
                 processedEntry,
                 cancellationToken
@@ -447,7 +449,7 @@ public class EntriesController : BaseV3Controller<Entry>
 
         try
         {
-            var deleted = await _postgreSqlService.DeleteEntryAsync(id, cancellationToken);
+            var deleted = await _entries.DeleteEntryAsync(id, cancellationToken);
 
             if (!deleted)
             {
@@ -493,7 +495,7 @@ public class EntriesController : BaseV3Controller<Entry>
         {
             limit = Math.Min(Math.Max(limit, 1), 1000);
 
-            var entries = await _postgreSqlService.GetEntriesModifiedSinceAsync(
+            var entries = await _entries.GetEntriesModifiedSinceAsync(
                 lastModified,
                 limit,
                 cancellationToken
@@ -630,7 +632,7 @@ public class EntriesController : BaseV3Controller<Entry>
         try
         {
             // Use the count endpoint to get total
-            return await _postgreSqlService.CountEntriesAsync(type, findQuery, cancellationToken);
+            return await _entries.CountEntriesAsync(findQuery, type, cancellationToken);
         }
         catch (Exception ex)
         {

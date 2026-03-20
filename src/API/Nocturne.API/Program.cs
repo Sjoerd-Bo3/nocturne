@@ -10,7 +10,7 @@ using Nocturne.API.OpenApi;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Infrastructure.Cache.Extensions;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Infrastructure.Data.Extensions;
 using OpenTelemetry.Logs;
 using Scalar.AspNetCore;
@@ -254,7 +254,7 @@ app.MapScalarApiReference(options =>
 // Add root endpoint to serve a basic info page
 app.MapGet(
     "/",
-    async (IPostgreSqlService postgreSqlService) =>
+    async (IEntryRepository entryRepository) =>
     {
         // Check database connection by fetching the latest entry
         string databaseStatus = "unknown";
@@ -262,7 +262,7 @@ app.MapGet(
 
         try
         {
-            var entry = await postgreSqlService.GetCurrentEntryAsync();
+            var entry = await entryRepository.GetCurrentEntryAsync();
 
             if (entry != null)
             {

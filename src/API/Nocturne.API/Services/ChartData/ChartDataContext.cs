@@ -8,7 +8,7 @@ namespace Nocturne.API.Services.ChartData;
 /// Immutable data envelope passed between chart data pipeline stages.
 /// Each stage produces a new instance via <c>with</c> expressions, contributing its results.
 /// </summary>
-internal sealed record ChartDataContext
+public sealed record ChartDataContext
 {
     // === Request parameters ===
 

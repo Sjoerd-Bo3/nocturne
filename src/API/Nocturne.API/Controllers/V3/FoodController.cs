@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers.V3;
 
@@ -17,12 +17,17 @@ namespace Nocturne.API.Controllers.V3;
 [Authorize]
 public class FoodController : BaseV3Controller<Food>
 {
+    private readonly IFoodRepository _foods;
+
     public FoodController(
-        IPostgreSqlService postgreSqlService,
+        IFoodRepository foods,
         IDocumentProcessingService documentProcessingService,
         ILogger<FoodController> logger
     )
-        : base(postgreSqlService, documentProcessingService, logger) { }
+        : base(documentProcessingService, logger)
+    {
+        _foods = foods;
+    }
 
     /// <summary>
     /// Get food records with V3 API features including pagination, field selection, and advanced filtering
@@ -59,7 +64,7 @@ public class FoodController : BaseV3Controller<Food>
             var reverseResults = !hasSortDesc && ExtractSortDirection(parameters.Sort);
 
             // Get all food records - we'll apply V3 filtering in memory
-            var foodRecords = await _postgreSqlService.GetFoodWithAdvancedFilterAsync(
+            var foodRecords = await _foods.GetFoodWithAdvancedFilterAsync(
                 count: int.MaxValue, // Get all, filter later
                 skip: 0,
                 findQuery: null,
@@ -238,7 +243,7 @@ public class FoodController : BaseV3Controller<Food>
 
         try
         {
-            var food = await _postgreSqlService.GetFoodByIdAsync(id, cancellationToken);
+            var food = await _foods.GetFoodByIdAsync(id, cancellationToken);
 
             if (food == null)
             {
@@ -332,7 +337,7 @@ public class FoodController : BaseV3Controller<Food>
             }
 
             // Create food records with deduplication support
-            var createdRecords = await _postgreSqlService.CreateFoodAsync(
+            var createdRecords = await _foods.CreateFoodAsync(
                 foodRecords,
                 cancellationToken
             );
@@ -405,7 +410,7 @@ public class FoodController : BaseV3Controller<Food>
 
             ProcessFoodForCreation(food);
 
-            var updatedFood = await _postgreSqlService.UpdateFoodAsync(id, food, cancellationToken);
+            var updatedFood = await _foods.UpdateFoodAsync(id, food, cancellationToken);
 
             if (updatedFood == null)
             {
@@ -515,7 +520,7 @@ public class FoodController : BaseV3Controller<Food>
 
         try
         {
-            var deleted = await _postgreSqlService.DeleteFoodAsync(id, cancellationToken);
+            var deleted = await _foods.DeleteFoodAsync(id, cancellationToken);
 
             if (!deleted)
             {
@@ -652,7 +657,7 @@ public class FoodController : BaseV3Controller<Food>
     {
         try
         {
-            return await _postgreSqlService.CountFoodAsync(findQuery, type, cancellationToken);
+            return await _foods.CountFoodAsync(findQuery, type, cancellationToken);
         }
         catch (Exception ex)
         {

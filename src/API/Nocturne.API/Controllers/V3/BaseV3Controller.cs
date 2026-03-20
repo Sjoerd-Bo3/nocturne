@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
 
 namespace Nocturne.API.Controllers.V3;
 
@@ -15,17 +14,14 @@ namespace Nocturne.API.Controllers.V3;
 public abstract class BaseV3Controller<T> : ControllerBase
     where T : class
 {
-    protected readonly IPostgreSqlService _postgreSqlService;
     protected readonly IDocumentProcessingService _documentProcessingService;
     protected readonly ILogger _logger;
 
     protected BaseV3Controller(
-        IPostgreSqlService postgreSqlService,
         IDocumentProcessingService documentProcessingService,
         ILogger logger
     )
     {
-        _postgreSqlService = postgreSqlService;
         _documentProcessingService = documentProcessingService;
         _logger = logger;
     }

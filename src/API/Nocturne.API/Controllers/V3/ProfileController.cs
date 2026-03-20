@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers.V3;
 
@@ -17,12 +17,17 @@ namespace Nocturne.API.Controllers.V3;
 [Authorize]
 public class ProfileController : BaseV3Controller<Profile>
 {
+    private readonly IProfileRepository _profiles;
+
     public ProfileController(
-        IPostgreSqlService postgreSqlService,
+        IProfileRepository profiles,
         IDocumentProcessingService documentProcessingService,
         ILogger<ProfileController> logger
     )
-        : base(postgreSqlService, documentProcessingService, logger) { }
+        : base(documentProcessingService, logger)
+    {
+        _profiles = profiles;
+    }
 
     /// <summary>
     /// Get profiles with V3 API features including pagination, field selection, and advanced filtering
@@ -51,7 +56,7 @@ public class ProfileController : BaseV3Controller<Profile>
             var reverseResults = ExtractSortDirection(parameters.Sort);
 
             // Get profiles using existing backend with V3 parameters
-            var profiles = await _postgreSqlService.GetProfilesWithAdvancedFilterAsync(
+            var profiles = await _profiles.GetProfilesWithAdvancedFilterAsync(
                 count: parameters.Limit,
                 skip: parameters.Offset,
                 findQuery: findQuery,
@@ -123,7 +128,7 @@ public class ProfileController : BaseV3Controller<Profile>
 
         try
         {
-            var profile = await _postgreSqlService.GetProfileByIdAsync(id, cancellationToken);
+            var profile = await _profiles.GetProfileByIdAsync(id, cancellationToken);
 
             if (profile == null)
             {
@@ -188,7 +193,7 @@ public class ProfileController : BaseV3Controller<Profile>
             }
 
             // Create profiles with deduplication support
-            var createdProfiles = await _postgreSqlService.CreateProfilesAsync(
+            var createdProfiles = await _profiles.CreateProfilesAsync(
                 profiles,
                 cancellationToken
             );
@@ -247,7 +252,7 @@ public class ProfileController : BaseV3Controller<Profile>
 
             ProcessProfileForCreation(profile);
 
-            var updatedProfile = await _postgreSqlService.UpdateProfileAsync(
+            var updatedProfile = await _profiles.UpdateProfileAsync(
                 id,
                 profile,
                 cancellationToken
@@ -302,7 +307,7 @@ public class ProfileController : BaseV3Controller<Profile>
 
         try
         {
-            var deleted = await _postgreSqlService.DeleteProfileAsync(id, cancellationToken);
+            var deleted = await _profiles.DeleteProfileAsync(id, cancellationToken);
 
             if (!deleted)
             {
@@ -444,7 +449,7 @@ public class ProfileController : BaseV3Controller<Profile>
     {
         try
         {
-            return await _postgreSqlService.CountProfilesAsync(findQuery, cancellationToken);
+            return await _profiles.CountProfilesAsync(findQuery, cancellationToken);
         }
         catch (Exception ex)
         {

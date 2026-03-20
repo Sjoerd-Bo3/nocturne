@@ -5,7 +5,7 @@ namespace Nocturne.API.Services.ChartData;
 /// <summary>
 /// Assembles the final DashboardChartData DTO from a fully-populated ChartDataContext.
 /// </summary>
-internal interface IChartDataAssembler
+public interface IChartDataAssembler
 {
     DashboardChartData Assemble(ChartDataContext context);
 }

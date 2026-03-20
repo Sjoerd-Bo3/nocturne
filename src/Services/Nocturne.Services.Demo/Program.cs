@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Infrastructure.Data.Extensions;
 using Nocturne.Services.Demo.Configuration;
 using Nocturne.Services.Demo.Services;
@@ -122,11 +122,11 @@ public class Program
             async (IServiceProvider sp, CancellationToken ct) =>
             {
                 using var scope = sp.CreateScope();
-                var postgreSqlService =
-                    scope.ServiceProvider.GetRequiredService<IPostgreSqlService>();
+                var entryRepository =
+                    scope.ServiceProvider.GetRequiredService<IEntryRepository>();
 
                 // Count demo entries using find query
-                var entriesCount = await postgreSqlService.CountEntriesAsync(
+                var entriesCount = await entryRepository.CountEntriesAsync(
                     findQuery: "{\"data_source\":\"" + DataSources.DemoService + "\"}",
                     cancellationToken: ct
                 );
@@ -170,14 +170,16 @@ public class Program
             async (IServiceProvider sp, CancellationToken ct) =>
             {
                 using var scope = sp.CreateScope();
-                var postgreSqlService =
-                    scope.ServiceProvider.GetRequiredService<IPostgreSqlService>();
+                var entryRepository =
+                    scope.ServiceProvider.GetRequiredService<IEntryRepository>();
+                var treatmentRepository =
+                    scope.ServiceProvider.GetRequiredService<ITreatmentRepository>();
 
-                var entriesDeleted = await postgreSqlService.DeleteEntriesByDataSourceAsync(
+                var entriesDeleted = await entryRepository.DeleteEntriesByDataSourceAsync(
                     DataSources.DemoService,
                     ct
                 );
-                var treatmentsDeleted = await postgreSqlService.DeleteTreatmentsByDataSourceAsync(
+                var treatmentsDeleted = await treatmentRepository.DeleteTreatmentsByDataSourceAsync(
                     DataSources.DemoService,
                     ct
                 );

@@ -2,6 +2,8 @@ using Nocturne.API.Configuration;
 using Nocturne.API.Middleware.Handlers;
 using Nocturne.API.Services;
 using Nocturne.API.Services.AidDetection;
+using Nocturne.API.Services.ChartData;
+using Nocturne.API.Services.ChartData.Stages;
 using Nocturne.API.Services.Alerts;
 using Nocturne.API.Services.Alerts.Notifiers;
 using Nocturne.API.Services.Alerts.Webhooks;
@@ -213,6 +215,23 @@ public static class ServiceRegistrationExtensions
             MyFitnessPalMatchingSettingsService
         >();
         services.AddScoped<IClockFaceService, ClockFaceService>();
+        // Chart data pipeline stages (order matters!)
+        services.AddScoped<ProfileLoadStage>();
+        services.AddScoped<DataFetchStage>();
+        services.AddScoped<TreatmentAdapterStage>();
+        services.AddScoped<IobCobComputeStage>();
+        services.AddScoped<DtoMappingStage>();
+
+        services.AddScoped<IEnumerable<IChartDataStage>>(sp => new IChartDataStage[]
+        {
+            sp.GetRequiredService<ProfileLoadStage>(),
+            sp.GetRequiredService<DataFetchStage>(),
+            sp.GetRequiredService<TreatmentAdapterStage>(),
+            sp.GetRequiredService<IobCobComputeStage>(),
+            sp.GetRequiredService<DtoMappingStage>(),
+        });
+
+        services.AddScoped<IChartDataAssembler, DashboardChartDataAssembler>();
         services.AddScoped<IChartDataService, ChartDataService>();
         services.AddScoped<IDataOverviewService, DataOverviewService>();
 

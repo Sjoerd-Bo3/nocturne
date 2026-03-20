@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers.V3;
 
@@ -17,16 +17,18 @@ namespace Nocturne.API.Controllers.V3;
 [Authorize]
 public class TreatmentsController : BaseV3Controller<Treatment>
 {
+    private readonly ITreatmentRepository _treatments;
     private readonly ITreatmentService _treatmentService;
 
     public TreatmentsController(
-        IPostgreSqlService postgreSqlService,
+        ITreatmentRepository treatments,
         IDocumentProcessingService documentProcessingService,
         ITreatmentService treatmentService,
         ILogger<TreatmentsController> logger
     )
-        : base(postgreSqlService, documentProcessingService, logger)
+        : base(documentProcessingService, logger)
     {
+        _treatments = treatments;
         _treatmentService = treatmentService;
     }
 
@@ -617,7 +619,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
         try
         {
             // Use the count endpoint to get total
-            return await _postgreSqlService.CountTreatmentsAsync(findQuery, cancellationToken);
+            return await _treatments.CountTreatmentsAsync(findQuery, cancellationToken);
         }
         catch (Exception ex)
         {

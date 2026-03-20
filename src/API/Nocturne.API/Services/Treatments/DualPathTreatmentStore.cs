@@ -4,14 +4,14 @@ using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Infrastructure.Data.Mappers;
 
 namespace Nocturne.API.Services.Treatments;
 
 public class DualPathTreatmentStore : ITreatmentStore
 {
-    private readonly IPostgreSqlService _legacy;
+    private readonly ITreatmentRepository _treatmentRepository;
     private readonly ITreatmentDecomposer _decomposer;
     private readonly IDecompositionPipeline _pipeline;
     private readonly IV4ToLegacyProjectionService _projection;
@@ -19,14 +19,14 @@ public class DualPathTreatmentStore : ITreatmentStore
     private readonly ILogger<DualPathTreatmentStore> _logger;
 
     public DualPathTreatmentStore(
-        IPostgreSqlService legacy,
+        ITreatmentRepository treatmentRepository,
         ITreatmentDecomposer decomposer,
         IDecompositionPipeline pipeline,
         IV4ToLegacyProjectionService projection,
         ITempBasalRepository tempBasalRepo,
         ILogger<DualPathTreatmentStore> logger)
     {
-        _legacy = legacy;
+        _treatmentRepository = treatmentRepository;
         _decomposer = decomposer;
         _pipeline = pipeline;
         _projection = projection;
@@ -36,7 +36,7 @@ public class DualPathTreatmentStore : ITreatmentStore
 
     public async Task<IReadOnlyList<Treatment>> QueryAsync(TreatmentQuery query, CancellationToken ct)
     {
-        var treatments = await _legacy.GetTreatmentsWithAdvancedFilterAsync(
+        var treatments = await _treatmentRepository.GetTreatmentsWithAdvancedFilterAsync(
             count: query.Count,
             skip: 0,
             findQuery: query.Find,
@@ -53,7 +53,7 @@ public class DualPathTreatmentStore : ITreatmentStore
 
     public async Task<Treatment?> GetByIdAsync(string id, CancellationToken ct)
     {
-        var treatment = await _legacy.GetTreatmentByIdAsync(id, ct);
+        var treatment = await _treatmentRepository.GetTreatmentByIdAsync(id, ct);
         if (treatment != null)
             return treatment;
 
@@ -69,7 +69,7 @@ public class DualPathTreatmentStore : ITreatmentStore
     public async Task<IReadOnlyList<Treatment>> GetModifiedSinceAsync(
         long lastModifiedMills, int limit, CancellationToken ct)
     {
-        var treatments = await _legacy.GetTreatmentsModifiedSinceAsync(lastModifiedMills, limit, ct);
+        var treatments = await _treatmentRepository.GetTreatmentsModifiedSinceAsync(lastModifiedMills, limit, ct);
 
         var tempBasals = await _tempBasalRepo.GetAsync(
             from: DateTimeOffset.FromUnixTimeMilliseconds(lastModifiedMills).UtcDateTime,
@@ -135,7 +135,7 @@ public class DualPathTreatmentStore : ITreatmentStore
 
         if (regularTreatments.Count > 0)
         {
-            var created = await _legacy.CreateTreatmentsAsync(regularTreatments, ct);
+            var created = await _treatmentRepository.CreateTreatmentsAsync(regularTreatments, ct);
             var createdList = created.ToList();
             await _pipeline.DecomposeAsync<Treatment>(createdList, ct);
             results.AddRange(createdList);
@@ -168,7 +168,7 @@ public class DualPathTreatmentStore : ITreatmentStore
             }
         }
 
-        var updated = await _legacy.UpdateTreatmentAsync(id, treatment, ct);
+        var updated = await _treatmentRepository.UpdateTreatmentAsync(id, treatment, ct);
         if (updated != null)
             await _pipeline.DecomposeAsync(updated, ct);
 
@@ -177,7 +177,7 @@ public class DualPathTreatmentStore : ITreatmentStore
 
     public async Task<Treatment?> PatchAsync(string id, JsonElement patchData, CancellationToken ct)
     {
-        return await _legacy.PatchTreatmentAsync(id, patchData, ct);
+        return await _treatmentRepository.PatchTreatmentAsync(id, patchData, ct);
     }
 
     public async Task<bool> DeleteAsync(string id, CancellationToken ct)
@@ -202,12 +202,12 @@ public class DualPathTreatmentStore : ITreatmentStore
             }
         }
 
-        return await _legacy.DeleteTreatmentAsync(id, ct);
+        return await _treatmentRepository.DeleteTreatmentAsync(id, ct);
     }
 
     public async Task<long> BulkDeleteAsync(string? find, CancellationToken ct)
     {
-        return await _legacy.BulkDeleteTreatmentsAsync(find ?? "{}", ct);
+        return await _treatmentRepository.BulkDeleteTreatmentsAsync(find ?? "{}", ct);
     }
 
     private async Task<IReadOnlyList<Treatment>> MergeWithTempBasalsAsync(
