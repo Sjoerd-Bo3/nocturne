@@ -701,9 +701,6 @@
     <div class="mb-6 rounded-lg border border-border bg-card p-3">
       {#if selectedMetric === "avgGlucose"}
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <div class="text-xs font-medium text-muted-foreground">
-            Avg Glucose ({unitLabel}):
-          </div>
           <svg
             viewBox="0 0 {LEGEND_W} 48"
             class="h-12 w-full max-w-[420px] text-muted-foreground"
@@ -768,9 +765,6 @@
         {@const metricMax = selectedMetric === "tir" ? 100 : getMetricMax(selectedMetric)}
         {@const cssVar = METRIC_CSS_VARS[selectedMetric as Exclude<HeatmapMetric, "avgGlucose">]}
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <div class="text-xs font-medium text-muted-foreground">
-            {metricLabel} ({metricUnit}):
-          </div>
           <svg
             viewBox="0 0 {LEGEND_W} 36"
             class="h-9 w-full max-w-[420px] text-muted-foreground"
