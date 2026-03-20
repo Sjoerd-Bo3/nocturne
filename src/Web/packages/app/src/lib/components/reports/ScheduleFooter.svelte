@@ -3,7 +3,9 @@
     ProfileSummary,
     TargetRangeEntry,
     ScheduleEntry,
+    ScheduleChangeInfo,
   } from "$lib/api/generated/nocturne-api-client";
+  import { History } from "lucide-svelte";
 
   interface Props {
     profile?: ProfileSummary | null;
@@ -69,6 +71,10 @@
     profile?.sensitivitySchedules?.[0]?.entries ?? [],
   );
 
+  let targetRangeChanged = $derived(profile?.targetRangeChanges);
+  let carbRatioChanged = $derived(profile?.carbRatioChanges);
+  let sensitivityChanged = $derived(profile?.sensitivityChanges);
+
   let targetSegments = $derived(
     computeSegmentWidths<TargetRangeEntry>(targetRangeEntries),
   );
@@ -85,6 +91,17 @@
       sensitivitySegments.length > 0,
   );
 </script>
+
+{#snippet changeIndicator(info: ScheduleChangeInfo | undefined)}
+  {#if info?.changedDuringPeriod}
+    <span
+      class="inline-flex items-center text-muted-foreground ml-1"
+      title="Changed {info.lastChangedAt ? new Date(info.lastChangedAt).toLocaleDateString() : 'during period'} ({info.changeCount} change{info.changeCount === 1 ? '' : 's'} during this period)"
+    >
+      <History class="w-3 h-3" />
+    </span>
+  {/if}
+{/snippet}
 
 {#if hasData}
   <div class="space-y-2 text-xs">
@@ -106,8 +123,9 @@
               </div>
             {/each}
           </div>
-          <span class="w-16 shrink-0 text-right text-gray-500 dark:text-gray-400">
+          <span class="w-20 shrink-0 text-right text-gray-500 dark:text-gray-400 flex items-center justify-end gap-0.5">
             mg/dL
+            {@render changeIndicator(targetRangeChanged)}
           </span>
         </div>
       {/if}
@@ -130,8 +148,9 @@
               </div>
             {/each}
           </div>
-          <span class="w-16 shrink-0 text-right text-gray-500 dark:text-gray-400">
+          <span class="w-20 shrink-0 text-right text-gray-500 dark:text-gray-400 flex items-center justify-end gap-0.5">
             g/U
+            {@render changeIndicator(carbRatioChanged)}
           </span>
         </div>
       {/if}
@@ -154,8 +173,9 @@
               </div>
             {/each}
           </div>
-          <span class="w-16 shrink-0 text-right text-gray-500 dark:text-gray-400">
+          <span class="w-20 shrink-0 text-right text-gray-500 dark:text-gray-400 flex items-center justify-end gap-0.5">
             mg/dL/U
+            {@render changeIndicator(sensitivityChanged)}
           </span>
         </div>
       {/if}
@@ -170,7 +190,7 @@
           <span>6PM</span>
           <span>12AM</span>
         </div>
-        <span class="w-16 shrink-0"></span>
+        <span class="w-20 shrink-0"></span>
       </div>
   </div>
 {/if}

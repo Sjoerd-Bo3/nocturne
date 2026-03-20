@@ -29,7 +29,7 @@ export const getDayInReviewData = query(
 		const { apiClient } = locals;
 
 		// Resolve the user's timezone from their profile to compute correct day boundaries
-		const profile = await getProfileSummary();
+		const profile = await getProfileSummary(undefined);
 		const timezone = profile?.therapySettings?.[0]?.timezone;
 		const { start: dayStart, end: dayEnd } = getLocalDayBoundariesUtc(dateParam, timezone);
 

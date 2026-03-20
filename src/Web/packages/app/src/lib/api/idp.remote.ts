@@ -122,7 +122,7 @@ export const getIdpData = query(
 		const [insulinDeliveryStats, profileSummary, analysis, averagedStats, basalAnalysis] =
 			await Promise.all([
 				apiClient.statistics.getInsulinDeliveryStatistics(startDate, endDate),
-				apiClient.profile.getProfileSummary(),
+				apiClient.profile.getProfileSummary(startDate, endDate),
 				apiClient.statistics.analyzeGlucoseDataExtended({
 					entries,
 					boluses,
