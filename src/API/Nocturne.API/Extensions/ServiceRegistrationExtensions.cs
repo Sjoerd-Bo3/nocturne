@@ -15,6 +15,7 @@ using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Alerts;
+using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Contracts.V4.Repositories;
@@ -50,7 +51,6 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<IVersionService, VersionService>();
         services.AddSingleton<IXmlDocumentationService, XmlDocumentationService>();
         services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
-        services.AddScoped<ITreatmentProcessingService, TreatmentProcessingService>();
 
         services.AddScoped<IBraceExpansionService, BraceExpansionService>();
         services.AddScoped<ITimeQueryService, TimeQueryService>();
@@ -175,6 +175,9 @@ public static class ServiceRegistrationExtensions
 
         // Core domain services
         services.AddScoped<ITreatmentService, TreatmentService>();
+        services.AddScoped<ITreatmentStore, Nocturne.API.Services.Treatments.DualPathTreatmentStore>();
+        services.AddScoped<ITreatmentCache, Nocturne.API.Services.Treatments.TreatmentCacheAdapter>();
+        services.AddScoped<ITreatmentEventSink, Nocturne.API.Services.Treatments.SignalRTreatmentEventSink>();
         services.AddScoped<IEntryService, EntryService>();
         services.AddScoped<IStateSpanService, StateSpanService>();
         services.AddScoped<IDeviceStatusService, DeviceStatusService>();

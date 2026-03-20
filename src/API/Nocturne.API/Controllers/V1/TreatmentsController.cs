@@ -17,17 +17,17 @@ namespace Nocturne.API.Controllers.V1;
 public class TreatmentsController : ControllerBase
 {
     private readonly ITreatmentService _treatmentService;
-    private readonly ITreatmentProcessingService _treatmentProcessingService;
+    private readonly IDocumentProcessingService _documentProcessingService;
     private readonly ILogger<TreatmentsController> _logger;
 
     public TreatmentsController(
         ITreatmentService treatmentService,
-        ITreatmentProcessingService treatmentProcessingService,
+        IDocumentProcessingService treatmentProcessingService,
         ILogger<TreatmentsController> logger
     )
     {
         _treatmentService = treatmentService;
-        _treatmentProcessingService = treatmentProcessingService;
+        _documentProcessingService = treatmentProcessingService;
         _logger = logger;
     }
 
@@ -233,7 +233,7 @@ public class TreatmentsController : ControllerBase
             }
 
             // Process treatments: sanitize HTML, convert timestamps, set defaults, and deduplicate
-            var processedTreatments = _treatmentProcessingService.ProcessTreatments(
+            var processedTreatments = _documentProcessingService.ProcessDocuments(
                 treatmentsToCreate
             );
 
