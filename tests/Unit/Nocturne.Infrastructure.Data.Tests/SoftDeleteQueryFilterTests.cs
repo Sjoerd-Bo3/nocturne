@@ -2,6 +2,7 @@ using System.Data.Common;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Nocturne.Infrastructure.Data.Entities;
+using Nocturne.Infrastructure.Data.Mappers;
 
 namespace Nocturne.Infrastructure.Data.Tests;
 
@@ -117,6 +118,58 @@ public class SoftDeleteQueryFilterTests : IDisposable
 
         Assert.Single(results);
         Assert.Equal(activeTreatment.Id, results[0].Id);
+    }
+
+    [Fact]
+    public void EntryMapper_ToDomainModel_SetsIsValidFalse_WhenDeletedAtIsSet()
+    {
+        var entity = new EntryEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Mills = 1000,
+            Mgdl = 120,
+            Type = "sgv",
+            IsValid = true,
+            DeletedAt = DateTime.UtcNow,
+        };
+
+        var model = EntryMapper.ToDomainModel(entity);
+
+        Assert.False(model.IsValid);
+    }
+
+    [Fact]
+    public void EntryMapper_ToDomainModel_SetsIsValidTrue_WhenDeletedAtIsNull()
+    {
+        var entity = new EntryEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Mills = 1000,
+            Mgdl = 120,
+            Type = "sgv",
+            IsValid = null,
+            DeletedAt = null,
+        };
+
+        var model = EntryMapper.ToDomainModel(entity);
+
+        Assert.True(model.IsValid);
+    }
+
+    [Fact]
+    public void TreatmentMapper_ToDomainModel_SetsIsValidFalse_WhenDeletedAtIsSet()
+    {
+        var entity = new TreatmentEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Mills = 1000,
+            DeletedAt = DateTime.UtcNow,
+        };
+        entity.Aaps.IsValid = true;
+
+        var model = TreatmentMapper.ToDomainModel(entity);
+
+        Assert.False(model.IsValid);
     }
 
     public void Dispose() => _connection.Dispose();

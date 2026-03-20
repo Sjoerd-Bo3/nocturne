@@ -16,7 +16,7 @@ public static class TreatmentMapper
     /// </summary>
     public static TreatmentEntity ToEntity(Treatment treatment)
     {
-        return new TreatmentEntity
+        var entity = new TreatmentEntity
         {
             Id = string.IsNullOrEmpty(treatment.Id)
                 ? Guid.CreateVersion7()
@@ -133,6 +133,13 @@ public static class TreatmentMapper
                 ReasonDisplay = treatment.ReasonDisplay,
             },
         };
+
+        if (treatment.IsValid == false)
+        {
+            entity.DeletedAt = DateTime.UtcNow;
+        }
+
+        return entity;
     }
 
     /// <summary>
@@ -233,7 +240,7 @@ public static class TreatmentMapper
             PumpSerial = entity.Aaps.PumpSerial,
             PumpType = entity.Aaps.PumpType,
             EndId = entity.Aaps.EndId,
-            IsValid = entity.Aaps.IsValid,
+            IsValid = entity.DeletedAt == null,
             IsReadOnly = entity.Aaps.IsReadOnly,
             IsBasalInsulin = entity.Aaps.IsBasalInsulin,
             OriginalDuration = entity.Aaps.OriginalDuration,
@@ -344,6 +351,10 @@ public static class TreatmentMapper
         entity.Aaps.PumpType = treatment.PumpType;
         entity.Aaps.EndId = treatment.EndId;
         entity.Aaps.IsValid = treatment.IsValid;
+        if (treatment.IsValid == false)
+        {
+            entity.DeletedAt ??= DateTime.UtcNow;
+        }
         entity.Aaps.IsReadOnly = treatment.IsReadOnly;
         entity.Aaps.IsBasalInsulin = treatment.IsBasalInsulin;
         entity.Aaps.OriginalDuration = treatment.OriginalDuration;

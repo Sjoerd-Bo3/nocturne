@@ -15,7 +15,7 @@ public static class EntryMapper
     /// </summary>
     public static EntryEntity ToEntity(Entry entry)
     {
-        return new EntryEntity
+        var entity = new EntryEntity
         {
             Id = string.IsNullOrEmpty(entry.Id) ? Guid.CreateVersion7() : ParseIdToGuid(entry.Id),
             OriginalId = MongoIdUtils.IsValidMongoId(entry.Id) ? entry.Id : null,
@@ -50,6 +50,13 @@ public static class EntryMapper
             IsValid = entry.IsValid,
             IsReadOnly = entry.IsReadOnly,
         };
+
+        if (entry.IsValid == false)
+        {
+            entity.DeletedAt = DateTime.UtcNow;
+        }
+
+        return entity;
     }
 
     /// <summary>
@@ -89,7 +96,7 @@ public static class EntryMapper
             Meta = DeserializeJsonProperty<Dictionary<string, object>>(entity.MetaJson),
             App = entity.App,
             Units = entity.Units,
-            IsValid = entity.IsValid,
+            IsValid = entity.DeletedAt == null,
             IsReadOnly = entity.IsReadOnly,
             SrvModified =
                 entity.SysUpdatedAt != default
@@ -143,6 +150,10 @@ public static class EntryMapper
         entity.App = entry.App;
         entity.Units = entry.Units;
         entity.IsValid = entry.IsValid;
+        if (entry.IsValid == false)
+        {
+            entity.DeletedAt ??= DateTime.UtcNow;
+        }
         entity.IsReadOnly = entry.IsReadOnly;
     }
 
