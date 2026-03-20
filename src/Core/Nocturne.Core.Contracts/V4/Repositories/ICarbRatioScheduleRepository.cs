@@ -2,7 +2,7 @@ using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Contracts.V4.Repositories;
 
-public interface ICarbRatioScheduleRepository
+public interface ICarbRatioScheduleRepository : IV4Repository<CarbRatioSchedule>
 {
     Task<IEnumerable<CarbRatioSchedule>> GetAsync(
         DateTime? from,

@@ -2,7 +2,7 @@ using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Contracts.V4.Repositories;
 
-public interface ISensitivityScheduleRepository
+public interface ISensitivityScheduleRepository : IV4Repository<SensitivitySchedule>
 {
     Task<IEnumerable<SensitivitySchedule>> GetAsync(
         DateTime? from,

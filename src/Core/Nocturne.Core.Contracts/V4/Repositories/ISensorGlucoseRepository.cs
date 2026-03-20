@@ -2,7 +2,7 @@ using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Contracts.V4.Repositories;
 
-public interface ISensorGlucoseRepository
+public interface ISensorGlucoseRepository : IV4Repository<SensorGlucose>
 {
     Task<IEnumerable<SensorGlucose>> GetAsync(
         DateTime? from,
@@ -15,6 +15,12 @@ public interface ISensorGlucoseRepository
         bool nativeOnly = false,
         CancellationToken ct = default
     );
+
+    // Explicit base-interface bridge — delegates to the extended overload
+    async Task<IEnumerable<SensorGlucose>> IV4Repository<SensorGlucose>.GetAsync(
+        DateTime? from, DateTime? to, string? device, string? source,
+        int limit, int offset, bool descending, CancellationToken ct)
+        => await GetAsync(from, to, device, source, limit, offset, descending, false, ct);
     Task<SensorGlucose?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<SensorGlucose?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default);
     Task<SensorGlucose> CreateAsync(SensorGlucose model, CancellationToken ct = default);

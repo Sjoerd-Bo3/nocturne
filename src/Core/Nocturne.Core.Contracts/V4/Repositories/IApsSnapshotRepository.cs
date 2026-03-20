@@ -2,7 +2,7 @@ using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Contracts.V4.Repositories;
 
-public interface IApsSnapshotRepository
+public interface IApsSnapshotRepository : IV4Repository<ApsSnapshot>
 {
     Task<IEnumerable<ApsSnapshot>> GetAsync(DateTime? from, DateTime? to, string? device, string? source, int limit = 100, int offset = 0, bool descending = true, CancellationToken ct = default);
     Task<ApsSnapshot?> GetByIdAsync(Guid id, CancellationToken ct = default);

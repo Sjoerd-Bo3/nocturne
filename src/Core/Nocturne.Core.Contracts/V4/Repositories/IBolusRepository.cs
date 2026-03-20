@@ -2,7 +2,7 @@ using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Contracts.V4.Repositories;
 
-public interface IBolusRepository
+public interface IBolusRepository : IV4Repository<Bolus>
 {
     Task<IEnumerable<Bolus>> GetAsync(
         DateTime? from,
@@ -16,6 +16,12 @@ public interface IBolusRepository
         BolusKind? kind = null,
         CancellationToken ct = default
     );
+
+    // Explicit base-interface bridge — delegates to the extended overload
+    async Task<IEnumerable<Bolus>> IV4Repository<Bolus>.GetAsync(
+        DateTime? from, DateTime? to, string? device, string? source,
+        int limit, int offset, bool descending, CancellationToken ct)
+        => await GetAsync(from, to, device, source, limit, offset, descending, false, null, ct);
     Task<Bolus?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Bolus?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default);
     Task<Bolus> CreateAsync(Bolus model, CancellationToken ct = default);

@@ -2,7 +2,7 @@ using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Contracts.V4.Repositories;
 
-public interface IBasalScheduleRepository
+public interface IBasalScheduleRepository : IV4Repository<BasalSchedule>
 {
     Task<IEnumerable<BasalSchedule>> GetAsync(
         DateTime? from,
