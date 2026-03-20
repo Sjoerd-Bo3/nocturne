@@ -39,3 +39,6 @@ aspire-output/
 !docker-compose.yaml
 !.env.example
 nul
+
+# Git worktrees
+.worktrees/
