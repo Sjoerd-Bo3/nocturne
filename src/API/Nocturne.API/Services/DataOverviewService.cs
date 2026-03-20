@@ -1088,10 +1088,21 @@ public class DataOverviewService : IDataOverviewService
             return;
         }
 
-        // Group by date and compute daily averages
+        // Group by date and compute daily averages + time in range
         var grouped = allReadings
             .GroupBy(r => TimestampToDateString(r.Timestamp, tz))
-            .Select(g => new { Date = g.Key, AvgMgdl = g.Average(r => r.Mgdl) });
+            .Select(g =>
+            {
+                var readings = g.ToList();
+                var total = readings.Count;
+                var inRange = readings.Count(r => r.Mgdl >= 70 && r.Mgdl <= 180);
+                return new
+                {
+                    Date = g.Key,
+                    AvgMgdl = readings.Average(r => r.Mgdl),
+                    TimeInRangePercent = total > 0 ? Math.Round((double)inRange / total * 100.0, 1) : (double?)null
+                };
+            });
 
         foreach (var group in grouped)
         {
@@ -1102,6 +1113,7 @@ public class DataOverviewService : IDataOverviewService
             }
 
             day.AverageGlucoseMgdl = Math.Round(group.AvgMgdl, 1);
+            day.TimeInRangePercent = group.TimeInRangePercent;
         }
     }
 

@@ -1288,4 +1288,54 @@ public class DataOverviewServiceTests : IDisposable
     }
 
     #endregion
+
+    #region Time In Range Tests
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_WithGlucoseReadings_ComputesTimeInRangePercent()
+    {
+        // Arrange: 4 readings on June 15, 2024 — 3 in range (70-180), 1 high (250)
+        var baseTime = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime;
+        _dbContext.SensorGlucose.AddRange(
+            new SensorGlucoseEntity { Id = Guid.NewGuid(), Timestamp = baseTime, Mgdl = 100.0, DataSource = "dexcom" },
+            new SensorGlucoseEntity { Id = Guid.NewGuid(), Timestamp = baseTime.AddMinutes(5), Mgdl = 120.0, DataSource = "dexcom" },
+            new SensorGlucoseEntity { Id = Guid.NewGuid(), Timestamp = baseTime.AddMinutes(10), Mgdl = 150.0, DataSource = "dexcom" },
+            new SensorGlucoseEntity { Id = Guid.NewGuid(), Timestamp = baseTime.AddMinutes(15), Mgdl = 250.0, DataSource = "dexcom" }
+        );
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        // Assert
+        var june15 = result.Days.FirstOrDefault(d => d.Date == "2024-06-15");
+        june15.Should().NotBeNull();
+        june15!.TimeInRangePercent.Should().BeApproximately(75.0, 0.1); // 3 of 4 readings in range
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetDailySummaryAsync_DayWithNoGlucose_TimeInRangeIsNull()
+    {
+        // Arrange: only a bolus, no glucose
+        _dbContext.Boluses.Add(new BolusEntity
+        {
+            Id = Guid.NewGuid(),
+            Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(June15_2024_Noon).UtcDateTime,
+            Insulin = 5.0,
+            DataSource = "glooko"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _service.GetDailySummaryAsync(2024);
+
+        // Assert
+        var june15 = result.Days.FirstOrDefault(d => d.Date == "2024-06-15");
+        june15.Should().NotBeNull();
+        june15!.TimeInRangePercent.Should().BeNull();
+    }
+
+    #endregion
 }
