@@ -4,18 +4,18 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
+using Nocturne.Connectors.Core.Services;
 using Nocturne.Connectors.Core.Utilities;
 using Nocturne.Connectors.Dexcom.Configurations;
 using Nocturne.Connectors.Dexcom.Services;
 
 namespace Nocturne.Connectors.Dexcom;
 
-public static class ServiceCollectionExtensions
+public class DexcomConnectorInstaller : IConnectorInstaller
 {
-    public static void AddDexcomConnector(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    public string ConnectorName => "Dexcom";
+
+    public void Install(IServiceCollection services, IConfiguration configuration)
     {
         var dexcomConfig = services.AddConnectorConfiguration<DexcomConnectorConfiguration>(
             configuration,
@@ -48,5 +48,15 @@ public static class ServiceCollectionExtensions
             var retryStrategy = sp.GetRequiredService<IRetryDelayStrategy>();
             return new DexcomAuthTokenProvider(config, httpClient, logger, retryStrategy);
         });
+
+        services.AddScoped<IConnectorSyncExecutor, DexcomSyncExecutor>();
     }
+}
+
+public class DexcomSyncExecutor
+    : ConnectorSyncExecutor<DexcomConnectorService, DexcomConnectorConfiguration>
+{
+    public override string ConnectorId => "dexcom";
+
+    protected override string ConnectorName => "Dexcom";
 }

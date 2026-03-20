@@ -4,18 +4,18 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
+using Nocturne.Connectors.Core.Services;
 using Nocturne.Connectors.Core.Utilities;
 using Nocturne.Connectors.Tidepool.Configurations;
 using Nocturne.Connectors.Tidepool.Services;
 
 namespace Nocturne.Connectors.Tidepool;
 
-public static class ServiceCollectionExtensions
+public class TidepoolConnectorInstaller : IConnectorInstaller
 {
-    public static void AddTidepoolConnector(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    public string ConnectorName => "Tidepool";
+
+    public void Install(IServiceCollection services, IConfiguration configuration)
     {
         var tidepoolConfig = services.AddConnectorConfiguration<TidepoolConnectorConfiguration>(
             configuration,
@@ -47,5 +47,15 @@ public static class ServiceCollectionExtensions
             var retryStrategy = sp.GetRequiredService<IRetryDelayStrategy>();
             return new TidepoolAuthTokenProvider(config, httpClient, logger, retryStrategy);
         });
+
+        services.AddScoped<IConnectorSyncExecutor, TidepoolSyncExecutor>();
     }
+}
+
+public class TidepoolSyncExecutor
+    : ConnectorSyncExecutor<TidepoolConnectorService, TidepoolConnectorConfiguration>
+{
+    public override string ConnectorId => "tidepool";
+
+    protected override string ConnectorName => "Tidepool";
 }
