@@ -502,7 +502,7 @@
           {#if syncResult.itemsSynced && Object.keys(syncResult.itemsSynced).length > 0}
             <CardContent>
               <div class="space-y-1">
-                {#each Object.entries(syncResult.itemsSynced) as [type, count]}
+                {#each Object.entries(syncResult.itemsSynced as Record<string, number>) as [type, count]}
                   <div
                     class="flex items-center justify-between text-sm"
                   >
