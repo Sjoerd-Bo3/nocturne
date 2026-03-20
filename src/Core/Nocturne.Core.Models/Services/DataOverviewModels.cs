@@ -91,6 +91,9 @@ public class DailySummaryDay
     [JsonPropertyName("totalCarbs")]
     public double? TotalCarbs { get; set; }
 
+    [JsonPropertyName("timeInRangePercent")]
+    public double? TimeInRangePercent { get; set; }
+
     [JsonPropertyName("totalCount")]
     public int TotalCount { get; set; }
 
