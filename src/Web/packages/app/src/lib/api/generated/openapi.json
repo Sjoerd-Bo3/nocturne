@@ -29262,6 +29262,11 @@
             "format": "double",
             "nullable": true
           },
+          "timeInRangePercent": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
           "totalCount": {
             "type": "integer",
             "format": "int32"

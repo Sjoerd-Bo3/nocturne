@@ -26117,6 +26117,7 @@ export interface DailySummaryDay {
     totalBasalUnits?: number | undefined;
     totalDailyDose?: number | undefined;
     totalCarbs?: number | undefined;
+    timeInRangePercent?: number | undefined;
     totalCount?: number;
     counts?: { [key: string]: number; };
 }
