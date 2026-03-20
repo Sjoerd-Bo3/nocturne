@@ -119,7 +119,7 @@ export const getIdpData = query(
 
 		// Fetch insulin delivery stats, profile summary, extended glucose analytics,
 		// averaged stats, and basal analysis in parallel
-		const [insulinDeliveryStats, profileSummary, analysis, averagedStats, basalAnalysis] =
+		const [insulinDeliveryStats, profileSummary, analysis, averagedStats, basalAnalysis, aidSystemMetrics] =
 			await Promise.all([
 				apiClient.statistics.getInsulinDeliveryStatistics(startDate, endDate),
 				apiClient.profile.getProfileSummary(startDate, endDate),
@@ -131,6 +131,7 @@ export const getIdpData = query(
 				}),
 				apiClient.statistics.calculateAveragedStats(entries),
 				apiClient.statistics.getBasalAnalysis(startDate, endDate),
+				apiClient.statistics.getAidSystemMetrics(startDate, endDate),
 			]);
 
 		return {
@@ -142,6 +143,7 @@ export const getIdpData = query(
 			analysis,
 			averagedStats,
 			basalAnalysis,
+			aidSystemMetrics,
 			dateRange: {
 				from: startDate.toISOString(),
 				to: endDate.toISOString(),

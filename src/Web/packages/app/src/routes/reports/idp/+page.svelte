@@ -47,6 +47,7 @@
     profileSummary: reportsResource.current?.profileSummary,
     analysis: reportsResource.current?.analysis,
     averagedStats: reportsResource.current?.averagedStats,
+    aidSystemMetrics: reportsResource.current?.aidSystemMetrics,
     dateRange: reportsResource.current?.dateRange ?? {
       from: new Date().toISOString(),
       to: new Date().toISOString(),
@@ -59,6 +60,7 @@
   const boluses = $derived(data.boluses);
   const insulinStats = $derived(data.insulinDeliveryStats);
   const analysis = $derived(data.analysis);
+  const aidMetrics = $derived(data.aidSystemMetrics);
   const dateRange = $derived(data.dateRange);
   const startDate = $derived(new Date(dateRange.from));
   const endDate = $derived(new Date(dateRange.to));
@@ -286,32 +288,29 @@
         <div class="grid grid-cols-2 gap-4 text-sm">
           <div>
             <div class="text-muted-foreground">CGM Use</div>
-            <div class="font-semibold text-lg">--</div>
+            <div class="font-semibold text-lg">{aidMetrics?.cgmUsePercent != null ? `${Math.round(aidMetrics.cgmUsePercent)}%` : '--'}</div>
           </div>
           <div>
             <div class="text-muted-foreground">Pump Use</div>
-            <div class="font-semibold text-lg">--</div>
+            <div class="font-semibold text-lg">{aidMetrics?.pumpUsePercent != null ? `${Math.round(aidMetrics.pumpUsePercent)}%` : '--'}</div>
           </div>
           <div>
             <div class="text-muted-foreground">AID Active</div>
-            <div class="font-semibold text-lg">--</div>
+            <div class="font-semibold text-lg">{aidMetrics?.aidActivePercent != null ? `${Math.round(aidMetrics.aidActivePercent)}%` : '--'}</div>
           </div>
           <div>
             <div class="text-muted-foreground">CGM Active</div>
-            <div class="font-semibold text-lg">--</div>
+            <div class="font-semibold text-lg">{aidMetrics?.cgmActivePercent != null ? `${Math.round(aidMetrics.cgmActivePercent)}%` : '--'}</div>
           </div>
           <div>
             <div class="text-muted-foreground">Target</div>
-            <div class="font-semibold text-lg">--</div>
+            <div class="font-semibold text-lg">{aidMetrics?.targetLow != null && aidMetrics?.targetHigh != null ? `${bg(aidMetrics.targetLow)}-${bg(aidMetrics.targetHigh)} ${bgLabel()}` : '--'}</div>
           </div>
           <div>
             <div class="text-muted-foreground">Site Changes</div>
-            <div class="font-semibold text-lg">--</div>
+            <div class="font-semibold text-lg">{aidMetrics?.siteChangeCount != null ? aidMetrics.siteChangeCount : '--'}</div>
           </div>
         </div>
-        <p class="text-xs text-muted-foreground/60 mt-4">
-          AID metrics require pump integration data, which is not yet available.
-        </p>
       </CardContent>
     </Card>
 
