@@ -20,6 +20,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer, IDecomposer<Devic
     private readonly IPumpSnapshotRepository _pumpRepo;
     private readonly IUploaderSnapshotRepository _uploaderRepo;
     private readonly IStateSpanService _stateSpanService;
+    private readonly IDeviceService _deviceService;
     private readonly ILogger<DeviceStatusDecomposer> _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -32,12 +33,14 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer, IDecomposer<Devic
         IPumpSnapshotRepository pumpRepo,
         IUploaderSnapshotRepository uploaderRepo,
         IStateSpanService stateSpanService,
+        IDeviceService deviceService,
         ILogger<DeviceStatusDecomposer> logger)
     {
         _apsRepo = apsRepo;
         _pumpRepo = pumpRepo;
         _uploaderRepo = uploaderRepo;
         _stateSpanService = stateSpanService;
+        _deviceService = deviceService;
         _logger = logger;
     }
 
@@ -203,6 +206,12 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer, IDecomposer<Devic
             Clock = ds.Pump.Clock,
         };
 
+        model.DeviceId = await _deviceService.ResolveAsync(
+            V4Models.DeviceCategory.InsulinPump,
+            ds.Pump?.Manufacturer,
+            ds.Pump?.Model,
+            ds.Mills, ct);
+
         var existing = legacyId != null
             ? await _pumpRepo.GetByLegacyIdAsync(legacyId, ct)
             : null;
@@ -242,6 +251,12 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer, IDecomposer<Devic
             Temperature = ds.Uploader?.Temperature,
             Type = ds.Uploader?.Type,
         };
+
+        model.DeviceId = await _deviceService.ResolveAsync(
+            V4Models.DeviceCategory.Uploader,
+            ds.Uploader?.Name,
+            ds.Uploader?.Type ?? "unknown",
+            ds.Mills, ct);
 
         var existing = legacyId != null
             ? await _uploaderRepo.GetByLegacyIdAsync(legacyId, ct)

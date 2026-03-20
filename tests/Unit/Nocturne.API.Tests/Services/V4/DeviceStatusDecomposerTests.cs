@@ -17,6 +17,7 @@ public class DeviceStatusDecomposerTests : IDisposable
 {
     private readonly NocturneDbContext _context;
     private readonly Mock<IStateSpanService> _stateSpanServiceMock;
+    private readonly Mock<IDeviceService> _deviceServiceMock;
     private readonly DeviceStatusDecomposer _decomposer;
 
     public DeviceStatusDecomposerTests()
@@ -27,10 +28,12 @@ public class DeviceStatusDecomposerTests : IDisposable
         var pumpRepo = new PumpSnapshotRepository(_context, NullLogger<PumpSnapshotRepository>.Instance);
         var uploaderRepo = new UploaderSnapshotRepository(_context, NullLogger<UploaderSnapshotRepository>.Instance);
         _stateSpanServiceMock = new Mock<IStateSpanService>();
+        _deviceServiceMock = new Mock<IDeviceService>();
 
         _decomposer = new DeviceStatusDecomposer(
             apsRepo, pumpRepo, uploaderRepo,
             _stateSpanServiceMock.Object,
+            _deviceServiceMock.Object,
             NullLogger<DeviceStatusDecomposer>.Instance);
     }
 
@@ -1496,6 +1499,81 @@ public class DeviceStatusDecomposerTests : IDisposable
         aps.PredictedZtJson.Should().BeNull();
         aps.PredictedCobJson.Should().BeNull();
         aps.PredictedUamJson.Should().BeNull();
+    }
+
+    #endregion
+
+    #region Device Resolution
+
+    [Fact]
+    public async Task DecomposePumpAsync_WithManufacturerAndModel_SetsDeviceId()
+    {
+        // Arrange
+        var expectedDeviceId = Guid.CreateVersion7();
+        _deviceServiceMock
+            .Setup(s => s.ResolveAsync(
+                V4Models.DeviceCategory.InsulinPump,
+                "Insulet",
+                "Omnipod 5",
+                1700000000000,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedDeviceId);
+
+        var ds = new DeviceStatus
+        {
+            Id = "pump-device-resolve",
+            Mills = 1700000000000,
+            Device = "openaps://Samsung",
+            Pump = new PumpStatus
+            {
+                Manufacturer = "Insulet",
+                Model = "Omnipod 5",
+                Reservoir = 150.5,
+                Battery = new PumpBattery { Percent = 85 }
+            }
+        };
+
+        // Act
+        var result = await _decomposer.DecomposeAsync(ds);
+
+        // Assert
+        var pump = result.CreatedRecords[0].Should().BeOfType<V4Models.PumpSnapshot>().Subject;
+        pump.DeviceId.Should().Be(expectedDeviceId);
+    }
+
+    [Fact]
+    public async Task DecomposeUploaderAsync_WithNameAndType_SetsDeviceId()
+    {
+        // Arrange
+        var expectedDeviceId = Guid.CreateVersion7();
+        _deviceServiceMock
+            .Setup(s => s.ResolveAsync(
+                V4Models.DeviceCategory.Uploader,
+                "Samsung Galaxy S23",
+                "phone",
+                1700000000000,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedDeviceId);
+
+        var ds = new DeviceStatus
+        {
+            Id = "uploader-device-resolve",
+            Mills = 1700000000000,
+            Device = "openaps://Samsung",
+            Uploader = new UploaderStatus
+            {
+                Name = "Samsung Galaxy S23",
+                Battery = 78,
+                Type = "phone"
+            }
+        };
+
+        // Act
+        var result = await _decomposer.DecomposeAsync(ds);
+
+        // Assert
+        var uploader = result.CreatedRecords[0].Should().BeOfType<V4Models.UploaderSnapshot>().Subject;
+        uploader.DeviceId.Should().Be(expectedDeviceId);
     }
 
     #endregion
