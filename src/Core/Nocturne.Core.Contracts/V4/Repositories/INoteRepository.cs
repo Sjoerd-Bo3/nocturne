@@ -17,10 +17,10 @@ public interface INoteRepository : IV4Repository<Note>
     );
 
     // Explicit base-interface bridge — delegates to the extended overload
-    async Task<IEnumerable<Note>> IV4Repository<Note>.GetAsync(
+    Task<IEnumerable<Note>> IV4Repository<Note>.GetAsync(
         DateTime? from, DateTime? to, string? device, string? source,
         int limit, int offset, bool descending, CancellationToken ct)
-        => await GetAsync(from, to, device, source, limit, offset, descending, false, ct);
+        => GetAsync(from, to, device, source, limit, offset, descending, false, ct);
     Task<Note?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Note?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default);
     Task<Note> CreateAsync(Note model, CancellationToken ct = default);

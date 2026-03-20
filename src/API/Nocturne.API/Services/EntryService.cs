@@ -22,7 +22,7 @@ public class EntryService : IEntryService
     private readonly ICacheService _cacheService;
     private readonly CacheConfiguration _cacheConfig;
     private readonly IDemoModeService _demoModeService;
-    private readonly IEntryDecomposer _entryDecomposer;
+    private readonly IDecompositionPipeline _pipeline;
     private readonly IV4ToLegacyProjectionService _projectionService;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<EntryService> _logger;
@@ -36,7 +36,7 @@ public class EntryService : IEntryService
         ICacheService cacheService,
         IOptions<CacheConfiguration> cacheConfig,
         IDemoModeService demoModeService,
-        IEntryDecomposer entryDecomposer,
+        IDecompositionPipeline pipeline,
         IV4ToLegacyProjectionService projectionService,
         ITenantAccessor tenantAccessor,
         ILogger<EntryService> logger
@@ -47,7 +47,7 @@ public class EntryService : IEntryService
         _cacheService = cacheService;
         _cacheConfig = cacheConfig.Value;
         _demoModeService = demoModeService;
-        _entryDecomposer = entryDecomposer;
+        _pipeline = pipeline;
         _projectionService = projectionService;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
@@ -510,21 +510,7 @@ public class EntryService : IEntryService
         }
 
         // Decompose each created entry into v4 tables
-        foreach (var entry in createdEntries)
-        {
-            try
-            {
-                await _entryDecomposer.DecomposeAsync(entry, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to decompose entry {EntryId} into v4 tables",
-                    entry.Id
-                );
-            }
-        }
+        await _pipeline.DecomposeAsync<Entry>(createdEntries, cancellationToken);
 
         return createdEntries;
     }
@@ -588,18 +574,7 @@ public class EntryService : IEntryService
             }
 
             // Re-decompose the updated entry to keep v4 tables in sync
-            try
-            {
-                await _entryDecomposer.DecomposeAsync(updatedEntry, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to re-decompose updated entry {EntryId} into v4 tables",
-                    updatedEntry.Id
-                );
-            }
+            await _pipeline.DecomposeAsync(updatedEntry, cancellationToken);
         }
 
         return updatedEntry;
@@ -612,14 +587,7 @@ public class EntryService : IEntryService
     )
     {
         // Delete corresponding v4 records by LegacyId
-        try
-        {
-            await _entryDecomposer.DeleteByLegacyIdAsync(id, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete v4 records for legacy entry {EntryId}", id);
-        }
+        await _pipeline.DeleteByLegacyIdAsync<Entry>(id, cancellationToken);
 
         // Get the entry before deleting for broadcasting
         var entryToDelete = await _postgreSqlService.GetEntryByIdAsync(id, cancellationToken);

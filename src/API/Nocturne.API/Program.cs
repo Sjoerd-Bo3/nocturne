@@ -490,6 +490,15 @@ builder.Services.AddScoped<ITreatmentDecomposer, TreatmentDecomposer>();
 builder.Services.AddScoped<IDeviceStatusDecomposer, DeviceStatusDecomposer>();
 builder.Services.AddScoped<IActivityDecomposer, ActivityDecomposer>();
 builder.Services.AddScoped<IProfileDecomposer, ProfileDecomposer>();
+
+// Unified generic decomposer registrations (resolve from typed interfaces)
+builder.Services.AddScoped<IDecomposer<Entry>>(sp => (IDecomposer<Entry>)sp.GetRequiredService<IEntryDecomposer>());
+builder.Services.AddScoped<IDecomposer<Treatment>>(sp => (IDecomposer<Treatment>)sp.GetRequiredService<ITreatmentDecomposer>());
+builder.Services.AddScoped<IDecomposer<DeviceStatus>>(sp => (IDecomposer<DeviceStatus>)sp.GetRequiredService<IDeviceStatusDecomposer>());
+builder.Services.AddScoped<IDecomposer<Activity>>(sp => (IDecomposer<Activity>)sp.GetRequiredService<IActivityDecomposer>());
+builder.Services.AddScoped<IDecomposer<Profile>>(sp => (IDecomposer<Profile>)sp.GetRequiredService<IProfileDecomposer>());
+builder.Services.AddScoped<IDecompositionPipeline, DecompositionPipeline>();
+
 builder.Services.AddScoped<V4BackfillService>();
 
 // Note: Processing status service is registered by AddNocturneMemoryCache

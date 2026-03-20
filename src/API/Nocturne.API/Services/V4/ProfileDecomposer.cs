@@ -12,7 +12,7 @@ namespace Nocturne.API.Services.V4;
 /// Iterates through the Profile.Store dictionary, producing one set of 5 V4 records per named profile.
 /// Supports idempotent create-or-update via composite LegacyId matching ("{profileId}:{storeName}").
 /// </summary>
-public class ProfileDecomposer : IProfileDecomposer
+public class ProfileDecomposer : IProfileDecomposer, IDecomposer<Profile>
 {
     private readonly ITherapySettingsRepository _therapySettingsRepo;
     private readonly IBasalScheduleRepository _basalScheduleRepo;

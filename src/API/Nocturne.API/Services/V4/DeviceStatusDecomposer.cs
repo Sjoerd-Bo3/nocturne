@@ -14,7 +14,7 @@ namespace Nocturne.API.Services.V4;
 /// Extracts APS (OpenAPS/AAPS/Trio and Loop), pump, and uploader snapshots
 /// and persists them with idempotent create-or-update via LegacyId matching.
 /// </summary>
-public class DeviceStatusDecomposer : IDeviceStatusDecomposer
+public class DeviceStatusDecomposer : IDeviceStatusDecomposer, IDecomposer<DeviceStatus>
 {
     private readonly IApsSnapshotRepository _apsRepo;
     private readonly IPumpSnapshotRepository _pumpRepo;

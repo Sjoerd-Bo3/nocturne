@@ -15,7 +15,7 @@ public class DeviceStatusService : IDeviceStatusService
     private readonly IPostgreSqlService _postgreSqlService;
     private readonly ISignalRBroadcastService _broadcastService;
     private readonly ICacheService _cacheService;
-    private readonly IDeviceStatusDecomposer _deviceStatusDecomposer;
+    private readonly IDecompositionPipeline _pipeline;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<DeviceStatusService> _logger;
     private const string CollectionName = "devicestatus";
@@ -27,7 +27,7 @@ public class DeviceStatusService : IDeviceStatusService
         IPostgreSqlService postgreSqlService,
         ISignalRBroadcastService broadcastService,
         ICacheService cacheService,
-        IDeviceStatusDecomposer deviceStatusDecomposer,
+        IDecompositionPipeline pipeline,
         ITenantAccessor tenantAccessor,
         ILogger<DeviceStatusService> logger
     )
@@ -35,7 +35,7 @@ public class DeviceStatusService : IDeviceStatusService
         _postgreSqlService = postgreSqlService;
         _broadcastService = broadcastService;
         _cacheService = cacheService;
-        _deviceStatusDecomposer = deviceStatusDecomposer;
+        _pipeline = pipeline;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
@@ -154,21 +154,7 @@ public class DeviceStatusService : IDeviceStatusService
         }
 
         // Decompose each device status into v4 snapshot tables
-        foreach (var deviceStatus in createdDeviceStatus)
-        {
-            try
-            {
-                await _deviceStatusDecomposer.DecomposeAsync(deviceStatus, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to decompose device status {DeviceStatusId} into v4 tables",
-                    deviceStatus.Id
-                );
-            }
-        }
+        await _pipeline.DecomposeAsync<DeviceStatus>(createdDeviceStatus, cancellationToken);
 
         return createdDeviceStatus;
     }
@@ -223,18 +209,7 @@ public class DeviceStatusService : IDeviceStatusService
             }
 
             // Re-decompose updated device status into v4 snapshot tables
-            try
-            {
-                await _deviceStatusDecomposer.DecomposeAsync(updatedDeviceStatus, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to re-decompose updated device status {DeviceStatusId} into v4 tables",
-                    updatedDeviceStatus.Id
-                );
-            }
+            await _pipeline.DecomposeAsync(updatedDeviceStatus, cancellationToken);
         }
 
         return updatedDeviceStatus;
@@ -247,14 +222,7 @@ public class DeviceStatusService : IDeviceStatusService
     )
     {
         // Delete corresponding v4 snapshot records by LegacyId
-        try
-        {
-            await _deviceStatusDecomposer.DeleteByLegacyIdAsync(id, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete v4 snapshot records for legacy device status {DeviceStatusId}", id);
-        }
+        await _pipeline.DeleteByLegacyIdAsync<DeviceStatus>(id, cancellationToken);
 
         // Get the device status before deleting for broadcasting
         var deviceStatusToDelete = await _postgreSqlService.GetDeviceStatusByIdAsync(

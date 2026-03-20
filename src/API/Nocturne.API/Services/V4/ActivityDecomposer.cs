@@ -11,7 +11,7 @@ namespace Nocturne.API.Services.V4;
 /// Decomposes legacy Activity records into HeartRate or StepCount records.
 /// Detection is based on the presence of specific keys in Activity.AdditionalProperties.
 /// </summary>
-public class ActivityDecomposer : IActivityDecomposer
+public class ActivityDecomposer : IActivityDecomposer, IDecomposer<Activity>
 {
     private readonly NocturneDbContext _dbContext;
     private readonly ILogger<ActivityDecomposer> _logger;

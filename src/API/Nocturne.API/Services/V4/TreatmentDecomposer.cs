@@ -15,7 +15,7 @@ namespace Nocturne.API.Services.V4;
 /// types (TempBasal, ProfileSwitch) to IStateSpanService.
 /// Supports idempotent create-or-update via LegacyId matching.
 /// </summary>
-public class TreatmentDecomposer : ITreatmentDecomposer
+public class TreatmentDecomposer : ITreatmentDecomposer, IDecomposer<Treatment>
 {
     private readonly IBolusRepository _bolusRepository;
     private readonly ITempBasalRepository _tempBasalRepository;
@@ -87,6 +87,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         var delegateToStateSpan = false;
         var isProfileSwitch = false;
         var isOverride = false;
+        var isTemporaryTarget = false;
         var isAnnouncement = false;
         DeviceEventType parsedDeviceEventType = default;
 
@@ -102,6 +103,12 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         else if (string.Equals(eventType, "Temporary Override", StringComparison.OrdinalIgnoreCase))
         {
             isOverride = true;
+            delegateToStateSpan = true;
+        }
+        else if (string.Equals(eventType, "Temporary Target", StringComparison.OrdinalIgnoreCase)
+              || string.Equals(eventType, "Temporary Target Cancel", StringComparison.OrdinalIgnoreCase))
+        {
+            isTemporaryTarget = true;
             delegateToStateSpan = true;
         }
         else if (eventType != null && TreatmentTypes.DeviceEventTypeMap.TryGetValue(eventType, out parsedDeviceEventType))
@@ -163,6 +170,10 @@ public class TreatmentDecomposer : ITreatmentDecomposer
             else if (isOverride)
             {
                 await DecomposeOverrideAsync(treatment, result, ct);
+            }
+            else if (isTemporaryTarget)
+            {
+                await DecomposeTemporaryTargetAsync(treatment, result, ct);
             }
             else
             {
@@ -491,6 +502,31 @@ public class TreatmentDecomposer : ITreatmentDecomposer
         _logger.LogDebug("Delegated Temporary Override treatment {LegacyId} to IStateSpanService", treatment.Id);
     }
 
+    private async Task DecomposeTemporaryTargetAsync(Treatment treatment, V4Models.DecompositionResult result, CancellationToken ct)
+    {
+        var isCancelled = treatment.Duration is null or 0
+            || string.Equals(treatment.EventType, "Temporary Target Cancel", StringComparison.OrdinalIgnoreCase);
+
+        var stateSpan = new StateSpan
+        {
+            Category = StateSpanCategory.TemporaryTarget,
+            State = isCancelled
+                ? TemporaryTargetState.Cancelled.ToString()
+                : TemporaryTargetState.Active.ToString(),
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills).UtcDateTime,
+            EndTimestamp = !isCancelled && treatment.Duration is > 0
+                ? DateTimeOffset.FromUnixTimeMilliseconds(treatment.Mills + (long)(treatment.Duration.Value * 60 * 1000)).UtcDateTime
+                : null,
+            Source = treatment.DataSource ?? treatment.EnteredBy ?? "nightscout",
+            OriginalId = treatment.Id,
+            Metadata = BuildTemporaryTargetMetadata(treatment)
+        };
+
+        var upserted = await _stateSpanService.UpsertStateSpanAsync(stateSpan, ct);
+        result.CreatedRecords.Add(upserted);
+        _logger.LogDebug("Delegated Temporary Target treatment {LegacyId} to IStateSpanService", treatment.Id);
+    }
+
     #endregion
 
     #region Mapping Methods
@@ -751,6 +787,30 @@ public class TreatmentDecomposer : ITreatmentDecomposer
 
         if (!string.IsNullOrEmpty(treatment.DurationType))
             metadata["durationType"] = treatment.DurationType;
+
+        if (!string.IsNullOrEmpty(treatment.EnteredBy))
+            metadata["enteredBy"] = treatment.EnteredBy;
+
+        metadata["utcOffset"] = treatment.UtcOffset ?? 0;
+
+        return metadata.Count > 0 ? metadata : null;
+    }
+
+    private static Dictionary<string, object>? BuildTemporaryTargetMetadata(Treatment treatment)
+    {
+        var metadata = new Dictionary<string, object>();
+
+        if (treatment.TargetTop.HasValue)
+            metadata["targetTop"] = treatment.TargetTop.Value;
+
+        if (treatment.TargetBottom.HasValue)
+            metadata["targetBottom"] = treatment.TargetBottom.Value;
+
+        if (!string.IsNullOrEmpty(treatment.Reason))
+            metadata["reason"] = treatment.Reason;
+
+        if (!string.IsNullOrEmpty(treatment.Units))
+            metadata["units"] = treatment.Units;
 
         if (!string.IsNullOrEmpty(treatment.EnteredBy))
             metadata["enteredBy"] = treatment.EnteredBy;

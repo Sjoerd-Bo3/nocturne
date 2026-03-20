@@ -17,10 +17,10 @@ public interface IDeviceEventRepository : IV4Repository<DeviceEvent>
     );
 
     // Explicit base-interface bridge — delegates to the extended overload
-    async Task<IEnumerable<DeviceEvent>> IV4Repository<DeviceEvent>.GetAsync(
+    Task<IEnumerable<DeviceEvent>> IV4Repository<DeviceEvent>.GetAsync(
         DateTime? from, DateTime? to, string? device, string? source,
         int limit, int offset, bool descending, CancellationToken ct)
-        => await GetAsync(from, to, device, source, limit, offset, descending, false, ct);
+        => GetAsync(from, to, device, source, limit, offset, descending, false, ct);
     Task<DeviceEvent?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<DeviceEvent?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default);
     Task<DeviceEvent> CreateAsync(DeviceEvent model, CancellationToken ct = default);

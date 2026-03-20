@@ -17,10 +17,10 @@ public interface ICarbIntakeRepository : IV4Repository<CarbIntake>
     );
 
     // Explicit base-interface bridge — delegates to the extended overload
-    async Task<IEnumerable<CarbIntake>> IV4Repository<CarbIntake>.GetAsync(
+    Task<IEnumerable<CarbIntake>> IV4Repository<CarbIntake>.GetAsync(
         DateTime? from, DateTime? to, string? device, string? source,
         int limit, int offset, bool descending, CancellationToken ct)
-        => await GetAsync(from, to, device, source, limit, offset, descending, false, ct);
+        => GetAsync(from, to, device, source, limit, offset, descending, false, ct);
     Task<CarbIntake?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<CarbIntake?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default);
     Task<CarbIntake> CreateAsync(CarbIntake model, CancellationToken ct = default);

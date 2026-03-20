@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Nocturne.Core.Contracts.V4;
+using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Mappers;
 
@@ -13,8 +14,7 @@ namespace Nocturne.API.Services.V4;
 /// </summary>
 public class V4BackfillService
 {
-    private readonly IEntryDecomposer _entryDecomposer;
-    private readonly ITreatmentDecomposer _treatmentDecomposer;
+    private readonly IDecompositionPipeline _pipeline;
     private readonly NocturneDbContext _context;
     private readonly ILogger<V4BackfillService> _logger;
 
@@ -33,14 +33,12 @@ public class V4BackfillService
     ];
 
     public V4BackfillService(
-        IEntryDecomposer entryDecomposer,
-        ITreatmentDecomposer treatmentDecomposer,
+        IDecompositionPipeline pipeline,
         NocturneDbContext context,
         ILogger<V4BackfillService> logger
     )
     {
-        _entryDecomposer = entryDecomposer;
-        _treatmentDecomposer = treatmentDecomposer;
+        _pipeline = pipeline;
         _context = context;
         _logger = logger;
     }
@@ -98,25 +96,10 @@ public class V4BackfillService
             if (batch.Count == 0)
                 break;
 
-            foreach (var entity in batch)
-            {
-                try
-                {
-                    var entry = EntryMapper.ToDomainModel(entity);
-                    await _entryDecomposer.DecomposeAsync(entry, ct);
-                    result.EntriesProcessed++;
-                }
-                catch (Exception ex)
-                {
-                    result.EntriesFailed++;
-                    _logger.LogWarning(
-                        ex,
-                        "Failed to decompose entry {EntryId} (Mills={Mills})",
-                        entity.Id,
-                        entity.Mills
-                    );
-                }
-            }
+            var entries = batch.Select(EntryMapper.ToDomainModel).ToList();
+            var batchResult = await _pipeline.DecomposeAsync<Entry>(entries, ct);
+            result.EntriesProcessed += batchResult.Succeeded;
+            result.EntriesFailed += batchResult.Failed;
 
             lastMills = batch[^1].Mills;
             lastId = batch[^1].Id;
@@ -164,35 +147,21 @@ public class V4BackfillService
             if (batch.Count == 0)
                 break;
 
+            // Skip TempBasal and ProfileSwitch treatments — these are already
+            // handled as StateSpans by the decomposer for new writes
+            var treatments = new List<Treatment>();
             foreach (var entity in batch)
             {
-                try
-                {
-                    var treatment = TreatmentMapper.ToDomainModel(entity);
-
-                    // Skip TempBasal and ProfileSwitch treatments — these are already
-                    // handled as StateSpans by the decomposer for new writes
-                    if (ShouldSkipTreatment(treatment))
-                    {
-                        result.TreatmentsSkipped++;
-                        continue;
-                    }
-
-                    await _treatmentDecomposer.DecomposeAsync(treatment, ct);
-                    result.TreatmentsProcessed++;
-                }
-                catch (Exception ex)
-                {
-                    result.TreatmentsFailed++;
-                    _logger.LogWarning(
-                        ex,
-                        "Failed to decompose treatment {TreatmentId} (Mills={Mills}, EventType={EventType})",
-                        entity.Id,
-                        entity.Mills,
-                        entity.EventType
-                    );
-                }
+                var treatment = TreatmentMapper.ToDomainModel(entity);
+                if (ShouldSkipTreatment(treatment))
+                    result.TreatmentsSkipped++;
+                else
+                    treatments.Add(treatment);
             }
+
+            var batchResult = await _pipeline.DecomposeAsync<Treatment>(treatments, ct);
+            result.TreatmentsProcessed += batchResult.Succeeded;
+            result.TreatmentsFailed += batchResult.Failed;
 
             lastMills = batch[^1].Mills;
             lastId = batch[^1].Id;
@@ -213,7 +182,7 @@ public class V4BackfillService
     /// Determines if a treatment should be skipped during backfill.
     /// Temp basals and profile switches are already represented as StateSpans.
     /// </summary>
-    private static bool ShouldSkipTreatment(Core.Models.Treatment treatment)
+    private static bool ShouldSkipTreatment(Treatment treatment)
     {
         if (string.IsNullOrEmpty(treatment.EventType))
             return false;

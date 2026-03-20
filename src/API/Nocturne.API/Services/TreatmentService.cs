@@ -27,6 +27,7 @@ public class TreatmentService : ITreatmentService
     private readonly IDemoModeService _demoModeService;
     private readonly IStateSpanService _stateSpanService;
     private readonly ITreatmentDecomposer _treatmentDecomposer;
+    private readonly IDecompositionPipeline _pipeline;
     private readonly IV4ToLegacyProjectionService _projectionService;
     private readonly ITempBasalRepository _tempBasalRepository;
     private readonly ITenantAccessor _tenantAccessor;
@@ -43,6 +44,7 @@ public class TreatmentService : ITreatmentService
         IDemoModeService demoModeService,
         IStateSpanService stateSpanService,
         ITreatmentDecomposer treatmentDecomposer,
+        IDecompositionPipeline pipeline,
         IV4ToLegacyProjectionService projectionService,
         ITempBasalRepository tempBasalRepository,
         ITenantAccessor tenantAccessor,
@@ -56,6 +58,7 @@ public class TreatmentService : ITreatmentService
         _demoModeService = demoModeService;
         _stateSpanService = stateSpanService;
         _treatmentDecomposer = treatmentDecomposer;
+        _pipeline = pipeline;
         _projectionService = projectionService;
         _tempBasalRepository = tempBasalRepository;
         _tenantAccessor = tenantAccessor;
@@ -631,22 +634,8 @@ public class TreatmentService : ITreatmentService
                 }
             }
 
-            // Decompose each created treatment into v4 tables
-            foreach (var treatment in createdTreatments)
-            {
-                try
-                {
-                    await _treatmentDecomposer.DecomposeAsync(treatment, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(
-                        ex,
-                        "Failed to decompose treatment {TreatmentId} into v4 tables",
-                        treatment.Id
-                    );
-                }
-            }
+            // Decompose created treatments into v4 tables
+            await _pipeline.DecomposeAsync<Treatment>(createdTreatments, cancellationToken);
 
             results.AddRange(createdTreatments);
         }
@@ -763,21 +752,7 @@ public class TreatmentService : ITreatmentService
             }
 
             // Re-decompose the updated treatment to keep v4 tables in sync
-            try
-            {
-                await _treatmentDecomposer.DecomposeAsync(
-                    regularUpdatedTreatment,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to re-decompose updated treatment {TreatmentId} into v4 tables",
-                    regularUpdatedTreatment.Id
-                );
-            }
+            await _pipeline.DecomposeAsync(regularUpdatedTreatment, cancellationToken);
         }
 
         return regularUpdatedTreatment;
@@ -901,14 +876,7 @@ public class TreatmentService : ITreatmentService
     )
     {
         // Delete corresponding v4 records by LegacyId
-        try
-        {
-            await _treatmentDecomposer.DeleteByLegacyIdAsync(id, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete v4 records for legacy treatment {TreatmentId}", id);
-        }
+        await _pipeline.DeleteByLegacyIdAsync<Treatment>(id, cancellationToken);
 
         // Check if this is a temp basal in the V4 TempBasal table
         var existingTempBasal = await _tempBasalRepository.GetByLegacyIdAsync(id, cancellationToken);

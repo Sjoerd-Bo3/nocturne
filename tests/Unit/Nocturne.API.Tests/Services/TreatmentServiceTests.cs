@@ -30,6 +30,7 @@ public class TreatmentServiceTests
     private readonly Mock<IDemoModeService> _mockDemoModeService;
     private readonly Mock<IStateSpanService> _mockStateSpanService;
     private readonly Mock<ITreatmentDecomposer> _mockTreatmentDecomposer;
+    private readonly Mock<IDecompositionPipeline> _mockPipeline;
     private readonly Mock<IV4ToLegacyProjectionService> _mockProjectionService;
     private readonly Mock<ITempBasalRepository> _mockTempBasalRepository;
     private readonly Mock<ILogger<TreatmentService>> _mockLogger;
@@ -44,6 +45,7 @@ public class TreatmentServiceTests
         _mockDemoModeService = new Mock<IDemoModeService>();
         _mockStateSpanService = new Mock<IStateSpanService>();
         _mockTreatmentDecomposer = new Mock<ITreatmentDecomposer>();
+        _mockPipeline = new Mock<IDecompositionPipeline>();
         _mockProjectionService = new Mock<IV4ToLegacyProjectionService>();
         _mockTempBasalRepository = new Mock<ITempBasalRepository>();
         _mockLogger = new Mock<ILogger<TreatmentService>>();
@@ -79,6 +81,7 @@ public class TreatmentServiceTests
             _mockDemoModeService.Object,
             _mockStateSpanService.Object,
             _mockTreatmentDecomposer.Object,
+            _mockPipeline.Object,
             _mockProjectionService.Object,
             _mockTempBasalRepository.Object,
             mockTenantAccessor.Object,
@@ -618,11 +621,11 @@ public class TreatmentServiceTests
             Times.Once
         );
 
-        // Decomposer was also called for the regular bolus treatment after legacy write
-        _mockTreatmentDecomposer.Verify(
+        // Regular bolus goes through the pipeline after legacy write
+        _mockPipeline.Verify(
             x =>
-                x.DecomposeAsync(
-                    It.Is<Treatment>(t => t.EventType == "Correction Bolus"),
+                x.DecomposeAsync<Treatment>(
+                    It.IsAny<IEnumerable<Treatment>>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once

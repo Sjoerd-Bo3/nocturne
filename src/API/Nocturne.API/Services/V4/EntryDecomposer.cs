@@ -11,7 +11,7 @@ namespace Nocturne.API.Services.V4;
 /// Maps Entry.Type "sgv" -> SensorGlucose, "mbg" -> MeterGlucose, "cal" -> Calibration.
 /// Supports idempotent create-or-update via LegacyId matching.
 /// </summary>
-public class EntryDecomposer : IEntryDecomposer
+public class EntryDecomposer : IEntryDecomposer, IDecomposer<Entry>
 {
     private readonly ISensorGlucoseRepository _sensorGlucoseRepository;
     private readonly IMeterGlucoseRepository _meterGlucoseRepository;

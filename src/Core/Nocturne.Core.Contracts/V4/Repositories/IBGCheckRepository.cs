@@ -17,10 +17,10 @@ public interface IBGCheckRepository : IV4Repository<BGCheck>
     );
 
     // Explicit base-interface bridge — delegates to the extended overload
-    async Task<IEnumerable<BGCheck>> IV4Repository<BGCheck>.GetAsync(
+    Task<IEnumerable<BGCheck>> IV4Repository<BGCheck>.GetAsync(
         DateTime? from, DateTime? to, string? device, string? source,
         int limit, int offset, bool descending, CancellationToken ct)
-        => await GetAsync(from, to, device, source, limit, offset, descending, false, ct);
+        => GetAsync(from, to, device, source, limit, offset, descending, false, ct);
     Task<BGCheck?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<BGCheck?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default);
     Task<BGCheck> CreateAsync(BGCheck model, CancellationToken ct = default);
