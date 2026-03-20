@@ -4,18 +4,18 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
+using Nocturne.Connectors.Core.Services;
 using Nocturne.Connectors.Core.Utilities;
 using Nocturne.Connectors.FreeStyle.Configurations;
 using Nocturne.Connectors.FreeStyle.Services;
 
 namespace Nocturne.Connectors.FreeStyle;
 
-public static class ServiceCollectionExtensions
+public class FreeStyleConnectorInstaller : IConnectorInstaller
 {
-    public static void AddLibreLinkUpConnector(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    public string ConnectorName => "LibreLinkUp";
+
+    public void Install(IServiceCollection services, IConfiguration configuration)
     {
         var libreConfig = services.AddConnectorConfiguration<LibreLinkUpConnectorConfiguration>(
             configuration,
@@ -62,5 +62,15 @@ public static class ServiceCollectionExtensions
             var retryStrategy = sp.GetRequiredService<IRetryDelayStrategy>();
             return new LibreLinkAuthTokenProvider(config, httpClient, logger, retryStrategy);
         });
+
+        services.AddScoped<IConnectorSyncExecutor, FreeStyleSyncExecutor>();
     }
+}
+
+public class FreeStyleSyncExecutor
+    : ConnectorSyncExecutor<LibreConnectorService, LibreLinkUpConnectorConfiguration>
+{
+    public override string ConnectorId => "librelinkup";
+
+    protected override string ConnectorName => "LibreLinkUp";
 }

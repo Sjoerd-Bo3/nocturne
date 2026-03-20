@@ -1,17 +1,18 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Connectors.Core.Extensions;
+using Nocturne.Connectors.Core.Interfaces;
+using Nocturne.Connectors.Core.Services;
 using Nocturne.Connectors.MyFitnessPal.Configurations;
 using Nocturne.Connectors.MyFitnessPal.Services;
 
 namespace Nocturne.Connectors.MyFitnessPal;
 
-public static class ServiceCollectionExtensions
+public class MyFitnessPalConnectorInstaller : IConnectorInstaller
 {
-    public static void AddMyFitnessPalConnector(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    public string ConnectorName => "MyFitnessPal";
+
+    public void Install(IServiceCollection services, IConfiguration configuration)
     {
         var config = services.AddConnectorConfiguration<MyFitnessPalConnectorConfiguration>(
             configuration,
@@ -23,5 +24,15 @@ public static class ServiceCollectionExtensions
         services
             .AddHttpClient<MyFitnessPalConnectorService>()
             .ConfigureConnectorClient("https://www.myfitnesspal.com");
+
+        services.AddScoped<IConnectorSyncExecutor, MyFitnessPalSyncExecutor>();
     }
+}
+
+public class MyFitnessPalSyncExecutor
+    : ConnectorSyncExecutor<MyFitnessPalConnectorService, MyFitnessPalConnectorConfiguration>
+{
+    public override string ConnectorId => "myfitnesspal";
+
+    protected override string ConnectorName => "MyFitnessPal";
 }
