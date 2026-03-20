@@ -29,6 +29,7 @@ public static class UploaderSnapshotMapper
             IsCharging = model.IsCharging,
             Temperature = model.Temperature,
             Type = model.Type,
+            DeviceId = model.DeviceId,
             AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
                 ? JsonSerializer.Serialize(model.AdditionalProperties)
                 : null,
@@ -55,6 +56,7 @@ public static class UploaderSnapshotMapper
             IsCharging = entity.IsCharging,
             Temperature = entity.Temperature,
             Type = entity.Type,
+            DeviceId = entity.DeviceId,
             AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
                 ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
                 : null,
@@ -77,6 +79,7 @@ public static class UploaderSnapshotMapper
         entity.IsCharging = model.IsCharging;
         entity.Temperature = model.Temperature;
         entity.Type = model.Type;
+        entity.DeviceId = model.DeviceId;
         entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
             ? JsonSerializer.Serialize(model.AdditionalProperties)
             : null;

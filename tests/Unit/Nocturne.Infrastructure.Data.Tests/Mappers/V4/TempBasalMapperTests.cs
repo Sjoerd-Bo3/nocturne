@@ -27,7 +27,7 @@ public class TempBasalMapperTests
             Rate = 1.25,
             ScheduledRate = 0.85,
             Origin = TempBasalOrigin.Algorithm,
-            PumpDeviceId = pumpDeviceId,
+            DeviceId = pumpDeviceId,
             PumpRecordId = "pump-rec-001"
         };
 
@@ -45,7 +45,7 @@ public class TempBasalMapperTests
         entity.Rate.Should().Be(1.25);
         entity.ScheduledRate.Should().Be(0.85);
         entity.Origin.Should().Be("Algorithm");
-        entity.PumpDeviceId.Should().Be(pumpDeviceId);
+        entity.DeviceId.Should().Be(pumpDeviceId);
         entity.PumpRecordId.Should().Be("pump-rec-001");
     }
 
@@ -120,7 +120,7 @@ public class TempBasalMapperTests
             Rate = 1.0,
             EndTimestamp = null,
             ScheduledRate = null,
-            PumpDeviceId = null,
+            DeviceId = null,
             PumpRecordId = null
         };
 
@@ -128,7 +128,7 @@ public class TempBasalMapperTests
 
         entity.EndTimestamp.Should().BeNull();
         entity.ScheduledRate.Should().BeNull();
-        entity.PumpDeviceId.Should().BeNull();
+        entity.DeviceId.Should().BeNull();
         entity.PumpRecordId.Should().BeNull();
     }
 
@@ -157,7 +157,7 @@ public class TempBasalMapperTests
             Rate = 1.25,
             ScheduledRate = 0.85,
             Origin = "Algorithm",
-            PumpDeviceId = pumpDeviceId,
+            DeviceId = pumpDeviceId,
             PumpRecordId = "pump-rec-001"
         };
 
@@ -177,7 +177,7 @@ public class TempBasalMapperTests
         model.Rate.Should().Be(1.25);
         model.ScheduledRate.Should().Be(0.85);
         model.Origin.Should().Be(TempBasalOrigin.Algorithm);
-        model.PumpDeviceId.Should().Be(pumpDeviceId);
+        model.DeviceId.Should().Be(pumpDeviceId);
         model.PumpRecordId.Should().Be("pump-rec-001");
     }
 
@@ -252,7 +252,7 @@ public class TempBasalMapperTests
         };
 
         var newCorrelationId = Guid.NewGuid();
-        var newPumpDeviceId = Guid.NewGuid();
+        var newDeviceId = Guid.NewGuid();
         var model = new TempBasal
         {
             StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
@@ -266,7 +266,7 @@ public class TempBasalMapperTests
             Rate = 2.5,
             ScheduledRate = 1.0,
             Origin = TempBasalOrigin.Algorithm,
-            PumpDeviceId = newPumpDeviceId,
+            DeviceId = newDeviceId,
             PumpRecordId = "pump-rec-002"
         };
 
@@ -285,7 +285,7 @@ public class TempBasalMapperTests
         entity.Rate.Should().Be(2.5);
         entity.ScheduledRate.Should().Be(1.0);
         entity.Origin.Should().Be("Algorithm");
-        entity.PumpDeviceId.Should().Be(newPumpDeviceId);
+        entity.DeviceId.Should().Be(newDeviceId);
         entity.PumpRecordId.Should().Be("pump-rec-002");
         entity.SysUpdatedAt.Should().BeAfter(originalCreatedAt);
     }
@@ -330,7 +330,7 @@ public class TempBasalMapperTests
             Rate = 0.75,
             ScheduledRate = 1.2,
             Origin = TempBasalOrigin.Scheduled,
-            PumpDeviceId = pumpDeviceId,
+            DeviceId = pumpDeviceId,
             PumpRecordId = "pump-rec-003"
         };
 
@@ -349,7 +349,7 @@ public class TempBasalMapperTests
         roundTripped.Rate.Should().Be(original.Rate);
         roundTripped.ScheduledRate.Should().Be(original.ScheduledRate);
         roundTripped.Origin.Should().Be(original.Origin);
-        roundTripped.PumpDeviceId.Should().Be(original.PumpDeviceId);
+        roundTripped.DeviceId.Should().Be(original.DeviceId);
         roundTripped.PumpRecordId.Should().Be(original.PumpRecordId);
     }
 

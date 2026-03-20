@@ -33,6 +33,7 @@ public static class PumpSnapshotMapper
             Suspended = model.Suspended,
             PumpStatus = model.PumpStatus,
             Clock = model.Clock,
+            DeviceId = model.DeviceId,
             AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
                 ? JsonSerializer.Serialize(model.AdditionalProperties)
                 : null,
@@ -63,6 +64,7 @@ public static class PumpSnapshotMapper
             Suspended = entity.Suspended,
             PumpStatus = entity.PumpStatus,
             Clock = entity.Clock,
+            DeviceId = entity.DeviceId,
             AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
                 ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
                 : null,
@@ -89,6 +91,7 @@ public static class PumpSnapshotMapper
         entity.Suspended = model.Suspended;
         entity.PumpStatus = model.PumpStatus;
         entity.Clock = model.Clock;
+        entity.DeviceId = model.DeviceId;
         entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
             ? JsonSerializer.Serialize(model.AdditionalProperties)
             : null;

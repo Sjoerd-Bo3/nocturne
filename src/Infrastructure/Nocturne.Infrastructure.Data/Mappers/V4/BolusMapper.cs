@@ -36,7 +36,7 @@ public static class BolusMapper
             SyncIdentifier = model.SyncIdentifier,
             InsulinType = model.InsulinType,
             Unabsorbed = model.Unabsorbed,
-            PumpDeviceId = model.PumpDeviceId,
+            DeviceId = model.DeviceId,
             PumpRecordId = model.PumpRecordId,
             BolusCalculationId = model.BolusCalculationId,
             ApsSnapshotId = model.ApsSnapshotId,
@@ -73,7 +73,7 @@ public static class BolusMapper
             SyncIdentifier = entity.SyncIdentifier,
             InsulinType = entity.InsulinType,
             Unabsorbed = entity.Unabsorbed,
-            PumpDeviceId = entity.PumpDeviceId,
+            DeviceId = entity.DeviceId,
             PumpRecordId = entity.PumpRecordId,
             BolusCalculationId = entity.BolusCalculationId,
             ApsSnapshotId = entity.ApsSnapshotId,
@@ -106,7 +106,7 @@ public static class BolusMapper
         entity.SyncIdentifier = model.SyncIdentifier;
         entity.InsulinType = model.InsulinType;
         entity.Unabsorbed = model.Unabsorbed;
-        entity.PumpDeviceId = model.PumpDeviceId;
+        entity.DeviceId = model.DeviceId;
         entity.PumpRecordId = model.PumpRecordId;
         entity.BolusCalculationId = model.BolusCalculationId;
         entity.ApsSnapshotId = model.ApsSnapshotId;

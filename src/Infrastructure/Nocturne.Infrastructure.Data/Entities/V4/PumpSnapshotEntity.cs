@@ -125,6 +125,12 @@ public class PumpSnapshotEntity : ITenantScoped
     public string? Clock { get; set; }
 
     /// <summary>
+    /// Foreign key to the Device table
+    /// </summary>
+    [Column("device_id")]
+    public Guid? DeviceId { get; set; }
+
+    /// <summary>
     /// Catch-all JSONB column for fields not mapped to dedicated columns
     /// </summary>
     [Column("additional_properties", TypeName = "jsonb")]

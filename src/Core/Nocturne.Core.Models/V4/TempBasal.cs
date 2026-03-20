@@ -87,9 +87,9 @@ public class TempBasal
     public TempBasalOrigin Origin { get; set; }
 
     /// <summary>
-    /// Reference to the pump device that delivered this temp basal
+    /// Foreign key to the Device table
     /// </summary>
-    public Guid? PumpDeviceId { get; set; }
+    public Guid? DeviceId { get; set; }
 
     /// <summary>
     /// Pump-specific record identifier for deduplication

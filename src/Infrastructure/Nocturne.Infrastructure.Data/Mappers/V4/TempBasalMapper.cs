@@ -30,7 +30,7 @@ public static class TempBasalMapper
             Rate = model.Rate,
             ScheduledRate = model.ScheduledRate,
             Origin = model.Origin.ToString(),
-            PumpDeviceId = model.PumpDeviceId,
+            DeviceId = model.DeviceId,
             PumpRecordId = model.PumpRecordId,
             ApsSnapshotId = model.ApsSnapshotId,
             AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
@@ -62,7 +62,7 @@ public static class TempBasalMapper
             Origin = Enum.TryParse<TempBasalOrigin>(entity.Origin, out var origin)
                 ? origin
                 : TempBasalOrigin.Inferred,
-            PumpDeviceId = entity.PumpDeviceId,
+            DeviceId = entity.DeviceId,
             PumpRecordId = entity.PumpRecordId,
             ApsSnapshotId = entity.ApsSnapshotId,
             AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
@@ -88,7 +88,7 @@ public static class TempBasalMapper
         entity.Rate = model.Rate;
         entity.ScheduledRate = model.ScheduledRate;
         entity.Origin = model.Origin.ToString();
-        entity.PumpDeviceId = model.PumpDeviceId;
+        entity.DeviceId = model.DeviceId;
         entity.PumpRecordId = model.PumpRecordId;
         entity.ApsSnapshotId = model.ApsSnapshotId;
         entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }

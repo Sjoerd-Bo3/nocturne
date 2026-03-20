@@ -111,9 +111,9 @@ public class Bolus : IV4Record
     public double? Unabsorbed { get; set; }
 
     /// <summary>
-    /// Foreign key to the PumpDevice table
+    /// Foreign key to the Device table
     /// </summary>
-    public Guid? PumpDeviceId { get; set; }
+    public Guid? DeviceId { get; set; }
 
     /// <summary>
     /// Per-record pump counter (AAPS internal identifier)

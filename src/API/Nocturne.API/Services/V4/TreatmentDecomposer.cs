@@ -261,7 +261,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer, IDecomposer<Treatment>
             : null;
 
         var model = MapToBolus(treatment, result.CorrelationId);
-        model.PumpDeviceId = await _deviceService.ResolveAsync(
+        model.DeviceId = await _deviceService.ResolveAsync(
             V4Models.DeviceCategory.InsulinPump, treatment.PumpType, treatment.PumpSerial, treatment.Mills, ct);
 
         if (existing != null)
@@ -288,7 +288,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer, IDecomposer<Treatment>
         var model = MapToBolus(treatment, result.CorrelationId);
         model.Kind = V4Models.BolusKind.Algorithm;
         model.Automatic = true;
-        model.PumpDeviceId = await _deviceService.ResolveAsync(
+        model.DeviceId = await _deviceService.ResolveAsync(
             V4Models.DeviceCategory.InsulinPump, treatment.PumpType, treatment.PumpSerial, treatment.Mills, ct);
 
         if (existing != null)
@@ -444,7 +444,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer, IDecomposer<Treatment>
             : null;
 
         var model = MapToTempBasal(treatment, result.CorrelationId);
-        model.PumpDeviceId = await _deviceService.ResolveAsync(
+        model.DeviceId = await _deviceService.ResolveAsync(
             V4Models.DeviceCategory.InsulinPump, treatment.PumpType, treatment.PumpSerial, treatment.Mills, ct);
 
         if (existing != null)
@@ -573,7 +573,7 @@ public class TreatmentDecomposer : ITreatmentDecomposer, IDecomposer<Treatment>
             SyncIdentifier = treatment.SyncIdentifier,
             InsulinType = treatment.InsulinType,
             Unabsorbed = treatment.Unabsorbed,
-            PumpDeviceId = null, // Resolved by caller via IDeviceService
+            DeviceId = null, // Resolved by caller via IDeviceService
             PumpRecordId = treatment.PumpId?.ToString(),
         };
     }

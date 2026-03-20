@@ -329,7 +329,7 @@ public class BolusMapperTests
             SyncIdentifier = "loop-sync-abc123",
             InsulinType = "Humalog",
             Unabsorbed = 1.5,
-            PumpDeviceId = pumpDeviceId,
+            DeviceId = pumpDeviceId,
             PumpRecordId = "pump-42"
         };
 
@@ -338,7 +338,7 @@ public class BolusMapperTests
         entity.SyncIdentifier.Should().Be("loop-sync-abc123");
         entity.InsulinType.Should().Be("Humalog");
         entity.Unabsorbed.Should().Be(1.5);
-        entity.PumpDeviceId.Should().Be(pumpDeviceId);
+        entity.DeviceId.Should().Be(pumpDeviceId);
         entity.PumpRecordId.Should().Be("pump-42");
     }
 
@@ -355,7 +355,7 @@ public class BolusMapperTests
             SyncIdentifier = "loop-sync-abc123",
             InsulinType = "Humalog",
             Unabsorbed = 1.5,
-            PumpDeviceId = pumpDeviceId,
+            DeviceId = pumpDeviceId,
             PumpRecordId = "pump-42"
         };
 
@@ -364,7 +364,7 @@ public class BolusMapperTests
         model.SyncIdentifier.Should().Be("loop-sync-abc123");
         model.InsulinType.Should().Be("Humalog");
         model.Unabsorbed.Should().Be(1.5);
-        model.PumpDeviceId.Should().Be(pumpDeviceId);
+        model.DeviceId.Should().Be(pumpDeviceId);
         model.PumpRecordId.Should().Be("pump-42");
     }
 

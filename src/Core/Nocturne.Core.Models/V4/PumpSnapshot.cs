@@ -30,6 +30,11 @@ public class PumpSnapshot : IV4Record
     public string? Clock { get; set; }
 
     /// <summary>
+    /// Foreign key to the Device table
+    /// </summary>
+    public Guid? DeviceId { get; set; }
+
+    /// <summary>
     /// Catch-all for fields not mapped to dedicated columns
     /// </summary>
     public Dictionary<string, object?>? AdditionalProperties { get; set; }

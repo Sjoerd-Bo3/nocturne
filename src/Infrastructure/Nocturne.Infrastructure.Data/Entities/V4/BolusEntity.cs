@@ -134,8 +134,8 @@ public class BolusEntity : ITenantScoped
     [Column("unabsorbed")]
     public double? Unabsorbed { get; set; }
 
-    [Column("pump_device_id")]
-    public Guid? PumpDeviceId { get; set; }
+    [Column("device_id")]
+    public Guid? DeviceId { get; set; }
 
     [Column("pump_record_id")]
     [MaxLength(256)]

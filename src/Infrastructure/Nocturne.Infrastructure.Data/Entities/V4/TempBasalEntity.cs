@@ -105,10 +105,10 @@ public class TempBasalEntity : ITenantScoped
     public string Origin { get; set; } = null!;
 
     /// <summary>
-    /// Reference to the pump device that delivered this temp basal
+    /// Foreign key to the Device table
     /// </summary>
-    [Column("pump_device_id")]
-    public Guid? PumpDeviceId { get; set; }
+    [Column("device_id")]
+    public Guid? DeviceId { get; set; }
 
     /// <summary>
     /// Pump-specific record identifier for deduplication
