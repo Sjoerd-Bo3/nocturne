@@ -29,4 +29,24 @@ public class ProfileSummary
     /// All target range schedules across all profile names
     /// </summary>
     public IEnumerable<TargetRangeSchedule> TargetRangeSchedules { get; set; } = [];
+
+    /// <summary>
+    /// Change detection info for basal schedules within the requested period (null if no period specified)
+    /// </summary>
+    public ScheduleChangeInfo? BasalChanges { get; set; }
+
+    /// <summary>
+    /// Change detection info for carb ratio schedules within the requested period (null if no period specified)
+    /// </summary>
+    public ScheduleChangeInfo? CarbRatioChanges { get; set; }
+
+    /// <summary>
+    /// Change detection info for sensitivity schedules within the requested period (null if no period specified)
+    /// </summary>
+    public ScheduleChangeInfo? SensitivityChanges { get; set; }
+
+    /// <summary>
+    /// Change detection info for target range schedules within the requested period (null if no period specified)
+    /// </summary>
+    public ScheduleChangeInfo? TargetRangeChanges { get; set; }
 }

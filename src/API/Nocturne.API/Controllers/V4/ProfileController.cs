@@ -41,13 +41,16 @@ public class ProfileController : ControllerBase
     #region Summary
 
     /// <summary>
-    /// Get a consolidated summary of all profile data across all profile names
+    /// Get a consolidated summary of all profile data across all profile names.
+    /// Optionally provide a date range to include schedule change detection info.
     /// </summary>
     [HttpGet("summary")]
     [RemoteQuery]
     [ResponseCache(Duration = 300, VaryByQueryKeys = new[] { "*" })]
     [ProducesResponseType(typeof(ProfileSummary), StatusCodes.Status200OK)]
     public async Task<ActionResult<ProfileSummary>> GetProfileSummary(
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken ct = default
     )
     {
@@ -93,16 +96,32 @@ public class ProfileController : ControllerBase
             ct
         );
 
-        return Ok(
-            new ProfileSummary
-            {
-                TherapySettings = therapySettings,
-                BasalSchedules = basalSchedules,
-                CarbRatioSchedules = carbRatioSchedules,
-                SensitivitySchedules = sensitivitySchedules,
-                TargetRangeSchedules = targetRangeSchedules,
-            }
-        );
+        var summary = new ProfileSummary
+        {
+            TherapySettings = therapySettings,
+            BasalSchedules = basalSchedules,
+            CarbRatioSchedules = carbRatioSchedules,
+            SensitivitySchedules = sensitivitySchedules,
+            TargetRangeSchedules = targetRangeSchedules,
+        };
+
+        if (from.HasValue && to.HasValue)
+        {
+            summary.BasalChanges = ComputeChangeInfo(basalSchedules, from.Value, to.Value);
+            summary.CarbRatioChanges = ComputeChangeInfo(carbRatioSchedules, from.Value, to.Value);
+            summary.SensitivityChanges = ComputeChangeInfo(
+                sensitivitySchedules,
+                from.Value,
+                to.Value
+            );
+            summary.TargetRangeChanges = ComputeChangeInfo(
+                targetRangeSchedules,
+                from.Value,
+                to.Value
+            );
+        }
+
+        return Ok(summary);
     }
 
     #endregion
@@ -685,4 +704,22 @@ public class ProfileController : ControllerBase
     }
 
     #endregion
+
+    private static ScheduleChangeInfo ComputeChangeInfo<T>(
+        IEnumerable<T> schedules,
+        DateTime from,
+        DateTime to
+    )
+        where T : IV4Record
+    {
+        var inRange = schedules.Where(s => s.Timestamp >= from && s.Timestamp <= to).ToList();
+        return new ScheduleChangeInfo
+        {
+            ChangedDuringPeriod = inRange.Count > 0,
+            LastChangedAt = inRange.OrderByDescending(s => s.Timestamp).FirstOrDefault() is { } last
+                ? last.Timestamp
+                : null,
+            ChangeCount = inRange.Count,
+        };
+    }
 }
