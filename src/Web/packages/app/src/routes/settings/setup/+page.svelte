@@ -1,0 +1,157 @@
+<script lang="ts">
+  import * as Card from "$lib/components/ui/card";
+  import { Badge } from "$lib/components/ui/badge";
+  import {
+    HeartPulse,
+    Smartphone,
+    Syringe,
+    Plug,
+    Activity,
+    CheckCircle2,
+    ChevronRight,
+  } from "lucide-svelte";
+  import * as patientRemote from "$lib/api/generated/patientRecords.generated.remote";
+  import * as servicesRemote from "$lib/api/generated/services.generated.remote";
+  import * as profileRemote from "$lib/api/generated/profiles.generated.remote";
+
+  // ── Data loading ──────────────────────────────────────────────────
+
+  const patientRecord = patientRemote.getPatientRecord();
+  const devices = patientRemote.getDevices();
+  const insulins = patientRemote.getInsulins();
+  const servicesOverview = servicesRemote.getServicesOverview();
+  const profileSummary = profileRemote.getProfileSummary(undefined);
+
+  // ── Step definitions ──────────────────────────────────────────────
+
+  type SetupStep = {
+    title: string;
+    description: string;
+    icon: typeof HeartPulse;
+    href: string;
+    required: boolean;
+  };
+
+  const steps: SetupStep[] = [
+    {
+      title: "Patient Record",
+      description: "Set your diabetes type and clinical information",
+      icon: HeartPulse,
+      href: "/settings/setup/patient",
+      required: true,
+    },
+    {
+      title: "Devices",
+      description: "Add the devices you currently use",
+      icon: Smartphone,
+      href: "/settings/setup/devices",
+      required: true,
+    },
+    {
+      title: "Insulins",
+      description: "Add the insulins you currently use",
+      icon: Syringe,
+      href: "/settings/setup/insulins",
+      required: true,
+    },
+    {
+      title: "Connectors",
+      description: "Connect external data sources",
+      icon: Plug,
+      href: "/settings/setup/connectors",
+      required: false,
+    },
+    {
+      title: "Therapy Profile",
+      description: "Configure your basal rates and therapy settings",
+      icon: Activity,
+      href: "/settings/setup/profile",
+      required: true,
+    },
+  ];
+
+  // ── Completion inference ──────────────────────────────────────────
+
+  const completionStatus = $derived.by(() => {
+    const patientComplete = !!patientRecord.current?.diabetesType;
+
+    const devicesComplete =
+      (devices.current ?? []).some((d) => d.isCurrent) ?? false;
+
+    const insulinsComplete =
+      (insulins.current ?? []).some((i) => i.isCurrent) ?? false;
+
+    const connectorsComplete =
+      (servicesOverview.current?.availableConnectors ?? []).some(
+        (c) => c.isConfigured,
+      ) ?? false;
+
+    const profileComplete =
+      (profileSummary.current?.basalSchedules ?? []).length > 0;
+
+    return [
+      patientComplete,
+      devicesComplete,
+      insulinsComplete,
+      connectorsComplete,
+      profileComplete,
+    ];
+  });
+
+  const requiredComplete = $derived(
+    completionStatus.filter((complete, i) => steps[i].required && complete)
+      .length,
+  );
+</script>
+
+<div class="container max-w-2xl py-8 space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">Setup</h1>
+    <p class="text-muted-foreground">
+      {requiredComplete} of 4 required steps complete
+    </p>
+  </div>
+
+  <div class="space-y-3">
+    {#each steps as step, i}
+      {@const isComplete = completionStatus[i]}
+      <a href={step.href} class="block">
+        <Card.Root
+          class="transition-colors hover:bg-muted/50 {isComplete
+            ? 'border-green-500/30'
+            : ''}"
+        >
+          <Card.Header class="flex flex-row items-center gap-4 space-y-0 p-4">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg {isComplete
+                ? 'bg-green-500/10 text-green-600'
+                : 'bg-muted text-muted-foreground'}"
+            >
+              {#if isComplete}
+                <CheckCircle2 class="h-5 w-5" />
+              {:else}
+                <step.icon class="h-5 w-5" />
+              {/if}
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <Card.Title class="text-sm font-medium">
+                  {step.title}
+                </Card.Title>
+                {#if !step.required}
+                  <Badge variant="secondary" class="text-xs">Optional</Badge>
+                {/if}
+              </div>
+              <Card.Description class="text-xs">
+                {step.description}
+              </Card.Description>
+            </div>
+
+            <ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground" />
+          </Card.Header>
+        </Card.Root>
+      </a>
+    {/each}
+  </div>
+</div>
