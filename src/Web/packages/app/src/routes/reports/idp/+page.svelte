@@ -340,64 +340,47 @@
     </Card>
   </div>
 
-  <!-- Full width: AGP Chart -->
+  <!-- Glucose Pattern — unified section matching iCoDE-2 layout -->
   <Card class="border-2">
     <CardHeader>
       <CardTitle class="flex items-center gap-2">
         <Activity class="w-5 h-5" />
-        Ambulatory Glucose Profile
+        Glucose Pattern
       </CardTitle>
       <CardDescription>
-        Median glucose with percentile bands showing your typical daily pattern
+        Daily glucose overlay with basal rate, bolus distribution, and dosing profile
       </CardDescription>
     </CardHeader>
-    <CardContent class="h-80 md:h-96">
-      <AmbulatoryGlucoseProfile averagedStats={data.averagedStats} />
-    </CardContent>
-  </Card>
+    <CardContent class="space-y-6">
+      <!-- AGP -->
+      <div class="h-80 md:h-96">
+        <AmbulatoryGlucoseProfile averagedStats={data.averagedStats} />
+      </div>
 
-  <!-- Full width: Basal Rate Percentile Chart -->
-  <Card class="border-2">
-    <CardHeader>
-      <CardTitle class="flex items-center gap-2">
-        <Syringe class="w-5 h-5 text-blue-600" />
-        Basal Rate Profile
-      </CardTitle>
-      <CardDescription>
-        Hourly basal rate distribution with percentile bands
-      </CardDescription>
-    </CardHeader>
-    <CardContent class="h-80 md:h-96">
-      {#if basalAnalysis?.hourlyPercentiles}
-        <BasalRatePercentileChart data={basalAnalysis.hourlyPercentiles} />
-      {:else}
-        <div class="flex items-center justify-center h-full text-muted-foreground">
-          No basal rate data available
+      <!-- Scheduled Basal Rate -->
+      <div>
+        <h4 class="text-sm font-semibold text-muted-foreground mb-1">Scheduled Basal Rate</h4>
+        <div class="h-32">
+          {#if basalAnalysis?.hourlyPercentiles}
+            <BasalRatePercentileChart data={basalAnalysis.hourlyPercentiles} />
+          {:else}
+            <div class="flex items-center justify-center h-full text-muted-foreground text-xs">
+              No basal rate data available
+            </div>
+          {/if}
         </div>
-      {/if}
+      </div>
+
+      <!-- User-Initiated Boluses Per Day -->
+      <div>
+        <h4 class="text-sm font-semibold text-muted-foreground mb-1">User-Initiated Boluses Per Day</h4>
+        <HourlyBolusChart {boluses} {dayCount} />
+      </div>
+
+      <!-- Schedule Bands -->
+      <ScheduleFooter profile={data.profileSummary} />
     </CardContent>
   </Card>
-
-  <!-- Full width: Bolus Distribution Chart -->
-  <Card class="border-2">
-    <CardHeader>
-      <CardTitle class="flex items-center gap-2">
-        <Syringe class="w-5 h-5 text-orange-600" />
-        Bolus Distribution
-      </CardTitle>
-      <CardDescription>
-        Average bolus frequency by hour of day
-      </CardDescription>
-    </CardHeader>
-    <CardContent class="h-80 md:h-96">
-      <HourlyBolusChart {boluses} {dayCount} />
-    </CardContent>
-  </Card>
-
-  <Separator />
-
-  <!-- Schedule Footer -->
-  <ScheduleFooter profile={data.profileSummary} />
 
   <div class="text-xs text-muted-foreground text-center">
     Data from {startDate.toLocaleDateString()} – {endDate.toLocaleDateString()}.
