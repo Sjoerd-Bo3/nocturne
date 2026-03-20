@@ -1,0 +1,68 @@
+using Nocturne.Core.Models.V4;
+using Nocturne.Infrastructure.Data.Entities.V4;
+
+namespace Nocturne.Infrastructure.Data.Mappers.V4;
+
+/// <summary>
+/// Mapper for converting between PatientRecord domain models and PatientRecordEntity database entities
+/// </summary>
+public static class PatientRecordMapper
+{
+    /// <summary>
+    /// Convert domain model to database entity
+    /// </summary>
+    public static PatientRecordEntity ToEntity(PatientRecord model)
+    {
+        return new PatientRecordEntity
+        {
+            Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
+            DiabetesType = model.DiabetesType?.ToString(),
+            DiabetesTypeOther = model.DiabetesTypeOther,
+            DiagnosisDate = model.DiagnosisDate,
+            DateOfBirth = model.DateOfBirth,
+            PreferredName = model.PreferredName,
+            Pronouns = model.Pronouns,
+            AvatarUrl = model.AvatarUrl,
+            SysCreatedAt = DateTime.UtcNow,
+            SysUpdatedAt = DateTime.UtcNow,
+        };
+    }
+
+    /// <summary>
+    /// Convert database entity to domain model
+    /// </summary>
+    public static PatientRecord ToDomainModel(PatientRecordEntity entity)
+    {
+        return new PatientRecord
+        {
+            Id = entity.Id,
+            DiabetesType = entity.DiabetesType is not null
+                && Enum.TryParse<DiabetesType>(entity.DiabetesType, ignoreCase: true, out var parsed)
+                    ? parsed
+                    : null,
+            DiabetesTypeOther = entity.DiabetesTypeOther,
+            DiagnosisDate = entity.DiagnosisDate,
+            DateOfBirth = entity.DateOfBirth,
+            PreferredName = entity.PreferredName,
+            Pronouns = entity.Pronouns,
+            AvatarUrl = entity.AvatarUrl,
+            CreatedAt = entity.SysCreatedAt,
+            ModifiedAt = entity.SysUpdatedAt,
+        };
+    }
+
+    /// <summary>
+    /// Update existing entity with data from domain model
+    /// </summary>
+    public static void UpdateEntity(PatientRecordEntity entity, PatientRecord model)
+    {
+        entity.DiabetesType = model.DiabetesType?.ToString();
+        entity.DiabetesTypeOther = model.DiabetesTypeOther;
+        entity.DiagnosisDate = model.DiagnosisDate;
+        entity.DateOfBirth = model.DateOfBirth;
+        entity.PreferredName = model.PreferredName;
+        entity.Pronouns = model.Pronouns;
+        entity.AvatarUrl = model.AvatarUrl;
+        entity.SysUpdatedAt = DateTime.UtcNow;
+    }
+}
