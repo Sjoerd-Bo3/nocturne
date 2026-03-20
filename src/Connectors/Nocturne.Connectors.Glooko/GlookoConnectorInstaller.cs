@@ -3,18 +3,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Connectors.Core.Extensions;
+using Nocturne.Connectors.Core.Interfaces;
+using Nocturne.Connectors.Core.Services;
 using Nocturne.Connectors.Core.Utilities;
 using Nocturne.Connectors.Glooko.Configurations;
 using Nocturne.Connectors.Glooko.Services;
 
 namespace Nocturne.Connectors.Glooko;
 
-public static class ServiceCollectionExtensions
+public class GlookoConnectorInstaller : IConnectorInstaller
 {
-    public static void AddGlookoConnector(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    public string ConnectorName => "Glooko";
+
+    public void Install(IServiceCollection services, IConfiguration configuration)
     {
         var glookoConfig = services.AddConnectorConfiguration<GlookoConnectorConfiguration>(
             configuration,
@@ -62,5 +63,14 @@ public static class ServiceCollectionExtensions
             var logger = sp.GetRequiredService<ILogger<GlookoAuthTokenProvider>>();
             return new GlookoAuthTokenProvider(config, httpClient, logger);
         });
+
+        services.AddScoped<IConnectorSyncExecutor, GlookoSyncExecutor>();
     }
+}
+
+public class GlookoSyncExecutor : ConnectorSyncExecutor<GlookoConnectorService, GlookoConnectorConfiguration>
+{
+    public override string ConnectorId => "glooko";
+
+    protected override string ConnectorName => "Glooko";
 }
