@@ -347,6 +347,23 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<TargetRangeScheduleEntity> TargetRangeSchedules { get; set; }
 
+    // V4 Patient Profile Models
+
+    /// <summary>
+    /// Gets or sets the PatientRecords table for patient demographic and diabetes type records
+    /// </summary>
+    public DbSet<PatientRecordEntity> PatientRecords { get; set; }
+
+    /// <summary>
+    /// Gets or sets the PatientDevices table for patient device records (pumps, CGMs, pens, etc.)
+    /// </summary>
+    public DbSet<PatientDeviceEntity> PatientDevices { get; set; }
+
+    /// <summary>
+    /// Gets or sets the PatientInsulins table for patient insulin records (rapid-acting, long-acting, etc.)
+    /// </summary>
+    public DbSet<PatientInsulinEntity> PatientInsulins { get; set; }
+
     // Multitenancy entities
 
     /// <summary>
@@ -1616,6 +1633,22 @@ public class NocturneDbContext : DbContext
         modelBuilder.Entity<TenantMemberEntity>()
             .HasIndex(tm => tm.SubjectId)
             .HasDatabaseName("ix_tenant_members_subject_id");
+
+        // PatientRecord: unique constraint — one record per tenant
+        modelBuilder.Entity<PatientRecordEntity>()
+            .HasIndex(e => e.TenantId)
+            .HasDatabaseName("ix_patient_records_tenant_id")
+            .IsUnique();
+
+        // PatientDevice: query by tenant + current status
+        modelBuilder.Entity<PatientDeviceEntity>()
+            .HasIndex(e => new { e.TenantId, e.IsCurrent })
+            .HasDatabaseName("ix_patient_devices_tenant_is_current");
+
+        // PatientInsulin: query by tenant + current status
+        modelBuilder.Entity<PatientInsulinEntity>()
+            .HasIndex(e => new { e.TenantId, e.IsCurrent })
+            .HasDatabaseName("ix_patient_insulins_tenant_is_current");
     }
 
     private static void ConfigureEntities(ModelBuilder modelBuilder)
