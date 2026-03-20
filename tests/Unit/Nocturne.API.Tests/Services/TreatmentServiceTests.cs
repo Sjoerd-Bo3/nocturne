@@ -9,10 +9,10 @@ using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
-using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Tests.Shared.Mocks;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services;
@@ -67,12 +67,6 @@ public class TreatmentServiceTests
             )
             .ReturnsAsync(new List<TempBasal>());
 
-        var mockTenantAccessor = new Mock<ITenantAccessor>();
-        mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
-            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
-        mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
-        mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
-
         _treatmentService = new TreatmentService(
             _mockPostgreSqlService.Object,
             _mockBroadcastService.Object,
@@ -84,7 +78,7 @@ public class TreatmentServiceTests
             _mockPipeline.Object,
             _mockProjectionService.Object,
             _mockTempBasalRepository.Object,
-            mockTenantAccessor.Object,
+            MockTenantAccessor.Create().Object,
             _mockLogger.Object
         );
     }

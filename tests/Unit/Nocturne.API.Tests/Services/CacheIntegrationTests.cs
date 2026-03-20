@@ -15,6 +15,7 @@ using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Tests.Shared.Infrastructure;
+using Nocturne.Tests.Shared.Mocks;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services;
@@ -46,11 +47,7 @@ public class CacheIntegrationTests
         _mockProjectionService = new Mock<IV4ToLegacyProjectionService>();
         _mockEntryLogger = new Mock<ILogger<EntryService>>();
         _mockStatusLogger = new Mock<ILogger<StatusService>>();
-        _mockTenantAccessor = new Mock<ITenantAccessor>();
-        _mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
-            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
-        _mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
-        _mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        _mockTenantAccessor = MockTenantAccessor.Create();
 
         _mockCacheConfig.Setup(x => x.Value).Returns(new CacheConfiguration());
         _mockDemoModeService.Setup(x => x.IsEnabled).Returns(false);

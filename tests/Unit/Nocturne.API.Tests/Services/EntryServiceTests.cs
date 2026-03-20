@@ -6,10 +6,10 @@ using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
-using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Tests.Shared.Mocks;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services;
@@ -47,12 +47,6 @@ public class EntryServiceTests
         _mockCacheConfig.Setup(x => x.Value).Returns(new CacheConfiguration());
         _mockDemoModeService.Setup(x => x.IsEnabled).Returns(false);
 
-        var mockTenantAccessor = new Mock<ITenantAccessor>();
-        mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
-            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
-        mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
-        mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
-
         _entryService = new EntryService(
             _mockPostgreSqlService.Object,
             _mockSignalRBroadcastService.Object,
@@ -61,7 +55,7 @@ public class EntryServiceTests
             _mockDemoModeService.Object,
             _mockPipeline.Object,
             _mockProjectionService.Object,
-            mockTenantAccessor.Object,
+            MockTenantAccessor.Create().Object,
             _mockLogger.Object
         );
     }

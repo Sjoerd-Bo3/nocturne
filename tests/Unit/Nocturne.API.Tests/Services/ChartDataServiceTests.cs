@@ -5,8 +5,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Nocturne.API.Helpers;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
-using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4.Repositories;
+using Nocturne.Tests.Shared.Mocks;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Entities;
@@ -58,12 +58,6 @@ public class ChartDataServiceTests
         _mockSystemEventRepo = new Mock<SystemEventRepository>(MockBehavior.Loose, null!);
         _mockTrackerRepo = new Mock<TrackerRepository>(MockBehavior.Loose, null!);
 
-        var mockTenantAccessor = new Mock<ITenantAccessor>();
-        mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
-            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
-        mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
-        mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
-
         _service = new ChartDataService(
             _mockIobService.Object,
             _mockCobService.Object,
@@ -81,7 +75,7 @@ public class ChartDataServiceTests
             _mockSystemEventRepo.Object,
             _mockTrackerRepo.Object,
             new MemoryCache(new MemoryCacheOptions()),
-            mockTenantAccessor.Object,
+            MockTenantAccessor.Create().Object,
             _logger
         );
     }

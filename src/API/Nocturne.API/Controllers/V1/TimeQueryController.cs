@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
+using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 
@@ -14,17 +15,14 @@ namespace Nocturne.API.Controllers.V1;
 public class TimeQueryController : ControllerBase
 {
     private readonly ITimeQueryService _timeQueryService;
-    private readonly IDataFormatService _dataFormatService;
     private readonly ILogger<TimeQueryController> _logger;
 
     public TimeQueryController(
         ITimeQueryService timeQueryService,
-        IDataFormatService dataFormatService,
         ILogger<TimeQueryController> logger
     )
     {
         _timeQueryService = timeQueryService;
-        _dataFormatService = dataFormatService;
         _logger = logger;
     }
 
@@ -145,8 +143,8 @@ public class TimeQueryController : ControllerBase
             {
                 try
                 {
-                    var formattedData = _dataFormatService.FormatEntries(entriesArray, format);
-                    var contentType = _dataFormatService.GetContentType(format);
+                    var formattedData = DataFormatService.FormatEntries(entriesArray, format);
+                    var contentType = DataFormatService.GetContentType(format);
                     return Content(formattedData, contentType);
                 }
                 catch (Exception ex)
@@ -548,8 +546,8 @@ public class TimeQueryController : ControllerBase
             {
                 try
                 {
-                    var formattedData = _dataFormatService.FormatEntries(entriesArray, format);
-                    var contentType = _dataFormatService.GetContentType(format);
+                    var formattedData = DataFormatService.FormatEntries(entriesArray, format);
+                    var contentType = DataFormatService.GetContentType(format);
                     return Content(formattedData, contentType);
                 }
                 catch (Exception ex)

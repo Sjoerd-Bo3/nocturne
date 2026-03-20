@@ -10,6 +10,7 @@ using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Authorization;
+using Nocturne.Tests.Shared.Mocks;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -38,11 +39,7 @@ public class StatusServiceTests
         _mockCacheService = new Mock<ICacheService>();
         _mockDemoModeService = new Mock<IDemoModeService>();
         _mockLogger = new Mock<ILogger<StatusService>>();
-        _mockTenantAccessor = new Mock<ITenantAccessor>();
-        _mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
-            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
-        _mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
-        _mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        _mockTenantAccessor = MockTenantAccessor.Create();
         _mockDemoModeService.Setup(x => x.IsEnabled).Returns(false);
         _dbContext = TestDbContextFactory.CreateInMemoryContext();
 

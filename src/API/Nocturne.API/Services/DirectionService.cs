@@ -1,13 +1,13 @@
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services;
 
 /// <summary>
-/// Direction service with 1:1 legacy JavaScript compatibility
-/// Implements the exact algorithms from ClientApp/lib/plugins/direction.js and ClientApp/lib/plugins/bgnow.js
+/// Static direction helpers with 1:1 legacy JavaScript compatibility.
+/// Implements the exact algorithms from ClientApp/lib/plugins/direction.js and ClientApp/lib/plugins/bgnow.js.
+/// All methods are pure functions with no dependencies.
 /// </summary>
-public class DirectionService : IDirectionService
+public static class DirectionService
 {
     /// <summary>
     /// Direction to character mapping - exact legacy mapping from direction.js
@@ -31,7 +31,7 @@ public class DirectionService : IDirectionService
     /// <summary>
     /// Get direction information for display - exact legacy algorithm
     /// </summary>
-    public Core.Models.DirectionInfo GetDirectionInfo(Entry? entry)
+    public static Core.Models.DirectionInfo GetDirectionInfo(Entry? entry)
     {
         var result = new Core.Models.DirectionInfo { Display = null };
 
@@ -50,7 +50,7 @@ public class DirectionService : IDirectionService
     /// <summary>
     /// Calculate glucose delta between current and previous readings - exact legacy algorithm
     /// </summary>
-    public Core.Models.DeltaInfo? CalculateDelta(IList<Entry> entries, string units)
+    public static Core.Models.DeltaInfo? CalculateDelta(IList<Entry> entries, string units)
     {
         if (entries.Count < 2)
             return null;
@@ -108,7 +108,7 @@ public class DirectionService : IDirectionService
     /// <summary>
     /// Calculate direction from slope and delta values
     /// </summary>
-    public Direction CalculateDirection(double current, double previous, double deltaMinutes)
+    public static Direction CalculateDirection(double current, double previous, double deltaMinutes)
     {
         if (deltaMinutes <= 0)
             return Direction.NONE;
@@ -132,7 +132,7 @@ public class DirectionService : IDirectionService
     /// <summary>
     /// Get direction character mapping - exact legacy mapping
     /// </summary>
-    public string DirectionToChar(Direction direction)
+    public static string DirectionToChar(Direction direction)
     {
         return DirectionCharMap.TryGetValue(direction, out var character) ? character : "-";
     }
@@ -140,7 +140,7 @@ public class DirectionService : IDirectionService
     /// <summary>
     /// Convert character to HTML entity - exact legacy method
     /// </summary>
-    public string CharToEntity(string character)
+    public static string CharToEntity(string character)
     {
         if (string.IsNullOrEmpty(character) || character.Length == 0)
             return string.Empty;

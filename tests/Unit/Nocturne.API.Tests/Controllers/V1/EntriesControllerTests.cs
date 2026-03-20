@@ -17,7 +17,6 @@ namespace Nocturne.API.Tests.Controllers.V1;
 public class EntriesControllerTests
 {
     private readonly Mock<IEntryService> _mockEntryService;
-    private readonly Mock<IDataFormatService> _mockDataFormatService;
     private readonly Mock<IDocumentProcessingService> _mockDocumentProcessingService;
     private readonly Mock<IProcessingStatusService> _mockProcessingStatusService;
     private readonly Mock<IAlertOrchestrator> _mockAlertOrchestrator;
@@ -27,7 +26,6 @@ public class EntriesControllerTests
     public EntriesControllerTests()
     {
         _mockEntryService = new Mock<IEntryService>();
-        _mockDataFormatService = new Mock<IDataFormatService>();
         _mockDocumentProcessingService = new Mock<IDocumentProcessingService>();
         _mockProcessingStatusService = new Mock<IProcessingStatusService>();
         _mockAlertOrchestrator = new Mock<IAlertOrchestrator>();
@@ -35,7 +33,6 @@ public class EntriesControllerTests
 
         _controller = new EntriesController(
             _mockEntryService.Object,
-            _mockDataFormatService.Object,
             _mockDocumentProcessingService.Object,
             _mockProcessingStatusService.Object,
             _mockAlertOrchestrator.Object,

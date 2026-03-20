@@ -19,11 +19,10 @@ public class ProfileController : BaseV3Controller<Profile>
 {
     public ProfileController(
         IPostgreSqlService postgreSqlService,
-        IDataFormatService dataFormatService,
         IDocumentProcessingService documentProcessingService,
         ILogger<ProfileController> logger
     )
-        : base(postgreSqlService, dataFormatService, documentProcessingService, logger) { }
+        : base(postgreSqlService, documentProcessingService, logger) { }
 
     /// <summary>
     /// Get profiles with V3 API features including pagination, field selection, and advanced filtering

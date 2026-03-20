@@ -17,19 +17,16 @@ namespace Nocturne.API.Controllers.V1;
 public class TreatmentsController : ControllerBase
 {
     private readonly ITreatmentService _treatmentService;
-    private readonly IDataFormatService _dataFormatService;
     private readonly ITreatmentProcessingService _treatmentProcessingService;
     private readonly ILogger<TreatmentsController> _logger;
 
     public TreatmentsController(
         ITreatmentService treatmentService,
-        IDataFormatService dataFormatService,
         ITreatmentProcessingService treatmentProcessingService,
         ILogger<TreatmentsController> logger
     )
     {
         _treatmentService = treatmentService;
-        _dataFormatService = dataFormatService;
         _treatmentProcessingService = treatmentProcessingService;
         _logger = logger;
     }

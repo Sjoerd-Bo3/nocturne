@@ -15,7 +15,6 @@ public class PropertiesServiceTests
 {
     private readonly Mock<IDDataService> _mockDDataService;
     private readonly Mock<ILogger<PropertiesService>> _mockLogger;
-    private readonly Mock<IDirectionService> _mockDirectionService;
     private readonly PropertiesService _service;
 
     public PropertiesServiceTests()
@@ -25,60 +24,13 @@ public class PropertiesServiceTests
         var mockIobService = new Mock<IIobService>();
         var mockCobService = new Mock<ICobService>();
         var mockAr2Service = new Mock<IAr2Service>();
-        _mockDirectionService = new Mock<IDirectionService>();
-
-        // Configure direction service mock to return valid delta and direction info
-        _mockDirectionService
-            .Setup(x => x.CalculateDelta(It.IsAny<List<Entry>>(), It.IsAny<string>()))
-            .Returns(
-                new DeltaInfo
-                {
-                    Display = "-2",
-                    Mgdl = -2,
-                    Scaled = -2,
-                    Interpolated = false,
-                    Absolute = 2,
-                    ElapsedMins = 5.0,
-                    Mean5MinsAgo = 120,
-                    Previous = new Entry
-                    {
-                        Mgdl = 120,
-                        Mills = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - 5 * 60 * 1000,
-                    },
-                    Current = new Entry
-                    {
-                        Mgdl = 118,
-                        Mills = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                    },
-                    Times = new Dictionary<string, long>
-                    {
-                        {
-                            "previous",
-                            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - 5 * 60 * 1000
-                        },
-                        { "current", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() },
-                    },
-                }
-            );
-
-        _mockDirectionService
-            .Setup(x => x.GetDirectionInfo(It.IsAny<Entry>()))
-            .Returns(
-                new DirectionInfo
-                {
-                    Value = Direction.Flat,
-                    Label = "Flat",
-                    Entity = "→",
-                }
-            );
 
         _service = new PropertiesService(
             _mockDDataService.Object,
             _mockLogger.Object,
             mockIobService.Object,
             mockCobService.Object,
-            mockAr2Service.Object,
-            _mockDirectionService.Object
+            mockAr2Service.Object
         );
     }
 

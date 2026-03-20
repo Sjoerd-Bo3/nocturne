@@ -20,11 +20,10 @@ public class SettingsController : BaseV3Controller<Settings>
 {
     public SettingsController(
         IPostgreSqlService postgreSqlService,
-        IDataFormatService dataFormatService,
         IDocumentProcessingService documentProcessingService,
         ILogger<SettingsController> logger
     )
-        : base(postgreSqlService, dataFormatService, documentProcessingService, logger) { }
+        : base(postgreSqlService, documentProcessingService, logger) { }
 
     /// <summary>
     /// Get settings with V3 API features including pagination, field selection, and advanced filtering

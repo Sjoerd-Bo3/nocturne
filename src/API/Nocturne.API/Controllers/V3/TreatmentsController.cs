@@ -21,12 +21,11 @@ public class TreatmentsController : BaseV3Controller<Treatment>
 
     public TreatmentsController(
         IPostgreSqlService postgreSqlService,
-        IDataFormatService dataFormatService,
         IDocumentProcessingService documentProcessingService,
         ITreatmentService treatmentService,
         ILogger<TreatmentsController> logger
     )
-        : base(postgreSqlService, dataFormatService, documentProcessingService, logger)
+        : base(postgreSqlService, documentProcessingService, logger)
     {
         _treatmentService = treatmentService;
     }

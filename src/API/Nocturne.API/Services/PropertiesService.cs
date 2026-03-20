@@ -15,7 +15,6 @@ public class PropertiesService : IPropertiesService
     private readonly IIobService _iobService;
     private readonly ICobService _cobService;
     private readonly IAr2Service _ar2Service;
-    private readonly IDirectionService _directionService;
 
     // Properties that should be filtered out for security
     private static readonly string[] SecureProperties =
@@ -34,8 +33,7 @@ public class PropertiesService : IPropertiesService
         ILogger<PropertiesService> logger,
         IIobService iobService,
         ICobService cobService,
-        IAr2Service ar2Service,
-        IDirectionService directionService
+        IAr2Service ar2Service
     )
     {
         _ddataService = ddataService;
@@ -43,7 +41,6 @@ public class PropertiesService : IPropertiesService
         _iobService = iobService;
         _cobService = cobService;
         _ar2Service = ar2Service;
-        _directionService = directionService;
     }
 
     /// <inheritdoc />
@@ -226,7 +223,7 @@ public class PropertiesService : IPropertiesService
             return;
 
         // Use the DirectionService for exact legacy delta calculation
-        var deltaInfo = _directionService.CalculateDelta(entries!, "mg/dl");
+        var deltaInfo = DirectionService.CalculateDelta(entries!, "mg/dl");
         if (deltaInfo == null)
             return;
 
@@ -255,7 +252,7 @@ public class PropertiesService : IPropertiesService
             return;
 
         // Use the DirectionService for exact legacy direction calculation
-        var directionInfo = _directionService.GetDirectionInfo(currentEntry);
+        var directionInfo = DirectionService.GetDirectionInfo(currentEntry);
 
         properties["direction"] = new Dictionary<string, object>
         {

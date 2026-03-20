@@ -3,43 +3,18 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Nocturne.API.Configuration;
 using Nocturne.API.Extensions;
-using Nocturne.API.Multitenancy;
-using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.API.Hubs;
 using Nocturne.API.Middleware;
-using Nocturne.API.Middleware.Handlers;
+using Nocturne.API.Multitenancy;
 using Nocturne.API.OpenApi;
-using Nocturne.API.Services;
-using Nocturne.API.Services.AidDetection;
-using Nocturne.API.Services.Alerts;
-using Nocturne.API.Services.Alerts.Notifiers;
-using Nocturne.API.Services.Alerts.Webhooks;
-using Nocturne.API.Services.Auth;
-using Nocturne.API.Services.BackgroundServices;
-using Nocturne.API.Services.ConnectorPublishing;
-using Nocturne.API.Services.V4;
-using Nocturne.Connectors.Core.Extensions;
-using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Core.Constants;
-using Nocturne.Core.Contracts;
-using Nocturne.Core.Contracts.Alerts;
-using Nocturne.Core.Contracts.V4;
-using Nocturne.Core.Models;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Infrastructure.Cache.Extensions;
 using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Extensions;
-using Nocturne.Infrastructure.Data.Repositories;
-using Nocturne.Core.Contracts.V4.Repositories;
-using Nocturne.Infrastructure.Data.Repositories.V4;
-using Nocturne.Infrastructure.Data.Services;
-using Nocturne.Infrastructure.Shared.Services;
 using OpenTelemetry.Logs;
 using Scalar.AspNetCore;
-using EmailOptions = Nocturne.Core.Models.Configuration.EmailOptions;
 using JwtOptions = Nocturne.Core.Models.Configuration.JwtOptions;
-using LocalIdentityOptions = Nocturne.Core.Models.Configuration.LocalIdentityOptions;
-using OidcOptions = Nocturne.Core.Models.Configuration.OidcOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -141,23 +116,10 @@ builder.Services.AddNocturneMemoryCache();
 builder.Logging.ClearProviders();
 builder.Logging.AddOpenTelemetry(logging => logging.AddConsoleExporter());
 
-// Configure Loop settings
-builder.Services.Configure<LoopConfiguration>(options =>
-{
-    // Read from environment variables (matches legacy env.extendedSettings.loop)
-    options.ApnsKey = Environment.GetEnvironmentVariable("LOOP_APNS_KEY");
-    options.ApnsKeyId = Environment.GetEnvironmentVariable("LOOP_APNS_KEY_ID");
-    options.DeveloperTeamId = Environment.GetEnvironmentVariable("LOOP_DEVELOPER_TEAM_ID");
-    options.PushServerEnvironment =
-        Environment.GetEnvironmentVariable("LOOP_PUSH_SERVER_ENVIRONMENT") ?? "development";
-});
-
 var loopApnsKeyId = Environment.GetEnvironmentVariable("LOOP_APNS_KEY_ID");
 Console.WriteLine(
     $"Loop configuration loaded - APNS Key ID: {(string.IsNullOrEmpty(loopApnsKeyId) ? "Not configured" : $"{loopApnsKeyId[..Math.Min(4, loopApnsKeyId.Length)]}****")}"
 );
-
-// Add services
 
 // Add response caching for GET endpoints
 builder.Services.AddResponseCaching();
@@ -198,138 +160,15 @@ builder.Services.AddOpenApiDocument(config =>
     };
 });
 
-// Register native API services with proper dependency injection
-builder.Services.AddScoped<IStatusService, StatusService>();
-builder.Services.AddScoped<IVersionService, VersionService>();
-builder.Services.AddScoped<IDataFormatService, DataFormatService>();
-builder.Services.AddSingleton<IXmlDocumentationService, XmlDocumentationService>();
-builder.Services.AddScoped<IDocumentProcessingService, DocumentProcessingService>();
-builder.Services.AddScoped<ITreatmentProcessingService, TreatmentProcessingService>();
-
-builder.Services.AddScoped<IBraceExpansionService, BraceExpansionService>();
-builder.Services.AddScoped<ITimeQueryService, TimeQueryService>();
-
-builder.Services.AddScoped<IDDataService, DDataService>();
-builder.Services.AddScoped<IPropertiesService, PropertiesService>();
-builder.Services.AddScoped<ISummaryService, SummaryService>();
-builder.Services.AddScoped<IIobService, IobService>();
-
-// Prediction service — configurable via Predictions:Source (None, DeviceStatus, OrefWasm)
-var predictionSource = builder.Configuration.GetValue<PredictionSource>(
-    "Predictions:Source",
-    PredictionSource.None
-);
-switch (predictionSource)
-{
-    case PredictionSource.DeviceStatus:
-        builder.Services.AddScoped<IPredictionService, DeviceStatusPredictionService>();
-        break;
-    case PredictionSource.OrefWasm:
-        builder.Services.AddScoped<IPredictionService, PredictionService>();
-        builder.Services.AddOrefService(options =>
-        {
-            options.WasmPath = "oref.wasm";
-            options.Enabled = true;
-        });
-        break;
-    case PredictionSource.None:
-    default:
-        // No prediction service registered — controller will check and return 404
-        break;
-}
-
-builder.Services.AddScoped<ICobService, CobService>();
-builder.Services.AddScoped<IProfileService, ProfileService>();
-builder.Services.AddScoped<IAr2Service, Ar2Service>();
-builder.Services.AddScoped<IBolusWizardService, BolusWizardService>();
-
-builder.Services.AddScoped<IDirectionService, DirectionService>();
-builder.Services.AddScoped<INotificationV2Service, NotificationV2Service>();
-builder.Services.AddScoped<INotificationV1Service, NotificationV1Service>();
-builder.Services.AddScoped<IApnsClientFactory, ApnsClientFactory>();
-builder.Services.AddScoped<ILoopService, LoopService>();
-builder.Services.AddScoped<IOpenApsService, OpenApsService>();
-builder.Services.AddScoped<IPumpAlertService, PumpAlertService>();
-builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
-builder.Services.AddScoped<IAlexaService, AlexaService>();
-
-// Authentication and authorization services
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-builder.Services.Configure<OidcOptions>(builder.Configuration.GetSection(OidcOptions.SectionName));
-builder.Services.Configure<LocalIdentityOptions>(
-    builder.Configuration.GetSection(LocalIdentityOptions.SectionName)
-);
-builder.Services.Configure<EmailOptions>(
-    builder.Configuration.GetSection(EmailOptions.SectionName)
-);
-builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
-builder.Services.AddScoped<ISubjectService, SubjectService>();
-builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IOidcProviderService, OidcProviderService>();
-builder.Services.AddScoped<IOidcAuthService, OidcAuthService>();
-
-// Local identity provider services (built-in authentication without external OIDC)
-builder.Services.AddScoped<ILocalIdentityService, LocalIdentityService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddHostedService<UserSeedService>();
-builder.Services.AddHostedService<AuthorizationSeedService>();
-
-// Multitenancy
-builder.Services.Configure<MultitenancyConfiguration>(
-    builder.Configuration.GetSection(MultitenancyConfiguration.SectionName));
-builder.Services.AddScoped<ITenantAccessor, HttpContextTenantAccessor>();
-builder.Services.AddScoped<ITenantMemberService, TenantMemberService>();
-builder.Services.AddScoped<ITenantService, TenantService>();
-
-// Register authentication handlers for the middleware pipeline
-// Handlers are executed in priority order (lowest first)
-builder.Services.AddSingleton<IAuthHandler, SessionCookieHandler>(); // Priority 50 (web sessions)
-builder.Services.AddSingleton<IAuthHandler, OidcTokenHandler>(); // Priority 100
-builder.Services.AddSingleton<IAuthHandler, LegacyJwtHandler>(); // Priority 200
-builder.Services.AddSingleton<IAuthHandler, AccessTokenHandler>(); // Priority 300
-builder.Services.AddSingleton<IAuthHandler, ApiSecretHandler>(); // Priority 400
-
-// Add HTTP client for OIDC provider discovery
-builder.Services.AddHttpClient(
-    "OidcProvider",
-    client =>
-    {
-        client.Timeout = TimeSpan.FromSeconds(30);
-    }
-);
-
-// Statistics service for analytics and calculations
-builder.Services.AddScoped<IStatisticsService, StatisticsService>();
-
-// Compression low detection services
-builder.Services.AddScoped<ICompressionLowRepository, CompressionLowRepository>();
-builder.Services.AddScoped<ICompressionLowService, CompressionLowService>();
-builder.Services.AddSingleton<CompressionLowDetectionService>();
-builder.Services.AddSingleton<ICompressionLowDetectionService>(sp =>
-    sp.GetRequiredService<CompressionLowDetectionService>()
-);
-builder.Services.AddHostedService(sp => sp.GetRequiredService<CompressionLowDetectionService>());
-
-// Data source service for services/connectors management
-builder.Services.AddScoped<IDataSourceService, DataSourceService>();
-
-// Deduplication service for linking records from multiple data sources
-builder.Services.AddScoped<IDeduplicationService, DeduplicationService>();
-
-// Secret encryption service - singleton since key derivation should happen once
-builder.Services.AddSingleton<ISecretEncryptionService, SecretEncryptionService>();
-
-// Connector configuration service for runtime config and secrets management
-builder.Services.AddScoped<IConnectorConfigurationService, ConnectorConfigurationService>();
-builder.Services.AddScoped<IConnectorSyncService, ConnectorSyncService>();
-
-// Connector runtime services (single executable)
-builder.Services.AddBaseConnectorServices();
-builder.Services.AddScoped<IConnectorPublisher, InProcessConnectorPublisher>();
-builder.Services.AddConnectors(
-    builder.Configuration,
-    backgroundServiceAssembly: typeof(Program).Assembly);
+// ── Service registration (grouped by concern) ──────────────────────────
+builder.Services.AddApiCoreServices(builder.Configuration);
+builder.Services.AddAuthenticationAndIdentity(builder.Configuration);
+builder.Services.AddDomainServices();
+builder.Services.AddV4Infrastructure();
+builder.Services.AddRealTimeAndNotifications(builder.Configuration);
+builder.Services.AddAlertingAndMonitoring(builder.Configuration);
+builder.Services.AddConnectorInfrastructure(builder.Configuration);
+builder.Services.AddMigrationServices();
 
 // Configure JWT authentication
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName);
@@ -373,203 +212,6 @@ builder.Services.AddCors(options =>
             .AllowCredentials(); // Required for cookies/auth to work cross-origin
     });
 });
-
-// Add HTTP client for dotAPNS (Apple Push Notifications)
-builder.Services.AddHttpClient(
-    "dotAPNS",
-    client =>
-    {
-        client.Timeout = TimeSpan.FromSeconds(30); // APNS-specific timeout
-    }
-);
-
-// Add SignalR for real-time communication
-builder.Services.AddSignalR();
-
-// Register tenant-aware hub filter to set ITenantAccessor on each hub method invocation
-builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IHubFilter, Nocturne.API.Hubs.TenantHubFilter>();
-
-// Register SignalR broadcast service
-builder.Services.AddScoped<ISignalRBroadcastService, SignalRBroadcastService>();
-
-// Register tracker trigger service for auto-starting trackers from treatments
-builder.Services.AddScoped<ITrackerTriggerService, TrackerTriggerService>();
-
-// Register tracker alert service for evaluating tracker thresholds and generating alerts
-builder.Services.AddScoped<ITrackerAlertService, TrackerAlertService>();
-
-// Register tracker suggestion service for suggesting tracker resets based on treatments/sensor gaps
-builder.Services.AddScoped<ITrackerSuggestionService, TrackerSuggestionService>();
-
-// Register in-app notification repository and service
-builder.Services.AddScoped<InAppNotificationRepository>();
-builder.Services.AddScoped<IInAppNotificationService, InAppNotificationService>();
-
-// Register meal matching repository and service
-builder.Services.AddScoped<IConnectorFoodEntryRepository, ConnectorFoodEntryRepository>();
-builder.Services.AddScoped<IMealMatchingService, MealMatchingService>();
-
-// Register legacy device age service (bridges Tracker system to legacy deviceage endpoints)
-builder.Services.AddScoped<ILegacyDeviceAgeService, LegacyDeviceAgeService>();
-
-// Register demo mode service for querying demo mode status
-// This service is used by EntryService, TreatmentService, and StatusService to filter data
-builder.Services.AddSingleton<IDemoModeService, DemoModeService>();
-
-// Register UI settings service for frontend configuration persistence
-builder.Services.AddScoped<IUISettingsService, UISettingsService>();
-
-// Register V4 → legacy projection service (must be registered before EntryService/TreatmentService)
-builder.Services.AddScoped<IV4ToLegacyProjectionService, V4ToLegacyProjectionService>();
-
-// Register domain services for WebSocket broadcasting
-builder.Services.AddScoped<ITreatmentService, TreatmentService>();
-builder.Services.AddScoped<IEntryService, EntryService>();
-builder.Services.AddScoped<IStateSpanService, StateSpanService>();
-builder.Services.AddScoped<IDeviceStatusService, DeviceStatusService>();
-builder.Services.AddScoped<IBatteryService, BatteryService>();
-builder.Services.AddScoped<IProfileDataService, ProfileDataService>();
-builder.Services.AddScoped<IFoodService, FoodService>();
-builder.Services.AddScoped<IConnectorFoodEntryService, ConnectorFoodEntryService>();
-builder.Services.AddScoped<ITreatmentFoodService, TreatmentFoodService>();
-builder.Services.AddScoped<IUserFoodFavoriteService, UserFoodFavoriteService>();
-builder.Services.AddScoped<IActivityService, ActivityService>();
-builder.Services.AddScoped<IHeartRateService, HeartRateService>();
-builder.Services.AddScoped<IStepCountService, StepCountService>();
-builder.Services.AddScoped<
-    IMyFitnessPalMatchingSettingsService,
-    MyFitnessPalMatchingSettingsService
->();
-builder.Services.AddScoped<IClockFaceService, ClockFaceService>();
-builder.Services.AddScoped<IChartDataService, ChartDataService>();
-builder.Services.AddScoped<IDataOverviewService, DataOverviewService>();
-
-// Device resolution service (find-or-create with per-request cache)
-builder.Services.AddScoped<IDeviceService, DeviceService>();
-
-// V4 Repositories
-builder.Services.AddScoped<ISensorGlucoseRepository, SensorGlucoseRepository>();
-builder.Services.AddScoped<IMeterGlucoseRepository, MeterGlucoseRepository>();
-builder.Services.AddScoped<ICalibrationRepository, CalibrationRepository>();
-builder.Services.AddScoped<IBolusRepository, BolusRepository>();
-builder.Services.AddScoped<ITempBasalRepository, TempBasalRepository>();
-builder.Services.AddScoped<ICarbIntakeRepository, CarbIntakeRepository>();
-builder.Services.AddScoped<IBGCheckRepository, BGCheckRepository>();
-builder.Services.AddScoped<INoteRepository, NoteRepository>();
-builder.Services.AddScoped<IDeviceEventRepository, DeviceEventRepository>();
-builder.Services.AddScoped<IBolusCalculationRepository, BolusCalculationRepository>();
-
-builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
-
-// V4 Snapshot Repositories
-builder.Services.AddScoped<IApsSnapshotRepository, ApsSnapshotRepository>();
-builder.Services.AddScoped<IPumpSnapshotRepository, PumpSnapshotRepository>();
-builder.Services.AddScoped<IUploaderSnapshotRepository, UploaderSnapshotRepository>();
-
-// V4 Profile Repositories
-builder.Services.AddScoped<ITherapySettingsRepository, TherapySettingsRepository>();
-builder.Services.AddScoped<IBasalScheduleRepository, BasalScheduleRepository>();
-builder.Services.AddScoped<ICarbRatioScheduleRepository, CarbRatioScheduleRepository>();
-builder.Services.AddScoped<ISensitivityScheduleRepository, SensitivityScheduleRepository>();
-builder.Services.AddScoped<ITargetRangeScheduleRepository, TargetRangeScheduleRepository>();
-
-// V4 Patient Record Repositories
-builder.Services.AddScoped<IPatientRecordRepository, PatientRecordRepository>();
-builder.Services.AddScoped<IPatientDeviceRepository, PatientDeviceRepository>();
-builder.Services.AddScoped<IPatientInsulinRepository, PatientInsulinRepository>();
-
-// AID Detection Strategies and Metrics Service
-builder.Services.AddSingleton<IAidDetectionStrategy, ApsSnapshotStrategy>();
-builder.Services.AddSingleton<IAidDetectionStrategy, TbrBasedStrategy>();
-builder.Services.AddSingleton<IAidDetectionStrategy, NoAidStrategy>();
-builder.Services.AddScoped<IAidMetricsService, AidMetricsService>();
-
-// V4 Decomposers
-builder.Services.AddScoped<IEntryDecomposer, EntryDecomposer>();
-builder.Services.AddScoped<ITreatmentDecomposer, TreatmentDecomposer>();
-builder.Services.AddScoped<IDeviceStatusDecomposer, DeviceStatusDecomposer>();
-builder.Services.AddScoped<IActivityDecomposer, ActivityDecomposer>();
-builder.Services.AddScoped<IProfileDecomposer, ProfileDecomposer>();
-
-// Unified generic decomposer registrations (resolve from typed interfaces)
-builder.Services.AddScoped<IDecomposer<Entry>>(sp => (IDecomposer<Entry>)sp.GetRequiredService<IEntryDecomposer>());
-builder.Services.AddScoped<IDecomposer<Treatment>>(sp => (IDecomposer<Treatment>)sp.GetRequiredService<ITreatmentDecomposer>());
-builder.Services.AddScoped<IDecomposer<DeviceStatus>>(sp => (IDecomposer<DeviceStatus>)sp.GetRequiredService<IDeviceStatusDecomposer>());
-builder.Services.AddScoped<IDecomposer<Activity>>(sp => (IDecomposer<Activity>)sp.GetRequiredService<IActivityDecomposer>());
-builder.Services.AddScoped<IDecomposer<Profile>>(sp => (IDecomposer<Profile>)sp.GetRequiredService<IProfileDecomposer>());
-builder.Services.AddScoped<IDecompositionPipeline, DecompositionPipeline>();
-
-builder.Services.AddScoped<V4BackfillService>();
-
-// Note: Processing status service is registered by AddNocturneMemoryCache
-
-// Register demo service health monitor
-// Demo data generation is handled by the separate Nocturne.Services.Demo service
-// The API only monitors the demo service health and cleans up demo data when the service stops
-builder.Services.AddHttpClient("DemoServiceHealth");
-builder.Services.AddHostedService<DemoServiceHealthMonitor>();
-
-// Configure device health settings
-builder.Services.Configure<DeviceHealthOptions>(
-    builder.Configuration.GetSection(DeviceHealthOptions.SectionName)
-);
-
-// Register device health services
-builder.Services.AddScoped<IDeviceRegistryService, DeviceRegistryService>();
-
-// Configure alert monitoring settings
-builder.Services.Configure<AlertMonitoringOptions>(
-    builder.Configuration.GetSection(AlertMonitoringOptions.SectionName)
-);
-builder.Services.AddScoped<WebhookRequestSender>();
-
-// Register alert engines
-builder.Services.AddScoped<IAlertRulesEngine, AlertRulesEngine>();
-builder.Services.AddScoped<IAlertProcessingService, AlertProcessingService>();
-builder.Services.AddScoped<IAlertOrchestrator, AlertOrchestrator>();
-builder.Services.AddScoped<IDeviceAlertEngine, DeviceAlertEngine>();
-builder.Services.AddScoped<INotifierDispatcher, NotifierDispatcher>();
-builder.Services.AddScoped<INotifier, SignalRNotifier>();
-builder.Services.AddScoped<INotifier, WebhookNotifier>();
-
-var pushoverApiToken =
-    builder.Configuration[ServiceNames.ConfigKeys.PushoverApiToken]
-    ?? builder.Configuration[ServiceNames.ConfigKeys.PushoverApiTokenEnv];
-var pushoverUserKey =
-    builder.Configuration[ServiceNames.ConfigKeys.PushoverUserKey]
-    ?? builder.Configuration[ServiceNames.ConfigKeys.PushoverUserKeyEnv];
-
-if (!string.IsNullOrWhiteSpace(pushoverApiToken) && !string.IsNullOrWhiteSpace(pushoverUserKey))
-{
-    builder.Services.AddHttpClient<IPushoverService, PushoverService>();
-    builder.Services.AddScoped<INotifier, PushoverNotifier>();
-}
-
-// Register device health monitoring background service
-builder.Services.AddHostedService<DeviceHealthMonitoringService>();
-
-// Configure analytics settings
-builder.Services.Configure<AnalyticsConfiguration>(
-    builder.Configuration.GetSection(AnalyticsConfiguration.SectionName)
-);
-
-// Register analytics services
-builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
-
-// Register connector health service
-builder.Services.AddScoped<IConnectorHealthService, ConnectorHealthService>();
-
-// Register migration job service for data migration from Nightscout
-builder.Services.AddSingleton<
-    Nocturne.API.Services.Migration.IMigrationJobService,
-    Nocturne.API.Services.Migration.MigrationJobService
->();
-
-// Register migration startup service to check for pending migrations and create admin notifications
-builder.Services.AddHostedService<Nocturne.API.Services.Migration.MigrationStartupService>();
-
-// Register notification resolution background service for auto-resolving notifications
-builder.Services.AddHostedService<NotificationResolutionService>();
 
 var app = builder.Build();
 

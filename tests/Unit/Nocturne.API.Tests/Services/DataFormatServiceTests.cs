@@ -11,12 +11,6 @@ namespace Nocturne.API.Tests.Services;
 /// </summary>
 public class DataFormatServiceTests
 {
-    private readonly DataFormatService _dataFormatService;
-
-    public DataFormatServiceTests()
-    {
-        _dataFormatService = new DataFormatService();
-    }
 
     #region GetContentType Tests
 
@@ -29,7 +23,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.GetContentType(format);
+        var result = DataFormatService.GetContentType(format);
 
         // Assert
         result.Should().Be("text/csv");
@@ -44,7 +38,7 @@ public class DataFormatServiceTests
         var format = "tsv";
 
         // Act
-        var result = _dataFormatService.GetContentType(format);
+        var result = DataFormatService.GetContentType(format);
 
         // Assert
         result.Should().Be("text/tab-separated-values");
@@ -59,7 +53,7 @@ public class DataFormatServiceTests
         var format = "txt";
 
         // Act
-        var result = _dataFormatService.GetContentType(format);
+        var result = DataFormatService.GetContentType(format);
 
         // Assert
         result.Should().Be("text/plain");
@@ -74,7 +68,7 @@ public class DataFormatServiceTests
         var format = "CSV";
 
         // Act
-        var result = _dataFormatService.GetContentType(format);
+        var result = DataFormatService.GetContentType(format);
 
         // Assert
         result.Should().Be("text/csv");
@@ -89,7 +83,7 @@ public class DataFormatServiceTests
         var format = "xml";
 
         // Act
-        var result = _dataFormatService.GetContentType(format);
+        var result = DataFormatService.GetContentType(format);
 
         // Assert
         result.Should().Be("application/json");
@@ -110,7 +104,7 @@ public class DataFormatServiceTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            _dataFormatService.FormatEntries(entries, format)
+            DataFormatService.FormatEntries(entries, format)
         );
         exception.Message.Should().Contain("Unsupported format: xml");
     }
@@ -126,7 +120,7 @@ public class DataFormatServiceTests
 
         // Act & Assert
         Assert.Throws<NullReferenceException>(() =>
-            _dataFormatService.FormatEntries(entries, format)
+            DataFormatService.FormatEntries(entries, format)
         );
     }
 
@@ -144,7 +138,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         result
@@ -166,7 +160,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         var lines = result.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
@@ -203,7 +197,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         result.Should().Contain("\"test,with,commas\""); // Commas should be escaped
@@ -230,7 +224,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         result.Should().NotBeNull();
@@ -259,7 +253,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         result.Should().Contain("test-ñáéíóú-emoji-🩸");
@@ -281,7 +275,7 @@ public class DataFormatServiceTests
         var format = "tsv";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         var lines = result.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
@@ -315,7 +309,7 @@ public class DataFormatServiceTests
         var format = "tsv";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         result.Should().Contain("test with tabs"); // Tabs should be replaced with spaces
@@ -342,7 +336,7 @@ public class DataFormatServiceTests
         var format = "tsv";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         result.Should().Contain("test with newlines"); // Newlines should be replaced with spaces
@@ -372,7 +366,7 @@ public class DataFormatServiceTests
         var format = "txt";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         result.Should().Contain("Entry test-id: 115 mg/dL at 2023-01-01T12:00:00.000Z (sgv)");
@@ -397,7 +391,7 @@ public class DataFormatServiceTests
         var format = "txt";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         result.Should().Contain("Entry test-id: 120 mg/dL at 2023-01-01T12:00:00.000Z (sgv)");
@@ -418,7 +412,7 @@ public class DataFormatServiceTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            _dataFormatService.FormatTreatments(treatments, format)
+            DataFormatService.FormatTreatments(treatments, format)
         );
         exception.Message.Should().Contain("Unsupported format: xml");
     }
@@ -434,7 +428,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.FormatTreatments(treatments, format);
+        var result = DataFormatService.FormatTreatments(treatments, format);
 
         // Assert
         var lines = result.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
@@ -461,7 +455,7 @@ public class DataFormatServiceTests
         var format = "tsv";
 
         // Act
-        var result = _dataFormatService.FormatTreatments(treatments, format);
+        var result = DataFormatService.FormatTreatments(treatments, format);
 
         // Assert
         var lines = result.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
@@ -493,7 +487,7 @@ public class DataFormatServiceTests
         var format = "txt";
 
         // Act
-        var result = _dataFormatService.FormatTreatments(treatments, format);
+        var result = DataFormatService.FormatTreatments(treatments, format);
 
         // Assert
         result
@@ -521,7 +515,7 @@ public class DataFormatServiceTests
         var format = "txt";
 
         // Act
-        var result = _dataFormatService.FormatTreatments(treatments, format);
+        var result = DataFormatService.FormatTreatments(treatments, format);
 
         // Assert
         result
@@ -550,7 +544,7 @@ public class DataFormatServiceTests
         var format = "txt";
 
         // Act
-        var result = _dataFormatService.FormatTreatments(treatments, format);
+        var result = DataFormatService.FormatTreatments(treatments, format);
 
         // Assert
         result
@@ -581,7 +575,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.FormatTreatments(treatments, format);
+        var result = DataFormatService.FormatTreatments(treatments, format);
 
         // Assert
         result.Should().Contain("\"treatment,with,commas\"");
@@ -603,7 +597,7 @@ public class DataFormatServiceTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() =>
-            _dataFormatService.FormatDeviceStatus(deviceStatuses, format)
+            DataFormatService.FormatDeviceStatus(deviceStatuses, format)
         );
         exception.Message.Should().Contain("Unsupported format: xml");
     }
@@ -619,7 +613,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.FormatDeviceStatus(deviceStatuses, format);
+        var result = DataFormatService.FormatDeviceStatus(deviceStatuses, format);
 
         // Assert
         var lines = result.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
@@ -645,7 +639,7 @@ public class DataFormatServiceTests
         var format = "tsv";
 
         // Act
-        var result = _dataFormatService.FormatDeviceStatus(deviceStatuses, format);
+        var result = DataFormatService.FormatDeviceStatus(deviceStatuses, format);
 
         // Assert
         var lines = result.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
@@ -676,7 +670,7 @@ public class DataFormatServiceTests
         var format = "txt";
 
         // Act
-        var result = _dataFormatService.FormatDeviceStatus(deviceStatuses, format);
+        var result = DataFormatService.FormatDeviceStatus(deviceStatuses, format);
 
         // Assert
         result
@@ -703,7 +697,7 @@ public class DataFormatServiceTests
         var format = "txt";
 
         // Act
-        var result = _dataFormatService.FormatDeviceStatus(deviceStatuses, format);
+        var result = DataFormatService.FormatDeviceStatus(deviceStatuses, format);
 
         // Assert
         result
@@ -741,7 +735,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.FormatDeviceStatus(deviceStatuses, format);
+        var result = DataFormatService.FormatDeviceStatus(deviceStatuses, format);
 
         // Assert
         result.Should().Contain("75"); // Pump battery percent
@@ -778,7 +772,7 @@ public class DataFormatServiceTests
 
         // Act
         var startTime = DateTime.UtcNow;
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
         var endTime = DateTime.UtcNow;
 
         // Assert
@@ -810,7 +804,7 @@ public class DataFormatServiceTests
 
         // Act
         var startTime = DateTime.UtcNow;
-        var result = _dataFormatService.FormatTreatments(treatments, format);
+        var result = DataFormatService.FormatTreatments(treatments, format);
         var endTime = DateTime.UtcNow;
 
         // Assert
@@ -844,7 +838,7 @@ public class DataFormatServiceTests
         var format = "csv";
 
         // Act
-        var result = _dataFormatService.FormatEntries(entries, format);
+        var result = DataFormatService.FormatEntries(entries, format);
 
         // Assert
         result.Should().NotBeNullOrEmpty();
@@ -868,8 +862,8 @@ public class DataFormatServiceTests
         var entries = new Entry[] { entry };
 
         // Act
-        var csvResult = _dataFormatService.FormatEntries(entries, "csv");
-        var tsvResult = _dataFormatService.FormatEntries(entries, "tsv");
+        var csvResult = DataFormatService.FormatEntries(entries, "csv");
+        var tsvResult = DataFormatService.FormatEntries(entries, "tsv");
 
         // Assert
         // CSV should escape the field with quotes

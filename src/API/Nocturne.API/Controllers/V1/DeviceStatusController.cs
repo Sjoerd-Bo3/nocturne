@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
+using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 
@@ -17,17 +18,14 @@ namespace Nocturne.API.Controllers.V1;
 public class DeviceStatusController : ControllerBase
 {
     private readonly IDeviceStatusService _deviceStatusService;
-    private readonly IDataFormatService _dataFormatService;
     private readonly ILogger<DeviceStatusController> _logger;
 
     public DeviceStatusController(
         IDeviceStatusService deviceStatusService,
-        IDataFormatService dataFormatService,
         ILogger<DeviceStatusController> logger
     )
     {
         _deviceStatusService = deviceStatusService;
-        _dataFormatService = dataFormatService;
         _logger = logger;
     }
 
@@ -116,11 +114,11 @@ public class DeviceStatusController : ControllerBase
 
             try
             {
-                var formattedData = _dataFormatService.FormatDeviceStatus(
+                var formattedData = DataFormatService.FormatDeviceStatus(
                     deviceStatusArray,
                     format
                 );
-                var contentType = _dataFormatService.GetContentType(format);
+                var contentType = DataFormatService.GetContentType(format);
                 return Content(formattedData, contentType);
             }
             catch (ArgumentException)

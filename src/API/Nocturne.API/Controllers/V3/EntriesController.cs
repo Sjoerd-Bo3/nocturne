@@ -25,13 +25,12 @@ public class EntriesController : BaseV3Controller<Entry>
 
     public EntriesController(
         IPostgreSqlService postgreSqlService,
-        IDataFormatService dataFormatService,
         IDocumentProcessingService documentProcessingService,
         IEntryService entryService,
         IAlertOrchestrator alertOrchestrator,
         ILogger<EntriesController> logger
     )
-        : base(postgreSqlService, dataFormatService, documentProcessingService, logger)
+        : base(postgreSqlService, documentProcessingService, logger)
     {
         _entryService = entryService;
         _alertOrchestrator = alertOrchestrator;

@@ -16,19 +16,16 @@ public abstract class BaseV3Controller<T> : ControllerBase
     where T : class
 {
     protected readonly IPostgreSqlService _postgreSqlService;
-    protected readonly IDataFormatService _dataFormatService;
     protected readonly IDocumentProcessingService _documentProcessingService;
     protected readonly ILogger _logger;
 
     protected BaseV3Controller(
         IPostgreSqlService postgreSqlService,
-        IDataFormatService dataFormatService,
         IDocumentProcessingService documentProcessingService,
         ILogger logger
     )
     {
         _postgreSqlService = postgreSqlService;
-        _dataFormatService = dataFormatService;
         _documentProcessingService = documentProcessingService;
         _logger = logger;
     }

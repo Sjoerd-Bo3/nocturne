@@ -1,9 +1,9 @@
 using FluentAssertions;
 using Moq;
 using Nocturne.API.Services;
-using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models.V4;
+using Nocturne.Tests.Shared.Mocks;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services;
@@ -19,12 +19,7 @@ public class DeviceServiceTests
     public DeviceServiceTests()
     {
         _mockRepository = new Mock<IDeviceRepository>();
-        var mockTenantAccessor = new Mock<ITenantAccessor>();
-        mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
-            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
-        mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
-        mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
-        _service = new DeviceService(_mockRepository.Object, mockTenantAccessor.Object);
+        _service = new DeviceService(_mockRepository.Object, MockTenantAccessor.Create().Object);
     }
 
     [Fact]

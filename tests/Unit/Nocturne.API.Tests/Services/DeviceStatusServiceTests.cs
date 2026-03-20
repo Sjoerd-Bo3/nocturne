@@ -2,11 +2,11 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
-using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Tests.Shared.Mocks;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services;
@@ -32,18 +32,12 @@ public class DeviceStatusServiceTests
         _mockPipeline = new Mock<IDecompositionPipeline>();
         _mockLogger = new Mock<ILogger<DeviceStatusService>>();
 
-        var mockTenantAccessor = new Mock<ITenantAccessor>();
-        mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
-            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
-        mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
-        mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
-
         _deviceStatusService = new DeviceStatusService(
             _mockPostgreSqlService.Object,
             _mockSignalRBroadcastService.Object,
             _mockCacheService.Object,
             _mockPipeline.Object,
-            mockTenantAccessor.Object,
+            MockTenantAccessor.Create().Object,
             _mockLogger.Object
         );
     }

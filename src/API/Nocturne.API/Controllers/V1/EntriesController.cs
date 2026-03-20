@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
+using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models;
@@ -20,7 +21,6 @@ namespace Nocturne.API.Controllers.V1;
 public class EntriesController : ControllerBase
 {
     private readonly IEntryService _entryService;
-    private readonly IDataFormatService _dataFormatService;
     private readonly IDocumentProcessingService _documentProcessingService;
     private readonly IProcessingStatusService _processingStatusService;
     private readonly IAlertOrchestrator _alertOrchestrator;
@@ -28,7 +28,6 @@ public class EntriesController : ControllerBase
 
     public EntriesController(
         IEntryService entryService,
-        IDataFormatService dataFormatService,
         IDocumentProcessingService documentProcessingService,
         IProcessingStatusService processingStatusService,
         IAlertOrchestrator alertOrchestrator,
@@ -36,7 +35,6 @@ public class EntriesController : ControllerBase
     )
     {
         _entryService = entryService;
-        _dataFormatService = dataFormatService;
         _documentProcessingService = documentProcessingService;
         _processingStatusService = processingStatusService;
         _alertOrchestrator = alertOrchestrator;
@@ -464,11 +462,11 @@ public class EntriesController : ControllerBase
             {
                 try
                 {
-                    var formattedData = _dataFormatService.FormatEntries(
+                    var formattedData = DataFormatService.FormatEntries(
                         entriesArray,
                         effectiveFormat
                     );
-                    var contentType = _dataFormatService.GetContentType(effectiveFormat);
+                    var contentType = DataFormatService.GetContentType(effectiveFormat);
                     return Content(formattedData, contentType);
                 }
                 catch (ArgumentException ex)

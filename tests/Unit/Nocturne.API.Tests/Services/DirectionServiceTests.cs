@@ -11,12 +11,6 @@ namespace Nocturne.API.Tests.Services;
 [Parity("direction.test.js")]
 public class DirectionServiceTests
 {
-    private readonly DirectionService _directionService;
-
-    public DirectionServiceTests()
-    {
-        _directionService = new DirectionService();
-    }
 
     [Fact]
     public void GetDirectionInfo_ShouldReturnCorrectInfoForFlat()
@@ -29,7 +23,7 @@ public class DirectionServiceTests
         };
 
         // Act
-        var result = _directionService.GetDirectionInfo(entry);
+        var result = DirectionService.GetDirectionInfo(entry);
 
         // Assert
         Assert.Equal(Direction.Flat, result.Value);
@@ -48,7 +42,7 @@ public class DirectionServiceTests
         };
 
         // Act
-        var result = _directionService.GetDirectionInfo(entry);
+        var result = DirectionService.GetDirectionInfo(entry);
 
         // Assert
         Assert.Equal(Direction.DoubleUp, result.Value);
@@ -87,7 +81,7 @@ public class DirectionServiceTests
             };
 
             // Act
-            var result = _directionService.GetDirectionInfo(entry);
+            var result = DirectionService.GetDirectionInfo(entry);
 
             // Assert
             Assert.Equal(testCase.Value.expectedEnum, result.Value);
@@ -100,7 +94,7 @@ public class DirectionServiceTests
     public void GetDirectionInfo_ShouldReturnNullDisplayForNullEntry()
     {
         // Arrange & Act
-        var result = _directionService.GetDirectionInfo(null);
+        var result = DirectionService.GetDirectionInfo(null);
 
         // Assert
         Assert.Null(result.Display);
@@ -120,7 +114,7 @@ public class DirectionServiceTests
         };
 
         // Act
-        var result = _directionService.CalculateDelta(entries, "mg/dl");
+        var result = DirectionService.CalculateDelta(entries, "mg/dl");
 
         // Assert
         Assert.NotNull(result);
@@ -143,7 +137,7 @@ public class DirectionServiceTests
         };
 
         // Act
-        var result = _directionService.CalculateDelta(entries, "mg/dl");
+        var result = DirectionService.CalculateDelta(entries, "mg/dl");
 
         // Assert
         Assert.NotNull(result);
@@ -173,7 +167,7 @@ public class DirectionServiceTests
         };
 
         // Act
-        var result = _directionService.CalculateDelta(entries, "mmol");
+        var result = DirectionService.CalculateDelta(entries, "mmol");
 
         // Assert
         Assert.NotNull(result);
@@ -193,7 +187,7 @@ public class DirectionServiceTests
         };
 
         // Act
-        var result = _directionService.CalculateDelta(entries, "mg/dl");
+        var result = DirectionService.CalculateDelta(entries, "mg/dl");
 
         // Assert
         Assert.Null(result);
@@ -219,7 +213,7 @@ public class DirectionServiceTests
         foreach (var testCase in testCases)
         {
             // Act
-            var result = _directionService.CalculateDirection(
+            var result = DirectionService.CalculateDirection(
                 testCase.current,
                 testCase.previous,
                 testCase.minutes
@@ -253,7 +247,7 @@ public class DirectionServiceTests
         foreach (var testCase in testCases)
         {
             // Act
-            var result = _directionService.DirectionToChar(testCase.Key);
+            var result = DirectionService.DirectionToChar(testCase.Key);
 
             // Assert
             Assert.Equal(testCase.Value, result);
@@ -264,11 +258,11 @@ public class DirectionServiceTests
     public void CharToEntity_ShouldConvertToHtmlEntity()
     {
         // Arrange & Act & Assert
-        Assert.Equal("&#8594;", _directionService.CharToEntity("→"));
-        Assert.Equal("&#8648;", _directionService.CharToEntity("⇈"));
-        Assert.Equal("&#45;", _directionService.CharToEntity("-"));
-        Assert.Equal(string.Empty, _directionService.CharToEntity(""));
-        Assert.Equal(string.Empty, _directionService.CharToEntity(null!));
+        Assert.Equal("&#8594;", DirectionService.CharToEntity("→"));
+        Assert.Equal("&#8648;", DirectionService.CharToEntity("⇈"));
+        Assert.Equal("&#45;", DirectionService.CharToEntity("-"));
+        Assert.Equal(string.Empty, DirectionService.CharToEntity(""));
+        Assert.Equal(string.Empty, DirectionService.CharToEntity(null!));
     }
 
     [Fact]
@@ -285,7 +279,7 @@ public class DirectionServiceTests
         };
 
         // Act
-        var result = _directionService.CalculateDelta(entries, "mg/dl");
+        var result = DirectionService.CalculateDelta(entries, "mg/dl");
 
         // Assert
         Assert.NotNull(result);
@@ -319,7 +313,7 @@ public class DirectionServiceTests
         };
 
         // Act
-        var result = _directionService.CalculateDelta(entries, "mg/dl");
+        var result = DirectionService.CalculateDelta(entries, "mg/dl");
 
         // Assert
         Assert.NotNull(result);

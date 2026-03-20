@@ -22,11 +22,10 @@ public class DeviceStatusController : BaseV3Controller<DeviceStatus>
     public DeviceStatusController(
         IDeviceStatusService deviceStatusService,
         IPostgreSqlService postgreSqlService,
-        IDataFormatService dataFormatService,
         IDocumentProcessingService documentProcessingService,
         ILogger<DeviceStatusController> logger
     )
-        : base(postgreSqlService, dataFormatService, documentProcessingService, logger)
+        : base(postgreSqlService, documentProcessingService, logger)
     {
         _deviceStatusService = deviceStatusService;
     }

@@ -3,8 +3,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Hubs;
 using Nocturne.API.Services;
-using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
+using Nocturne.Tests.Shared.Mocks;
 using Xunit;
 
 namespace Nocturne.API.Tests.Unit.Services;
@@ -54,17 +54,11 @@ public class SignalRBroadcastServiceTests
             .Setup(x => x.Group(It.IsAny<string>()))
             .Returns(_mockConfigGroupProxy.Object);
 
-        var mockTenantAccessor = new Mock<ITenantAccessor>();
-        mockTenantAccessor.Setup(x => x.Context).Returns(new TenantContext(
-            Guid.Parse("00000000-0000-0000-0000-000000000001"), "test-tenant", "Test Tenant", true));
-        mockTenantAccessor.Setup(x => x.IsResolved).Returns(true);
-        mockTenantAccessor.Setup(x => x.TenantId).Returns(Guid.Parse("00000000-0000-0000-0000-000000000001"));
-
         _service = new SignalRBroadcastService(
             _mockDataHubContext.Object,
             _mockAlarmHubContext.Object,
             _mockConfigHubContext.Object,
-            mockTenantAccessor.Object,
+            MockTenantAccessor.Create().Object,
             _mockLogger.Object
         );
     }

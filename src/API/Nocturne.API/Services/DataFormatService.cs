@@ -1,16 +1,15 @@
 using System.Text;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services;
 
 /// <summary>
-/// Service for formatting data into different output formats (CSV, TSV, etc.)
+/// Static helpers for formatting data into different output formats (CSV, TSV, etc.).
+/// All methods are pure functions with no dependencies.
 /// </summary>
-public class DataFormatService : IDataFormatService
+public static class DataFormatService
 {
-    /// <inheritdoc />
-    public string FormatEntries(Entry[] entries, string format)
+    public static string FormatEntries(Entry[] entries, string format)
     {
         return format.ToLowerInvariant() switch
         {
@@ -22,7 +21,7 @@ public class DataFormatService : IDataFormatService
     }
 
     /// <inheritdoc />
-    public string FormatTreatments(Treatment[] treatments, string format)
+    public static string FormatTreatments(Treatment[] treatments, string format)
     {
         return format.ToLowerInvariant() switch
         {
@@ -34,7 +33,7 @@ public class DataFormatService : IDataFormatService
     }
 
     /// <inheritdoc />
-    public string FormatDeviceStatus(DeviceStatus[] deviceStatus, string format)
+    public static string FormatDeviceStatus(DeviceStatus[] deviceStatus, string format)
     {
         return format.ToLowerInvariant() switch
         {
@@ -46,7 +45,7 @@ public class DataFormatService : IDataFormatService
     }
 
     /// <inheritdoc />
-    public string GetContentType(string format)
+    public static string GetContentType(string format)
     {
         return format.ToLowerInvariant() switch
         {
@@ -57,7 +56,7 @@ public class DataFormatService : IDataFormatService
         };
     }
 
-    private string FormatEntriesAsCsv(Entry[] entries)
+    private static string FormatEntriesAsCsv(Entry[] entries)
     {
         var sb = new StringBuilder();
 
@@ -74,7 +73,7 @@ public class DataFormatService : IDataFormatService
         return sb.ToString();
     }
 
-    private string FormatEntriesAsTsv(Entry[] entries)
+    private static string FormatEntriesAsTsv(Entry[] entries)
     {
         var sb = new StringBuilder();
 
@@ -91,7 +90,7 @@ public class DataFormatService : IDataFormatService
         return sb.ToString();
     }
 
-    private string FormatEntriesAsText(Entry[] entries)
+    private static string FormatEntriesAsText(Entry[] entries)
     {
         var sb = new StringBuilder();
 
@@ -105,17 +104,17 @@ public class DataFormatService : IDataFormatService
         return sb.ToString();
     }
 
-    private string FormatEntryAsCsvRow(Entry entry)
+    private static string FormatEntryAsCsvRow(Entry entry)
     {
         return $"{EscapeCsvField(entry.Id ?? "")},{entry.Mills},{entry.Date?.ToString("o") ?? ""},{EscapeCsvField(entry.DateString ?? "")},{entry.Sgv?.ToString() ?? ""},{entry.Mgdl.ToString()},{EscapeCsvField(entry.Type)},{EscapeCsvField(entry.Direction ?? "")},{EscapeCsvField(entry.Device ?? "")},{entry.Filtered?.ToString() ?? ""},{entry.Unfiltered?.ToString() ?? ""},{entry.Rssi?.ToString() ?? ""},{entry.Noise?.ToString() ?? ""}";
     }
 
-    private string FormatEntryAsTsvRow(Entry entry)
+    private static string FormatEntryAsTsvRow(Entry entry)
     {
         return $"{EscapeTsvField(entry.Id ?? "")}\t{entry.Mills}\t{entry.Date?.ToString("o") ?? ""}\t{EscapeTsvField(entry.DateString ?? "")}\t{entry.Sgv?.ToString() ?? ""}\t{entry.Mgdl.ToString()}\t{EscapeTsvField(entry.Type)}\t{EscapeTsvField(entry.Direction ?? "")}\t{EscapeTsvField(entry.Device ?? "")}\t{entry.Filtered?.ToString() ?? ""}\t{entry.Unfiltered?.ToString() ?? ""}\t{entry.Rssi?.ToString() ?? ""}\t{entry.Noise?.ToString() ?? ""}";
     }
 
-    private string FormatTreatmentsAsCsv(Treatment[] treatments)
+    private static string FormatTreatmentsAsCsv(Treatment[] treatments)
     {
         var sb = new StringBuilder();
 
@@ -132,7 +131,7 @@ public class DataFormatService : IDataFormatService
         return sb.ToString();
     }
 
-    private string FormatTreatmentsAsTsv(Treatment[] treatments)
+    private static string FormatTreatmentsAsTsv(Treatment[] treatments)
     {
         var sb = new StringBuilder();
 
@@ -149,7 +148,7 @@ public class DataFormatService : IDataFormatService
         return sb.ToString();
     }
 
-    private string FormatTreatmentsAsText(Treatment[] treatments)
+    private static string FormatTreatmentsAsText(Treatment[] treatments)
     {
         var sb = new StringBuilder();
 
@@ -169,17 +168,17 @@ public class DataFormatService : IDataFormatService
         return sb.ToString();
     }
 
-    private string FormatTreatmentAsCsvRow(Treatment treatment)
+    private static string FormatTreatmentAsCsvRow(Treatment treatment)
     {
         return $"{EscapeCsvField(treatment.Id ?? "")},{treatment.Timestamp?.ToString() ?? ""},{EscapeCsvField(treatment.CreatedAt ?? "")},{EscapeCsvField(treatment.EventType ?? "")},{treatment.Insulin?.ToString() ?? ""},{treatment.Carbs?.ToString() ?? ""},{treatment.Glucose?.ToString() ?? ""},{EscapeCsvField(treatment.GlucoseType ?? "")},{EscapeCsvField(treatment.Notes ?? "")},{EscapeCsvField(treatment.EnteredBy ?? "")}";
     }
 
-    private string FormatTreatmentAsTsvRow(Treatment treatment)
+    private static string FormatTreatmentAsTsvRow(Treatment treatment)
     {
         return $"{EscapeTsvField(treatment.Id ?? "")}\t{treatment.Timestamp?.ToString() ?? ""}\t{EscapeTsvField(treatment.CreatedAt ?? "")}\t{EscapeTsvField(treatment.EventType ?? "")}\t{treatment.Insulin?.ToString() ?? ""}\t{treatment.Carbs?.ToString() ?? ""}\t{treatment.Glucose?.ToString() ?? ""}\t{EscapeTsvField(treatment.GlucoseType ?? "")}\t{EscapeTsvField(treatment.Notes ?? "")}\t{EscapeTsvField(treatment.EnteredBy ?? "")}";
     }
 
-    private string FormatDeviceStatusAsCsv(DeviceStatus[] deviceStatuses)
+    private static string FormatDeviceStatusAsCsv(DeviceStatus[] deviceStatuses)
     {
         var sb = new StringBuilder();
 
@@ -196,7 +195,7 @@ public class DataFormatService : IDataFormatService
         return sb.ToString();
     }
 
-    private string FormatDeviceStatusAsTsv(DeviceStatus[] deviceStatuses)
+    private static string FormatDeviceStatusAsTsv(DeviceStatus[] deviceStatuses)
     {
         var sb = new StringBuilder();
 
@@ -213,7 +212,7 @@ public class DataFormatService : IDataFormatService
         return sb.ToString();
     }
 
-    private string FormatDeviceStatusAsText(DeviceStatus[] deviceStatuses)
+    private static string FormatDeviceStatusAsText(DeviceStatus[] deviceStatuses)
     {
         var sb = new StringBuilder();
 
@@ -228,12 +227,12 @@ public class DataFormatService : IDataFormatService
         return sb.ToString();
     }
 
-    private string FormatDeviceStatusAsCsvRow(DeviceStatus status)
+    private static string FormatDeviceStatusAsCsvRow(DeviceStatus status)
     {
         return $"{EscapeCsvField(status.Id ?? "")},{status.Mills},{EscapeCsvField(status.CreatedAt ?? "")},{EscapeCsvField(status.Device ?? "")},{status.Uploader?.Battery?.ToString() ?? ""},{status.Pump?.Battery?.Percent?.ToString() ?? ""},{EscapeCsvField(status.Pump?.Iob?.Timestamp ?? "")},{status.Pump?.Iob?.BolusIob?.ToString() ?? ""},{status.Pump?.Iob?.BasalIob?.ToString() ?? ""}";
     }
 
-    private string FormatDeviceStatusAsTsvRow(DeviceStatus status)
+    private static string FormatDeviceStatusAsTsvRow(DeviceStatus status)
     {
         return $"{EscapeTsvField(status.Id ?? "")}\t{status.Mills}\t{EscapeTsvField(status.CreatedAt ?? "")}\t{EscapeTsvField(status.Device ?? "")}\t{status.Uploader?.Battery?.ToString() ?? ""}\t{status.Pump?.Battery?.Percent?.ToString() ?? ""}\t{EscapeTsvField(status.Pump?.Iob?.Timestamp ?? "")}\t{status.Pump?.Iob?.BolusIob?.ToString() ?? ""}\t{status.Pump?.Iob?.BasalIob?.ToString() ?? ""}";
     }

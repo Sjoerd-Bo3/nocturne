@@ -19,11 +19,10 @@ public class FoodController : BaseV3Controller<Food>
 {
     public FoodController(
         IPostgreSqlService postgreSqlService,
-        IDataFormatService dataFormatService,
         IDocumentProcessingService documentProcessingService,
         ILogger<FoodController> logger
     )
-        : base(postgreSqlService, dataFormatService, documentProcessingService, logger) { }
+        : base(postgreSqlService, documentProcessingService, logger) { }
 
     /// <summary>
     /// Get food records with V3 API features including pagination, field selection, and advanced filtering
