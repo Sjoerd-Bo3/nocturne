@@ -9,7 +9,7 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Maps to Nocturne.Core.Models.Treatment
 /// </summary>
 [Table("treatments")]
-public class TreatmentEntity : ITenantScoped
+public class TreatmentEntity : ITenantScoped, ISoftDeletable
 {
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
@@ -217,6 +217,9 @@ public class TreatmentEntity : ITenantScoped
     /// </summary>
     [Column("sys_updated_at")]
     public DateTime SysUpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [Column("deleted_at")]
+    public DateTime? DeletedAt { get; set; }
 
     // === Owned Types ===
     // Column mappings configured via TreatmentEntityConfiguration.ConfigureOwnedTypes()

@@ -9,7 +9,7 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Maps to Nocturne.Core.Models.Entry
 /// </summary>
 [Table("entries")]
-public class EntryEntity : ITenantScoped
+public class EntryEntity : ITenantScoped, ISoftDeletable
 {
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
@@ -244,6 +244,9 @@ public class EntryEntity : ITenantScoped
     /// </summary>
     [Column("sys_updated_at")]
     public DateTime SysUpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [Column("deleted_at")]
+    public DateTime? DeletedAt { get; set; }
 
     /// <summary>
     /// Parses the Notes field if it contains valid JSON and extracts matching properties
