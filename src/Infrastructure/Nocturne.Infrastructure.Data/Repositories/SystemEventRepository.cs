@@ -23,7 +23,7 @@ public class SystemEventRepository
     /// <summary>
     /// Get system events with optional filtering
     /// </summary>
-    public async Task<IEnumerable<SystemEvent>> GetSystemEventsAsync(
+    public virtual async Task<IEnumerable<SystemEvent>> GetSystemEventsAsync(
         SystemEventType? eventType = null,
         SystemEventCategory? category = null,
         long? from = null,

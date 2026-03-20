@@ -332,7 +332,7 @@ public class StateSpanRepository
     /// <summary>
     /// Get state spans for multiple categories in a single query (batch fetch)
     /// </summary>
-    public async Task<Dictionary<StateSpanCategory, List<StateSpan>>> GetByCategories(
+    public virtual async Task<Dictionary<StateSpanCategory, List<StateSpan>>> GetByCategories(
         IEnumerable<StateSpanCategory> categories,
         DateTime? from = null,
         DateTime? to = null,
