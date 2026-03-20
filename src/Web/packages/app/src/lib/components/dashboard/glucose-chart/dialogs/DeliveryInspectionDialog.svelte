@@ -7,7 +7,7 @@
   import { bg, bgLabel } from "$lib/utils/formatting";
   import { getDataSourceDisplayName } from "$lib/utils/data-source-display";
   import type { PredictionData } from "$api/predictions.remote";
-  import { getApsSnapshots } from "$lib/api/generated/deviceStatus.generated.remote";
+  import { getApsSnapshots } from "$lib/api/generated";
   import { apsSnapshotToPrediction } from "$lib/utils/aps-snapshot-to-prediction";
   import GlucoseResponseChart from "./GlucoseResponseChart.svelte";
 
