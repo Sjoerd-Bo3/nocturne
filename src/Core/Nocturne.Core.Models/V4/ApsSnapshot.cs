@@ -20,9 +20,9 @@ public class ApsSnapshot : IV4Record
     public DateTime ModifiedAt { get; set; }
 
     /// <summary>
-    /// Which APS system produced this snapshot
+    /// Which AID algorithm produced this snapshot
     /// </summary>
-    public ApsSystem ApsSystem { get; set; }
+    public AidAlgorithm AidAlgorithm { get; set; }
 
     /// <summary>Total insulin on board</summary>
     public double? Iob { get; set; }

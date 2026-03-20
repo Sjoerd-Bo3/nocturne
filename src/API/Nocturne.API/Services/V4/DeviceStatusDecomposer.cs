@@ -93,7 +93,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
             UtcOffset = ds.UtcOffset,
             Device = ds.Device,
             LegacyId = legacyId,
-            ApsSystem = apsSystem,
+            AidAlgorithm = apsSystem,
             Iob = ds.OpenAps.Iob?.Iob,
             BasalIob = ds.OpenAps.Iob?.BasalIob,
             BolusIob = ds.OpenAps.Iob?.BolusIob,
@@ -113,7 +113,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
             // Trio uses oref multi-curve predictions exclusively; PredictedDefaultJson
             // is reserved for Loop's single combined curve. OpenAPS/AAPS duplicate IOB
             // into the default slot for backwards compatibility.
-            PredictedDefaultJson = apsSystem == V4Models.ApsSystem.Trio
+            PredictedDefaultJson = apsSystem == V4Models.AidAlgorithm.Trio
                 ? null
                 : SerializeOrNull(predBGs?.IOB),
             PredictedIobJson = SerializeOrNull(predBGs?.IOB),
@@ -135,7 +135,7 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
             UtcOffset = ds.UtcOffset,
             Device = ds.Device,
             LegacyId = legacyId,
-            ApsSystem = V4Models.ApsSystem.Loop,
+            AidAlgorithm = V4Models.AidAlgorithm.Loop,
             Iob = ds.Loop!.Iob?.Iob,
             BasalIob = ds.Loop.Iob?.BasalIob,
             BolusIob = null,
@@ -298,15 +298,15 @@ public class DeviceStatusDecomposer : IDeviceStatusDecomposer
     /// - Trio: openaps block includes a version field
     /// - Vanilla OpenAPS: neither of the above
     /// </summary>
-    internal static V4Models.ApsSystem DetectOpenApsVariant(DeviceStatus ds)
+    internal static V4Models.AidAlgorithm DetectOpenApsVariant(DeviceStatus ds)
     {
         if (ds.Uploader?.Name?.Contains("AndroidAPS", StringComparison.OrdinalIgnoreCase) == true)
-            return V4Models.ApsSystem.AndroidAps;
+            return V4Models.AidAlgorithm.AndroidAps;
 
         if (!string.IsNullOrEmpty(ds.OpenAps?.Version))
-            return V4Models.ApsSystem.Trio;
+            return V4Models.AidAlgorithm.Trio;
 
-        return V4Models.ApsSystem.OpenAps;
+        return V4Models.AidAlgorithm.OpenAps;
     }
 
     private static string? SerializeOrNull<T>(T? obj) where T : class

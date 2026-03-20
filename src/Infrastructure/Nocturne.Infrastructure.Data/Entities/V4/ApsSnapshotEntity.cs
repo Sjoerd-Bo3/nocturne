@@ -64,7 +64,7 @@ public class ApsSnapshotEntity : ITenantScoped
     /// </summary>
     [Column("aps_system")]
     [MaxLength(32)]
-    public string ApsSystem { get; set; } = null!;
+    public string AidAlgorithm { get; set; } = null!;
 
     /// <summary>
     /// Total insulin on board

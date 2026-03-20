@@ -26493,7 +26493,7 @@ export interface ApsSnapshot {
     legacyId?: string | undefined;
     createdAt?: Date;
     modifiedAt?: Date;
-    apsSystem?: ApsSystem;
+    aidAlgorithm?: AidAlgorithm;
     iob?: number | undefined;
     basalIob?: number | undefined;
     bolusIob?: number | undefined;
@@ -26519,11 +26519,18 @@ export interface ApsSnapshot {
     additionalProperties?: { [key: string]: any; } | undefined;
 }
 
-export enum ApsSystem {
+export enum AidAlgorithm {
     OpenAps = "OpenAps",
     AndroidAps = "AndroidAps",
     Loop = "Loop",
     Trio = "Trio",
+    IAPS = "IAPS",
+    ControlIQ = "ControlIQ",
+    CamAPSFX = "CamAPSFX",
+    Omnipod5Algorithm = "Omnipod5Algorithm",
+    MedtronicSmartGuard = "MedtronicSmartGuard",
+    None = "None",
+    Unknown = "Unknown",
 }
 
 export interface PaginationInfo {

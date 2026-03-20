@@ -96,7 +96,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         // Assert
         result.CreatedRecords.Should().HaveCount(1);
         var aps = result.CreatedRecords[0].Should().BeOfType<V4Models.ApsSnapshot>().Subject;
-        aps.ApsSystem.Should().Be(V4Models.ApsSystem.OpenAps);
+        aps.AidAlgorithm.Should().Be(V4Models.AidAlgorithm.OpenAps);
         aps.Iob.Should().Be(2.5);
         aps.BasalIob.Should().Be(1.0);
         aps.BolusIob.Should().Be(1.5);
@@ -151,7 +151,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         // Assert
         result.CreatedRecords.Should().HaveCount(1);
         var aps = result.CreatedRecords[0].Should().BeOfType<V4Models.ApsSnapshot>().Subject;
-        aps.ApsSystem.Should().Be(V4Models.ApsSystem.Loop);
+        aps.AidAlgorithm.Should().Be(V4Models.AidAlgorithm.Loop);
         aps.Iob.Should().Be(1.8);
         aps.BasalIob.Should().Be(0.5);
         aps.BolusIob.Should().BeNull();
@@ -866,7 +866,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         // Assert - only one APS snapshot, and it's OpenAps
         result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Should().HaveCount(1);
         var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
-        aps.ApsSystem.Should().Be(V4Models.ApsSystem.OpenAps);
+        aps.AidAlgorithm.Should().Be(V4Models.AidAlgorithm.OpenAps);
         aps.Iob.Should().Be(2.0, "OpenAps IOB, not Loop's");
     }
 
@@ -1300,7 +1300,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         var result = await _decomposer.DecomposeAsync(ds);
 
         var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
-        aps.ApsSystem.Should().Be(V4Models.ApsSystem.AndroidAps);
+        aps.AidAlgorithm.Should().Be(V4Models.AidAlgorithm.AndroidAps);
     }
 
     [Fact]
@@ -1325,7 +1325,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         var result = await _decomposer.DecomposeAsync(ds);
 
         var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
-        aps.ApsSystem.Should().Be(V4Models.ApsSystem.AndroidAps);
+        aps.AidAlgorithm.Should().Be(V4Models.AidAlgorithm.AndroidAps);
     }
 
     [Fact]
@@ -1352,7 +1352,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         var result = await _decomposer.DecomposeAsync(ds);
 
         var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
-        aps.ApsSystem.Should().Be(V4Models.ApsSystem.Trio);
+        aps.AidAlgorithm.Should().Be(V4Models.AidAlgorithm.Trio);
     }
 
     [Fact]
@@ -1376,7 +1376,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         var result = await _decomposer.DecomposeAsync(ds);
 
         var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
-        aps.ApsSystem.Should().Be(V4Models.ApsSystem.OpenAps);
+        aps.AidAlgorithm.Should().Be(V4Models.AidAlgorithm.OpenAps);
     }
 
     [Fact]
@@ -1404,7 +1404,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         var result = await _decomposer.DecomposeAsync(ds);
 
         var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
-        aps.ApsSystem.Should().Be(V4Models.ApsSystem.AndroidAps);
+        aps.AidAlgorithm.Should().Be(V4Models.AidAlgorithm.AndroidAps);
     }
 
     [Fact]
@@ -1418,7 +1418,7 @@ public class DeviceStatusDecomposerTests : IDisposable
 
         var result = DeviceStatusDecomposer.DetectOpenApsVariant(ds);
 
-        result.Should().Be(V4Models.ApsSystem.OpenAps);
+        result.Should().Be(V4Models.AidAlgorithm.OpenAps);
     }
 
     #endregion
@@ -1456,7 +1456,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         var result = await _decomposer.DecomposeAsync(ds);
 
         var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
-        aps.ApsSystem.Should().Be(V4Models.ApsSystem.Trio);
+        aps.AidAlgorithm.Should().Be(V4Models.AidAlgorithm.Trio);
         aps.PredictedDefaultJson.Should().BeNull("Trio uses oref multi-curve format; PredictedDefaultJson is for Loop's single curve");
         aps.PredictedIobJson.Should().NotBeNull();
         aps.PredictedZtJson.Should().NotBeNull();
@@ -1490,7 +1490,7 @@ public class DeviceStatusDecomposerTests : IDisposable
         var result = await _decomposer.DecomposeAsync(ds);
 
         var aps = result.CreatedRecords.OfType<V4Models.ApsSnapshot>().Single();
-        aps.ApsSystem.Should().Be(V4Models.ApsSystem.Trio);
+        aps.AidAlgorithm.Should().Be(V4Models.AidAlgorithm.Trio);
         aps.PredictedDefaultJson.Should().BeNull();
         aps.PredictedIobJson.Should().BeNull();
         aps.PredictedZtJson.Should().BeNull();

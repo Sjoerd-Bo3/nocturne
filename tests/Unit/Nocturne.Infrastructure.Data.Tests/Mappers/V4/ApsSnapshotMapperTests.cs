@@ -18,7 +18,7 @@ public class ApsSnapshotMapperTests
             UtcOffset = -300,
             Device = "openaps-rig",
             LegacyId = "aps123",
-            ApsSystem = ApsSystem.Loop,
+            AidAlgorithm = AidAlgorithm.Loop,
             Iob = 2.5,
             BasalIob = 1.2,
             BolusIob = 1.3,
@@ -49,7 +49,7 @@ public class ApsSnapshotMapperTests
         entity.UtcOffset.Should().Be(-300);
         entity.Device.Should().Be("openaps-rig");
         entity.LegacyId.Should().Be("aps123");
-        entity.ApsSystem.Should().Be("Loop");
+        entity.AidAlgorithm.Should().Be("Loop");
         entity.Iob.Should().Be(2.5);
         entity.BasalIob.Should().Be(1.2);
         entity.BolusIob.Should().Be(1.3);
@@ -77,7 +77,7 @@ public class ApsSnapshotMapperTests
     [Trait("Category", "Unit")]
     public void ToEntity_EmptyGuid_GeneratesNewId()
     {
-        var model = new ApsSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, ApsSystem = ApsSystem.OpenAps };
+        var model = new ApsSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, AidAlgorithm = AidAlgorithm.OpenAps };
 
         var entity = ApsSnapshotMapper.ToEntity(model);
 
@@ -100,7 +100,7 @@ public class ApsSnapshotMapperTests
             LegacyId = "aps123",
             SysCreatedAt = createdAt,
             SysUpdatedAt = updatedAt,
-            ApsSystem = "Loop",
+            AidAlgorithm = "Loop",
             Iob = 2.5,
             BasalIob = 1.2,
             BolusIob = 1.3,
@@ -133,7 +133,7 @@ public class ApsSnapshotMapperTests
         model.LegacyId.Should().Be("aps123");
         model.CreatedAt.Should().Be(createdAt);
         model.ModifiedAt.Should().Be(updatedAt);
-        model.ApsSystem.Should().Be(ApsSystem.Loop);
+        model.AidAlgorithm.Should().Be(AidAlgorithm.Loop);
         model.Iob.Should().Be(2.5);
         model.BasalIob.Should().Be(1.2);
         model.BolusIob.Should().Be(1.3);
@@ -168,7 +168,7 @@ public class ApsSnapshotMapperTests
             Id = originalId,
             SysCreatedAt = originalCreatedAt,
             Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1000).UtcDateTime,
-            ApsSystem = "OpenAps",
+            AidAlgorithm = "OpenAps",
         };
 
         var model = new ApsSnapshot
@@ -177,7 +177,7 @@ public class ApsSnapshotMapperTests
             UtcOffset = 60,
             Device = "loop-phone",
             LegacyId = "upd456",
-            ApsSystem = ApsSystem.Loop,
+            AidAlgorithm = AidAlgorithm.Loop,
             Iob = 3.0,
             BasalIob = 1.5,
             BolusIob = 1.5,
@@ -209,7 +209,7 @@ public class ApsSnapshotMapperTests
         entity.UtcOffset.Should().Be(60);
         entity.Device.Should().Be("loop-phone");
         entity.LegacyId.Should().Be("upd456");
-        entity.ApsSystem.Should().Be("Loop");
+        entity.AidAlgorithm.Should().Be("Loop");
         entity.Iob.Should().Be(3.0);
         entity.BasalIob.Should().Be(1.5);
         entity.BolusIob.Should().Be(1.5);
@@ -236,45 +236,45 @@ public class ApsSnapshotMapperTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void ToEntity_ApsSystemEnum_StoredAsString()
+    public void ToEntity_AidAlgorithmEnum_StoredAsString()
     {
-        var model = new ApsSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, ApsSystem = ApsSystem.Loop };
+        var model = new ApsSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, AidAlgorithm = AidAlgorithm.Loop };
 
         var entity = ApsSnapshotMapper.ToEntity(model);
 
-        entity.ApsSystem.Should().Be("Loop");
+        entity.AidAlgorithm.Should().Be("Loop");
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public void ToDomainModel_ApsSystemEnum_ParsedFromString()
+    public void ToDomainModel_AidAlgorithmEnum_ParsedFromString()
     {
         var entity = new ApsSnapshotEntity
         {
             Id = Guid.CreateVersion7(),
             Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime,
-            ApsSystem = "Loop",
+            AidAlgorithm = "Loop",
         };
 
         var model = ApsSnapshotMapper.ToDomainModel(entity);
 
-        model.ApsSystem.Should().Be(ApsSystem.Loop);
+        model.AidAlgorithm.Should().Be(AidAlgorithm.Loop);
     }
 
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData(ApsSystem.OpenAps, "OpenAps")]
-    [InlineData(ApsSystem.AndroidAps, "AndroidAps")]
-    [InlineData(ApsSystem.Loop, "Loop")]
-    [InlineData(ApsSystem.Trio, "Trio")]
-    public void ToEntity_AllApsSystemValues_RoundTripCorrectly(ApsSystem system, string expected)
+    [InlineData(AidAlgorithm.OpenAps, "OpenAps")]
+    [InlineData(AidAlgorithm.AndroidAps, "AndroidAps")]
+    [InlineData(AidAlgorithm.Loop, "Loop")]
+    [InlineData(AidAlgorithm.Trio, "Trio")]
+    public void ToEntity_AllAidAlgorithmValues_RoundTripCorrectly(AidAlgorithm system, string expected)
     {
-        var model = new ApsSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, ApsSystem = system };
+        var model = new ApsSnapshot { Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime, AidAlgorithm = system };
 
         var entity = ApsSnapshotMapper.ToEntity(model);
-        entity.ApsSystem.Should().Be(expected);
+        entity.AidAlgorithm.Should().Be(expected);
 
         var roundTripped = ApsSnapshotMapper.ToDomainModel(entity);
-        roundTripped.ApsSystem.Should().Be(system);
+        roundTripped.AidAlgorithm.Should().Be(system);
     }
 }

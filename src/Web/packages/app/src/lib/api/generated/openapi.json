@@ -30409,8 +30409,8 @@
             "type": "string",
             "format": "date-time"
           },
-          "apsSystem": {
-            "$ref": "#/components/schemas/ApsSystem"
+          "aidAlgorithm": {
+            "$ref": "#/components/schemas/AidAlgorithm"
           },
           "iob": {
             "type": "number",
@@ -30520,20 +30520,34 @@
           }
         }
       },
-      "ApsSystem": {
+      "AidAlgorithm": {
         "type": "string",
         "description": "",
         "x-enumNames": [
           "OpenAps",
           "AndroidAps",
           "Loop",
-          "Trio"
+          "Trio",
+          "IAPS",
+          "ControlIQ",
+          "CamAPSFX",
+          "Omnipod5Algorithm",
+          "MedtronicSmartGuard",
+          "None",
+          "Unknown"
         ],
         "enum": [
           "OpenAps",
           "AndroidAps",
           "Loop",
-          "Trio"
+          "Trio",
+          "IAPS",
+          "ControlIQ",
+          "CamAPSFX",
+          "Omnipod5Algorithm",
+          "MedtronicSmartGuard",
+          "None",
+          "Unknown"
         ]
       },
       "PaginationInfo": {

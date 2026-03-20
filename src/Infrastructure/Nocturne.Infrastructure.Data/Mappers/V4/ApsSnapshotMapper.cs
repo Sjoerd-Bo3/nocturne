@@ -23,7 +23,7 @@ public static class ApsSnapshotMapper
             LegacyId = model.LegacyId,
             SysCreatedAt = DateTime.UtcNow,
             SysUpdatedAt = DateTime.UtcNow,
-            ApsSystem = model.ApsSystem.ToString(),
+            AidAlgorithm = model.AidAlgorithm.ToString(),
             Iob = model.Iob,
             BasalIob = model.BasalIob,
             BolusIob = model.BolusIob,
@@ -65,7 +65,7 @@ public static class ApsSnapshotMapper
             LegacyId = entity.LegacyId,
             CreatedAt = entity.SysCreatedAt,
             ModifiedAt = entity.SysUpdatedAt,
-            ApsSystem = Enum.TryParse<ApsSystem>(entity.ApsSystem, out var sys) ? sys : ApsSystem.OpenAps,
+            AidAlgorithm = Enum.TryParse<AidAlgorithm>(entity.AidAlgorithm, out var sys) ? sys : AidAlgorithm.OpenAps,
             Iob = entity.Iob,
             BasalIob = entity.BasalIob,
             BolusIob = entity.BolusIob,
@@ -103,7 +103,7 @@ public static class ApsSnapshotMapper
         entity.Device = model.Device;
         entity.LegacyId = model.LegacyId;
         entity.SysUpdatedAt = DateTime.UtcNow;
-        entity.ApsSystem = model.ApsSystem.ToString();
+        entity.AidAlgorithm = model.AidAlgorithm.ToString();
         entity.Iob = model.Iob;
         entity.BasalIob = model.BasalIob;
         entity.BolusIob = model.BolusIob;
