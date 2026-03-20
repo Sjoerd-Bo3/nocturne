@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -210,6 +211,42 @@ public static class ConnectorServiceCollectionExtensions
             }
 
             return config;
+        }
+
+        /// <summary>
+        ///     Discovers and registers all connector services via assembly scanning.
+        ///     Replaces explicit per-connector AddXxxConnector() calls in Program.cs.
+        /// </summary>
+        public IServiceCollection AddConnectors(IConfiguration configuration)
+        {
+            var connectorAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => a.FullName?.Contains("Nocturne.Connectors") == true)
+                .ToList();
+
+            // Discover and invoke all IConnectorInstaller implementations
+            foreach (var assembly in connectorAssemblies)
+            {
+                try
+                {
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        if (type.IsAbstract || type.IsInterface)
+                            continue;
+
+                        if (!typeof(IConnectorInstaller).IsAssignableFrom(type))
+                            continue;
+
+                        var installer = (IConnectorInstaller)Activator.CreateInstance(type)!;
+                        installer.Install(services, configuration);
+                    }
+                }
+                catch (ReflectionTypeLoadException)
+                {
+                    // Some types may not be loadable, skip them
+                }
+            }
+
+            return services;
         }
     }
 }
