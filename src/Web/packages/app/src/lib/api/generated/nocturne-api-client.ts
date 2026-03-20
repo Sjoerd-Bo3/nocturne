@@ -12763,10 +12763,17 @@ export class ProfileClient {
     }
 
     /**
-     * Get a consolidated summary of all profile data across all profile names
+     * Get a consolidated summary of all profile data across all profile names.
+    Optionally provide a date range to include schedule change detection info.
+     * @param from (optional) 
+     * @param to (optional) 
      */
-    getProfileSummary(signal?: AbortSignal): Promise<ProfileSummary> {
-        let url_ = this.baseUrl + "/api/v4/profile/summary";
+    getProfileSummary(from?: Date | null | undefined, to?: Date | null | undefined, signal?: AbortSignal): Promise<ProfileSummary> {
+        let url_ = this.baseUrl + "/api/v4/profile/summary?";
+        if (from !== undefined && from !== null)
+            url_ += "from=" + encodeURIComponent(from ? "" + from.toISOString() : "") + "&";
+        if (to !== undefined && to !== null)
+            url_ += "to=" + encodeURIComponent(to ? "" + to.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -27106,6 +27113,10 @@ export interface ProfileSummary {
     carbRatioSchedules?: CarbRatioSchedule[];
     sensitivitySchedules?: SensitivitySchedule[];
     targetRangeSchedules?: TargetRangeSchedule[];
+    basalChanges?: ScheduleChangeInfo | undefined;
+    carbRatioChanges?: ScheduleChangeInfo | undefined;
+    sensitivityChanges?: ScheduleChangeInfo | undefined;
+    targetRangeChanges?: ScheduleChangeInfo | undefined;
 }
 
 export interface TherapySettings {
@@ -27247,6 +27258,12 @@ export interface TargetRangeEntry {
     low?: number;
     high?: number;
     timeAsSeconds?: number | undefined;
+}
+
+export interface ScheduleChangeInfo {
+    changedDuringPeriod?: boolean;
+    lastChangedAt?: Date | undefined;
+    changeCount?: number;
 }
 
 export interface PaginatedResponseOfTherapySettings {

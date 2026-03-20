@@ -8,12 +8,13 @@ import { z } from 'zod';
 import { TherapySettingsSchema, BasalScheduleSchema, CarbRatioScheduleSchema, SensitivityScheduleSchema, TargetRangeScheduleSchema } from '$lib/api/generated/schemas';
 import { type TherapySettings, type BasalSchedule, type CarbRatioSchedule, type SensitivitySchedule, type TargetRangeSchedule } from '$api';
 
-/** Get a consolidated summary of all profile data across all profile names */
-export const getProfileSummary = query(async () => {
+/** Get a consolidated summary of all profile data across all profile names.
+Optionally provide a date range to include schedule change detection info. */
+export const getProfileSummary = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    return await apiClient.profile.getProfileSummary();
+    return await apiClient.profile.getProfileSummary(params?.from, params?.to);
   } catch (err) {
     const status = (err as any)?.status;
     if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }

@@ -10573,8 +10573,30 @@
         "tags": [
           "V4 Profile"
         ],
-        "summary": "Get a consolidated summary of all profile data across all profile names",
+        "summary": "Get a consolidated summary of all profile data across all profile names.\nOptionally provide a date range to include schedule change detection info.",
         "operationId": "Profile_GetProfileSummary",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -32431,6 +32453,38 @@
             "items": {
               "$ref": "#/components/schemas/TargetRangeSchedule"
             }
+          },
+          "basalChanges": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleChangeInfo"
+              }
+            ]
+          },
+          "carbRatioChanges": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleChangeInfo"
+              }
+            ]
+          },
+          "sensitivityChanges": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleChangeInfo"
+              }
+            ]
+          },
+          "targetRangeChanges": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ScheduleChangeInfo"
+              }
+            ]
           }
         }
       },
@@ -32987,6 +33041,24 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          }
+        }
+      },
+      "ScheduleChangeInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "changedDuringPeriod": {
+            "type": "boolean"
+          },
+          "lastChangedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "changeCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
