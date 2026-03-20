@@ -1,5 +1,7 @@
 using FluentAssertions;
+using Nocturne.API.Services;
 using Nocturne.API.Services.AidDetection;
+using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 
@@ -234,5 +236,135 @@ public class AidMetricsServiceTests
         strategy.SupportedAlgorithms.Should().Contain(AidAlgorithm.CamAPSFX);
         strategy.SupportedAlgorithms.Should().Contain(AidAlgorithm.Omnipod5Algorithm);
         strategy.SupportedAlgorithms.Should().Contain(AidAlgorithm.MedtronicSmartGuard);
+    }
+
+    // --- AidMetricsService tests ---
+
+    private static AidMetricsService CreateService()
+    {
+        var strategies = new IAidDetectionStrategy[]
+        {
+            new ApsSnapshotStrategy(),
+            new TbrBasedStrategy(),
+            new NoAidStrategy(),
+        };
+        return new AidMetricsService(strategies);
+    }
+
+    [Fact]
+    public void Calculate_SingleTrioDevice_AllEnacted_Returns100Percent()
+    {
+        var service = CreateService();
+        var start = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var end = new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc); // 24 hours
+
+        var segments = new List<DeviceSegmentInput>
+        {
+            new() { Algorithm = AidAlgorithm.Trio, StartDate = start, EndDate = end }
+        };
+
+        // 288 snapshots = 24 hours * 12 per hour, all enacted
+        var snapshots = Enumerable.Range(0, 288).Select(i => new ApsSnapshot
+        {
+            Timestamp = start.AddMinutes(i * 5),
+            Enacted = true,
+            AidAlgorithm = AidAlgorithm.Trio
+        }).ToList();
+
+        var result = service.Calculate(segments, snapshots, [], 3, 95.0, 93.0, 70, 180, start, end);
+
+        result.AidActivePercent.Should().Be(100.0);
+        result.PumpUsePercent.Should().Be(100.0);
+        result.CgmUsePercent.Should().Be(95.0);
+        result.CgmActivePercent.Should().Be(93.0);
+        result.TargetLow.Should().Be(70);
+        result.TargetHigh.Should().Be(180);
+        result.SiteChangeCount.Should().Be(3);
+        result.Segments.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void Calculate_TwoDevices_TimeWeightedAverage()
+    {
+        var service = CreateService();
+        var start = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var mid = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        var end = new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc);
+
+        var segments = new List<DeviceSegmentInput>
+        {
+            new() { Algorithm = AidAlgorithm.Trio, StartDate = start, EndDate = mid },
+            new() { Algorithm = AidAlgorithm.None, StartDate = mid, EndDate = end },
+        };
+
+        // 144 snapshots for first 12 hours, all enacted
+        var snapshots = Enumerable.Range(0, 144).Select(i => new ApsSnapshot
+        {
+            Timestamp = start.AddMinutes(i * 5),
+            Enacted = true,
+            AidAlgorithm = AidAlgorithm.Trio
+        }).ToList();
+
+        var result = service.Calculate(segments, snapshots, [], 0, null, null, null, null, start, end);
+
+        // Trio: 12h at 100% AID, NoAid: 12h at null AID
+        // Time-weighted: 100 * 12 / 12 = 100 (only counted segments with data)
+        // Wait - NoAid returns null, so only Trio's 12 hours count for weighting
+        result.AidActivePercent.Should().Be(100.0);
+        result.Segments.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Calculate_NoDeviceSegments_ReturnsPassthroughOnly()
+    {
+        var service = CreateService();
+        var start = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var end = new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc);
+
+        var result = service.Calculate([], [], [], 2, 95.0, 93.0, 70, 180, start, end);
+
+        result.AidActivePercent.Should().BeNull();
+        result.PumpUsePercent.Should().BeNull();
+        result.CgmUsePercent.Should().Be(95.0);
+        result.CgmActivePercent.Should().Be(93.0);
+        result.TargetLow.Should().Be(70);
+        result.TargetHigh.Should().Be(180);
+        result.SiteChangeCount.Should().Be(2);
+        result.Segments.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Calculate_SegmentClampedToReportBounds()
+    {
+        var service = CreateService();
+        var start = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var end = new DateTime(2024, 1, 2, 0, 0, 0, DateTimeKind.Utc);
+
+        // Device segment extends beyond report bounds
+        var segments = new List<DeviceSegmentInput>
+        {
+            new()
+            {
+                Algorithm = AidAlgorithm.Trio,
+                StartDate = new DateTime(2023, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+                EndDate = new DateTime(2024, 1, 3, 0, 0, 0, DateTimeKind.Utc),
+            }
+        };
+
+        // 288 snapshots within report bounds
+        var snapshots = Enumerable.Range(0, 288).Select(i => new ApsSnapshot
+        {
+            Timestamp = start.AddMinutes(i * 5),
+            Enacted = true,
+            AidAlgorithm = AidAlgorithm.Trio
+        }).ToList();
+
+        var result = service.Calculate(segments, snapshots, [], 0, null, null, null, null, start, end);
+
+        // Segment should be clamped to report bounds
+        result.Segments.Should().HaveCount(1);
+        result.Segments[0].StartDate.Should().Be(start);
+        result.Segments[0].EndDate.Should().Be(end);
+        result.Segments[0].DurationHours.Should().Be(24.0);
     }
 }
