@@ -215,4 +215,28 @@ public class DeviceEventRepository : IDeviceEventRepository
 
         return entities.Select(DeviceEventMapper.ToDomainModel);
     }
+
+    public async Task<DeviceEvent?> GetLatestByEventTypeAsync(DeviceEventType eventType, CancellationToken ct = default)
+    {
+        var eventTypeString = eventType.ToString();
+        var entity = await _context.DeviceEvents
+            .AsNoTracking()
+            .Where(e => e.EventType == eventTypeString)
+            .OrderByDescending(e => e.Timestamp)
+            .FirstOrDefaultAsync(ct);
+
+        return entity is null ? null : DeviceEventMapper.ToDomainModel(entity);
+    }
+
+    public async Task<DeviceEvent?> GetLatestByEventTypesAsync(DeviceEventType[] eventTypes, CancellationToken ct = default)
+    {
+        var eventTypeStrings = eventTypes.Select(t => t.ToString()).ToList();
+        var entity = await _context.DeviceEvents
+            .AsNoTracking()
+            .Where(e => eventTypeStrings.Contains(e.EventType))
+            .OrderByDescending(e => e.Timestamp)
+            .FirstOrDefaultAsync(ct);
+
+        return entity is null ? null : DeviceEventMapper.ToDomainModel(entity);
+    }
 }

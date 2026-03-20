@@ -50,9 +50,16 @@ public class SensorGlucoseControllerTests
             Mgdl = 120
         };
 
-        _repoMock
-            .Setup(r => r.CreateAsync(input, It.IsAny<CancellationToken>()))
+        _repoMock.As<IV4Repository<SensorGlucose>>()
+            .Setup(r => r.CreateAsync(It.IsAny<SensorGlucose>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(created);
+
+        _alertsMock
+            .Setup(a => a.EvaluateAndProcessSensorGlucoseAsync(
+                It.IsAny<IEnumerable<SensorGlucose>>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         var controller = CreateController();
 
@@ -89,8 +96,8 @@ public class SensorGlucoseControllerTests
             Mgdl = 95
         };
 
-        _repoMock
-            .Setup(r => r.CreateAsync(input, It.IsAny<CancellationToken>()))
+        _repoMock.As<IV4Repository<SensorGlucose>>()
+            .Setup(r => r.CreateAsync(It.IsAny<SensorGlucose>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(created);
 
         _alertsMock
@@ -137,8 +144,8 @@ public class SensorGlucoseControllerTests
             Mgdl = 110
         };
 
-        _repoMock
-            .Setup(r => r.CreateAsync(input, It.IsAny<CancellationToken>()))
+        _repoMock.As<IV4Repository<SensorGlucose>>()
+            .Setup(r => r.CreateAsync(It.IsAny<SensorGlucose>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(created);
 
         _alertsMock

@@ -198,7 +198,7 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<ITrackerTriggerService, TrackerTriggerService>();
         services.AddScoped<ITrackerAlertService, TrackerAlertService>();
         services.AddScoped<ITrackerSuggestionService, TrackerSuggestionService>();
-        services.AddScoped<ILegacyDeviceAgeService, LegacyDeviceAgeService>();
+        services.AddScoped<IDeviceAgeService, DeviceAgeService>();
 
         // Device resolution
         services.AddScoped<IDeviceService, DeviceService>();

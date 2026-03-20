@@ -1,3 +1,4 @@
+using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Contracts.V4.Repositories;
@@ -36,4 +37,6 @@ public interface IDeviceEventRepository : IV4Repository<DeviceEvent>
         IEnumerable<DeviceEvent> records,
         CancellationToken ct = default
     );
+    Task<DeviceEvent?> GetLatestByEventTypeAsync(DeviceEventType eventType, CancellationToken ct = default);
+    Task<DeviceEvent?> GetLatestByEventTypesAsync(DeviceEventType[] eventTypes, CancellationToken ct = default);
 }

@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Nocturne.API.Extensions;
-using Nocturne.API.Services;
+using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V4;
 
 /// <summary>
 /// Device age endpoints for tracking consumable ages (CAGE, SAGE, IAGE, BAGE).
-/// Uses the Tracker system under the hood.
+/// Uses the V4 DeviceEvents system.
 /// </summary>
 [ApiController]
 [Authorize]
@@ -16,11 +15,11 @@ namespace Nocturne.API.Controllers.V4;
 [Tags("V4 Device Age")]
 public class DeviceAgeController : ControllerBase
 {
-    private readonly ILegacyDeviceAgeService _deviceAgeService;
+    private readonly IDeviceAgeService _deviceAgeService;
     private readonly ILogger<DeviceAgeController> _logger;
 
     public DeviceAgeController(
-        ILegacyDeviceAgeService deviceAgeService,
+        IDeviceAgeService deviceAgeService,
         ILogger<DeviceAgeController> logger)
     {
         _deviceAgeService = deviceAgeService;
@@ -39,10 +38,8 @@ public class DeviceAgeController : ControllerBase
         [FromQuery] string? display = null,
         [FromQuery] bool? enableAlerts = null)
     {
-        var userId = HttpContext.GetSubjectIdString()!;
         var prefs = BuildPreferences(info, warn, urgent, display, enableAlerts);
-
-        var result = await _deviceAgeService.GetCannulaAgeAsync(userId, prefs, HttpContext.RequestAborted);
+        var result = await _deviceAgeService.GetCannulaAgeAsync(prefs, HttpContext.RequestAborted);
         return Ok(result);
     }
 
@@ -59,10 +56,8 @@ public class DeviceAgeController : ControllerBase
         [FromQuery] string? display = null,
         [FromQuery] bool? enableAlerts = null)
     {
-        var userId = HttpContext.GetSubjectIdString()!;
         var prefs = BuildPreferences(info, warn, urgent, display, enableAlerts);
-
-        var result = await _deviceAgeService.GetSensorAgeAsync(userId, prefs, HttpContext.RequestAborted);
+        var result = await _deviceAgeService.GetSensorAgeAsync(prefs, HttpContext.RequestAborted);
         return Ok(result);
     }
 
@@ -78,10 +73,8 @@ public class DeviceAgeController : ControllerBase
         [FromQuery] string? display = null,
         [FromQuery] bool? enableAlerts = null)
     {
-        var userId = HttpContext.GetSubjectIdString()!;
         var prefs = BuildPreferences(info, warn, urgent, display, enableAlerts);
-
-        var result = await _deviceAgeService.GetInsulinAgeAsync(userId, prefs, HttpContext.RequestAborted);
+        var result = await _deviceAgeService.GetInsulinAgeAsync(prefs, HttpContext.RequestAborted);
         return Ok(result);
     }
 
@@ -97,10 +90,8 @@ public class DeviceAgeController : ControllerBase
         [FromQuery] string? display = null,
         [FromQuery] bool? enableAlerts = null)
     {
-        var userId = HttpContext.GetSubjectIdString()!;
         var prefs = BuildPreferences(info, warn, urgent, display, enableAlerts);
-
-        var result = await _deviceAgeService.GetBatteryAgeAsync(userId, prefs, HttpContext.RequestAborted);
+        var result = await _deviceAgeService.GetBatteryAgeAsync(prefs, HttpContext.RequestAborted);
         return Ok(result);
     }
 
@@ -111,13 +102,12 @@ public class DeviceAgeController : ControllerBase
     [ProducesResponseType(200)]
     public async Task<ActionResult> GetAllDeviceAges()
     {
-        var userId = HttpContext.GetSubjectIdString()!;
         var defaultPrefs = new DeviceAgePreferences();
 
-        var cannula = await _deviceAgeService.GetCannulaAgeAsync(userId, defaultPrefs, HttpContext.RequestAborted);
-        var sensor = await _deviceAgeService.GetSensorAgeAsync(userId, defaultPrefs, HttpContext.RequestAborted);
-        var insulin = await _deviceAgeService.GetInsulinAgeAsync(userId, defaultPrefs, HttpContext.RequestAborted);
-        var battery = await _deviceAgeService.GetBatteryAgeAsync(userId, defaultPrefs, HttpContext.RequestAborted);
+        var cannula = await _deviceAgeService.GetCannulaAgeAsync(defaultPrefs, HttpContext.RequestAborted);
+        var sensor = await _deviceAgeService.GetSensorAgeAsync(defaultPrefs, HttpContext.RequestAborted);
+        var insulin = await _deviceAgeService.GetInsulinAgeAsync(defaultPrefs, HttpContext.RequestAborted);
+        var battery = await _deviceAgeService.GetBatteryAgeAsync(defaultPrefs, HttpContext.RequestAborted);
 
         return Ok(new
         {

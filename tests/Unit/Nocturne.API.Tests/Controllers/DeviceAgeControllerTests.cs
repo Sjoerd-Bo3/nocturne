@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Controllers.V4;
-using Nocturne.API.Services;
+using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Authorization;
 using Xunit;
@@ -12,13 +12,12 @@ namespace Nocturne.API.Tests.Controllers;
 
 public class DeviceAgeControllerTests
 {
-    private readonly Guid _subjectId = Guid.NewGuid();
-    private readonly Mock<ILegacyDeviceAgeService> _deviceAgeServiceMock;
+    private readonly Mock<IDeviceAgeService> _deviceAgeServiceMock;
     private readonly DeviceAgeController _controller;
 
     public DeviceAgeControllerTests()
     {
-        _deviceAgeServiceMock = new Mock<ILegacyDeviceAgeService>();
+        _deviceAgeServiceMock = new Mock<IDeviceAgeService>();
         _controller = new DeviceAgeController(
             _deviceAgeServiceMock.Object,
             Mock.Of<ILogger<DeviceAgeController>>()
@@ -28,7 +27,7 @@ public class DeviceAgeControllerTests
         httpContext.Items["AuthContext"] = new AuthContext
         {
             IsAuthenticated = true,
-            SubjectId = _subjectId
+            SubjectId = Guid.NewGuid()
         };
 
         _controller.ControllerContext = new ControllerContext
@@ -45,7 +44,6 @@ public class DeviceAgeControllerTests
         _deviceAgeServiceMock
             .Setup(x =>
                 x.GetCannulaAgeAsync(
-                    _subjectId.ToString(),
                     It.IsAny<DeviceAgePreferences>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -66,7 +64,6 @@ public class DeviceAgeControllerTests
         _deviceAgeServiceMock
             .Setup(x =>
                 x.GetSensorAgeAsync(
-                    _subjectId.ToString(),
                     It.IsAny<DeviceAgePreferences>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -84,7 +81,6 @@ public class DeviceAgeControllerTests
         _deviceAgeServiceMock.Verify(
             x =>
                 x.GetSensorAgeAsync(
-                    _subjectId.ToString(),
                     It.Is<DeviceAgePreferences>(p =>
                         p.Info == 100
                         && p.Warn == 150
@@ -106,7 +102,6 @@ public class DeviceAgeControllerTests
         _deviceAgeServiceMock
             .Setup(x =>
                 x.GetBatteryAgeAsync(
-                    _subjectId.ToString(),
                     It.IsAny<DeviceAgePreferences>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -132,7 +127,6 @@ public class DeviceAgeControllerTests
         _deviceAgeServiceMock
             .Setup(x =>
                 x.GetCannulaAgeAsync(
-                    _subjectId.ToString(),
                     It.IsAny<DeviceAgePreferences>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -142,7 +136,6 @@ public class DeviceAgeControllerTests
         _deviceAgeServiceMock
             .Setup(x =>
                 x.GetSensorAgeAsync(
-                    _subjectId.ToString(),
                     It.IsAny<DeviceAgePreferences>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -152,7 +145,6 @@ public class DeviceAgeControllerTests
         _deviceAgeServiceMock
             .Setup(x =>
                 x.GetInsulinAgeAsync(
-                    _subjectId.ToString(),
                     It.IsAny<DeviceAgePreferences>(),
                     It.IsAny<CancellationToken>()
                 )
@@ -162,7 +154,6 @@ public class DeviceAgeControllerTests
         _deviceAgeServiceMock
             .Setup(x =>
                 x.GetBatteryAgeAsync(
-                    _subjectId.ToString(),
                     It.IsAny<DeviceAgePreferences>(),
                     It.IsAny<CancellationToken>()
                 )
