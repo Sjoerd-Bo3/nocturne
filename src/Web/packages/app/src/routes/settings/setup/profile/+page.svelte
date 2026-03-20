@@ -28,6 +28,7 @@
   // ── Form state ────────────────────────────────────────────────────
 
   let saving = $state(false);
+  let saveError = $state<string | null>(null);
 
   // Basics
   let profileName = $state("Default");
@@ -59,7 +60,7 @@
 
   // ── Auto-complete detection ─────────────────────────────────────
 
-  const isExternallyManaged = $derived(() => {
+  const isExternallyManaged = $derived.by(() => {
     const settings = (summaryQuery.current?.therapySettings as any[])?.[0];
     return settings?.isExternallyManaged === true;
   });
@@ -129,6 +130,7 @@
 
   async function handleSave(): Promise<boolean> {
     saving = true;
+    saveError = null;
     try {
       const timestamp = new Date().toISOString();
 
@@ -222,6 +224,7 @@
 
       return true;
     } catch {
+      saveError = "Something went wrong. Please try again.";
       return false;
     } finally {
       saving = false;
@@ -245,7 +248,7 @@
   {saving}
   onSave={handleSave}
 >
-  {#if isExternallyManaged()}
+  {#if isExternallyManaged}
     <Card.Root>
       <Card.Content class="py-8 text-center space-y-2">
         <CheckCircle class="h-12 w-12 mx-auto text-green-500" />
@@ -390,5 +393,9 @@
         />
       </Card.Content>
     </Card.Root>
+  {/if}
+
+  {#if saveError}
+    <p class="text-sm text-destructive">{saveError}</p>
   {/if}
 </WizardShell>

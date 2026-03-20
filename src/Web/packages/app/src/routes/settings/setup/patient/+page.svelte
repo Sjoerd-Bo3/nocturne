@@ -24,6 +24,7 @@
   // ── Form state ────────────────────────────────────────────────────
 
   let saving = $state(false);
+  let saveError = $state<string | null>(null);
   let diabetesType = $state<string>("");
   let preferredName = $state("");
   let dateOfBirth = $state("");
@@ -49,6 +50,7 @@
 
   async function handleSave(): Promise<boolean> {
     saving = true;
+    saveError = null;
     try {
       await patientRemote.updatePatientRecord({
         ...record.current,
@@ -59,6 +61,7 @@
       });
       return true;
     } catch {
+      saveError = "Something went wrong. Please try again.";
       return false;
     } finally {
       saving = false;
@@ -124,4 +127,8 @@
       />
     </div>
   </div>
+
+  {#if saveError}
+    <p class="text-sm text-destructive">{saveError}</p>
+  {/if}
 </WizardShell>

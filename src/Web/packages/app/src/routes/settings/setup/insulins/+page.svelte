@@ -9,7 +9,8 @@
   import { Plus, Trash2, Syringe } from "lucide-svelte";
 
   // ── Data loading ──────────────────────────────────────────────────
-
+  // createInsulin and deleteInsulin call getInsulins().refresh() internally,
+  // so this reactive query updates automatically after mutations.
   const insulins = patientRemote.getInsulins();
 
   // ── Category definitions ─────────────────────────────────────────

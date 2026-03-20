@@ -19,7 +19,8 @@
   } from "lucide-svelte";
 
   // ── Data loading ──────────────────────────────────────────────────
-
+  // createDevice and deleteDevice call getDevices().refresh() internally,
+  // so this reactive query updates automatically after mutations.
   const devices = patientRemote.getDevices();
 
   // ── Label maps ────────────────────────────────────────────────────
