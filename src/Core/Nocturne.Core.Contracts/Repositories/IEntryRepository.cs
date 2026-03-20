@@ -182,4 +182,15 @@ public interface IEntryRepository
         int limit = 500,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>
+    /// Get statistics for entries from a specific data source
+    /// </summary>
+    /// <param name="dataSource">The data source name</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Data source statistics</returns>
+    Task<DataSourceStats> GetEntryStatsBySourceAsync(
+        string dataSource,
+        CancellationToken cancellationToken = default
+    );
 }
