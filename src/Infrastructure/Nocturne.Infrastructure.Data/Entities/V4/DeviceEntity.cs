@@ -7,12 +7,12 @@ using Nocturne.Infrastructure.Data.Entities;
 namespace Nocturne.Infrastructure.Data.Entities.V4;
 
 /// <summary>
-/// PostgreSQL entity for physical insulin pump device records
-/// Maps to Nocturne.Core.Models.V4.PumpDevice
+/// PostgreSQL entity for physical device records
+/// Maps to Nocturne.Core.Models.V4.Device
 /// </summary>
-[Table("pump_devices")]
-[Index(nameof(PumpType), nameof(PumpSerial), IsUnique = true)]
-public class PumpDeviceEntity : ITenantScoped
+[Table("devices")]
+[Index(nameof(Category), nameof(Type), nameof(Serial), IsUnique = true)]
+public class DeviceEntity : ITenantScoped
 {
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
@@ -24,27 +24,34 @@ public class PumpDeviceEntity : ITenantScoped
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Pump type/model name
+    /// Device category discriminator (stored as string)
     /// </summary>
-    [Column("pump_type")]
-    [MaxLength(128)]
-    public string PumpType { get; set; } = string.Empty;
+    [Column("category")]
+    [MaxLength(32)]
+    public string Category { get; set; } = string.Empty;
 
     /// <summary>
-    /// Pump serial number
+    /// Device type/model name
     /// </summary>
-    [Column("pump_serial")]
+    [Column("type")]
     [MaxLength(128)]
-    public string PumpSerial { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
 
     /// <summary>
-    /// When this pump was first seen as UTC DateTime (timestamptz)
+    /// Device serial number
+    /// </summary>
+    [Column("serial")]
+    [MaxLength(128)]
+    public string Serial { get; set; } = string.Empty;
+
+    /// <summary>
+    /// When this device was first seen as UTC DateTime (timestamptz)
     /// </summary>
     [Column("first_seen_timestamp")]
     public DateTime FirstSeenTimestamp { get; set; }
 
     /// <summary>
-    /// When this pump was last seen as UTC DateTime (timestamptz)
+    /// When this device was last seen as UTC DateTime (timestamptz)
     /// </summary>
     [Column("last_seen_timestamp")]
     public DateTime LastSeenTimestamp { get; set; }

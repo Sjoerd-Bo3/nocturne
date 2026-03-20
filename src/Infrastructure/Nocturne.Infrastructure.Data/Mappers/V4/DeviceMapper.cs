@@ -5,20 +5,21 @@ using Nocturne.Infrastructure.Data.Entities.V4;
 namespace Nocturne.Infrastructure.Data.Mappers.V4;
 
 /// <summary>
-/// Mapper for converting between PumpDevice domain models and PumpDeviceEntity database entities
+/// Mapper for converting between Device domain models and DeviceEntity database entities
 /// </summary>
-public static class PumpDeviceMapper
+public static class DeviceMapper
 {
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
-    public static PumpDeviceEntity ToEntity(PumpDevice model)
+    public static DeviceEntity ToEntity(Device model)
     {
-        return new PumpDeviceEntity
+        return new DeviceEntity
         {
             Id = model.Id == Guid.Empty ? Guid.CreateVersion7() : model.Id,
-            PumpType = model.PumpType,
-            PumpSerial = model.PumpSerial,
+            Category = model.Category.ToString(),
+            Type = model.Type,
+            Serial = model.Serial,
             FirstSeenTimestamp = model.FirstSeenTimestamp,
             LastSeenTimestamp = model.LastSeenTimestamp,
             AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
@@ -30,13 +31,16 @@ public static class PumpDeviceMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
-    public static PumpDevice ToDomainModel(PumpDeviceEntity entity)
+    public static Device ToDomainModel(DeviceEntity entity)
     {
-        return new PumpDevice
+        return new Device
         {
             Id = entity.Id,
-            PumpType = entity.PumpType,
-            PumpSerial = entity.PumpSerial,
+            Category = Enum.TryParse<DeviceCategory>(entity.Category, ignoreCase: true, out var category)
+                ? category
+                : DeviceCategory.InsulinPump,
+            Type = entity.Type,
+            Serial = entity.Serial,
             FirstSeenTimestamp = entity.FirstSeenTimestamp,
             LastSeenTimestamp = entity.LastSeenTimestamp,
             AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
@@ -48,10 +52,11 @@ public static class PumpDeviceMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
-    public static void UpdateEntity(PumpDeviceEntity entity, PumpDevice model)
+    public static void UpdateEntity(DeviceEntity entity, Device model)
     {
-        entity.PumpType = model.PumpType;
-        entity.PumpSerial = model.PumpSerial;
+        entity.Category = model.Category.ToString();
+        entity.Type = model.Type;
+        entity.Serial = model.Serial;
         entity.FirstSeenTimestamp = model.FirstSeenTimestamp;
         entity.LastSeenTimestamp = model.LastSeenTimestamp;
         entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }

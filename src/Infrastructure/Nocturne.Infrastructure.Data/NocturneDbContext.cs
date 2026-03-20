@@ -311,9 +311,9 @@ public class NocturneDbContext : DbContext
     public DbSet<UploaderSnapshotEntity> UploaderSnapshots { get; set; }
 
     /// <summary>
-    /// Gets or sets the PumpDevices table for physical insulin pump device records (v4 granular model)
+    /// Gets or sets the Devices table for physical device records (v4 granular model)
     /// </summary>
-    public DbSet<PumpDeviceEntity> PumpDevices { get; set; }
+    public DbSet<DeviceEntity> Devices { get; set; }
 
     /// <summary>
     /// Gets or sets the TempBasals table for temporary basal rate change records (v4 granular model)
@@ -1086,6 +1086,18 @@ public class NocturneDbContext : DbContext
             .HasIndex(s => s.OriginalId)
             .HasDatabaseName("ix_state_spans_original_id");
 
+        modelBuilder
+            .Entity<StateSpanEntity>()
+            .HasIndex(s => s.SupersededById)
+            .HasDatabaseName("ix_state_spans_superseded_by_id");
+
+        modelBuilder
+            .Entity<StateSpanEntity>()
+            .HasOne<StateSpanEntity>()
+            .WithMany()
+            .HasForeignKey(s => s.SupersededById)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // SystemEvent indexes - optimized for time range and type queries
         modelBuilder
             .Entity<SystemEventEntity>()
@@ -1495,7 +1507,7 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => e.CorrelationId)
             .HasDatabaseName("ix_temp_basals_correlation_id");
 
-        // PumpDevices unique index is handled by [Index] attribute on entity
+        // Devices unique index is handled by [Index] attribute on entity
 
         // V4 Profile Decomposition indexes
 

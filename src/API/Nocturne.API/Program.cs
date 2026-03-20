@@ -444,8 +444,8 @@ builder.Services.AddScoped<IClockFaceService, ClockFaceService>();
 builder.Services.AddScoped<IChartDataService, ChartDataService>();
 builder.Services.AddScoped<IDataOverviewService, DataOverviewService>();
 
-// Pump device resolution service (find-or-create with per-request cache)
-builder.Services.AddScoped<IPumpDeviceService, PumpDeviceService>();
+// Device resolution service (find-or-create with per-request cache)
+builder.Services.AddScoped<IDeviceService, DeviceService>();
 
 // V4 Repositories
 builder.Services.AddScoped<ISensorGlucoseRepository, SensorGlucoseRepository>();
@@ -459,7 +459,7 @@ builder.Services.AddScoped<INoteRepository, NoteRepository>();
 builder.Services.AddScoped<IDeviceEventRepository, DeviceEventRepository>();
 builder.Services.AddScoped<IBolusCalculationRepository, BolusCalculationRepository>();
 
-builder.Services.AddScoped<IPumpDeviceRepository, PumpDeviceRepository>();
+builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
 
 // V4 Snapshot Repositories
 builder.Services.AddScoped<IApsSnapshotRepository, ApsSnapshotRepository>();

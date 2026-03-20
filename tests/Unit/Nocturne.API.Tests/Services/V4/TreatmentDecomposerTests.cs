@@ -20,7 +20,7 @@ public class TreatmentDecomposerTests : IDisposable
     private readonly Mock<IStateSpanService> _stateSpanServiceMock;
     private readonly Mock<ITreatmentFoodService> _treatmentFoodServiceMock;
     private readonly Mock<ITempBasalRepository> _tempBasalRepoMock;
-    private readonly Mock<IPumpDeviceService> _pumpDeviceServiceMock;
+    private readonly Mock<IDeviceService> _deviceServiceMock;
     private readonly TreatmentDecomposer _decomposer;
 
     public TreatmentDecomposerTests()
@@ -37,11 +37,11 @@ public class TreatmentDecomposerTests : IDisposable
         _stateSpanServiceMock = new Mock<IStateSpanService>();
         _treatmentFoodServiceMock = new Mock<ITreatmentFoodService>();
         _tempBasalRepoMock = new Mock<ITempBasalRepository>();
-        _pumpDeviceServiceMock = new Mock<IPumpDeviceService>();
+        _deviceServiceMock = new Mock<IDeviceService>();
 
-        // Default: PumpDeviceService returns null (no pump device resolved)
-        _pumpDeviceServiceMock
-            .Setup(s => s.ResolveAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+        // Default: DeviceService returns null (no device resolved)
+        _deviceServiceMock
+            .Setup(s => s.ResolveAsync(It.IsAny<V4Models.DeviceCategory>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Guid?)null);
 
         _decomposer = new TreatmentDecomposer(
@@ -49,7 +49,7 @@ public class TreatmentDecomposerTests : IDisposable
             carbIntakeRepo, bgCheckRepo, noteRepo, deviceEventRepo, bolusCalcRepo,
             _stateSpanServiceMock.Object,
             _treatmentFoodServiceMock.Object,
-            _pumpDeviceServiceMock.Object,
+            _deviceServiceMock.Object,
             NullLogger<TreatmentDecomposer>.Instance);
     }
 
@@ -1877,6 +1877,155 @@ public class TreatmentDecomposerTests : IDisposable
         // Assert
         var deviceEvent = result.CreatedRecords[0].Should().BeOfType<V4Models.DeviceEvent>().Subject;
         deviceEvent.Notes.Should().BeNull();
+    }
+
+    #endregion
+
+    #region Temporary Target → Delegates to IStateSpanService
+
+    [Fact]
+    public async Task DecomposeAsync_TemporaryTarget_DelegatesToStateSpanService()
+    {
+        // Arrange
+        var treatment = new Treatment
+        {
+            Id = "temptarget-1",
+            EventType = "Temporary Target",
+            Mills = 1700000000000,
+            Duration = 60,
+            TargetTop = 80,
+            TargetBottom = 80,
+            Reason = "Eating Soon",
+            Units = "mg/dl",
+            EnteredBy = "AAPS"
+        };
+
+        var expectedStateSpan = new StateSpan
+        {
+            Id = "state-span-tt-1",
+            Category = StateSpanCategory.TemporaryTarget,
+            StartTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(1700000000000).UtcDateTime
+        };
+
+        _stateSpanServiceMock
+            .Setup(s => s.UpsertStateSpanAsync(It.IsAny<StateSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedStateSpan);
+
+        // Act
+        var result = await _decomposer.DecomposeAsync(treatment);
+
+        // Assert
+        result.CreatedRecords.Should().HaveCount(1);
+        result.CreatedRecords[0].Should().BeOfType<StateSpan>();
+
+        _stateSpanServiceMock.Verify(
+            s => s.UpsertStateSpanAsync(
+                It.Is<StateSpan>(ss =>
+                    ss.Category == StateSpanCategory.TemporaryTarget
+                    && ss.State == "Active"
+                    && ss.StartMills == 1700000000000
+                    && ss.EndMills == 1700000000000 + (60 * 60 * 1000)
+                    && ss.OriginalId == "temptarget-1"
+                    && ss.Metadata != null
+                    && ss.Metadata.ContainsKey("targetTop")
+                    && ss.Metadata.ContainsKey("targetBottom")
+                    && ss.Metadata.ContainsKey("reason")
+                    && ss.Metadata.ContainsKey("units")
+                    && ss.Metadata.ContainsKey("enteredBy")),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_TemporaryTargetCancel_CreatesSpanWithCancelledState()
+    {
+        // Arrange
+        var treatment = new Treatment
+        {
+            Id = "temptarget-cancel-1",
+            EventType = "Temporary Target Cancel",
+            Mills = 1700000000000,
+            EnteredBy = "AAPS"
+        };
+
+        var expectedStateSpan = new StateSpan
+        {
+            Id = "state-span-tt-cancel",
+            Category = StateSpanCategory.TemporaryTarget,
+        };
+
+        _stateSpanServiceMock
+            .Setup(s => s.UpsertStateSpanAsync(It.IsAny<StateSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedStateSpan);
+
+        // Act
+        var result = await _decomposer.DecomposeAsync(treatment);
+
+        // Assert
+        result.CreatedRecords.Should().HaveCount(1);
+
+        _stateSpanServiceMock.Verify(
+            s => s.UpsertStateSpanAsync(
+                It.Is<StateSpan>(ss =>
+                    ss.Category == StateSpanCategory.TemporaryTarget
+                    && ss.State == "Cancelled"
+                    && ss.EndTimestamp == null),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DecomposeAsync_TemporaryTargetZeroDuration_IsCancelled()
+    {
+        // Arrange - a temp target with duration=0 is a cancel event
+        var treatment = new Treatment
+        {
+            Id = "temptarget-zero-dur",
+            EventType = "Temporary Target",
+            Mills = 1700000000000,
+            Duration = 0,
+            EnteredBy = "AAPS"
+        };
+
+        var expectedStateSpan = new StateSpan
+        {
+            Id = "state-span-tt-zero",
+            Category = StateSpanCategory.TemporaryTarget,
+        };
+
+        _stateSpanServiceMock
+            .Setup(s => s.UpsertStateSpanAsync(It.IsAny<StateSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedStateSpan);
+
+        // Act
+        await _decomposer.DecomposeAsync(treatment);
+
+        // Assert
+        _stateSpanServiceMock.Verify(
+            s => s.UpsertStateSpanAsync(
+                It.Is<StateSpan>(ss =>
+                    ss.State == "Cancelled"
+                    && ss.EndTimestamp == null),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    #endregion
+
+    #region LoopOverridePreset Duration Conversion
+
+    [Fact]
+    public void LoopOverridePreset_DurationMinutes_ConvertsSecondsToMinutes()
+    {
+        var preset = new LoopOverridePreset { Duration = 3600 }; // 1 hour in seconds
+        preset.DurationMinutes.Should().Be(60); // 60 minutes
+    }
+
+    [Fact]
+    public void LoopOverridePreset_DurationMinutes_NullWhenDurationNull()
+    {
+        var preset = new LoopOverridePreset { Duration = null };
+        preset.DurationMinutes.Should().BeNull();
     }
 
     #endregion

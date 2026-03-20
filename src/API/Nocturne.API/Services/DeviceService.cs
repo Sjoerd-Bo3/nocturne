@@ -6,32 +6,32 @@ using Nocturne.Core.Models.V4;
 
 namespace Nocturne.API.Services;
 
-public class PumpDeviceService : IPumpDeviceService
+public class DeviceService : IDeviceService
 {
-    private readonly IPumpDeviceRepository _repository;
+    private readonly IDeviceRepository _repository;
     private readonly ITenantAccessor _tenantAccessor;
-    private readonly ConcurrentDictionary<(string, string, string), Guid> _cache = new();
+    private readonly ConcurrentDictionary<(string, string, string, string), Guid> _cache = new();
 
     private string TenantCacheId => _tenantAccessor.Context?.TenantId.ToString()
         ?? throw new InvalidOperationException("Tenant context is not resolved");
 
-    public PumpDeviceService(IPumpDeviceRepository repository, ITenantAccessor tenantAccessor)
+    public DeviceService(IDeviceRepository repository, ITenantAccessor tenantAccessor)
     {
         _repository = repository;
         _tenantAccessor = tenantAccessor;
     }
 
-    public async Task<Guid?> ResolveAsync(string? pumpType, string? pumpSerial, long mills, CancellationToken ct = default)
+    public async Task<Guid?> ResolveAsync(DeviceCategory category, string? type, string? serial, long mills, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(pumpType) || string.IsNullOrEmpty(pumpSerial))
+        if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(serial))
             return null;
 
         var tenantId = TenantCacheId;
-        var key = (tenantId, pumpType, pumpSerial);
+        var key = (tenantId, category.ToString(), type, serial);
         if (_cache.TryGetValue(key, out var cachedId))
             return cachedId;
 
-        var existing = await _repository.FindByTypeAndSerialAsync(pumpType, pumpSerial, ct);
+        var existing = await _repository.FindByCategoryTypeAndSerialAsync(category, type, serial, ct);
         var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(mills).UtcDateTime;
         if (existing is not null)
         {
@@ -44,11 +44,12 @@ public class PumpDeviceService : IPumpDeviceService
             return existing.Id;
         }
 
-        var device = new PumpDevice
+        var device = new Device
         {
             Id = Guid.CreateVersion7(),
-            PumpType = pumpType,
-            PumpSerial = pumpSerial,
+            Category = category,
+            Type = type,
+            Serial = serial,
             FirstSeenTimestamp = timestamp,
             LastSeenTimestamp = timestamp
         };
