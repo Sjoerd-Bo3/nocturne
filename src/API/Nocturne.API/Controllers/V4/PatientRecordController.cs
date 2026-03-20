@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
+using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models.V4;
 
@@ -19,15 +20,18 @@ public class PatientRecordController : ControllerBase
     private readonly IPatientRecordRepository _recordRepo;
     private readonly IPatientDeviceRepository _deviceRepo;
     private readonly IPatientInsulinRepository _insulinRepo;
+    private readonly IDeviceService _deviceService;
 
     public PatientRecordController(
         IPatientRecordRepository recordRepo,
         IPatientDeviceRepository deviceRepo,
-        IPatientInsulinRepository insulinRepo)
+        IPatientInsulinRepository insulinRepo,
+        IDeviceService deviceService)
     {
         _recordRepo = recordRepo;
         _deviceRepo = deviceRepo;
         _insulinRepo = insulinRepo;
+        _deviceService = deviceService;
     }
 
     #region Patient Record
@@ -84,6 +88,7 @@ public class PatientRecordController : ControllerBase
         [FromBody] PatientDevice model,
         CancellationToken cancellationToken = default)
     {
+        await ResolveDeviceIdAsync(model, cancellationToken);
         var created = await _deviceRepo.CreateAsync(model, cancellationToken);
         return CreatedAtAction(nameof(GetDevices), created);
     }
@@ -99,6 +104,7 @@ public class PatientRecordController : ControllerBase
         [FromBody] PatientDevice model,
         CancellationToken cancellationToken = default)
     {
+        await ResolveDeviceIdAsync(model, cancellationToken);
         var updated = await _deviceRepo.UpdateAsync(id, model, cancellationToken);
         return Ok(updated);
     }
@@ -113,6 +119,19 @@ public class PatientRecordController : ControllerBase
     {
         await _deviceRepo.DeleteAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    private async Task ResolveDeviceIdAsync(PatientDevice model, CancellationToken ct)
+    {
+        if (!string.IsNullOrWhiteSpace(model.SerialNumber))
+        {
+            model.DeviceId = await _deviceService.ResolveAsync(
+                model.DeviceCategory,
+                model.Manufacturer + " " + model.Model,
+                model.SerialNumber,
+                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                ct);
+        }
     }
 
     #endregion

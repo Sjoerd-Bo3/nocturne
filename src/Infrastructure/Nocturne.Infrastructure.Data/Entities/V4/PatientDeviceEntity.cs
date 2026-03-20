@@ -57,6 +57,12 @@ public class PatientDeviceEntity : ITenantScoped
     public string? SerialNumber { get; set; }
 
     /// <summary>
+    /// FK to canonical Device record (resolved via serial number)
+    /// </summary>
+    [Column("device_id")]
+    public Guid? DeviceId { get; set; }
+
+    /// <summary>
     /// Date the device was started/activated
     /// </summary>
     [Column("start_date")]

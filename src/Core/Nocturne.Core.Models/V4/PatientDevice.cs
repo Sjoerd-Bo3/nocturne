@@ -8,6 +8,7 @@ public class PatientDevice
     public string Model { get; set; } = string.Empty;
     public AidAlgorithm? AidAlgorithm { get; set; }
     public string? SerialNumber { get; set; }
+    public Guid? DeviceId { get; set; }
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
     public bool IsCurrent { get; set; }

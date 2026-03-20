@@ -21,6 +21,7 @@ public static class PatientDeviceMapper
             Model = model.Model,
             AidAlgorithm = model.AidAlgorithm?.ToString(),
             SerialNumber = model.SerialNumber,
+            DeviceId = model.DeviceId,
             StartDate = model.StartDate,
             EndDate = model.EndDate,
             IsCurrent = model.IsCurrent,
@@ -48,6 +49,7 @@ public static class PatientDeviceMapper
                     ? algorithm
                     : null,
             SerialNumber = entity.SerialNumber,
+            DeviceId = entity.DeviceId,
             StartDate = entity.StartDate,
             EndDate = entity.EndDate,
             IsCurrent = entity.IsCurrent,
@@ -67,6 +69,7 @@ public static class PatientDeviceMapper
         entity.Model = model.Model;
         entity.AidAlgorithm = model.AidAlgorithm?.ToString();
         entity.SerialNumber = model.SerialNumber;
+        entity.DeviceId = model.DeviceId;
         entity.StartDate = model.StartDate;
         entity.EndDate = model.EndDate;
         entity.IsCurrent = model.IsCurrent;
