@@ -21,6 +21,15 @@ public class SensorGlucoseController(
     ILogger<SensorGlucoseController> logger)
     : V4CrudControllerBase<SensorGlucose, ISensorGlucoseRepository>(repo)
 {
+    [ResponseCache(Duration = 90, VaryByQueryKeys = new[] { "*" })]
+    public override Task<ActionResult<PaginatedResponse<SensorGlucose>>> GetAll(
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to,
+        [FromQuery] int limit = 100, [FromQuery] int offset = 0,
+        [FromQuery] string sort = "timestamp_desc",
+        [FromQuery] string? device = null, [FromQuery] string? source = null,
+        CancellationToken ct = default)
+        => base.GetAll(from, to, limit, offset, sort, device, source, ct);
+
     protected override async Task<SensorGlucose> OnAfterCreateAsync(SensorGlucose created, CancellationToken ct)
     {
         try
