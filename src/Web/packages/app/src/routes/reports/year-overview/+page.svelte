@@ -593,28 +593,6 @@
 
       <!-- Filters -->
       <div class="flex items-center gap-2">
-        <!-- Metric Selector -->
-        <Select.Root
-          type="single"
-          value={selectedMetric}
-          onValueChange={(v) => {
-            if (v) selectedMetric = v as HeatmapMetric;
-          }}
-        >
-          <Select.Trigger class="w-[170px]">
-            <span class="truncate">
-              {METRIC_OPTIONS.find((o) => o.value === selectedMetric)?.label ?? "Avg Glucose"}
-            </span>
-          </Select.Trigger>
-          <Select.Content>
-            {#each METRIC_OPTIONS as option}
-              <Select.Item value={option.value}>
-                {option.label}
-              </Select.Item>
-            {/each}
-          </Select.Content>
-        </Select.Root>
-
         <!-- Data Source Filter (multi-select) -->
         <div class="flex items-center gap-2">
           <Filter class="h-4 w-4 text-muted-foreground" />
@@ -700,7 +678,27 @@
     <!-- Color Legend -->
     <div class="mb-6 rounded-lg border border-border bg-card p-3">
       {#if selectedMetric === "avgGlucose"}
-        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Select.Root
+            type="single"
+            value={selectedMetric}
+            onValueChange={(v) => {
+              if (v) selectedMetric = v as HeatmapMetric;
+            }}
+          >
+            <Select.Trigger class="w-[150px] h-8 text-xs">
+              <span class="truncate">
+                {METRIC_OPTIONS.find((o) => o.value === selectedMetric)?.label ?? "Avg Glucose"}
+              </span>
+            </Select.Trigger>
+            <Select.Content>
+              {#each METRIC_OPTIONS as option}
+                <Select.Item value={option.value}>
+                  {option.label}
+                </Select.Item>
+              {/each}
+            </Select.Content>
+          </Select.Root>
           <svg
             viewBox="0 0 {LEGEND_W} 48"
             class="h-12 w-full max-w-[420px] text-muted-foreground"
@@ -764,7 +762,27 @@
         {@const metricUnit = selectedMetric === "tir" ? "%" : selectedMetric === "carbs" ? "g" : "U"}
         {@const metricMax = selectedMetric === "tir" ? 100 : getMetricMax(selectedMetric)}
         {@const cssVar = METRIC_CSS_VARS[selectedMetric as Exclude<HeatmapMetric, "avgGlucose">]}
-        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Select.Root
+            type="single"
+            value={selectedMetric}
+            onValueChange={(v) => {
+              if (v) selectedMetric = v as HeatmapMetric;
+            }}
+          >
+            <Select.Trigger class="w-[150px] h-8 text-xs">
+              <span class="truncate">
+                {METRIC_OPTIONS.find((o) => o.value === selectedMetric)?.label ?? "Avg Glucose"}
+              </span>
+            </Select.Trigger>
+            <Select.Content>
+              {#each METRIC_OPTIONS as option}
+                <Select.Item value={option.value}>
+                  {option.label}
+                </Select.Item>
+              {/each}
+            </Select.Content>
+          </Select.Root>
           <svg
             viewBox="0 0 {LEGEND_W} 36"
             class="h-9 w-full max-w-[420px] text-muted-foreground"
