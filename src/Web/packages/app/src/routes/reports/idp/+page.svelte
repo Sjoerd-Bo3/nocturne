@@ -136,11 +136,16 @@
         </CardDescription>
       </CardHeader>
       <CardContent class="space-y-4">
+        {@const days = Math.max(insulinStats?.dayCount ?? 1, 1)}
+        {@const avgBasal = insulinStats?.totalBasal != null ? insulinStats.totalBasal / days : null}
+        {@const avgBolus = insulinStats?.totalBolus != null ? insulinStats.totalBolus / days : null}
+        {@const avgScheduled = insulinStats?.scheduledBasal != null ? insulinStats.scheduledBasal / days : null}
+
         <!-- TDD -->
         <div class="flex items-baseline justify-between">
-          <span class="text-sm text-muted-foreground">Total Daily Dose</span>
+          <span class="text-sm text-muted-foreground">Avg Total Daily Dose</span>
           <span class="text-2xl font-bold">
-            {insulinStats?.tdd?.toFixed(1) ?? "--"} U
+            {insulinStats?.tdd?.toFixed(1) ?? "--"} U/day
           </span>
         </div>
 
@@ -149,8 +154,8 @@
         {@const bolusPct = insulinStats?.bolusPercent ?? 0}
         <div class="space-y-1">
           <div class="flex justify-between text-xs text-muted-foreground">
-            <span>Basal: {insulinStats?.totalBasal?.toFixed(1) ?? "--"} U ({basalPct.toFixed(0)}%)</span>
-            <span>Bolus: {insulinStats?.totalBolus?.toFixed(1) ?? "--"} U ({bolusPct.toFixed(0)}%)</span>
+            <span>Basal: {avgBasal?.toFixed(1) ?? "--"} U/day ({basalPct.toFixed(0)}%)</span>
+            <span>Bolus: {avgBolus?.toFixed(1) ?? "--"} U/day ({bolusPct.toFixed(0)}%)</span>
           </div>
           <div class="flex h-4 rounded-full overflow-hidden">
             <div
@@ -166,41 +171,40 @@
 
         <Separator />
 
-        <!-- Delivered vs Scheduled -->
+        <!-- Delivered vs Scheduled (daily avg) -->
         <div class="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <div class="text-muted-foreground">Delivered Basal</div>
-            <div class="font-semibold">{insulinStats?.totalBasal?.toFixed(1) ?? "--"} U</div>
+            <div class="text-muted-foreground">Avg Delivered Basal</div>
+            <div class="font-semibold">{avgBasal?.toFixed(1) ?? "--"} U/day</div>
           </div>
           <div>
-            <div class="text-muted-foreground">Scheduled Basal</div>
-            <div class="font-semibold">{insulinStats?.scheduledBasal?.toFixed(1) ?? "--"} U</div>
+            <div class="text-muted-foreground">Avg Scheduled Basal</div>
+            <div class="font-semibold">{avgScheduled?.toFixed(1) ?? "--"} U/day</div>
           </div>
         </div>
 
         <Separator />
 
-        <!-- Bolus breakdown -->
+        <!-- Bolus breakdown (daily avg) -->
         <div class="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <div class="text-muted-foreground">Meal Boluses</div>
-            <div class="font-semibold">{insulinStats?.mealBoluses ?? "--"}</div>
+            <div class="text-muted-foreground">Boluses/Day</div>
+            <div class="font-semibold">{insulinStats?.bolusesPerDay?.toFixed(1) ?? "--"}</div>
           </div>
           <div>
-            <div class="text-muted-foreground">Correction Boluses</div>
-            <div class="font-semibold">{insulinStats?.correctionBoluses ?? "--"}</div>
+            <div class="text-muted-foreground">Avg Bolus Size</div>
+            <div class="font-semibold">{insulinStats?.avgBolus?.toFixed(1) ?? "--"} U</div>
           </div>
           <div>
-            <div class="text-muted-foreground">Total Bolus Count</div>
-            <div class="font-semibold">{insulinStats?.bolusCount ?? "--"}</div>
-          </div>
-          <div>
-            <div class="text-muted-foreground">Micro-Boluses</div>
+            <div class="text-muted-foreground">Meal Boluses/Day</div>
             <div class="font-semibold">
-              {insulinStats?.microBolusCount ?? "--"}
-              {#if insulinStats?.microBolusInsulin != null}
-                <span class="text-xs text-muted-foreground">({insulinStats.microBolusInsulin.toFixed(1)} U)</span>
-              {/if}
+              {insulinStats?.mealBoluses != null ? (insulinStats.mealBoluses / days).toFixed(1) : "--"}
+            </div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">Correction Boluses/Day</div>
+            <div class="font-semibold">
+              {insulinStats?.correctionBoluses != null ? (insulinStats.correctionBoluses / days).toFixed(1) : "--"}
             </div>
           </div>
         </div>
