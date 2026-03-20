@@ -60,7 +60,7 @@ public class ApsSnapshotEntity : ITenantScoped
     public DateTime SysUpdatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Which APS system produced this snapshot (enum stored as string: OpenAps, Loop)
+    /// Which AID algorithm produced this snapshot (enum stored as string: Loop, Trio, ControlIQ, etc.)
     /// </summary>
     [Column("aps_system")]
     [MaxLength(32)]

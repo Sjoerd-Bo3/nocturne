@@ -65,7 +65,7 @@ public static class ApsSnapshotMapper
             LegacyId = entity.LegacyId,
             CreatedAt = entity.SysCreatedAt,
             ModifiedAt = entity.SysUpdatedAt,
-            AidAlgorithm = Enum.TryParse<AidAlgorithm>(entity.AidAlgorithm, out var sys) ? sys : AidAlgorithm.OpenAps,
+            AidAlgorithm = Enum.TryParse<AidAlgorithm>(entity.AidAlgorithm, out var sys) ? sys : AidAlgorithm.Unknown,
             Iob = entity.Iob,
             BasalIob = entity.BasalIob,
             BolusIob = entity.BolusIob,
