@@ -358,13 +358,6 @@ public static class ServiceRegistrationExtensions
         );
         services.AddHostedService(sp => sp.GetRequiredService<CompressionLowDetectionService>());
 
-        // Device health
-        services.Configure<DeviceHealthOptions>(
-            configuration.GetSection(DeviceHealthOptions.SectionName)
-        );
-        services.AddScoped<IDeviceRegistryService, DeviceRegistryService>();
-        services.AddHostedService<DeviceHealthMonitoringService>();
-
         // Alert monitoring
         services.Configure<AlertMonitoringOptions>(
             configuration.GetSection(AlertMonitoringOptions.SectionName)
@@ -373,8 +366,6 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<IAlertRulesEngine, AlertRulesEngine>();
         services.AddScoped<IAlertProcessingService, AlertProcessingService>();
         services.AddScoped<IAlertOrchestrator, AlertOrchestrator>();
-        services.AddScoped<IDeviceAlertEngine, DeviceAlertEngine>();
-
         // Notifier dispatch
         services.AddScoped<INotifierDispatcher, NotifierDispatcher>();
         services.AddScoped<INotifier, SignalRNotifier>();

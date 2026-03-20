@@ -118,11 +118,6 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<EmergencyContactEntity> EmergencyContacts { get; set; }
 
-    /// <summary>
-    /// Gets or sets the DeviceHealth table for device health monitoring and maintenance alerts
-    /// </summary>
-    public DbSet<DeviceHealthEntity> DeviceHealth { get; set; }
-
     // Authentication and Authorization entities
 
     /// <summary>
@@ -817,59 +812,6 @@ public class NocturneDbContext : DbContext
             .Entity<EmergencyContactEntity>()
             .HasIndex(c => c.ContactType)
             .HasDatabaseName("ix_emergency_contacts_contact_type");
-
-        // Device Health indexes - optimized for device monitoring and maintenance queries
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .HasIndex(d => d.UserId)
-            .HasDatabaseName("ix_device_health_user_id");
-
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .HasIndex(d => new { d.TenantId, d.DeviceId })
-            .HasDatabaseName("ix_device_health_tenant_device")
-            .IsUnique(); // One health record per device per tenant
-
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .HasIndex(d => d.DeviceType)
-            .HasDatabaseName("ix_device_health_device_type");
-
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .HasIndex(d => d.Status)
-            .HasDatabaseName("ix_device_health_status");
-
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .HasIndex(d => new { d.UserId, d.DeviceType })
-            .HasDatabaseName("ix_device_health_user_device_type");
-
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .HasIndex(d => new { d.UserId, d.Status })
-            .HasDatabaseName("ix_device_health_user_status");
-
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .HasIndex(d => d.LastDataReceived)
-            .HasDatabaseName("ix_device_health_last_data_received")
-            .IsDescending(); // Most recent first
-
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .HasIndex(d => d.SensorExpiration)
-            .HasDatabaseName("ix_device_health_sensor_expiration");
-
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .HasIndex(d => d.LastMaintenanceAlert)
-            .HasDatabaseName("ix_device_health_last_maintenance_alert");
-
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .HasIndex(d => d.CreatedAt)
-            .HasDatabaseName("ix_device_health_created_at");
 
         // Refresh Token indexes - optimized for auth lookups
         modelBuilder
@@ -1753,11 +1695,6 @@ public class NocturneDbContext : DbContext
             .Entity<EmergencyContactEntity>()
             .Property(e => e.Id)
             .HasValueGenerator<GuidV7ValueGenerator>();
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .Property(d => d.Id)
-            .HasValueGenerator<GuidV7ValueGenerator>();
-
         // Auth entity UUID generators
         modelBuilder
             .Entity<RefreshTokenEntity>()
@@ -2198,42 +2135,6 @@ public class NocturneDbContext : DbContext
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .ValueGeneratedOnAddOrUpdate();
 
-        // Configure DeviceHealth defaults and constraints
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .Property(d => d.DeviceType)
-            .HasDefaultValue(DeviceType.Unknown)
-            .HasSentinel(DeviceType.CGM); // CGM is CLR default (0), use it as sentinel
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .Property(d => d.Status)
-            .HasDefaultValue(DeviceStatusType.Active);
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .Property(d => d.BatteryWarningThreshold)
-            .HasDefaultValue(20.0m);
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .Property(d => d.SensorExpirationWarningHours)
-            .HasDefaultValue(24);
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .Property(d => d.DataGapWarningMinutes)
-            .HasDefaultValue(30);
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .Property(d => d.CalibrationReminderHours)
-            .HasDefaultValue(12);
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .Property(d => d.CreatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP");
-        modelBuilder
-            .Entity<DeviceHealthEntity>()
-            .Property(d => d.UpdatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnAddOrUpdate();
-
         // Configure RefreshToken entity relationships and defaults
         modelBuilder.Entity<RefreshTokenEntity>(entity =>
         {
@@ -2629,14 +2530,6 @@ public class NocturneDbContext : DbContext
                     emergencyContactEntity.CreatedAt = utcNow;
                 }
                 emergencyContactEntity.UpdatedAt = utcNow;
-            }
-            else if (entry.Entity is DeviceHealthEntity deviceHealthEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    deviceHealthEntity.CreatedAt = utcNow;
-                }
-                deviceHealthEntity.UpdatedAt = utcNow;
             }
             // Auth entities
             else if (entry.Entity is RefreshTokenEntity refreshTokenEntity)
