@@ -19,13 +19,6 @@ using Nocturne.API.Services.ConnectorPublishing;
 using Nocturne.API.Services.V4;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
-using Nocturne.Connectors.Dexcom;
-using Nocturne.Connectors.FreeStyle;
-using Nocturne.Connectors.Glooko;
-using Nocturne.Connectors.MyFitnessPal;
-using Nocturne.Connectors.MyLife;
-using Nocturne.Connectors.Nightscout;
-using Nocturne.Connectors.Tidepool;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Alerts;
@@ -333,37 +326,9 @@ builder.Services.AddScoped<IConnectorSyncService, ConnectorSyncService>();
 // Connector runtime services (single executable)
 builder.Services.AddBaseConnectorServices();
 builder.Services.AddScoped<IConnectorPublisher, InProcessConnectorPublisher>();
-builder.Services.AddDexcomConnector(builder.Configuration);
-builder.Services.AddGlookoConnector(builder.Configuration);
-builder.Services.AddLibreLinkUpConnector(builder.Configuration);
-builder.Services.AddMyLifeConnector(builder.Configuration);
-builder.Services.AddTidepoolConnector(builder.Configuration);
-builder.Services.AddMyFitnessPalConnector(builder.Configuration);
-builder.Services.AddNightscoutConnector(builder.Configuration);
-
-static bool IsConnectorEnabled(IConfiguration configuration, string connectorName)
-{
-    var section = configuration.GetSection($"Parameters:Connectors:{connectorName}");
-    if (!section.Exists())
-        section = configuration.GetSection($"Connectors:{connectorName}");
-
-    return section.GetValue<bool>("Enabled");
-}
-
-if (IsConnectorEnabled(builder.Configuration, "Dexcom"))
-    builder.Services.AddHostedService<DexcomConnectorBackgroundService>();
-if (IsConnectorEnabled(builder.Configuration, "Glooko"))
-    builder.Services.AddHostedService<GlookoConnectorBackgroundService>();
-if (IsConnectorEnabled(builder.Configuration, "LibreLinkUp"))
-    builder.Services.AddHostedService<FreeStyleConnectorBackgroundService>();
-if (IsConnectorEnabled(builder.Configuration, "MyLife"))
-    builder.Services.AddHostedService<MyLifeConnectorBackgroundService>();
-if (IsConnectorEnabled(builder.Configuration, "Tidepool"))
-    builder.Services.AddHostedService<TidepoolConnectorBackgroundService>();
-if (IsConnectorEnabled(builder.Configuration, "MyFitnessPal"))
-    builder.Services.AddHostedService<MyFitnessPalConnectorBackgroundService>();
-if (IsConnectorEnabled(builder.Configuration, "Nightscout"))
-    builder.Services.AddHostedService<NightscoutConnectorBackgroundService>();
+builder.Services.AddConnectors(
+    builder.Configuration,
+    backgroundServiceAssembly: typeof(Program).Assembly);
 
 // Configure JWT authentication
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName);
