@@ -1,29 +1,9 @@
-using System.Reflection;
-using System.Text.Json;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Connectors.Core.Models;
-using Nocturne.Connectors.Dexcom.Configurations;
-using Nocturne.Connectors.Dexcom.Services;
-using Nocturne.Connectors.FreeStyle.Configurations;
-using Nocturne.Connectors.FreeStyle.Services;
-using Nocturne.Connectors.Glooko.Configurations;
-using Nocturne.Connectors.Glooko.Services;
-using Nocturne.Connectors.MyFitnessPal.Configurations;
-using Nocturne.Connectors.MyFitnessPal.Services;
-using Nocturne.Connectors.MyLife.Configurations;
-using Nocturne.Connectors.MyLife.Services;
-using Nocturne.Connectors.Nightscout.Configurations;
-using Nocturne.Connectors.Nightscout.Services;
-using Nocturne.Connectors.Tidepool.Configurations;
-using Nocturne.Connectors.Tidepool.Services;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 
 namespace Nocturne.API.Services;
 
-/// <summary>
-/// Dispatches manual sync requests to the correct connector service by name.
-/// </summary>
 public interface IConnectorSyncService
 {
     Task<SyncResult> TriggerSyncAsync(
@@ -33,10 +13,6 @@ public interface IConnectorSyncService
     );
 }
 
-/// <summary>
-/// Resolves the concrete connector service by name and executes a sync.
-/// Follows the same scope/resolve pattern as the connector background services.
-/// </summary>
 public class ConnectorSyncService : IConnectorSyncService
 {
     private readonly IServiceProvider _serviceProvider;
@@ -64,42 +40,31 @@ public class ConnectorSyncService : IConnectorSyncService
 
         try
         {
-            var result = connectorId.ToLowerInvariant() switch
+            using var scope = _serviceProvider.CreateScope();
+
+            if (_tenantAccessor.Context is { } tenantContext)
             {
-                "dexcom" => await ExecuteSyncAsync<
-                    DexcomConnectorService,
-                    DexcomConnectorConfiguration
-                >("Dexcom", request, ct),
-                "tidepool" => await ExecuteSyncAsync<
-                    TidepoolConnectorService,
-                    TidepoolConnectorConfiguration
-                >("Tidepool", request, ct),
-                "librelinkup" => await ExecuteSyncAsync<
-                    LibreConnectorService,
-                    LibreLinkUpConnectorConfiguration
-                >("LibreLinkUp", request, ct),
-                "glooko" => await ExecuteSyncAsync<
-                    GlookoConnectorService,
-                    GlookoConnectorConfiguration
-                >("Glooko", request, ct),
-                "mylife" => await ExecuteSyncAsync<
-                    MyLifeConnectorService,
-                    MyLifeConnectorConfiguration
-                >("MyLife", request, ct),
-                "myfitnesspal" => await ExecuteSyncAsync<
-                    MyFitnessPalConnectorService,
-                    MyFitnessPalConnectorConfiguration
-                >("MyFitnessPal", request, ct),
-                "nightscout" => await ExecuteSyncAsync<
-                    NightscoutConnectorService,
-                    NightscoutConnectorConfiguration
-                >("Nightscout", request, ct),
-                _ => new SyncResult
+                var scopedTenantAccessor =
+                    scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
+                scopedTenantAccessor.SetTenant(tenantContext);
+            }
+
+            var executors = scope.ServiceProvider.GetServices<IConnectorSyncExecutor>();
+            var executor = executors.FirstOrDefault(e =>
+                e.ConnectorId.Equals(connectorId, StringComparison.OrdinalIgnoreCase));
+
+            if (executor is null)
+            {
+                _logger.LogWarning(
+                    "Unknown or disabled connector {ConnectorId}", connectorId);
+                return new SyncResult
                 {
                     Success = false,
                     Message = $"Unknown connector: {connectorId}",
-                },
-            };
+                };
+            }
+
+            var result = await executor.ExecuteSyncAsync(scope.ServiceProvider, request, ct);
 
             _logger.LogInformation(
                 "Manual sync for {ConnectorId} completed: Success={Success}, Message={Message}",
@@ -130,144 +95,6 @@ public class ConnectorSyncService : IConnectorSyncService
                 connectorId
             );
             return new SyncResult { Success = false, Message = $"Sync failed: {ex.Message}" };
-        }
-    }
-
-    private async Task<SyncResult> ExecuteSyncAsync<TService, TConfig>(
-        string connectorName,
-        SyncRequest request,
-        CancellationToken ct
-    )
-        where TService : class, IConnectorService<TConfig>
-        where TConfig : class, IConnectorConfiguration
-    {
-        using var scope = _serviceProvider.CreateScope();
-
-        // Propagate tenant context from the HTTP request scope into the child scope
-        // so that broadcast, cache invalidation, and DB services can resolve the tenant.
-        if (_tenantAccessor.Context is { } tenantContext)
-        {
-            var scopedTenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
-            scopedTenantAccessor.SetTenant(tenantContext);
-        }
-
-        var service = scope.ServiceProvider.GetRequiredService<TService>();
-        var config = scope.ServiceProvider.GetRequiredService<TConfig>();
-
-        await LoadDatabaseConfigurationAsync(scope.ServiceProvider, connectorName, config, ct);
-
-        return await service.SyncDataAsync(request, config, ct);
-    }
-
-    /// <summary>
-    /// Loads runtime configuration and secrets from the database and applies them
-    /// to the config singleton. Ensures DB-stored values (including encrypted
-    /// passwords) are available for manual sync requests.
-    /// </summary>
-    private async Task LoadDatabaseConfigurationAsync<TConfig>(
-        IServiceProvider scopedProvider,
-        string connectorName,
-        TConfig config,
-        CancellationToken ct
-    )
-        where TConfig : class, IConnectorConfiguration
-    {
-        try
-        {
-            var configService = scopedProvider.GetRequiredService<IConnectorConfigurationService>();
-
-            var dbConfig = await configService.GetConfigurationAsync(connectorName, ct);
-            if (dbConfig?.Configuration != null)
-            {
-                ApplyJsonToConfig(dbConfig.Configuration, config);
-            }
-
-            var secrets = await configService.GetSecretsAsync(connectorName, ct);
-            if (secrets.Count > 0)
-            {
-                ApplySecretsToConfig(secrets, config);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(
-                ex,
-                "Failed to load database configuration for {ConnectorName} during manual sync",
-                connectorName
-            );
-        }
-    }
-
-    private static void ApplyJsonToConfig<TConfig>(JsonDocument configuration, TConfig config)
-        where TConfig : class
-    {
-        var properties = config
-            .GetType()
-            .GetProperties(BindingFlags.Public | BindingFlags.Instance);
-        var root = configuration.RootElement;
-
-        foreach (var property in properties)
-        {
-            if (!property.CanWrite)
-                continue;
-
-            var camelName = char.ToLowerInvariant(property.Name[0]) + property.Name[1..];
-            if (!root.TryGetProperty(camelName, out var element))
-                continue;
-
-            try
-            {
-                if (
-                    property.PropertyType == typeof(string)
-                    && element.ValueKind == JsonValueKind.String
-                )
-                    property.SetValue(config, element.GetString());
-                else if (
-                    property.PropertyType == typeof(int)
-                    && element.ValueKind == JsonValueKind.Number
-                )
-                    property.SetValue(config, element.GetInt32());
-                else if (
-                    property.PropertyType == typeof(double)
-                    && element.ValueKind == JsonValueKind.Number
-                )
-                    property.SetValue(config, element.GetDouble());
-                else if (
-                    property.PropertyType == typeof(bool)
-                    && (
-                        element.ValueKind == JsonValueKind.True
-                        || element.ValueKind == JsonValueKind.False
-                    )
-                )
-                    property.SetValue(config, element.GetBoolean());
-            }
-            catch (Exception)
-            {
-                // Skip properties that can't be set
-            }
-        }
-    }
-
-    private static void ApplySecretsToConfig<TConfig>(
-        Dictionary<string, string> secrets,
-        TConfig config
-    )
-        where TConfig : class
-    {
-        var properties = config
-            .GetType()
-            .GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-        foreach (var property in properties)
-        {
-            if (!property.CanWrite || property.PropertyType != typeof(string))
-                continue;
-
-            var camelName = char.ToLowerInvariant(property.Name[0]) + property.Name[1..];
-            if (secrets.TryGetValue(camelName, out var value))
-            {
-                property.SetValue(config, value);
-            }
         }
     }
 }
