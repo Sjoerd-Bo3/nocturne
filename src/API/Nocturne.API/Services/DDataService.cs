@@ -67,6 +67,13 @@ public class DDataService : IDDataService
         ddata.TempBasalTreatments = processedTreatments.TempBasalTreatments;
         ddata.TempTargetTreatments = processedTreatments.TempTargetTreatments;
 
+        // Compute lastProfileFromSwitch: latest zero-duration Profile Switch before request time
+        ddata.LastProfileFromSwitch = ddata.ProfileTreatments
+            .Where(t => (!t.Duration.HasValue || t.Duration == 0) && t.Mills <= timestamp)
+            .OrderByDescending(t => t.Mills)
+            .Select(t => t.Profile)
+            .FirstOrDefault();
+
         // Set the most recent calibration
         if (ddata.Cals.Count > 0)
         {
@@ -201,6 +208,13 @@ public class DDataService : IDDataService
         }
         tempTargetTreatments = ConvertTempTargetUnits(tempTargetTreatments);
         ddata.TempTargetTreatments = ProcessDurations(tempTargetTreatments, false);
+
+        // Compute lastProfileFromSwitch: latest zero-duration Profile Switch
+        ddata.LastProfileFromSwitch = ddata.ProfileTreatments
+            .Where(t => !t.Duration.HasValue || t.Duration == 0)
+            .OrderByDescending(t => t.Mills)
+            .Select(t => t.Profile)
+            .FirstOrDefault();
 
         return ddata;
     }

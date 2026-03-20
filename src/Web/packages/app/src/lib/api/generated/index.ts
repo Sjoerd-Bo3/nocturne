@@ -7,32 +7,38 @@ export * from './localauths.generated.remote';
 export * from './metadatas.generated.remote';
 export * from './oidcs.generated.remote';
 export * from './statistics.generated.remote';
+// './apsSnapshots.generated.remote' - all exports collide, import directly
 export * from './batteries.generated.remote';
+// './bgChecks.generated.remote' - all exports collide, import directly
 // './bolusCalculations.generated.remote' - all exports collide, import directly
 // './boluses.generated.remote' - all exports collide, import directly
+// './calibrations.generated.remote' - all exports collide, import directly
 export * from './chartDatas.generated.remote';
 export { list } from './clockFaces.generated.remote';
 export { getSuggestion, deleteSuggestion, acceptSuggestion, dismissSuggestion, triggerDetection } from './compressionLows.generated.remote';
 export * from './dataOverviews.generated.remote';
 export * from './deduplications.generated.remote';
-export * from './deviceStatus.generated.remote';
+// './deviceEvents.generated.remote' - all exports collide, import directly
 export * from './foods.generated.remote';
-export * from './glucoses.generated.remote';
 export * from './heartrates.generated.remote';
 export { getFoodEntry, acceptMatch, dismissMatch } from './mealMatchings.generated.remote';
+// './meterGlucoses.generated.remote' - all exports collide, import directly
 export { testConnection, startMigration, cancelMigration, getHistory, getPendingConfig, getSources } from './migrations.generated.remote';
 export * from './mytenants.generated.remote';
+// './notes.generated.remote' - all exports collide, import directly
 export * from './notifications.generated.remote';
 export * from './nutritions.generated.remote';
-export * from './observations.generated.remote';
 export * from './patientRecords.generated.remote';
 export { getPredictions } from './predictions.generated.remote';
 export * from './profiles.generated.remote';
+// './pumpSnapshots.generated.remote' - all exports collide, import directly
 export * from './retrospectives.generated.remote';
+// './sensorGlucoses.generated.remote' - all exports collide, import directly
 export * from './services.generated.remote';
 export * from './statespans.generated.remote';
 export * from './stepcounts.generated.remote';
 export * from './trackers.generated.remote';
 export * from './treatments.generated.remote';
+// './uploaderSnapshots.generated.remote' - all exports collide, import directly
 export { addMember, removeMember } from './tenants.generated.remote';
 export * from './configurations.generated.remote';

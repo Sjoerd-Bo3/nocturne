@@ -51,7 +51,12 @@ public enum StateSpanCategory
     /// <summary>
     /// Data exclusion period (compression lows, sensor errors)
     /// </summary>
-    DataExclusion
+    DataExclusion,
+
+    /// <summary>
+    /// AAPS temporary glucose target (Eating Soon, Activity, Manual)
+    /// </summary>
+    TemporaryTarget
 }
 
 /// <summary>
@@ -148,6 +153,23 @@ public enum OverrideState
     /// User-defined override (details in metadata)
     /// </summary>
     Custom
+}
+
+/// <summary>
+/// Temporary target states
+/// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter<TemporaryTargetState>))]
+public enum TemporaryTargetState
+{
+    /// <summary>
+    /// Temporary target is active
+    /// </summary>
+    Active,
+
+    /// <summary>
+    /// Temporary target was cancelled
+    /// </summary>
+    Cancelled
 }
 
 /// <summary>

@@ -164,6 +164,8 @@ msgstr "Absorption Time (minutes)"
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 msgid "Notes"
 msgstr "Notes"
 
@@ -210,6 +212,10 @@ msgstr "Reason for this treatment"
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -896,6 +902,7 @@ msgstr "Click to view full day report"
 #: src/routes/reports/+page.svelte
 #: src/routes/reports/agp/+page.svelte
 #: src/routes/reports/idp/+page.svelte
+#: src/routes/reports/year-overview/+page.svelte
 msgid "Time in Range"
 msgstr "Time in Range"
 
@@ -1089,6 +1096,8 @@ msgstr "Comparison Error"
 #: src/routes/settings/connectors/[connector]/+page.svelte
 #: src/routes/settings/migration/+page.svelte
 #: src/routes/settings/migration/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 msgid "Unknown"
 msgstr "Unknown"
 
@@ -1545,6 +1554,7 @@ msgstr "{0} minor"
 
 #: src/routes/compatibility/+page.svelte
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 msgid "None"
 msgstr "None"
 
@@ -1701,6 +1711,8 @@ msgstr "Unit"
 
 #: src/routes/food/FoodEditor.svelte
 #: src/routes/food/FoodList.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Category"
 msgstr "Category"
@@ -1745,6 +1757,7 @@ msgstr "Your database"
 #: src/routes/food/FoodList.svelte
 #: src/routes/food/QuickPickItem.svelte
 #: src/routes/reports/day-in-review/+page.svelte
+#: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -1932,6 +1945,7 @@ msgstr "No foods attributed"
 #: src/routes/meals/+page.svelte
 #: src/routes/notifications/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Other"
 msgstr "Other"
@@ -2906,6 +2920,7 @@ msgstr "Temp Basal"
 #: src/routes/reports/treatments/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
+#: src/routes/reports/year-overview/+page.svelte
 msgid "Bolus"
 msgstr "Bolus"
 
@@ -3071,6 +3086,7 @@ msgstr "Glucose"
 #: src/routes/reports/insulin-delivery/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
+#: src/routes/reports/year-overview/+page.svelte
 msgid "Basal"
 msgstr "Basal"
 
@@ -3185,6 +3201,8 @@ msgid "Add Food"
 msgstr "Add Food"
 
 #: src/lib/components/food/AddFoodDialog.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 msgid "Update"
 msgstr "Update"
 
@@ -4540,7 +4558,6 @@ msgstr "Target range (70-180)"
 msgid "Avg Before"
 msgstr "Avg Before"
 
-#: src/lib/components/reports/ScheduleFooter.svelte
 #: src/lib/components/reports/SiteChangeImpactChart.svelte
 #: src/lib/components/reports/SiteChangeImpactChart.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
@@ -5546,6 +5563,8 @@ msgstr "Preview"
 #: src/lib/components/treatments/TreatmentsDataTable.svelte
 #: src/routes/reports/treatments/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -5756,6 +5775,7 @@ msgid "Basal Profile Value"
 msgstr "Basal Profile Value"
 
 #: src/lib/components/status-pills/LoopPill.svelte
+#: src/routes/settings/patient/+page.svelte
 msgid "Loop"
 msgstr "Loop"
 
@@ -9237,6 +9257,8 @@ msgid "Custom Permission"
 msgstr "Custom Permission"
 
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 #: src/routes/tools/packing/list/+page.svelte
 #: src/routes/tools/packing/list/+page.svelte
 msgid "Add"
@@ -9364,6 +9386,7 @@ msgid "Custom color palette designed for Nocturne"
 msgstr "Custom color palette designed for Nocturne"
 
 #: src/routes/settings/appearance/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 msgid "Trio"
 msgstr "Trio"
 
@@ -9984,10 +10007,14 @@ msgstr ""
 #: src/routes/reports/data-quality/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/settings/migration/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 msgid "Start Date"
 msgstr "Start Date"
 
 #: src/routes/settings/migration/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 msgid "End Date"
 msgstr "End Date"
 
@@ -11943,6 +11970,9 @@ msgstr "Avg TIR"
 
 #: src/lib/components/reports/GlycemicRiskIndexChart.svelte
 #: src/routes/calendar/+page.svelte
+#: src/routes/reports/year-overview/+page.svelte
+#: src/routes/reports/year-overview/+page.svelte
+#: src/routes/reports/year-overview/+page.svelte
 msgid "Avg Glucose"
 msgstr "Avg Glucose"
 
@@ -14747,10 +14777,8 @@ msgstr "Show data types"
 msgid "Show all"
 msgstr "Show all"
 
-#. placeholder {0}: unitLabel
-#: src/routes/reports/year-overview/+page.svelte
-msgid "Avg Glucose ({0}):"
-msgstr "Avg Glucose ({0}):"
+#~ msgid "Avg Glucose ({0}):"
+#~ msgstr "Avg Glucose ({0}):"
 
 #: src/routes/reports/year-overview/+page.svelte
 msgid "Glucose color scale legend"
@@ -16940,6 +16968,8 @@ msgstr "Failed to load tenants"
 msgid "You are not a member of any tenants."
 msgstr "You are not a member of any tenants."
 
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
 #: src/routes/tenants/+page.svelte
 msgid "Current"
 msgstr "Current"
@@ -17723,9 +17753,8 @@ msgstr "CGM Active"
 msgid "Site Changes"
 msgstr "Site Changes"
 
-#: src/routes/reports/idp/+page.svelte
-msgid "AID metrics require pump integration data, which is not yet available."
-msgstr "AID metrics require pump integration data, which is not yet available."
+#~ msgid "AID metrics require pump integration data, which is not yet available."
+#~ msgstr "AID metrics require pump integration data, which is not yet available."
 
 #: src/routes/reports/idp/+page.svelte
 msgid "<0/> Glycemic Risk Index"
@@ -17808,17 +17837,15 @@ msgstr "Insulin Dosing Profile"
 msgid "Correction Range"
 msgstr "Correction Range"
 
-#: src/lib/components/reports/ScheduleFooter.svelte
-msgid "g/U"
-msgstr "g/U"
+#~ msgid "g/U"
+#~ msgstr "g/U"
 
 #: src/lib/components/reports/ScheduleFooter.svelte
 msgid "Correction Factor"
 msgstr "Correction Factor"
 
-#: src/lib/components/reports/ScheduleFooter.svelte
-msgid "mg/dL/U"
-msgstr "mg/dL/U"
+#~ msgid "mg/dL/U"
+#~ msgstr "mg/dL/U"
 
 #: src/lib/components/reports/ScheduleFooter.svelte
 #: src/lib/components/reports/ScheduleFooter.svelte
@@ -17921,3 +17948,327 @@ msgstr "GRI Score"
 #: src/lib/components/reports/GlycemicRiskIndexChart.svelte
 msgid "Avg Carbs"
 msgstr "Avg Carbs"
+
+#. placeholder {0}: info.lastChangedAt ? new Date(info.lastChangedAt).toLocaleDateString() : 'during period'
+#. placeholder {1}: info.changeCount
+#. placeholder {2}: info.changeCount === 1 ? '' : 's'
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "Changed {0} ({1} change{2} during this period)"
+msgstr "Changed {0} ({1} change{2} during this period)"
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "mg/dL <0/>"
+msgstr "mg/dL <0/>"
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "g/U <0/>"
+msgstr "g/U <0/>"
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "mg/dL/U <0/>"
+msgstr "mg/dL/U <0/>"
+
+#. placeholder {0}: metricLabel.toLowerCase()
+#: src/routes/reports/year-overview/+page.svelte
+msgid "<0/> No {0} data"
+msgstr "<0/> No {0} data"
+
+#: src/lib/components/layout/AppSidebar.svelte
+#: src/routes/settings/patient/+page.svelte
+msgid "Patient Record"
+msgstr "Patient Record"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Type 1"
+msgstr "Type 1"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Type 2"
+msgstr "Type 2"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Gestational"
+msgstr "Gestational"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Insulin Pump"
+msgstr "Insulin Pump"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Glucose Meter"
+msgstr "Glucose Meter"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Insulin Pen"
+msgstr "Insulin Pen"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Smart Pen"
+msgstr "Smart Pen"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "OpenAPS"
+msgstr "OpenAPS"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "AndroidAPS"
+msgstr "AndroidAPS"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Control-IQ"
+msgstr "Control-IQ"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "CamAPS FX"
+msgstr "CamAPS FX"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Omnipod 5"
+msgstr "Omnipod 5"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "SmartGuard"
+msgstr "SmartGuard"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Rapid Acting"
+msgstr "Rapid Acting"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Short Acting"
+msgstr "Short Acting"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Intermediate Acting"
+msgstr "Intermediate Acting"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Long Acting"
+msgstr "Long Acting"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Ultra Long Acting"
+msgstr "Ultra Long Acting"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Premixed"
+msgstr "Premixed"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Patient Record - Settings - Nocturne"
+msgstr "Patient Record - Settings - Nocturne"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Manage your clinical information, devices, and insulins"
+msgstr "Manage your clinical information, devices, and insulins"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Clinical Information"
+msgstr "Clinical Information"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Basic information about your diabetes management"
+msgstr "Basic information about your diabetes management"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Diabetes Type"
+msgstr "Diabetes Type"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Select type"
+msgstr "Select type"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Specify Type"
+msgstr "Specify Type"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Diagnosis Date"
+msgstr "Diagnosis Date"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Date of Birth"
+msgstr "Date of Birth"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Preferred Name"
+msgstr "Preferred Name"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "How you'd like to be addressed"
+msgstr "How you'd like to be addressed"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Pronouns"
+msgstr "Pronouns"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "<0/> Save Changes"
+msgstr "<0/> Save Changes"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Devices"
+msgstr "Devices"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "<0/> Add Device"
+msgstr "<0/> Add Device"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Pumps, CGMs, meters, and other devices you use"
+msgstr "Pumps, CGMs, meters, and other devices you use"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "No devices added yet. Add your first device to get started."
+msgstr "No devices added yet. Add your first device to get started."
+
+#. placeholder {0}: aidAlgorithmLabels[device.aidAlgorithm] ?? device.aidAlgorithm
+#: src/routes/settings/patient/+page.svelte
+msgid "AID: {0}"
+msgstr "AID: {0}"
+
+#. placeholder {0}: formatDate(device.startDate)
+#. placeholder {0}: formatDate(insulin.startDate)
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+msgid "From {0}"
+msgstr "From {0}"
+
+#. placeholder {0}: formatDate(device.endDate)
+#. placeholder {0}: formatDate(insulin.endDate)
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+msgid "Until {0}"
+msgstr "Until {0}"
+
+#. placeholder {0}: device.serialNumber
+#: src/routes/settings/patient/+page.svelte
+msgid "SN: {0}"
+msgstr "SN: {0}"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Insulins"
+msgstr "Insulins"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "<0/> Add Insulin"
+msgstr "<0/> Add Insulin"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Insulin types and brands you use or have used"
+msgstr "Insulin types and brands you use or have used"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "No insulins added yet. Add your first insulin to get started."
+msgstr "No insulins added yet. Add your first insulin to get started."
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Unnamed"
+msgstr "Unnamed"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Edit Device"
+msgstr "Edit Device"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Add Device"
+msgstr "Add Device"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Update the details of this device."
+msgstr "Update the details of this device."
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Add a new device to your patient record."
+msgstr "Add a new device to your patient record."
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Manufacturer"
+msgstr "Manufacturer"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Model"
+msgstr "Model"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "AID Algorithm"
+msgstr "AID Algorithm"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Select algorithm"
+msgstr "Select algorithm"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Serial Number"
+msgstr "Serial Number"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Optional"
+msgstr "Optional"
+
+#: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/patient/+page.svelte
+msgid "Currently in use"
+msgstr "Currently in use"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Any additional notes about this device"
+msgstr "Any additional notes about this device"
+
+#. placeholder {0}: deviceEditing ? "Update" : "Add"
+#: src/routes/settings/patient/+page.svelte
+msgid "<0/> {0} Device"
+msgstr "<0/> {0} Device"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Delete Device"
+msgstr "Delete Device"
+
+#: src/routes/settings/patient/+page.svelte
+msgid ""
+"Are you sure you want to delete this device? This action cannot be\n"
+"undone."
+msgstr ""
+"Are you sure you want to delete this device? This action cannot be\n"
+"undone."
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Edit Insulin"
+msgstr "Edit Insulin"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Add Insulin"
+msgstr "Add Insulin"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Update the details of this insulin."
+msgstr "Update the details of this insulin."
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Add an insulin to your patient record."
+msgstr "Add an insulin to your patient record."
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Name / Brand"
+msgstr "Name / Brand"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Any additional notes about this insulin"
+msgstr "Any additional notes about this insulin"
+
+#. placeholder {0}: insulinEditing ? "Update" : "Add"
+#: src/routes/settings/patient/+page.svelte
+msgid "<0/> {0} Insulin"
+msgstr "<0/> {0} Insulin"
+
+#: src/routes/settings/patient/+page.svelte
+msgid "Delete Insulin"
+msgstr "Delete Insulin"
+
+#: src/routes/settings/patient/+page.svelte
+msgid ""
+"Are you sure you want to delete this insulin? This action cannot be\n"
+"undone."
+msgstr ""
+"Are you sure you want to delete this insulin? This action cannot be\n"
+"undone."

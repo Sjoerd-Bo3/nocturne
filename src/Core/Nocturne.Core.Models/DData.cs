@@ -128,6 +128,13 @@ public class DData
     /// </summary>
     [JsonPropertyName("tempTargetTreatments")]
     public List<Treatment> TempTargetTreatments { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the profile name from the most recent zero-duration Profile Switch treatment.
+    /// Used by Loop and other clients for active profile determination.
+    /// </summary>
+    [JsonPropertyName("lastProfileFromSwitch")]
+    public string? LastProfileFromSwitch { get; set; }
 }
 
 /// <summary>

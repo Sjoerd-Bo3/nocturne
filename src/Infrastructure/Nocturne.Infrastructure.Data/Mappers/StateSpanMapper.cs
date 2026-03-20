@@ -28,6 +28,9 @@ public static class StateSpanMapper
                 ? JsonSerializer.Serialize(stateSpan.Metadata)
                 : null,
             OriginalId = stateSpan.OriginalId,
+            SupersededById = !string.IsNullOrEmpty(stateSpan.SupersededById)
+                ? ParseIdToGuid(stateSpan.SupersededById)
+                : null,
             CreatedAt = stateSpan.CreatedAt ?? DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };
@@ -50,6 +53,7 @@ public static class StateSpanMapper
             Source = entity.Source,
             Metadata = DeserializeJsonProperty<Dictionary<string, object>>(entity.MetadataJson),
             OriginalId = entity.OriginalId,
+            SupersededById = entity.SupersededById?.ToString(),
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt,
         };

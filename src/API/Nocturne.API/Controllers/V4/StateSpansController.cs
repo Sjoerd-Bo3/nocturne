@@ -84,6 +84,19 @@ public class StateSpansController : ControllerBase
     }
 
     /// <summary>
+    /// Get temporary target state spans (AAPS temporary glucose targets)
+    /// </summary>
+    [HttpGet("temporary-targets")]
+    public async Task<ActionResult<IEnumerable<StateSpan>>> GetTemporaryTargets(
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var spans = await _stateSpanService.GetStateSpansAsync(StateSpanCategory.TemporaryTarget, from: from, to: to, cancellationToken: cancellationToken);
+        return Ok(spans);
+    }
+
+    /// <summary>
     /// Get profile state spans
     /// </summary>
     [HttpGet("profiles")]

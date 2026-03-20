@@ -86,6 +86,13 @@ public class StateSpan
     public bool IsActive => !EndTimestamp.HasValue;
 
     /// <summary>
+    /// Gets or sets the ID of the span that superseded this one.
+    /// Set when a new exclusive span (Override, TemporaryTarget, Profile) closes this span.
+    /// </summary>
+    [JsonPropertyName("supersededById")]
+    public string? SupersededById { get; set; }
+
+    /// <summary>
     /// Gets or sets the canonical group ID for deduplication.
     /// Records with the same CanonicalId represent the same underlying event from different sources.
     /// </summary>

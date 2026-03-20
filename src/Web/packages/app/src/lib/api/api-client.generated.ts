@@ -7,11 +7,14 @@ import {
   BackfillClient,
   AlexaClient,
   AnalyticsClient,
+  ApsSnapshotClient,
   AuthenticationClient,
   AuthorizationClient,
   BatteryClient,
+  BGCheckClient,
   BolusCalculationClient,
   BolusClient,
+  CalibrationClient,
   ChartDataClient,
   ClockFacesClient,
   CompatibilityClient,
@@ -26,14 +29,12 @@ import {
   DebugClient,
   DeduplicationClient,
   DeviceAgeClient,
-  DeviceAlertsClient,
-  DeviceHealthClient,
+  DeviceEventClient,
   DeviceStatusClient,
   DiscrepancyClient,
   EntriesClient,
   FoodClient,
   FoodsClient,
-  GlucoseClient,
   HeartRateClient,
   IobClient,
   LastModifiedClient,
@@ -41,11 +42,12 @@ import {
   LoopClient,
   MealMatchingClient,
   MetadataClient,
+  MeterGlucoseClient,
   MigrationClient,
   MyTenantsClient,
+  NoteClient,
   NotificationsClient,
   NutritionClient,
-  ObservationsClient,
   OidcClient,
   WellKnownClient,
   PatientRecordClient,
@@ -53,7 +55,9 @@ import {
   PredictionClient,
   ProcessingClient,
   ProfileClient,
+  PumpSnapshotClient,
   RetrospectiveClient,
+  SensorGlucoseClient,
   ServicesClient,
   SettingsClient,
   StateSpansClient,
@@ -67,6 +71,7 @@ import {
   TrackersClient,
   TreatmentsClient,
   UISettingsClient,
+  UploaderSnapshotClient,
   UserPreferencesClient,
   DDataClient,
   PropertiesClient,
@@ -86,11 +91,14 @@ export class ApiClient {
   public readonly admin: BackfillClient;
   public readonly alexa: AlexaClient;
   public readonly analytics: AnalyticsClient;
+  public readonly aPSSnapshots: ApsSnapshotClient;
   public readonly authentication: AuthenticationClient;
   public readonly authorization: AuthorizationClient;
   public readonly battery: BatteryClient;
+  public readonly bGChecks: BGCheckClient;
   public readonly bolusCalculations: BolusCalculationClient;
   public readonly boluses: BolusClient;
+  public readonly calibrations: CalibrationClient;
   public readonly chartData: ChartDataClient;
   public readonly clockFaces: ClockFacesClient;
   public readonly compatibility: CompatibilityClient;
@@ -105,14 +113,12 @@ export class ApiClient {
   public readonly debug: DebugClient;
   public readonly deduplication: DeduplicationClient;
   public readonly deviceAge: DeviceAgeClient;
-  public readonly deviceAlerts: DeviceAlertsClient;
-  public readonly deviceHealth: DeviceHealthClient;
+  public readonly deviceEvents: DeviceEventClient;
   public readonly deviceStatus: DeviceStatusClient;
   public readonly discrepancy: DiscrepancyClient;
   public readonly entries: EntriesClient;
   public readonly food: FoodClient;
   public readonly foodsV4: FoodsClient;
-  public readonly glucose: GlucoseClient;
   public readonly heartRate: HeartRateClient;
   public readonly iob: IobClient;
   public readonly lastModified: LastModifiedClient;
@@ -120,11 +126,12 @@ export class ApiClient {
   public readonly loopNotifications: LoopClient;
   public readonly mealMatching: MealMatchingClient;
   public readonly metadata: MetadataClient;
+  public readonly meterGlucose: MeterGlucoseClient;
   public readonly migration: MigrationClient;
   public readonly myTenants: MyTenantsClient;
+  public readonly notes: NoteClient;
   public readonly notifications: NotificationsClient;
   public readonly nutrition: NutritionClient;
-  public readonly observations: ObservationsClient;
   public readonly oidc: OidcClient;
   public readonly oidcDiscovery: WellKnownClient;
   public readonly patientRecord: PatientRecordClient;
@@ -132,7 +139,9 @@ export class ApiClient {
   public readonly predictions: PredictionClient;
   public readonly processing: ProcessingClient;
   public readonly profile: ProfileClient;
+  public readonly pumpSnapshots: PumpSnapshotClient;
   public readonly retrospective: RetrospectiveClient;
+  public readonly sensorGlucose: SensorGlucoseClient;
   public readonly services: ServicesClient;
   public readonly settings: SettingsClient;
   public readonly stateSpans: StateSpansClient;
@@ -146,6 +155,7 @@ export class ApiClient {
   public readonly trackers: TrackersClient;
   public readonly treatments: TreatmentsClient;
   public readonly uiSettings: UISettingsClient;
+  public readonly uploaderSnapshots: UploaderSnapshotClient;
   public readonly userPreferences: UserPreferencesClient;
   public readonly v2DData: DDataClient;
   public readonly v2Properties: PropertiesClient;
@@ -165,11 +175,14 @@ export class ApiClient {
     this.admin = new BackfillClient(apiBaseUrl, http);
     this.alexa = new AlexaClient(apiBaseUrl, http);
     this.analytics = new AnalyticsClient(apiBaseUrl, http);
+    this.aPSSnapshots = new ApsSnapshotClient(apiBaseUrl, http);
     this.authentication = new AuthenticationClient(apiBaseUrl, http);
     this.authorization = new AuthorizationClient(apiBaseUrl, http);
     this.battery = new BatteryClient(apiBaseUrl, http);
+    this.bGChecks = new BGCheckClient(apiBaseUrl, http);
     this.bolusCalculations = new BolusCalculationClient(apiBaseUrl, http);
     this.boluses = new BolusClient(apiBaseUrl, http);
+    this.calibrations = new CalibrationClient(apiBaseUrl, http);
     this.chartData = new ChartDataClient(apiBaseUrl, http);
     this.clockFaces = new ClockFacesClient(apiBaseUrl, http);
     this.compatibility = new CompatibilityClient(apiBaseUrl, http);
@@ -184,14 +197,12 @@ export class ApiClient {
     this.debug = new DebugClient(apiBaseUrl, http);
     this.deduplication = new DeduplicationClient(apiBaseUrl, http);
     this.deviceAge = new DeviceAgeClient(apiBaseUrl, http);
-    this.deviceAlerts = new DeviceAlertsClient(apiBaseUrl, http);
-    this.deviceHealth = new DeviceHealthClient(apiBaseUrl, http);
+    this.deviceEvents = new DeviceEventClient(apiBaseUrl, http);
     this.deviceStatus = new DeviceStatusClient(apiBaseUrl, http);
     this.discrepancy = new DiscrepancyClient(apiBaseUrl, http);
     this.entries = new EntriesClient(apiBaseUrl, http);
     this.food = new FoodClient(apiBaseUrl, http);
     this.foodsV4 = new FoodsClient(apiBaseUrl, http);
-    this.glucose = new GlucoseClient(apiBaseUrl, http);
     this.heartRate = new HeartRateClient(apiBaseUrl, http);
     this.iob = new IobClient(apiBaseUrl, http);
     this.lastModified = new LastModifiedClient(apiBaseUrl, http);
@@ -199,11 +210,12 @@ export class ApiClient {
     this.loopNotifications = new LoopClient(apiBaseUrl, http);
     this.mealMatching = new MealMatchingClient(apiBaseUrl, http);
     this.metadata = new MetadataClient(apiBaseUrl, http);
+    this.meterGlucose = new MeterGlucoseClient(apiBaseUrl, http);
     this.migration = new MigrationClient(apiBaseUrl, http);
     this.myTenants = new MyTenantsClient(apiBaseUrl, http);
+    this.notes = new NoteClient(apiBaseUrl, http);
     this.notifications = new NotificationsClient(apiBaseUrl, http);
     this.nutrition = new NutritionClient(apiBaseUrl, http);
-    this.observations = new ObservationsClient(apiBaseUrl, http);
     this.oidc = new OidcClient(apiBaseUrl, http);
     this.oidcDiscovery = new WellKnownClient(apiBaseUrl, http);
     this.patientRecord = new PatientRecordClient(apiBaseUrl, http);
@@ -211,7 +223,9 @@ export class ApiClient {
     this.predictions = new PredictionClient(apiBaseUrl, http);
     this.processing = new ProcessingClient(apiBaseUrl, http);
     this.profile = new ProfileClient(apiBaseUrl, http);
+    this.pumpSnapshots = new PumpSnapshotClient(apiBaseUrl, http);
     this.retrospective = new RetrospectiveClient(apiBaseUrl, http);
+    this.sensorGlucose = new SensorGlucoseClient(apiBaseUrl, http);
     this.services = new ServicesClient(apiBaseUrl, http);
     this.settings = new SettingsClient(apiBaseUrl, http);
     this.stateSpans = new StateSpansClient(apiBaseUrl, http);
@@ -225,6 +239,7 @@ export class ApiClient {
     this.trackers = new TrackersClient(apiBaseUrl, http);
     this.treatments = new TreatmentsClient(apiBaseUrl, http);
     this.uiSettings = new UISettingsClient(apiBaseUrl, http);
+    this.uploaderSnapshots = new UploaderSnapshotClient(apiBaseUrl, http);
     this.userPreferences = new UserPreferencesClient(apiBaseUrl, http);
     this.v2DData = new DDataClient(apiBaseUrl, http);
     this.v2Properties = new PropertiesClient(apiBaseUrl, http);

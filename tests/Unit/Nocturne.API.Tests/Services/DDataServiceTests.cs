@@ -198,6 +198,69 @@ public class DDataServiceTests
     }
 
     [Fact]
+    public void ProcessTreatments_ShouldPopulateLastProfileFromSwitch()
+    {
+        // Arrange - lastProfileFromSwitch must be computed from profile treatments
+        // cgm-remote-monitor finds the latest zero-duration Profile Switch before current time
+        var treatments = new List<Treatment>
+        {
+            new()
+            {
+                EventType = "Profile Switch",
+                Mills = 1000,
+                Duration = 0,
+                Profile = "OldProfile",
+            },
+            new()
+            {
+                EventType = "Profile Switch",
+                Mills = 3000,
+                Duration = 0,
+                Profile = "CurrentProfile",
+            },
+            new()
+            {
+                EventType = "Profile Switch",
+                Mills = 2000,
+                Duration = 60,
+                Profile = "TimedProfile",
+            },
+            new()
+            {
+                EventType = "Meal Bolus",
+                Mills = 2500,
+                Duration = 0,
+            },
+        };
+
+        // Act
+        var result = _ddataService.ProcessTreatments(treatments, false);
+
+        // Assert - should pick the latest zero-duration Profile Switch
+        Assert.Equal("CurrentProfile", result.LastProfileFromSwitch);
+    }
+
+    [Fact]
+    public void ProcessTreatments_ShouldReturnNullLastProfileFromSwitch_WhenNoProfileSwitches()
+    {
+        // Arrange
+        var treatments = new List<Treatment>
+        {
+            new()
+            {
+                EventType = "Meal Bolus",
+                Mills = 1000,
+            },
+        };
+
+        // Act
+        var result = _ddataService.ProcessTreatments(treatments, false);
+
+        // Assert
+        Assert.Null(result.LastProfileFromSwitch);
+    }
+
+    [Fact]
     public void IdMergePreferNew_ShouldPreferNewDataWhenCollisionFound()
     {
         // Arrange

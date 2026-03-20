@@ -43,6 +43,7 @@
     ShieldCheck,
     Building2,
     Luggage,
+    HeartPulse,
   } from "lucide-svelte";
   import type { AuthUser } from "$lib/stores/auth-store.svelte";
 
@@ -203,6 +204,11 @@
       icon: Settings,
       children: [
         { title: "Account", href: "/settings/account", icon: User },
+        {
+          title: "Patient Record",
+          href: "/settings/patient",
+          icon: HeartPulse,
+        },
         { title: "Appearance", href: "/settings/appearance", icon: Palette },
         { title: "Therapy", href: "/settings/profile", icon: Syringe },
         { title: "Features", href: "/settings/features", icon: Sparkles },

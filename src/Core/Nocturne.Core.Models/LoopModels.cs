@@ -177,10 +177,16 @@ public class LoopOverridePreset
     public string? Symbol { get; set; }
 
     /// <summary>
-    /// Gets or sets the duration in seconds
+    /// Gets or sets the duration in seconds (Loop's external format)
     /// </summary>
     [JsonPropertyName("duration")]
     public double? Duration { get; set; }
+
+    /// <summary>
+    /// Duration converted to minutes for consistency with Treatment.Duration
+    /// </summary>
+    [JsonIgnore]
+    public double? DurationMinutes => Duration.HasValue ? Duration.Value / 60.0 : null;
 
     /// <summary>
     /// Gets or sets the target glucose range

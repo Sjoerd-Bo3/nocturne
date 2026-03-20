@@ -68,6 +68,12 @@ public class StateSpanEntity : ITenantScoped
     public string? OriginalId { get; set; }
 
     /// <summary>
+    /// ID of the span that superseded this one (self-referencing FK)
+    /// </summary>
+    [Column("superseded_by_id")]
+    public Guid? SupersededById { get; set; }
+
+    /// <summary>
     /// System tracking: when record was created
     /// </summary>
     [Column("created_at")]

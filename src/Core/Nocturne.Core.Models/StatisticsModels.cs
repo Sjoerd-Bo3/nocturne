@@ -2250,22 +2250,25 @@ public class AidSegmentMetrics
 }
 
 /// <summary>
-/// Input context for a strategy's Calculate method, containing the algorithm
-/// and time window for a single detection segment.
+/// Input context for a strategy's Calculate method, containing the algorithm,
+/// time window, and pre-sliced data for a single detection segment.
 /// </summary>
 public class AidDetectionContext
 {
     /// <summary>Which AID algorithm to detect metrics for</summary>
-    [JsonPropertyName("algorithm")]
     public AidAlgorithm Algorithm { get; set; }
 
     /// <summary>Start of the detection window</summary>
-    [JsonPropertyName("startDate")]
     public DateTime StartDate { get; set; }
 
     /// <summary>End of the detection window</summary>
-    [JsonPropertyName("endDate")]
     public DateTime EndDate { get; set; }
+
+    /// <summary>APS snapshots within the segment window (for OS AID strategies)</summary>
+    public IReadOnlyList<V4.ApsSnapshot> ApsSnapshots { get; set; } = [];
+
+    /// <summary>Temp basals within the segment window (for TBR-based strategies)</summary>
+    public IReadOnlyList<V4.TempBasal> TempBasals { get; set; } = [];
 }
 
 /// <summary>
@@ -2276,14 +2279,11 @@ public class AidDetectionContext
 public class DeviceSegmentInput
 {
     /// <summary>Which AID algorithm this device uses</summary>
-    [JsonPropertyName("algorithm")]
     public AidAlgorithm Algorithm { get; set; }
 
     /// <summary>Start of the device's active window</summary>
-    [JsonPropertyName("startDate")]
     public DateTime StartDate { get; set; }
 
     /// <summary>End of the device's active window</summary>
-    [JsonPropertyName("endDate")]
     public DateTime EndDate { get; set; }
 }

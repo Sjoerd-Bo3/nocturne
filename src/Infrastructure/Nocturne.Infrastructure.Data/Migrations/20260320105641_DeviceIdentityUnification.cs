@@ -84,43 +84,11 @@ namespace Nocturne.Infrastructure.Data.Migrations
                 type: "uuid",
                 nullable: true);
 
-            // Add superseded_by_id column to state_spans (from StateSpan changes)
-            migrationBuilder.AddColumn<Guid>(
-                name: "superseded_by_id",
-                table: "state_spans",
-                type: "uuid",
-                nullable: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_state_spans_superseded_by_id",
-                table: "state_spans",
-                column: "superseded_by_id");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_state_spans_state_spans_superseded_by_id",
-                table: "state_spans",
-                column: "superseded_by_id",
-                principalTable: "state_spans",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Remove state_spans FK and column
-            migrationBuilder.DropForeignKey(
-                name: "FK_state_spans_state_spans_superseded_by_id",
-                table: "state_spans");
-
-            migrationBuilder.DropIndex(
-                name: "ix_state_spans_superseded_by_id",
-                table: "state_spans");
-
-            migrationBuilder.DropColumn(
-                name: "superseded_by_id",
-                table: "state_spans");
-
             // Remove device_id columns from related tables
             migrationBuilder.DropColumn(
                 name: "device_id",

@@ -17,6 +17,17 @@ public class StateSpanRepository
     private readonly ILogger<StateSpanRepository> _logger;
 
     /// <summary>
+    /// Categories where only one span can be active at a time.
+    /// When a new span is inserted in one of these categories, any existing open spans are closed.
+    /// </summary>
+    private static readonly HashSet<string> ExclusiveCategories = new(StringComparer.OrdinalIgnoreCase)
+    {
+        nameof(StateSpanCategory.Override),
+        nameof(StateSpanCategory.TemporaryTarget),
+        nameof(StateSpanCategory.Profile),
+    };
+
+    /// <summary>
     /// Initializes a new instance of the StateSpanRepository class
     /// </summary>
     /// <param name="context">The database context</param>
@@ -144,6 +155,32 @@ public class StateSpanRepository
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // For exclusive categories, close any existing open spans when a new one is inserted
+        if (isNew && ExclusiveCategories.Contains(entity.Category))
+        {
+            var openSpans = await _context.StateSpans
+                .Where(s =>
+                    s.Category == entity.Category
+                    && s.EndTimestamp == null
+                    && s.Id != entity.Id)
+                .ToListAsync(cancellationToken);
+
+            if (openSpans.Count > 0)
+            {
+                foreach (var openSpan in openSpans)
+                {
+                    openSpan.EndTimestamp = entity.StartTimestamp;
+                    openSpan.SupersededById = entity.Id;
+                    openSpan.UpdatedAt = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogDebug(
+                    "Superseded {Count} open {Category} span(s) with new span {NewSpanId}",
+                    openSpans.Count, entity.Category, entity.Id);
+            }
+        }
 
         // Link new state spans to canonical groups for deduplication
         if (isNew)
