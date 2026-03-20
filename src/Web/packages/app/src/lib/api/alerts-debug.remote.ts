@@ -18,7 +18,7 @@ export const getAlertsDebugSnapshot = query(
     try {
       const [alarmConfiguration, entries] = await Promise.all([
         apiClient.uiSettings.getAlarmConfiguration(),
-        apiClient.glucose.getSensorGlucose(undefined, undefined, 1),
+        apiClient.sensorGlucose.getAll(undefined, undefined, 1),
       ]);
 
       const latestEntry: SensorGlucose | null = entries?.data?.[0] ?? null;

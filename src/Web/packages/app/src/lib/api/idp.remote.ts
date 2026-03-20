@@ -68,7 +68,7 @@ export const getIdpData = query(
 		const pageSize = 1000;
 
 		// Fetch sensor glucose readings
-		const glucoseResult = await apiClient.glucose.getSensorGlucose(startDate, endDate, 10000);
+		const glucoseResult = await apiClient.sensorGlucose.getAll(startDate, endDate, 10000);
 		const entries = glucoseResult.data ?? [];
 
 		// Paginate boluses

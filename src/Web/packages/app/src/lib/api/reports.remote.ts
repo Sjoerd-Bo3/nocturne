@@ -64,7 +64,7 @@ export const getEntries = query(
 		const { apiClient } = locals;
 		const { startDate, endDate } = calculateDateRange(input);
 
-		const result = await apiClient.glucose.getSensorGlucose(startDate, endDate, 10000);
+		const result = await apiClient.sensorGlucose.getAll(startDate, endDate, 10000);
 		const entries = result.data ?? [];
 
 		return {
@@ -189,7 +189,7 @@ export const getReportsData = query(
 		const pageSize = 1000;
 
 		// Fetch sensor glucose readings
-		const glucoseResult = await apiClient.glucose.getSensorGlucose(startDate, endDate, 10000);
+		const glucoseResult = await apiClient.sensorGlucose.getAll(startDate, endDate, 10000);
 		const entries = glucoseResult.data ?? [];
 
 		// Paginate boluses
@@ -299,7 +299,7 @@ export const getSiteChangeImpact = query(
 		const { startDate, endDate } = calculateDateRange(input);
 
 		// Fetch sensor glucose readings
-		const glucoseResult = await apiClient.glucose.getSensorGlucose(startDate, endDate, 10000);
+		const glucoseResult = await apiClient.sensorGlucose.getAll(startDate, endDate, 10000);
 		const entries = glucoseResult.data ?? [];
 
 		// Paginate device events to get all site changes
