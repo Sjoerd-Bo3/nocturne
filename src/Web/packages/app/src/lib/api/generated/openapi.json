@@ -4109,6 +4109,69 @@
         "x-client-property": "dataOverview"
       }
     },
+    "/api/v4/year-overview/gri-timeline": {
+      "get": {
+        "tags": [
+          "V4 Data Overview"
+        ],
+        "summary": "Get monthly GRI (Glycemic Risk Index) scores for a given year",
+        "operationId": "DataOverview_GetGriTimeline",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "description": "The year to compute GRI timeline for",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "dataSources",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "description": "Optional data source filters (multiple allowed)",
+            "schema": {
+              "type": "array",
+              "nullable": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GriTimelineResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "query",
+        "x-client-property": "dataOverview"
+      }
+    },
     "/api/v4/debug/echo/{echo}": {
       "get": {
         "tags": [
@@ -29209,6 +29272,56 @@
               "type": "integer",
               "format": "int32"
             }
+          }
+        }
+      },
+      "GriTimelineResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GriTimelinePeriod"
+            }
+          }
+        }
+      },
+      "GriTimelinePeriod": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "periodStart": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "gri": {
+            "$ref": "#/components/schemas/GlycemicRiskIndex"
+          },
+          "averageGlucoseMgdl": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalDailyDose": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "averageDailyCarbs": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "readingCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

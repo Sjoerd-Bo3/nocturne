@@ -19,4 +19,12 @@ public interface IDataOverviewService
     /// <param name="dataSources">Optional data source filters</param>
     /// <param name="cancellationToken">Cancellation token</param>
     Task<DailySummaryResponse> GetDailySummaryAsync(int year, string[]? dataSources = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get monthly GRI (Glycemic Risk Index) scores for a given year
+    /// </summary>
+    /// <param name="year">The year to compute GRI timeline for</param>
+    /// <param name="dataSources">Optional data source filters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task<GriTimelineResponse> GetGriTimelineAsync(int year, string[]? dataSources = null, CancellationToken cancellationToken = default);
 }

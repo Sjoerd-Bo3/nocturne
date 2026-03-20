@@ -5058,6 +5058,61 @@ export class DataOverviewClient {
         }
         return Promise.resolve<DailySummaryResponse>(null as any);
     }
+
+    /**
+     * Get monthly GRI (Glycemic Risk Index) scores for a given year
+     * @param year (optional) The year to compute GRI timeline for
+     * @param dataSources (optional) Optional data source filters (multiple allowed)
+     */
+    getGriTimeline(year?: number | undefined, dataSources?: string[] | null | undefined, signal?: AbortSignal): Promise<GriTimelineResponse> {
+        let url_ = this.baseUrl + "/api/v4/year-overview/gri-timeline?";
+        if (year === null)
+            throw new globalThis.Error("The parameter 'year' cannot be null.");
+        else if (year !== undefined)
+            url_ += "year=" + encodeURIComponent("" + year) + "&";
+        if (dataSources !== undefined && dataSources !== null)
+            dataSources && dataSources.forEach(item => { url_ += "dataSources=" + encodeURIComponent("" + item) + "&"; });
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetGriTimeline(_response);
+        });
+    }
+
+    protected processGetGriTimeline(response: Response): Promise<GriTimelineResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as GriTimelineResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<GriTimelineResponse>(null as any);
+    }
 }
 
 export class DebugClient {
@@ -26064,6 +26119,21 @@ export interface DailySummaryDay {
     totalCarbs?: number | undefined;
     totalCount?: number;
     counts?: { [key: string]: number; };
+}
+
+export interface GriTimelineResponse {
+    year?: number;
+    periods?: GriTimelinePeriod[];
+}
+
+export interface GriTimelinePeriod {
+    periodStart?: string;
+    periodEnd?: string;
+    gri?: GlycemicRiskIndex;
+    averageGlucoseMgdl?: number | undefined;
+    totalDailyDose?: number | undefined;
+    averageDailyCarbs?: number | undefined;
+    readingCount?: number;
 }
 
 export interface InAppNotificationDto {

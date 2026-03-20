@@ -80,6 +80,13 @@
   --iob-bolus: rgba(30, 150, 252, 1.0);
   --iob-temporary: rgba(162, 214, 249, 0.5);
 
+  /* Glycemia Risk Index (GRI) Zones */
+  --gri-zone-a: rgb(76, 175, 80);     /* Green - best glycemia */
+  --gri-zone-b: rgb(139, 195, 74);    /* Light green */
+  --gri-zone-c: rgb(255, 235, 59);    /* Yellow */
+  --gri-zone-d: rgb(255, 152, 0);     /* Orange */
+  --gri-zone-e: rgb(244, 67, 54);     /* Red - worst glycemia */
+
   /* Chart Colors - Trio themed */
   --chart-1: rgb(30, 150, 252); /* Insulin blue */
   --chart-2: rgb(111, 207, 151); /* LoopGreen */

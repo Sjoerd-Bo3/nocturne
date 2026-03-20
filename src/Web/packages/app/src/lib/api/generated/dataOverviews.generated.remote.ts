@@ -35,3 +35,18 @@ export const getDailySummary = query(z.object({ year: z.number().optional(), dat
     throw error(500, 'Failed to get daily summary');
   }
 });
+
+/** Get monthly GRI (Glycemic Risk Index) scores for a given year */
+export const getGriTimeline = query(z.object({ year: z.number().optional(), dataSources: z.array(z.string()).optional() }).optional(), async (params) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    return await apiClient.dataOverview.getGriTimeline(params?.year, params?.dataSources);
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in dataOverview.getGriTimeline:', err);
+    throw error(500, 'Failed to get gri timeline');
+  }
+});

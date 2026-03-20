@@ -20,8 +20,13 @@
   import {
     getAvailableYears,
     getDailySummary,
+    getGriTimeline,
   } from "$api/generated/dataOverviews.generated.remote";
-  import type { DailySummaryDay } from "$api/generated/nocturne-api-client";
+  import GlycemicRiskIndexChart from "$lib/components/reports/GlycemicRiskIndexChart.svelte";
+  import type {
+    DailySummaryDay,
+    GriTimelinePeriod,
+  } from "$api/generated/nocturne-api-client";
   import { getDataTypeLabel } from "$lib/utils/data-type-labels";
   import { formatGlucoseValue, getUnitLabel } from "$lib/utils/formatting";
   import { glucoseUnits } from "$lib/stores/appearance-store.svelte";
@@ -40,6 +45,7 @@
   let selectedDataSources = $state<string[]>([]);
   let prevDataSources = $state<string[]>([]);
   let yearData = $state<Map<number, DailySummaryDay[]>>(new Map());
+  let griTimelineData = $state<Map<number, GriTimelinePeriod[]>>(new Map());
   let loadingYears = $state<Set<number>>(new Set());
   let metadataLoaded = $state(false);
   let metadataLoading = $state(false);
@@ -196,6 +202,7 @@
       await waitForQuery(result);
       const days = result.current?.days ?? [];
       yearData = new Map([...yearData, [year, days]]);
+      loadGriTimeline(year);
     } catch (err) {
       console.error(`Failed to load data for year ${year}:`, err);
     } finally {
@@ -205,8 +212,25 @@
     }
   }
 
+  async function loadGriTimeline(year: number) {
+    if (griTimelineData.has(year)) return;
+    try {
+      const result = getGriTimeline({
+        year,
+        dataSources:
+          selectedDataSources.length > 0 ? selectedDataSources : undefined,
+      });
+      await waitForQuery(result);
+      const periods = result.current?.periods ?? [];
+      griTimelineData = new Map([...griTimelineData, [year, periods]]);
+    } catch (err) {
+      console.error(`Failed to load GRI timeline for year ${year}:`, err);
+    }
+  }
+
   function clearAndReload() {
     yearData = new Map();
+    griTimelineData = new Map();
     loadingYears = new Set();
     if (sortedYears.length > 0) {
       loadYearData(sortedYears[0]);
@@ -926,6 +950,15 @@
                   </Chart>
                 </div>
               </div>
+              {@const griPeriods = griTimelineData.get(year) ?? []}
+              {#if griPeriods.length > 1}
+                <div class="mt-4 rounded-lg border border-border bg-card p-4">
+                  <GlycemicRiskIndexChart
+                    gri={griPeriods[griPeriods.length - 1]?.gri ?? { score: 0 }}
+                    timeSeriesData={griPeriods}
+                  />
+                </div>
+              {/if}
             {:else if isYearLoading}
               <div
                 class="flex h-[120px] items-center justify-center rounded-lg border border-border bg-card"

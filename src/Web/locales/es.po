@@ -945,6 +945,7 @@ msgstr ""
 #. placeholder {0}: scaledFat()
 #. placeholder {0}: foodEntry.fat
 #. placeholder {0}: (snapshot.cob ?? 0).toFixed(0)
+#. placeholder {0}: Math.round(d.averageDailyCarbs)
 #. placeholder {0}: formatCarbDisplay(averages.avgCarbs)
 #. placeholder {0}: formatCarbDisplay(averages.avgProtein)
 #. placeholder {0}: formatCarbDisplay(averages.avgFat)
@@ -975,6 +976,7 @@ msgstr ""
 #: src/lib/components/meal-matching/MealMatchReviewDialog.svelte
 #: src/lib/components/meal-matching/MealMatchReviewDialog.svelte
 #: src/lib/components/reports/ApsStateCard.svelte
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
 #: src/lib/components/reports/PeriodAverages.svelte
 #: src/lib/components/reports/PeriodAverages.svelte
 #: src/lib/components/reports/PeriodAverages.svelte
@@ -1063,6 +1065,7 @@ msgstr ""
 #: src/lib/components/reports/DailySummaryTable.svelte
 #: src/routes/reports/+page.svelte
 #: src/routes/reports/agp/+page.svelte
+#: src/routes/reports/idp/+page.svelte
 msgid "Time in Range"
 msgstr ""
 
@@ -2567,10 +2570,12 @@ msgstr ""
 #. placeholder {0}: totalReadings.toLocaleString()
 #. placeholder {0}: entries.length.toLocaleString()
 #. placeholder {0}: readings.length
+#. placeholder {0}: entries.length.toLocaleString()
 #: src/lib/components/dashboard/widgets/DailySummaryWidget.svelte
 #: src/lib/components/dashboard/widgets/TirChartWidget.svelte
 #: src/routes/reports/agp/+page.svelte
 #: src/routes/reports/battery/+page.svelte
+#: src/routes/reports/idp/+page.svelte
 msgid "{0} readings"
 msgstr ""
 
@@ -2597,6 +2602,7 @@ msgstr ""
 
 #: src/routes/reports/agp/+page.svelte
 #: src/routes/reports/basal-analysis/+page.svelte
+#: src/routes/reports/idp/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 #: src/routes/reports/site-change-impact/+page.svelte
 msgid "<0/> Print"
@@ -2662,6 +2668,7 @@ msgstr ""
 #: src/lib/components/reports/DailyStatistics.svelte
 #: src/routes/reports/+page.svelte
 #: src/routes/reports/agp/+page.svelte
+#: src/routes/reports/idp/+page.svelte
 msgid "Average"
 msgstr ""
 
@@ -2685,8 +2692,9 @@ msgstr ""
 msgid "Std Dev"
 msgstr ""
 
-#~ msgid "CGM Active"
-#~ msgstr ""
+#: src/routes/reports/idp/+page.svelte
+msgid "CGM Active"
+msgstr ""
 
 #~ msgid "data quality"
 #~ msgstr ""
@@ -4018,15 +4026,11 @@ msgstr ""
 msgid "Basal Rate (U/hr)"
 msgstr ""
 
-#: src/lib/components/reports/BasalRatePercentileChart.svelte
-#: src/lib/components/reports/SiteChangeImpactChart.svelte
-msgid "10th-25th / 75th-90th percentile"
-msgstr ""
+#~ msgid "10th-25th / 75th-90th percentile"
+#~ msgstr ""
 
-#: src/lib/components/reports/BasalRatePercentileChart.svelte
-#: src/lib/components/reports/SiteChangeImpactChart.svelte
-msgid "25th-75th percentile"
-msgstr ""
+#~ msgid "25th-75th percentile"
+#~ msgstr ""
 
 #: src/lib/components/reports/BasalRatePercentileChart.svelte
 msgid "Median basal rate"
@@ -4047,6 +4051,7 @@ msgstr ""
 #~ msgid "Avg Bolus"
 #~ msgstr ""
 
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 msgid "Avg TDD"
@@ -4585,6 +4590,7 @@ msgid "No data"
 msgstr ""
 
 #: src/lib/components/reports/RetrospectiveStats.svelte
+#: src/lib/components/reports/ScheduledBasalRateChart.svelte
 #: src/routes/settings/algorithm/+page.svelte
 #: src/routes/settings/algorithm/+page.svelte
 msgid "U"
@@ -4626,6 +4632,7 @@ msgid "<0/> Try Again"
 msgstr ""
 
 #: src/lib/components/reports/ApsStateCard.svelte
+#: src/routes/reports/idp/+page.svelte
 msgid "Target"
 msgstr ""
 
@@ -4704,11 +4711,11 @@ msgstr ""
 msgid "Avg Before"
 msgstr ""
 
+#: src/lib/components/reports/ScheduleFooter.svelte
 #: src/lib/components/reports/SiteChangeImpactChart.svelte
 #: src/lib/components/reports/SiteChangeImpactChart.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
-#: src/routes/reports/agp/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 msgid "mg/dL"
 msgstr ""
@@ -7724,8 +7731,10 @@ msgstr ""
 #. placeholder {0}: dayCount
 #. placeholder {0}: reportsResource.date.dayCount
 #. placeholder {0}: dayCount
+#. placeholder {0}: dayCount
 #: src/routes/reports/agp/+page.svelte
 #: src/routes/reports/basal-analysis/+page.svelte
+#: src/routes/reports/idp/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 msgid "{0} days"
 msgstr ""
@@ -7943,21 +7952,25 @@ msgstr ""
 
 #: src/routes/reports/+page.svelte
 #: src/routes/reports/agp/+page.svelte
+#: src/routes/reports/idp/+page.svelte
 msgid "Est. A1C"
 msgstr ""
 
 #: src/routes/reports/agp/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
+#: src/routes/reports/idp/+page.svelte
 msgid "GMI"
 msgstr ""
 
 #: src/routes/reports/agp/+page.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/reports/executive-summary/+page.svelte
+#: src/routes/reports/idp/+page.svelte
 msgid "CV"
 msgstr ""
 
 #: src/routes/reports/agp/+page.svelte
+#: src/routes/reports/idp/+page.svelte
 msgid "Target: ≤33%"
 msgstr ""
 
@@ -8129,7 +8142,11 @@ msgstr ""
 #. placeholder {0}: startDate.toLocaleDateString()
 #. placeholder {1}: endDate.toLocaleDateString()
 #. placeholder {2}: new Date(dateRange.lastUpdated).toLocaleString()
+#. placeholder {0}: startDate.toLocaleDateString()
+#. placeholder {1}: endDate.toLocaleDateString()
+#. placeholder {2}: new Date(dateRange.lastUpdated).toLocaleString()
 #: src/routes/reports/agp/+page.svelte
+#: src/routes/reports/idp/+page.svelte
 msgid ""
 "Data from {0} – {1}.\n"
 "Last updated {2}."
@@ -8780,6 +8797,7 @@ msgstr ""
 msgid "{0}U total"
 msgstr ""
 
+#: src/routes/reports/idp/+page.svelte
 #: src/routes/reports/insulin-delivery/+page.svelte
 msgid "Boluses/Day"
 msgstr ""
@@ -14018,6 +14036,7 @@ msgstr ""
 msgid "Avg TIR"
 msgstr ""
 
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
 #: src/routes/calendar/+page.svelte
 msgid "Avg Glucose"
 msgstr ""
@@ -18127,6 +18146,8 @@ msgstr ""
 #. placeholder {0}: bolusCalc.insulinRecommendation.toFixed(2)
 #. placeholder {0}: bolusCalc.insulinProgrammed.toFixed(2)
 #. placeholder {0}: bolusCalc.insulinOnBoard.toFixed(2)
+#. placeholder {0}: d.totalDailyDose.toFixed(1)
+#. placeholder {0}: insulinStats?.avgBolus?.toFixed(1) ?? "--"
 #: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
 #: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
 #: src/lib/components/dashboard/glucose-chart/dialogs/GlucoseInspectionDialog.svelte
@@ -18134,6 +18155,8 @@ msgstr ""
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+#: src/routes/reports/idp/+page.svelte
 msgid "{0} U"
 msgstr ""
 
@@ -18279,6 +18302,7 @@ msgid "Carb Input"
 msgstr ""
 
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentInspectionDialog.svelte
+#: src/lib/components/reports/ScheduleFooter.svelte
 msgid "Carb Ratio"
 msgstr ""
 
@@ -18478,4 +18502,283 @@ msgstr ""
 
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 msgid "<0/> Delete All"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Error Loading IDP Report"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Insulin Dosing Profile - Nocturne Reports"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Insulin Dosing Profile report with delivery statistics, glucose metrics, basal analysis, and bolus distribution"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "<0/> Insulin Dosing Profile"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Comprehensive insulin delivery analysis with glucose context"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "<0/> Insulin Summary"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Daily insulin delivery breakdown"
+msgstr ""
+
+#~ msgid "Basal: {0} U ({1}%)"
+#~ msgstr ""
+
+#~ msgid "Bolus: {0} U ({1}%)"
+#~ msgstr ""
+
+#~ msgid "Delivered Basal"
+#~ msgstr ""
+
+#~ msgid "Total Bolus Count"
+#~ msgstr ""
+
+#~ msgid "Micro-Boluses"
+#~ msgstr ""
+
+#~ msgid "({0} U)"
+#~ msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "<0/> Glucose Metrics"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Key glucose indicators for this period"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "No glucose analysis available"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "<0/> AID System Use"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Automated insulin delivery system metrics"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "CGM Use"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Pump Use"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "AID Active"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Site Changes"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "AID metrics require pump integration data, which is not yet available."
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "<0/> Glycemic Risk Index"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Composite metric of hypo and hyperglycemia risk"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "No GRI data available"
+msgstr ""
+
+#~ msgid "Median glucose with percentile bands showing your typical daily pattern"
+#~ msgstr ""
+
+#~ msgid "<0/> Basal Rate Profile"
+#~ msgstr ""
+
+#~ msgid "Hourly basal rate distribution with percentile bands"
+#~ msgstr ""
+
+#~ msgid "No basal rate data available"
+#~ msgstr ""
+
+#~ msgid "<0/> Bolus Distribution"
+#~ msgstr ""
+
+#~ msgid "Average bolus frequency by hour of day"
+#~ msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid "Zone E (81-100)"
+msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid "Zone D (61-80)"
+msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid "Zone C (41-60)"
+msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid "Zone B (21-40)"
+msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid "Zone A (0-20)"
+msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid "GRI"
+msgstr ""
+
+#~ msgid "Risk is indicated in percentiles — 0 is lowest risk and 100 is highest risk"
+#~ msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid "Hypoglycemia Component (%)"
+msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid "Hyperglycemia Component (%)"
+msgstr ""
+
+#: src/lib/components/reports/HourlyBolusChart.svelte
+msgid "Avg bolus count"
+msgstr ""
+
+#: src/lib/components/reports/HourlyBolusChart.svelte
+msgid "No bolus data"
+msgstr ""
+
+#: src/routes/reports/+page.svelte
+msgid "Insulin Dosing Profile"
+msgstr ""
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "Correction Range"
+msgstr ""
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "g/U"
+msgstr ""
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "Correction Factor"
+msgstr ""
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "mg/dL/U"
+msgstr ""
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "12AM"
+msgstr ""
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "6AM"
+msgstr ""
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "12PM"
+msgstr ""
+
+#: src/lib/components/reports/ScheduleFooter.svelte
+msgid "6PM"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Avg Total Daily Dose"
+msgstr ""
+
+#. placeholder {0}: insulinStats?.tdd?.toFixed(1) ?? "--"
+#. placeholder {0}: avgBasal?.toFixed(1) ?? "--"
+#. placeholder {0}: avgScheduled?.toFixed(1) ?? "--"
+#: src/routes/reports/idp/+page.svelte
+#: src/routes/reports/idp/+page.svelte
+#: src/routes/reports/idp/+page.svelte
+msgid "{0} U/day"
+msgstr ""
+
+#. placeholder {0}: avgBasal?.toFixed(1) ?? "--"
+#. placeholder {1}: basalPct.toFixed(0)
+#: src/routes/reports/idp/+page.svelte
+msgid "Basal: {0} U/day ({1}%)"
+msgstr ""
+
+#. placeholder {0}: avgBolus?.toFixed(1) ?? "--"
+#. placeholder {1}: bolusPct.toFixed(0)
+#: src/routes/reports/idp/+page.svelte
+msgid "Bolus: {0} U/day ({1}%)"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Avg Delivered Basal"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Avg Scheduled Basal"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Avg Bolus Size"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Meal Boluses/Day"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Correction Boluses/Day"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "<0/> Glucose Pattern"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Daily glucose overlay with basal rate, bolus distribution, and dosing profile"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "Scheduled Basal Rate"
+msgstr ""
+
+#: src/routes/reports/idp/+page.svelte
+msgid "User-Initiated Boluses Per Day"
+msgstr ""
+
+#: src/lib/components/reports/ScheduledBasalRateChart.svelte
+msgid "No scheduled basal rate data"
+msgstr ""
+
+#: src/routes/reports/+page.svelte
+msgid "Standardised insulin and glucose summary"
+msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid ""
+"Risk is indicated in percentiles — 0 is lowest risk and 100 is\n"
+"highest risk"
+msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid "GRI Score"
+msgstr ""
+
+#: src/lib/components/reports/GlycemicRiskIndexChart.svelte
+msgid "Avg Carbs"
 msgstr ""

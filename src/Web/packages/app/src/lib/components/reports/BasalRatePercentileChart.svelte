@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { AreaChart } from "layerchart";
+  import { AreaChart, Legend } from "layerchart";
+  import { scaleOrdinal } from "d3-scale";
   import type { HourlyBasalPercentileData } from "$lib/api";
   import { Layers, Loader2 } from "lucide-svelte";
 
@@ -26,6 +27,18 @@
     if (hour === 12) return "12 PM";
     return `${hour - 12} PM`;
   }
+
+  const legendScale = scaleOrdinal<string, string>()
+    .domain([
+      "10th-25th / 75th-90th percentile",
+      "25th-75th percentile",
+      "Median basal rate",
+    ])
+    .range([
+      "var(--chart-1)",
+      "var(--chart-2)",
+      "hsl(var(--primary))",
+    ]);
 </script>
 
 <div class="w-full">
@@ -45,7 +58,6 @@
         x={(d) => d.hour}
         y={(d) => d.median}
         renderContext="svg"
-        legend
         series={[
           {
             key: "p10",
@@ -115,31 +127,16 @@
       />
     </div>
 
-    <!-- Legend explanation -->
-    <div
-      class="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground"
-    >
-      <div class="flex items-center gap-1.5">
-        <div
-          class="h-3 w-3 rounded-sm"
-          style="background-color: var(--chart-1); opacity: 0.5"
-        ></div>
-        <span>10th-25th / 75th-90th percentile</span>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <div
-          class="h-3 w-3 rounded-sm"
-          style="background-color: var(--chart-2)"
-        ></div>
-        <span>25th-75th percentile</span>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <div
-          class="h-0.5 w-4 rounded"
-          style="background-color: hsl(var(--primary))"
-        ></div>
-        <span>Median basal rate</span>
-      </div>
+    <!-- Legend -->
+    <div class="mt-4 flex justify-center">
+      <Legend
+        scale={legendScale}
+        variant="swatches"
+        classes={{
+          label: "text-xs text-muted-foreground",
+          swatch: "rounded-sm",
+        }}
+      />
     </div>
   {:else}
     <div

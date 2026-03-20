@@ -93,4 +93,46 @@ public class DataOverviewController : ControllerBase
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
+
+    /// <summary>
+    /// Get monthly GRI (Glycemic Risk Index) scores for a given year
+    /// </summary>
+    /// <param name="year">The year to compute GRI timeline for</param>
+    /// <param name="dataSources">Optional data source filters (multiple allowed)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    [HttpGet("gri-timeline")]
+    [RemoteQuery]
+    [ResponseCache(Duration = 300, VaryByQueryKeys = new[] { "*" })]
+    [ProducesResponseType(typeof(GriTimelineResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<GriTimelineResponse>> GetGriTimeline(
+        [FromQuery] int year,
+        [FromQuery] string[]? dataSources = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            if (year < 1970 || year > 2100)
+                return BadRequest(new { error = "Year must be between 1970 and 2100" });
+
+            // Filter out empty strings
+            var cleanSources = dataSources?.Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
+            if (cleanSources is { Length: 0 })
+                cleanSources = null;
+
+            var result = await _dataOverviewService.GetGriTimelineAsync(
+                year,
+                cleanSources,
+                cancellationToken
+            );
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting GRI timeline for year {Year}", year);
+            return StatusCode(500, new { error = "Internal server error" });
+        }
+    }
 }
