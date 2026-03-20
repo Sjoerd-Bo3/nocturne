@@ -2,8 +2,10 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
@@ -873,16 +875,20 @@ public class StatusServiceTests
     private StatusService CreateStatusService(
         IConfiguration configuration,
         NocturneDbContext? context = null
-    ) =>
-        new(
+    )
+    {
+        var mockDbContextFactory = new Mock<IDbContextFactory<NocturneDbContext>>();
+        return new StatusService(
             configuration,
             _mockCacheService.Object,
             _mockDemoModeService.Object,
             context ?? TestDbContextFactory.CreateInMemoryContext(),
+            mockDbContextFactory.Object,
             _httpContextAccessor,
             _mockTenantAccessor.Object,
             _mockLogger.Object
         );
+    }
 
     private static string ResolveExpectedHead()
     {

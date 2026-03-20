@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -280,11 +281,13 @@ public class CacheIntegrationTests
         };
         var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
 
+        var mockDbContextFactory = new Mock<IDbContextFactory<NocturneDbContext>>();
         var statusService = new StatusService(
             mockConfiguration,
             _mockCacheService.Object,
             _mockDemoModeService.Object,
             dbContext,
+            mockDbContextFactory.Object,
             httpContextAccessor,
             _mockTenantAccessor.Object,
             _mockStatusLogger.Object
@@ -358,11 +361,13 @@ public class CacheIntegrationTests
         };
         var httpContextAccessor = new HttpContextAccessor { HttpContext = httpContext };
 
+        var mockDbContextFactory = new Mock<IDbContextFactory<NocturneDbContext>>();
         var statusService = new StatusService(
             mockConfiguration,
             _mockCacheService.Object,
             _mockDemoModeService.Object,
             dbContext,
+            mockDbContextFactory.Object,
             httpContextAccessor,
             _mockTenantAccessor.Object,
             _mockStatusLogger.Object
