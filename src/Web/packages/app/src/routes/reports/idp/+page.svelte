@@ -20,7 +20,7 @@
   import TIRStackedChart from "$lib/components/reports/TIRStackedChart.svelte";
   import ReliabilityBadge from "$lib/components/reports/ReliabilityBadge.svelte";
   import GlycemicRiskIndexChart from "$lib/components/reports/GlycemicRiskIndexChart.svelte";
-  import BasalRatePercentileChart from "$lib/components/reports/BasalRatePercentileChart.svelte";
+  import ScheduledBasalRateChart from "$lib/components/reports/ScheduledBasalRateChart.svelte";
   import HourlyBolusChart from "$lib/components/reports/HourlyBolusChart.svelte";
   import ScheduleFooter from "$lib/components/reports/ScheduleFooter.svelte";
   import { getIdpData } from "$api/idp.remote";
@@ -47,7 +47,6 @@
     profileSummary: reportsResource.current?.profileSummary,
     analysis: reportsResource.current?.analysis,
     averagedStats: reportsResource.current?.averagedStats,
-    basalAnalysis: reportsResource.current?.basalAnalysis,
     dateRange: reportsResource.current?.dateRange ?? {
       from: new Date().toISOString(),
       to: new Date().toISOString(),
@@ -60,7 +59,6 @@
   const boluses = $derived(data.boluses);
   const insulinStats = $derived(data.insulinDeliveryStats);
   const analysis = $derived(data.analysis);
-  const basalAnalysis = $derived(data.basalAnalysis);
   const dateRange = $derived(data.dateRange);
   const startDate = $derived(new Date(dateRange.from));
   const endDate = $derived(new Date(dateRange.to));
@@ -360,14 +358,8 @@
       <!-- Scheduled Basal Rate -->
       <div>
         <h4 class="text-sm font-semibold text-muted-foreground mb-1">Scheduled Basal Rate</h4>
-        <div class="h-32">
-          {#if basalAnalysis?.hourlyPercentiles}
-            <BasalRatePercentileChart data={basalAnalysis.hourlyPercentiles} />
-          {:else}
-            <div class="flex items-center justify-center h-full text-muted-foreground text-xs">
-              No basal rate data available
-            </div>
-          {/if}
+        <div class="h-24">
+          <ScheduledBasalRateChart entries={data.profileSummary?.basalSchedules?.[0]?.entries ?? []} />
         </div>
       </div>
 
