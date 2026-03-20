@@ -227,6 +227,26 @@ public static class ConnectorServiceCollectionExtensions
             IConfiguration configuration,
             Assembly? backgroundServiceAssembly = null)
         {
+            // Connector assemblies may not be loaded yet since they're no longer
+            // directly referenced in Program.cs. Load them from the app's base directory.
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            foreach (var dll in Directory.GetFiles(baseDir, "Nocturne.Connectors.*.dll"))
+            {
+                try
+                {
+                    var assemblyName = AssemblyName.GetAssemblyName(dll);
+                    if (AppDomain.CurrentDomain.GetAssemblies()
+                        .All(a => a.GetName().Name != assemblyName.Name))
+                    {
+                        Assembly.LoadFrom(dll);
+                    }
+                }
+                catch
+                {
+                    // Skip assemblies that can't be loaded
+                }
+            }
+
             var connectorAssemblies = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => a.FullName?.Contains("Nocturne.Connectors") == true)
                 .ToList();
