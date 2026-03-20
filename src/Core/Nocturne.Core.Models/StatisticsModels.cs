@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Models;
 
@@ -2158,4 +2159,131 @@ public class SiteChangeImpactAnalysis
     /// <summary>Whether sufficient data exists for meaningful analysis</summary>
     [JsonPropertyName("hasSufficientData")]
     public bool HasSufficientData { get; set; }
+}
+
+/// <summary>
+/// Top-level DTO for AID (Automated Insulin Delivery) system metrics returned by the API endpoint.
+/// Contains time-weighted aggregates across mixed device segments within a report period.
+/// </summary>
+public class AidSystemMetrics
+{
+    /// <summary>Percentage of time CGM was in use</summary>
+    [JsonPropertyName("cgmUsePercent")]
+    public double? CgmUsePercent { get; set; }
+
+    /// <summary>Time-weighted pump use percentage across segments</summary>
+    [JsonPropertyName("pumpUsePercent")]
+    public double? PumpUsePercent { get; set; }
+
+    /// <summary>Time-weighted AID active percentage across segments</summary>
+    [JsonPropertyName("aidActivePercent")]
+    public double? AidActivePercent { get; set; }
+
+    /// <summary>CGM data completeness percentage</summary>
+    [JsonPropertyName("cgmActivePercent")]
+    public double? CgmActivePercent { get; set; }
+
+    /// <summary>Lower target bound in mg/dL</summary>
+    [JsonPropertyName("targetLow")]
+    public double? TargetLow { get; set; }
+
+    /// <summary>Upper target bound in mg/dL</summary>
+    [JsonPropertyName("targetHigh")]
+    public double? TargetHigh { get; set; }
+
+    /// <summary>Number of DeviceEvent SiteChange events in the period</summary>
+    [JsonPropertyName("siteChangeCount")]
+    public int? SiteChangeCount { get; set; }
+
+    /// <summary>Per-device time segments with individual metrics</summary>
+    [JsonPropertyName("segments")]
+    public List<AidTimeSegment> Segments { get; set; } = new();
+}
+
+/// <summary>
+/// One segment in the time-weighted AID breakdown, representing a period where
+/// a single algorithm was active on a specific device.
+/// </summary>
+public class AidTimeSegment
+{
+    /// <summary>Which AID algorithm was active during this segment</summary>
+    [JsonPropertyName("algorithm")]
+    public AidAlgorithm Algorithm { get; set; }
+
+    /// <summary>Start of the segment</summary>
+    [JsonPropertyName("startDate")]
+    public DateTime StartDate { get; set; }
+
+    /// <summary>End of the segment</summary>
+    [JsonPropertyName("endDate")]
+    public DateTime EndDate { get; set; }
+
+    /// <summary>Duration of the segment in hours</summary>
+    [JsonPropertyName("durationHours")]
+    public double DurationHours { get; set; }
+
+    /// <summary>Computed metrics for this segment</summary>
+    [JsonPropertyName("metrics")]
+    public AidSegmentMetrics Metrics { get; set; } = new();
+}
+
+/// <summary>
+/// Metrics computed by a strategy for a single AID time segment.
+/// </summary>
+public class AidSegmentMetrics
+{
+    /// <summary>Percentage of time AID was active in this segment</summary>
+    [JsonPropertyName("aidActivePercent")]
+    public double? AidActivePercent { get; set; }
+
+    /// <summary>Percentage of time pump was in use in this segment</summary>
+    [JsonPropertyName("pumpUsePercent")]
+    public double? PumpUsePercent { get; set; }
+
+    /// <summary>Number of loop iterations (applicable to open-source AIDs)</summary>
+    [JsonPropertyName("loopCycleCount")]
+    public int? LoopCycleCount { get; set; }
+
+    /// <summary>Number of enacted suggestions</summary>
+    [JsonPropertyName("enactedCount")]
+    public int? EnactedCount { get; set; }
+}
+
+/// <summary>
+/// Input context for a strategy's Calculate method, containing the algorithm
+/// and time window for a single detection segment.
+/// </summary>
+public class AidDetectionContext
+{
+    /// <summary>Which AID algorithm to detect metrics for</summary>
+    [JsonPropertyName("algorithm")]
+    public AidAlgorithm Algorithm { get; set; }
+
+    /// <summary>Start of the detection window</summary>
+    [JsonPropertyName("startDate")]
+    public DateTime StartDate { get; set; }
+
+    /// <summary>End of the detection window</summary>
+    [JsonPropertyName("endDate")]
+    public DateTime EndDate { get; set; }
+}
+
+/// <summary>
+/// Maps a patient device to a time segment for orchestration.
+/// Used to split a report period into per-device windows before
+/// dispatching to algorithm-specific strategies.
+/// </summary>
+public class DeviceSegmentInput
+{
+    /// <summary>Which AID algorithm this device uses</summary>
+    [JsonPropertyName("algorithm")]
+    public AidAlgorithm Algorithm { get; set; }
+
+    /// <summary>Start of the device's active window</summary>
+    [JsonPropertyName("startDate")]
+    public DateTime StartDate { get; set; }
+
+    /// <summary>End of the device's active window</summary>
+    [JsonPropertyName("endDate")]
+    public DateTime EndDate { get; set; }
 }
