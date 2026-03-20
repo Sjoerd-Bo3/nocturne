@@ -9,7 +9,6 @@ using Nocturne.API.Controllers.V4;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
 using Xunit;
 
 namespace Nocturne.API.Tests.Controllers.V4;
@@ -21,7 +20,6 @@ namespace Nocturne.API.Tests.Controllers.V4;
 [Trait("Category", "Unit")]
 public class DebugControllerTests
 {
-    private readonly Mock<IPostgreSqlService> _mockPostgreSqlService;
     private readonly Mock<IInAppNotificationService> _mockNotificationService;
     private readonly Mock<IWebHostEnvironment> _mockEnvironment;
     private readonly Mock<ILogger<DebugController>> _mockLogger;
@@ -29,12 +27,10 @@ public class DebugControllerTests
 
     public DebugControllerTests()
     {
-        _mockPostgreSqlService = new Mock<IPostgreSqlService>();
         _mockNotificationService = new Mock<IInAppNotificationService>();
         _mockEnvironment = new Mock<IWebHostEnvironment>();
         _mockLogger = new Mock<ILogger<DebugController>>();
         _controller = new DebugController(
-            _mockPostgreSqlService.Object,
             _mockNotificationService.Object,
             _mockEnvironment.Object,
             _mockLogger.Object
