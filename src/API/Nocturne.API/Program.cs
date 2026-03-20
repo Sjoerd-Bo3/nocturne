@@ -472,6 +472,11 @@ builder.Services.AddScoped<ICarbRatioScheduleRepository, CarbRatioScheduleReposi
 builder.Services.AddScoped<ISensitivityScheduleRepository, SensitivityScheduleRepository>();
 builder.Services.AddScoped<ITargetRangeScheduleRepository, TargetRangeScheduleRepository>();
 
+// V4 Patient Record Repositories
+builder.Services.AddScoped<IPatientRecordRepository, PatientRecordRepository>();
+builder.Services.AddScoped<IPatientDeviceRepository, PatientDeviceRepository>();
+builder.Services.AddScoped<IPatientInsulinRepository, PatientInsulinRepository>();
+
 // V4 Decomposers
 builder.Services.AddScoped<IEntryDecomposer, EntryDecomposer>();
 builder.Services.AddScoped<ITreatmentDecomposer, TreatmentDecomposer>();
