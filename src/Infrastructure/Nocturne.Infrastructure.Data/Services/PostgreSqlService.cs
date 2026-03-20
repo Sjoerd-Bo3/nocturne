@@ -1617,7 +1617,9 @@ public class PostgreSqlService : IPostgreSqlService
     {
         var threshold = DateTimeOffset.FromUnixTimeMilliseconds(lastModifiedMills).UtcDateTime;
         var entities = await _context
-            .Treatments.Where(t => t.SysUpdatedAt >= threshold)
+            .Treatments.IgnoreQueryFilters()
+            .Where(t => t.TenantId == _context.TenantId)
+            .Where(t => t.SysUpdatedAt >= threshold)
             .OrderBy(t => t.SysUpdatedAt)
             .Take(limit)
             .AsNoTracking()
@@ -1651,7 +1653,9 @@ public class PostgreSqlService : IPostgreSqlService
     {
         var threshold = DateTimeOffset.FromUnixTimeMilliseconds(lastModifiedMills).UtcDateTime;
         var entities = await _context
-            .Entries.Where(e => e.SysUpdatedAt >= threshold)
+            .Entries.IgnoreQueryFilters()
+            .Where(e => e.TenantId == _context.TenantId)
+            .Where(e => e.SysUpdatedAt >= threshold)
             .OrderBy(e => e.SysUpdatedAt)
             .Take(limit)
             .AsNoTracking()
