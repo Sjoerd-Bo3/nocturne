@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Mappers;
@@ -8,7 +9,7 @@ namespace Nocturne.Infrastructure.Data.Repositories;
 /// <summary>
 /// PostgreSQL repository for Activity operations
 /// </summary>
-public class ActivityRepository
+public class ActivityRepository : IActivityRepository
 {
     private readonly NocturneDbContext _context;
 
@@ -245,5 +246,55 @@ public class ActivityRepository
         }
 
         return await query.CountAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Get activities with pagination (interface-compatible overload without type)
+    /// </summary>
+    async Task<IEnumerable<Activity>> IActivityRepository.GetActivityAsync(
+        int count,
+        int skip,
+        CancellationToken cancellationToken
+    )
+    {
+        return await GetActivitiesAsync(null, count, skip, cancellationToken);
+    }
+
+    /// <summary>
+    /// Get activities with pagination (interface-compatible overload without type)
+    /// </summary>
+    async Task<IEnumerable<Activity>> IActivityRepository.GetActivitiesAsync(
+        int count,
+        int skip,
+        CancellationToken cancellationToken
+    )
+    {
+        return await GetActivitiesAsync(null, count, skip, cancellationToken);
+    }
+
+    /// <summary>
+    /// Create multiple activities (interface-compatible alias)
+    /// </summary>
+    public async Task<IEnumerable<Activity>> CreateActivityAsync(
+        IEnumerable<Activity> activities,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await CreateActivitiesAsync(activities, cancellationToken);
+    }
+
+    /// <summary>
+    /// Get activities with advanced filtering (interface-compatible alias)
+    /// </summary>
+    public async Task<IEnumerable<Activity>> GetActivityWithAdvancedFilterAsync(
+        int count = 10,
+        int skip = 0,
+        string? findQuery = null,
+        bool reverseResults = false,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await GetActivitiesWithAdvancedFilterAsync(
+            count, skip, findQuery, reverseResults, cancellationToken);
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Mappers;
@@ -9,7 +10,7 @@ namespace Nocturne.Infrastructure.Data.Repositories;
 /// <summary>
 /// PostgreSQL repository for DeviceStatus operations
 /// </summary>
-public class DeviceStatusRepository
+public class DeviceStatusRepository : IDeviceStatusRepository
 {
     private readonly NocturneDbContext _context;
     private readonly IQueryParser _queryParser;
@@ -335,5 +336,24 @@ public class DeviceStatusRepository
         }
 
         return await query.CountAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Get device status records modified since a given timestamp (for incremental sync)
+    /// </summary>
+    public async Task<IEnumerable<DeviceStatus>> GetDeviceStatusModifiedSinceAsync(
+        long lastModifiedMills,
+        int limit = 500,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var threshold = DateTimeOffset.FromUnixTimeMilliseconds(lastModifiedMills).UtcDateTime;
+        var entities = await _context
+            .DeviceStatuses.Where(d => d.SysUpdatedAt >= threshold)
+            .OrderBy(d => d.SysUpdatedAt)
+            .Take(limit)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        return entities.Select(DeviceStatusMapper.ToDomainModel);
     }
 }

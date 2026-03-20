@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Adapters;
 using Nocturne.Infrastructure.Data.Configuration;
@@ -107,6 +108,15 @@ public static class ServiceCollectionExtensions
         // Register core repositories required by PostgreSqlService
         services.AddScoped<EntryRepository>();
         services.AddScoped<TreatmentRepository>();
+
+        // Register all repositories via their port interfaces
+        services.AddScoped<IEntryRepository, EntryRepository>();
+        services.AddScoped<ITreatmentRepository, TreatmentRepository>();
+        services.AddScoped<IProfileRepository, ProfileRepository>();
+        services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
+        services.AddScoped<IFoodRepository, FoodRepository>();
+        services.AddScoped<IActivityRepository, ActivityRepository>();
+        services.AddScoped<ISettingsRepository, SettingsRepository>();
 
         // Register PostgreSQL service
         services.AddScoped<IPostgreSqlService, PostgreSqlService>();
@@ -224,6 +234,15 @@ public static class ServiceCollectionExtensions
         // Register core repositories required by PostgreSqlService
         services.AddScoped<EntryRepository>();
         services.AddScoped<TreatmentRepository>();
+
+        // Register all repositories via their port interfaces
+        services.AddScoped<IEntryRepository, EntryRepository>();
+        services.AddScoped<ITreatmentRepository, TreatmentRepository>();
+        services.AddScoped<IProfileRepository, ProfileRepository>();
+        services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
+        services.AddScoped<IFoodRepository, FoodRepository>();
+        services.AddScoped<IActivityRepository, ActivityRepository>();
+        services.AddScoped<ISettingsRepository, SettingsRepository>();
 
         // Register PostgreSQL service
         services.AddScoped<IPostgreSqlService, PostgreSqlService>();

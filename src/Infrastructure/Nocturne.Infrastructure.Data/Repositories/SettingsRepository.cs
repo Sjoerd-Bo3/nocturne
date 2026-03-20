@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Mappers;
@@ -8,7 +9,7 @@ namespace Nocturne.Infrastructure.Data.Repositories;
 /// <summary>
 /// PostgreSQL repository for Settings operations
 /// </summary>
-public class SettingsRepository
+public class SettingsRepository : ISettingsRepository
 {
     private readonly NocturneDbContext _context;
 

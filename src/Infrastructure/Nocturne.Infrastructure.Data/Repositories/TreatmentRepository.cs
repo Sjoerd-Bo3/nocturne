@@ -1,6 +1,9 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Mappers;
@@ -10,7 +13,7 @@ namespace Nocturne.Infrastructure.Data.Repositories;
 /// <summary>
 /// PostgreSQL repository for Treatment operations
 /// </summary>
-public class TreatmentRepository
+public class TreatmentRepository : ITreatmentRepository
 {
     private readonly NocturneDbContext _context;
     private readonly IQueryParser _queryParser;
@@ -438,5 +441,213 @@ public class TreatmentRepository
         }
 
         return await query.CountAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Get treatments with pagination (interface-compatible overload without eventType)
+    /// </summary>
+    async Task<IEnumerable<Treatment>> ITreatmentRepository.GetTreatmentsAsync(
+        int count,
+        int skip,
+        CancellationToken cancellationToken
+    )
+    {
+        return await GetTreatmentsAsync(null, count, skip, cancellationToken);
+    }
+
+    /// <summary>
+    /// Get treatments with advanced filtering (interface-compatible overload without eventType/dateString)
+    /// </summary>
+    async Task<IEnumerable<Treatment>> ITreatmentRepository.GetTreatmentsWithAdvancedFilterAsync(
+        int count,
+        int skip,
+        string? findQuery,
+        bool reverseResults,
+        CancellationToken cancellationToken
+    )
+    {
+        return await GetTreatmentsWithAdvancedFilterAsync(
+            null, count, skip, findQuery, null, reverseResults, cancellationToken);
+    }
+
+    /// <summary>
+    /// Get the latest treatment timestamp for a specific data source
+    /// </summary>
+    public async Task<DateTime?> GetLatestTreatmentTimestampBySourceAsync(
+        string dataSource,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var latestTreatment = await _context
+            .Treatments.Where(t => t.DataSource == dataSource)
+            .OrderByDescending(t => t.Mills)
+            .Select(t => new { t.Mills })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (latestTreatment == null)
+            return null;
+
+        return DateTimeOffset.FromUnixTimeMilliseconds(latestTreatment.Mills).UtcDateTime;
+    }
+
+    /// <summary>
+    /// Get the oldest treatment timestamp for a specific data source
+    /// </summary>
+    public async Task<DateTime?> GetOldestTreatmentTimestampBySourceAsync(
+        string dataSource,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var oldestTreatment = await _context
+            .Treatments.Where(t => t.DataSource == dataSource)
+            .OrderBy(t => t.Mills)
+            .Select(t => new { t.Mills })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (oldestTreatment == null)
+            return null;
+
+        return DateTimeOffset.FromUnixTimeMilliseconds(oldestTreatment.Mills).UtcDateTime;
+    }
+
+    /// <summary>
+    /// Check for duplicate treatment in the database by ID or OriginalId
+    /// </summary>
+    public async Task<Treatment?> CheckForDuplicateTreatmentAsync(
+        string? id,
+        string? originalId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // If both are null/empty, no duplicate check possible
+        if (string.IsNullOrEmpty(id) && string.IsNullOrEmpty(originalId))
+            return null;
+
+        // Try to find by OriginalId first (MongoDB ObjectId), then by GUID
+        Treatment? duplicate = null;
+
+        if (!string.IsNullOrEmpty(originalId))
+        {
+            duplicate = await GetTreatmentByIdAsync(originalId, cancellationToken);
+            if (duplicate != null)
+                return duplicate;
+        }
+
+        if (!string.IsNullOrEmpty(id))
+        {
+            duplicate = await GetTreatmentByIdAsync(id, cancellationToken);
+            if (duplicate != null)
+                return duplicate;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Delete all treatments with the specified data source
+    /// </summary>
+    public async Task<long> DeleteTreatmentsByDataSourceAsync(
+        string dataSource,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await DeleteByDataSourceAsync(dataSource, cancellationToken);
+    }
+
+    /// <summary>
+    /// Bulk delete treatments using query filters
+    /// </summary>
+    public async Task<long> BulkDeleteTreatmentsAsync(
+        string findQuery,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // Parse eventType from the find query (supports find[eventType]=Value format)
+        string? eventType = null;
+        if (!string.IsNullOrEmpty(findQuery))
+        {
+            var decodedQuery = System.Web.HttpUtility.UrlDecode(findQuery);
+            var match = System.Text.RegularExpressions.Regex.Match(
+                decodedQuery,
+                @"find\[eventType\]=([^&]+)",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+
+            if (match.Success)
+            {
+                eventType = match.Groups[1].Value;
+            }
+        }
+
+        return await DeleteTreatmentsAsync(eventType, cancellationToken);
+    }
+
+    /// <summary>
+    /// Get treatments modified since a given timestamp (for incremental sync)
+    /// </summary>
+    public async Task<IEnumerable<Treatment>> GetTreatmentsModifiedSinceAsync(
+        long lastModifiedMills,
+        int limit = 500,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var threshold = DateTimeOffset.FromUnixTimeMilliseconds(lastModifiedMills).UtcDateTime;
+        var entities = await _context
+            .Treatments.IgnoreQueryFilters()
+            .Where(t => t.TenantId == _context.TenantId)
+            .Where(t => t.SysUpdatedAt >= threshold)
+            .OrderBy(t => t.SysUpdatedAt)
+            .Take(limit)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        return entities.Select(TreatmentMapper.ToDomainModel);
+    }
+
+    /// <summary>
+    /// Patch a treatment by ID using JSON merge-patch semantics
+    /// </summary>
+    public async Task<Treatment?> PatchTreatmentAsync(
+        string id,
+        JsonElement patchData,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // Look up entity using same pattern: OriginalId first, then GUID
+        var entity = await _context.Treatments.FirstOrDefaultAsync(
+            t => t.OriginalId == id,
+            cancellationToken
+        );
+
+        if (entity == null && Guid.TryParse(id, out var guidId))
+        {
+            entity = await _context.Treatments.FirstOrDefaultAsync(
+                t => t.Id == guidId,
+                cancellationToken
+            );
+        }
+
+        if (entity == null)
+            return null;
+
+        // Convert entity to domain model, serialize to JSON, merge patch on top
+        var existing = TreatmentMapper.ToDomainModel(entity);
+        var existingJson = JsonSerializer.SerializeToNode(existing);
+
+        if (existingJson is JsonObject existingObj)
+        {
+            foreach (var property in patchData.EnumerateObject())
+            {
+                existingObj[property.Name] = JsonNode.Parse(property.Value.GetRawText());
+            }
+        }
+
+        var patched = existingJson!.Deserialize<Treatment>();
+        if (patched == null)
+            return null;
+
+        TreatmentMapper.UpdateEntity(entity, patched);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return TreatmentMapper.ToDomainModel(entity);
     }
 }
