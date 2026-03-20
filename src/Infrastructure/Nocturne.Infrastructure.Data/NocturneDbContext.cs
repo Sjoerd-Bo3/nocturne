@@ -424,6 +424,12 @@ public class NocturneDbContext : DbContext
             })
             .HasDatabaseName("ix_entries_duplicate_detection");
 
+        modelBuilder
+            .Entity<EntryEntity>()
+            .HasIndex(e => e.DeletedAt)
+            .HasDatabaseName("ix_entries_deleted_at")
+            .HasFilter("deleted_at IS NOT NULL");
+
         // Treatments indexes - optimized for common queries
         modelBuilder
             .Entity<TreatmentEntity>()
@@ -435,6 +441,12 @@ public class NocturneDbContext : DbContext
             .Entity<TreatmentEntity>()
             .HasIndex(t => t.EventType)
             .HasDatabaseName("ix_treatments_event_type");
+
+        modelBuilder
+            .Entity<TreatmentEntity>()
+            .HasIndex(t => t.DeletedAt)
+            .HasDatabaseName("ix_treatments_deleted_at")
+            .HasFilter("deleted_at IS NOT NULL");
 
         modelBuilder
             .Entity<TreatmentEntity>()
@@ -2864,9 +2876,17 @@ public class NocturneDbContext : DbContext
             var parameter = Expression.Parameter(entityType.ClrType, "e");
             var tenantIdProperty = Expression.Property(parameter, nameof(ITenantScoped.TenantId));
             var currentTenantId = Expression.Property(Expression.Constant(this), nameof(TenantId));
-            var filter = Expression.Lambda(Expression.Equal(tenantIdProperty, currentTenantId), parameter);
+            Expression body = Expression.Equal(tenantIdProperty, currentTenantId);
 
-            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
+            if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
+            {
+                var deletedAtProperty = Expression.Property(parameter, nameof(ISoftDeletable.DeletedAt));
+                var nullValue = Expression.Constant(null, typeof(DateTime?));
+                var isNotDeleted = Expression.Equal(deletedAtProperty, nullValue);
+                body = Expression.AndAlso(body, isNotDeleted);
+            }
+
+            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(Expression.Lambda(body, parameter));
         }
     }
 }
