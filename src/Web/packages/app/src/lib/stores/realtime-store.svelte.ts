@@ -263,9 +263,9 @@ export class RealtimeStore {
         apiClient.notifications.getNotifications().catch(() => []),
         apiClient.boluses.getAll(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load boluses:", e); return []; }),
         apiClient.nutrition.getCarbIntakes(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load carbIntakes:", e); return []; }),
-        apiClient.observations.getBGChecks(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load bgChecks:", e); return []; }),
-        apiClient.observations.getNotes(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load notes:", e); return []; }),
-        apiClient.observations.getDeviceEvents(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load deviceEvents:", e); return []; }),
+        apiClient.bgChecks.getAll(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load bgChecks:", e); return []; }),
+        apiClient.notes.getAll(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load notes:", e); return []; }),
+        apiClient.deviceEvents.getAll(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load deviceEvents:", e); return []; }),
       ]);
 
       // Defer all state updates to a microtask to completely break out of the
@@ -768,9 +768,9 @@ export class RealtimeStore {
         apiClient.deviceStatus.getDeviceStatus2(100).catch(() => []),
         apiClient.boluses.getAll(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
         apiClient.nutrition.getCarbIntakes(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.observations.getBGChecks(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.observations.getNotes(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.observations.getDeviceEvents(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.bgChecks.getAll(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.notes.getAll(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.deviceEvents.getAll(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
       ]);
 
       let backfilledCount = 0;

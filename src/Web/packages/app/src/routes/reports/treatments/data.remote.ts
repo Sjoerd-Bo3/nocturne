@@ -62,9 +62,9 @@ export const getTreatmentsData = query(
 			await Promise.all([
 				apiClient.boluses.getAll(startDate, endDate, 10000),
 				apiClient.nutrition.getCarbIntakes(startDate, endDate, 10000),
-				apiClient.observations.getBGChecks(startDate, endDate, 10000),
-				apiClient.observations.getNotes(startDate, endDate, 10000),
-				apiClient.observations.getDeviceEvents(startDate, endDate, 10000),
+				apiClient.bgChecks.getAll(startDate, endDate, 10000),
+				apiClient.notes.getAll(startDate, endDate, 10000),
+				apiClient.deviceEvents.getAll(startDate, endDate, 10000),
 			]);
 
 		const boluses = bolusResponse.data ?? [];
@@ -114,13 +114,13 @@ export const deleteEntryForm = form(
 					await apiClient.nutrition.deleteCarbIntake(entryId);
 					break;
 				case 'bgCheck':
-					await apiClient.observations.deleteBGCheck(entryId);
+					await apiClient.bgChecks.delete(entryId);
 					break;
 				case 'note':
-					await apiClient.observations.deleteNote(entryId);
+					await apiClient.notes.delete(entryId);
 					break;
 				case 'deviceEvent':
-					await apiClient.observations.deleteDeviceEvent(entryId);
+					await apiClient.deviceEvents.delete(entryId);
 					break;
 			}
 
@@ -163,13 +163,13 @@ export const bulkDeleteEntries = command(
 						await apiClient.nutrition.deleteCarbIntake(item.id);
 						break;
 					case 'bgCheck':
-						await apiClient.observations.deleteBGCheck(item.id);
+						await apiClient.bgChecks.delete(item.id);
 						break;
 					case 'note':
-						await apiClient.observations.deleteNote(item.id);
+						await apiClient.notes.delete(item.id);
 						break;
 					case 'deviceEvent':
-						await apiClient.observations.deleteDeviceEvent(item.id);
+						await apiClient.deviceEvents.delete(item.id);
 						break;
 				}
 				deletedIds.push(item.id);
@@ -215,11 +215,11 @@ export const updateEntry = command(
 			case 'carbs':
 				return await apiClient.nutrition.updateCarbIntake(id, data as CarbIntake);
 			case 'bgCheck':
-				return await apiClient.observations.updateBGCheck(id, data as BGCheck);
+				return await apiClient.bgChecks.update(id, data as BGCheck);
 			case 'note':
-				return await apiClient.observations.updateNote(id, data as Note);
+				return await apiClient.notes.update(id, data as Note);
 			case 'deviceEvent':
-				return await apiClient.observations.updateDeviceEvent(id, data as DeviceEvent);
+				return await apiClient.deviceEvents.update(id, data as DeviceEvent);
 		}
 	}
 );

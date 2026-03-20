@@ -43,7 +43,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   const eventIntervals: Record<string, number> = {};
 
   try {
-    const events = await apiClient.observations.getDeviceEvents(
+    const events = await apiClient.deviceEvents.getAll(
       ninetyDaysAgo,
       now,
       500,

@@ -304,12 +304,12 @@ export const getSiteChangeImpact = query(
 
 		// Paginate device events to get all site changes
 		const pageSize = 1000;
-		let allDeviceEvents: Awaited<ReturnType<typeof apiClient.observations.getDeviceEvents>>['data'] = [];
+		let allDeviceEvents: Awaited<ReturnType<typeof apiClient.deviceEvents.getAll>>['data'] = [];
 		let offset = 0;
 		let hasMore = true;
 
 		while (hasMore) {
-			const batch = await apiClient.observations.getDeviceEvents(startDate, endDate, pageSize, offset);
+			const batch = await apiClient.deviceEvents.getAll(startDate, endDate, pageSize, offset);
 			allDeviceEvents = allDeviceEvents!.concat(batch.data ?? []);
 
 			if ((batch.data?.length ?? 0) < pageSize) {
