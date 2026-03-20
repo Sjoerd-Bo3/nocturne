@@ -274,7 +274,8 @@ public class EntryRepository
         if (entity == null)
             return false;
 
-        _context.Entries.Remove(entity);
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.SysUpdatedAt = DateTime.UtcNow;
         var result = await _context.SaveChangesAsync(cancellationToken);
         return result > 0;
     }
@@ -289,13 +290,18 @@ public class EntryRepository
     {
         var query = _context.Entries.AsQueryable();
 
-        // Apply type filter if specified
         if (!string.IsNullOrEmpty(type))
         {
             query = query.Where(e => e.Type == type);
         }
 
-        var deletedCount = await query.ExecuteDeleteAsync(cancellationToken);
+        var now = DateTime.UtcNow;
+        var deletedCount = await query.ExecuteUpdateAsync(
+            s => s
+                .SetProperty(e => e.DeletedAt, now)
+                .SetProperty(e => e.SysUpdatedAt, now),
+            cancellationToken
+        );
         return deletedCount;
     }
 
@@ -310,9 +316,15 @@ public class EntryRepository
         CancellationToken cancellationToken = default
     )
     {
+        var now = DateTime.UtcNow;
         var deletedCount = await _context
             .Entries.Where(e => e.DataSource == dataSource)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteUpdateAsync(
+                s => s
+                    .SetProperty(e => e.DeletedAt, now)
+                    .SetProperty(e => e.SysUpdatedAt, now),
+                cancellationToken
+            );
         return deletedCount;
     }
 

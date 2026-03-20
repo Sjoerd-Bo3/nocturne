@@ -1261,6 +1261,33 @@ public class EntryRepositoryTests : IDisposable
 
     #endregion
 
+    [Fact]
+    public async Task DeleteEntryAsync_SoftDeletesRecord()
+    {
+        using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var queryParser = new Mock<IQueryParser>();
+        var repository = CreateRepository(context, queryParser.Object);
+
+        var entry = new Entry { Mills = 1000, Mgdl = 120, Type = "sgv" };
+        var created = (await repository.CreateEntriesAsync([entry])).First();
+
+        var result = await repository.DeleteEntryAsync(created.Id);
+
+        Assert.True(result);
+
+        // Record should be invisible to normal queries
+        var visible = await repository.GetEntryByIdAsync(created.Id);
+        Assert.Null(visible);
+
+        // Record should still exist with IgnoreQueryFilters
+        var guidId = Guid.Parse(created.Id);
+        var raw = await context.Entries.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(e => e.Id == guidId);
+        Assert.NotNull(raw);
+        Assert.NotNull(raw!.DeletedAt);
+    }
+
     public void Dispose()
     {
         _connection?.Dispose();

@@ -276,7 +276,8 @@ public class TreatmentRepository
         if (entity == null)
             return false;
 
-        _context.Treatments.Remove(entity);
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.SysUpdatedAt = DateTime.UtcNow;
         var result = await _context.SaveChangesAsync(cancellationToken);
         return result > 0;
     }
@@ -291,13 +292,18 @@ public class TreatmentRepository
     {
         var query = _context.Treatments.AsQueryable();
 
-        // Apply event type filter if specified
         if (!string.IsNullOrEmpty(eventType))
         {
             query = query.Where(t => t.EventType == eventType);
         }
 
-        var deletedCount = await query.ExecuteDeleteAsync(cancellationToken);
+        var now = DateTime.UtcNow;
+        var deletedCount = await query.ExecuteUpdateAsync(
+            s => s
+                .SetProperty(t => t.DeletedAt, now)
+                .SetProperty(t => t.SysUpdatedAt, now),
+            cancellationToken
+        );
         return deletedCount;
     }
 
@@ -312,9 +318,15 @@ public class TreatmentRepository
         CancellationToken cancellationToken = default
     )
     {
+        var now = DateTime.UtcNow;
         var deletedCount = await _context
             .Treatments.Where(t => t.DataSource == dataSource)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteUpdateAsync(
+                s => s
+                    .SetProperty(t => t.DeletedAt, now)
+                    .SetProperty(t => t.SysUpdatedAt, now),
+                cancellationToken
+            );
         return deletedCount;
     }
 

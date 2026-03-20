@@ -1307,6 +1307,32 @@ public class TreatmentRepositoryTests : IDisposable
 
     #endregion
 
+    [Fact]
+    public async Task DeleteTreatmentAsync_SoftDeletesRecord()
+    {
+        using var context = new NocturneDbContext(_contextOptions);
+        context.TenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var queryParser = new Mock<IQueryParser>();
+        var repository = CreateRepository(context, queryParser.Object);
+
+        var treatment = new Treatment { Mills = 1000, EventType = "Correction Bolus", Insulin = 2.0 };
+        var created = await repository.CreateTreatmentAsync(treatment);
+
+        var result = await repository.DeleteTreatmentAsync(created!.Id);
+
+        Assert.True(result);
+
+        // Record should be invisible to normal queries
+        var visible = await repository.GetTreatmentByIdAsync(created.Id);
+        Assert.Null(visible);
+
+        // Record should still exist with IgnoreQueryFilters
+        var raw = await context.Treatments.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.Id == created.DbId);
+        Assert.NotNull(raw);
+        Assert.NotNull(raw!.DeletedAt);
+    }
+
     public void Dispose()
     {
         _connection?.Dispose();
