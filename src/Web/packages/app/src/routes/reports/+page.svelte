@@ -74,6 +74,7 @@
     Sparkles,
     Activity,
     ChevronRight,
+    Syringe,
   } from "lucide-svelte";
   import TIRStackedChart from "$lib/components/reports/TIRStackedChart.svelte";
   import ReliabilityBadge from "$lib/components/reports/ReliabilityBadge.svelte";
@@ -289,6 +290,13 @@
           description: "How site changes affect control",
           href: "/reports/site-change-impact",
           icon: SiteChangeIcon,
+          status: "available" as const,
+        },
+        {
+          title: "Insulin Dosing Profile",
+          description: "Standardised insulin and glucose summary",
+          href: "/reports/idp",
+          icon: Syringe,
           status: "available" as const,
         },
       ],
