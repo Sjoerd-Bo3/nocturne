@@ -18,6 +18,7 @@
   } from "lucide-svelte";
   import { AmbulatoryGlucoseProfile } from "$lib/components/ambulatory-glucose-profile";
   import TIRStackedChart from "$lib/components/reports/TIRStackedChart.svelte";
+  import ReliabilityBadge from "$lib/components/reports/ReliabilityBadge.svelte";
   import GlycemicRiskIndexChart from "$lib/components/reports/GlycemicRiskIndexChart.svelte";
   import BasalRatePercentileChart from "$lib/components/reports/BasalRatePercentileChart.svelte";
   import HourlyBolusChart from "$lib/components/reports/HourlyBolusChart.svelte";
@@ -114,9 +115,9 @@
       <span>
         {startDate.toLocaleDateString()} – {endDate.toLocaleDateString()}
       </span>
-      <span class="text-muted-foreground/50">|</span>
+      <span class="text-muted-foreground/50">•</span>
       <span>{dayCount} days</span>
-      <span class="text-muted-foreground/50">|</span>
+      <span class="text-muted-foreground/50">•</span>
       <span>{entries.length.toLocaleString()} readings</span>
     </div>
   </div>
@@ -153,12 +154,12 @@
           </div>
           <div class="flex h-4 rounded-full overflow-hidden">
             <div
-              class="bg-blue-500 transition-all"
-              style="width: {basalPct}%"
+              class="transition-all"
+              style="width: {basalPct}%; background-color: var(--insulin-scheduled-basal)"
             ></div>
             <div
-              class="bg-orange-500 transition-all"
-              style="width: {bolusPct}%"
+              class="transition-all"
+              style="width: {bolusPct}%; background-color: var(--insulin-bolus)"
             ></div>
           </div>
         </div>
@@ -262,6 +263,10 @@
     </Card>
   </div>
 
+  {#if analysis?.reliability}
+    <ReliabilityBadge reliability={analysis.reliability} />
+  {/if}
+
   <!-- Middle Row: AID Use (stub) + GRI -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- AID Use Card (stubbed) -->
@@ -302,6 +307,9 @@
             <div class="font-semibold text-lg">--</div>
           </div>
         </div>
+        <p class="text-xs text-muted-foreground/60 mt-4">
+          AID metrics require pump integration data, which is not yet available.
+        </p>
       </CardContent>
     </Card>
 
@@ -378,7 +386,7 @@
       </CardDescription>
     </CardHeader>
     <CardContent class="h-80 md:h-96">
-      <HourlyBolusChart boluses={boluses} dayCount={dayCount} />
+      <HourlyBolusChart {boluses} {dayCount} />
     </CardContent>
   </Card>
 
