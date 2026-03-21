@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nocturne.API.Services.ConnectorPublishing;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Xunit;
 
@@ -13,14 +14,29 @@ namespace Nocturne.API.Tests.Services.ConnectorPublishing;
 public class TreatmentPublisherTests
 {
     private readonly Mock<ITreatmentService> _mockTreatmentService;
+    private readonly Mock<IBolusRepository> _mockBolusRepository;
+    private readonly Mock<ICarbIntakeRepository> _mockCarbIntakeRepository;
+    private readonly Mock<IBGCheckRepository> _mockBGCheckRepository;
+    private readonly Mock<IBolusCalculationRepository> _mockBolusCalculationRepository;
+    private readonly Mock<ITempBasalRepository> _mockTempBasalRepository;
     private readonly TreatmentPublisher _publisher;
 
     public TreatmentPublisherTests()
     {
         _mockTreatmentService = new Mock<ITreatmentService>();
+        _mockBolusRepository = new Mock<IBolusRepository>();
+        _mockCarbIntakeRepository = new Mock<ICarbIntakeRepository>();
+        _mockBGCheckRepository = new Mock<IBGCheckRepository>();
+        _mockBolusCalculationRepository = new Mock<IBolusCalculationRepository>();
+        _mockTempBasalRepository = new Mock<ITempBasalRepository>();
 
         _publisher = new TreatmentPublisher(
             _mockTreatmentService.Object,
+            _mockBolusRepository.Object,
+            _mockCarbIntakeRepository.Object,
+            _mockBGCheckRepository.Object,
+            _mockBolusCalculationRepository.Object,
+            _mockTempBasalRepository.Object,
             NullLogger<TreatmentPublisher>.Instance
         );
     }

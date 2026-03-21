@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nocturne.API.Services.ConnectorPublishing;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
@@ -20,6 +21,7 @@ public class MetadataPublisherTests
     private readonly Mock<IConnectorFoodEntryService> _mockConnectorFoodEntryService;
     private readonly Mock<IActivityService> _mockActivityService;
     private readonly Mock<IStateSpanService> _mockStateSpanService;
+    private readonly Mock<INoteRepository> _mockNoteRepository;
 
     public MetadataPublisherTests()
     {
@@ -28,6 +30,7 @@ public class MetadataPublisherTests
         _mockConnectorFoodEntryService = new Mock<IConnectorFoodEntryService>();
         _mockActivityService = new Mock<IActivityService>();
         _mockStateSpanService = new Mock<IStateSpanService>();
+        _mockNoteRepository = new Mock<INoteRepository>();
     }
 
     private MetadataPublisher CreatePublisher()
@@ -46,6 +49,7 @@ public class MetadataPublisherTests
             _mockActivityService.Object,
             _mockStateSpanService.Object,
             systemEventRepository,
+            _mockNoteRepository.Object,
             NullLogger<MetadataPublisher>.Instance
         );
     }

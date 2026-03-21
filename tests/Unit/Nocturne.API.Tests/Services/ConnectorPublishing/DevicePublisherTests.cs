@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nocturne.API.Services.ConnectorPublishing;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Xunit;
 
@@ -13,14 +14,17 @@ namespace Nocturne.API.Tests.Services.ConnectorPublishing;
 public class DevicePublisherTests
 {
     private readonly Mock<IDeviceStatusService> _mockDeviceStatusService;
+    private readonly Mock<IDeviceEventRepository> _mockDeviceEventRepository;
     private readonly DevicePublisher _publisher;
 
     public DevicePublisherTests()
     {
         _mockDeviceStatusService = new Mock<IDeviceStatusService>();
+        _mockDeviceEventRepository = new Mock<IDeviceEventRepository>();
 
         _publisher = new DevicePublisher(
             _mockDeviceStatusService.Object,
+            _mockDeviceEventRepository.Object,
             NullLogger<DevicePublisher>.Instance
         );
     }

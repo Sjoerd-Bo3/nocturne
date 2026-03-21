@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nocturne.API.Services.ConnectorPublishing;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Alerts;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Xunit;
 
@@ -13,14 +15,20 @@ namespace Nocturne.API.Tests.Services.ConnectorPublishing;
 public class GlucosePublisherTests
 {
     private readonly Mock<IEntryService> _mockEntryService;
+    private readonly Mock<ISensorGlucoseRepository> _mockSensorGlucoseRepository;
+    private readonly Mock<IAlertOrchestrator> _mockAlertOrchestrator;
     private readonly GlucosePublisher _publisher;
 
     public GlucosePublisherTests()
     {
         _mockEntryService = new Mock<IEntryService>();
+        _mockSensorGlucoseRepository = new Mock<ISensorGlucoseRepository>();
+        _mockAlertOrchestrator = new Mock<IAlertOrchestrator>();
 
         _publisher = new GlucosePublisher(
             _mockEntryService.Object,
+            _mockSensorGlucoseRepository.Object,
+            _mockAlertOrchestrator.Object,
             NullLogger<GlucosePublisher>.Instance
         );
     }

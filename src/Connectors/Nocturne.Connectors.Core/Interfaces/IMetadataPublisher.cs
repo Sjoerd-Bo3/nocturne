@@ -1,4 +1,5 @@
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Connectors.Core.Interfaces;
 
@@ -31,6 +32,11 @@ public interface IMetadataPublisher
 
     Task<bool> PublishSystemEventsAsync(
         IEnumerable<SystemEvent> systemEvents,
+        string source,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> PublishNotesAsync(
+        IEnumerable<Note> records,
         string source,
         CancellationToken cancellationToken = default);
 }

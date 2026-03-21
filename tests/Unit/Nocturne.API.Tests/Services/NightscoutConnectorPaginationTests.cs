@@ -38,14 +38,20 @@ public class NightscoutConnectorPaginationTests
         IConnectorPublisher? publisher = null;
         if (withPublisher)
         {
-            var mock = new Mock<IConnectorPublisher>();
-            mock.Setup(p => p.IsAvailable).Returns(true);
-            mock.Setup(p => p.PublishEntriesAsync(
+            var glucoseMock = new Mock<IGlucosePublisher>();
+            glucoseMock.Setup(p => p.PublishEntriesAsync(
                     It.IsAny<IEnumerable<Entry>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
-            mock.Setup(p => p.PublishTreatmentsAsync(
+
+            var treatmentMock = new Mock<ITreatmentPublisher>();
+            treatmentMock.Setup(p => p.PublishTreatmentsAsync(
                     It.IsAny<IEnumerable<Treatment>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
+
+            var mock = new Mock<IConnectorPublisher>();
+            mock.Setup(p => p.IsAvailable).Returns(true);
+            mock.Setup(p => p.Glucose).Returns(glucoseMock.Object);
+            mock.Setup(p => p.Treatments).Returns(treatmentMock.Object);
             publisher = mock.Object;
         }
 
