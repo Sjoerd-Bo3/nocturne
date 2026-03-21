@@ -306,7 +306,7 @@
   <title>Patient Record - Settings - Nocturne</title>
 </svelte:head>
 
-<div class="w-full py-6 space-y-6">
+<div class="container mx-auto max-w-4xl p-6 space-y-6">
   <div class="space-y-1">
     <h1 class="text-2xl font-bold tracking-tight">Patient Record</h1>
     <p class="text-muted-foreground">

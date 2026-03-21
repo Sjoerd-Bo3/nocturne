@@ -157,7 +157,7 @@
   }
 </script>
 
-<div class="container max-w-4xl space-y-6 p-6">
+<div class="container mx-auto max-w-4xl p-6 space-y-6">
   <div class="flex items-center gap-3">
     <Building2 class="h-8 w-8 text-primary" />
     <div>

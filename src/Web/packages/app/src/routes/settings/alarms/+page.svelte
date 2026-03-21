@@ -249,7 +249,7 @@
   <title>Alarms - Settings - Nocturne</title>
 </svelte:head>
 
-<div class="container mx-auto p-6 max-w-4xl space-y-6">
+<div class="container mx-auto max-w-4xl p-6 space-y-6">
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>

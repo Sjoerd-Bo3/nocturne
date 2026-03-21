@@ -104,7 +104,7 @@
   );
 </script>
 
-<div class="container max-w-2xl py-8 space-y-6">
+<div class="container mx-auto max-w-4xl p-6 space-y-6">
   <div>
     <h1 class="text-2xl font-bold tracking-tight">Setup</h1>
     <p class="text-muted-foreground">

@@ -127,7 +127,7 @@
 </svelte:head>
 
 {#await summaryQuery}
-  <div class="container mx-auto p-6 max-w-5xl">
+  <div class="container mx-auto max-w-4xl p-6 space-y-6">
     <div class="flex items-center justify-center h-64">
       <div class="animate-pulse text-muted-foreground">Loading profiles...</div>
     </div>
@@ -141,7 +141,7 @@
   {@const carbRatio = selectedProfileName ? getCarbRatioForProfile(data, selectedProfileName) : null}
   {@const sensitivity = selectedProfileName ? getSensitivityForProfile(data, selectedProfileName) : null}
   {@const targetRange = selectedProfileName ? getTargetRangeForProfile(data, selectedProfileName) : null}
-  <div class="container mx-auto p-6 max-w-5xl space-y-6">
+  <div class="container mx-auto max-w-4xl p-6 space-y-6">
     <!-- Header -->
     <div class="flex items-start justify-between">
       <div class="flex items-center gap-3">
@@ -151,7 +151,7 @@
           <User class="h-6 w-6 text-primary" />
         </div>
         <div>
-          <h1 class="text-3xl font-bold tracking-tight">Profile</h1>
+          <h1 class="text-2xl font-bold tracking-tight">Profile</h1>
           <p class="text-muted-foreground">
             Your therapy settings and insulin parameters
           </p>
@@ -496,7 +496,7 @@
     {/if}
   </div>
 {:catch error}
-  <div class="container mx-auto p-6 max-w-5xl">
+  <div class="container mx-auto max-w-4xl p-6 space-y-6">
     <Card class="border-destructive">
       <CardContent class="py-8">
         <div class="text-center space-y-2">

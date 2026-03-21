@@ -43,7 +43,7 @@
 	<title>Data Quality - Settings - Nocturne</title>
 </svelte:head>
 
-<div class="container mx-auto max-w-3xl space-y-6 p-6">
+<div class="container mx-auto max-w-4xl p-6 space-y-6">
 	<!-- Header -->
 	<div>
 		<h1 class="text-2xl font-bold tracking-tight">Data Quality</h1>
