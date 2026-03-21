@@ -38,6 +38,9 @@ public class BaseConnectorServiceTests
     {
         // Arrange
         var publisherMock = new Mock<IConnectorPublisher>();
+        var glucoseMock = new Mock<IGlucosePublisher>();
+        publisherMock.Setup(m => m.Glucose).Returns(glucoseMock.Object);
+        publisherMock.Setup(m => m.IsAvailable).Returns(true);
         var loggerMock = new Mock<ILogger<BaseConnectorService<TestConnectorConfiguration>>>();
         var testService = new TestConnectorService(publisherMock.Object, loggerMock.Object);
 
@@ -56,7 +59,7 @@ public class BaseConnectorServiceTests
             },
         };
 
-        publisherMock
+        glucoseMock
             .Setup(m =>
                 m.PublishEntriesAsync(
                     It.IsAny<IEnumerable<Entry>>(),
@@ -72,7 +75,7 @@ public class BaseConnectorServiceTests
         // Assert
         Assert.True(result);
 
-        publisherMock.Verify(
+        glucoseMock.Verify(
             m =>
                 m.PublishEntriesAsync(
                     It.Is<IEnumerable<Entry>>(e => e.Count() == 2),

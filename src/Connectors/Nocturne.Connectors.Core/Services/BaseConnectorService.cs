@@ -91,7 +91,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
 
         try
         {
-            var timestamp = await _publisher.GetLatestEntryTimestampAsync(ConnectorSource);
+            var timestamp = await _publisher.Glucose.GetLatestEntryTimestampAsync(ConnectorSource);
             if (timestamp.HasValue)
                 _logger.LogInformation(
                     "Latest entry timestamp from API for {ConnectorSource}: {Timestamp:yyyy-MM-dd HH:mm:ss} UTC",
@@ -132,7 +132,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
 
         try
         {
-            var timestamp = await _publisher.GetLatestTreatmentTimestampAsync(ConnectorSource);
+            var timestamp = await _publisher.Treatments.GetLatestTreatmentTimestampAsync(ConnectorSource);
             if (timestamp.HasValue)
                 _logger.LogInformation(
                     "Latest treatment timestamp from API for {ConnectorSource}: {Timestamp:yyyy-MM-dd HH:mm:ss} UTC",
@@ -359,7 +359,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishEntriesAsync(entries, ConnectorSource, cancellationToken);
+        return await _publisher.Glucose.PublishEntriesAsync(entries, ConnectorSource, cancellationToken);
     }
 
     /// <summary>
@@ -377,7 +377,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishTreatmentsAsync(
+        return await _publisher.Treatments.PublishTreatmentsAsync(
             treatments,
             ConnectorSource,
             cancellationToken
@@ -399,7 +399,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishDeviceStatusAsync(
+        return await _publisher.Device.PublishDeviceStatusAsync(
             deviceStatuses,
             ConnectorSource,
             cancellationToken
@@ -421,7 +421,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishProfilesAsync(profiles, ConnectorSource, cancellationToken);
+        return await _publisher.Metadata.PublishProfilesAsync(profiles, ConnectorSource, cancellationToken);
     }
 
     /// <summary>
@@ -439,7 +439,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishFoodAsync(foods, ConnectorSource, cancellationToken);
+        return await _publisher.Metadata.PublishFoodAsync(foods, ConnectorSource, cancellationToken);
     }
 
     /// <summary>
@@ -457,7 +457,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishActivityAsync(
+        return await _publisher.Metadata.PublishActivityAsync(
             activities,
             ConnectorSource,
             cancellationToken
@@ -479,7 +479,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishStateSpansAsync(
+        return await _publisher.Metadata.PublishStateSpansAsync(
             stateSpans,
             ConnectorSource,
             cancellationToken
@@ -501,7 +501,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishSystemEventsAsync(
+        return await _publisher.Metadata.PublishSystemEventsAsync(
             systemEvents,
             ConnectorSource,
             cancellationToken
@@ -525,7 +525,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishSensorGlucoseAsync(
+        return await _publisher.Glucose.PublishSensorGlucoseAsync(
             records,
             ConnectorSource,
             cancellationToken
@@ -547,7 +547,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishBolusesAsync(records, ConnectorSource, cancellationToken);
+        return await _publisher.Treatments.PublishBolusesAsync(records, ConnectorSource, cancellationToken);
     }
 
     /// <summary>
@@ -565,7 +565,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishCarbIntakesAsync(
+        return await _publisher.Treatments.PublishCarbIntakesAsync(
             records,
             ConnectorSource,
             cancellationToken
@@ -587,7 +587,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishBGChecksAsync(records, ConnectorSource, cancellationToken);
+        return await _publisher.Treatments.PublishBGChecksAsync(records, ConnectorSource, cancellationToken);
     }
 
     /// <summary>
@@ -605,7 +605,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishBolusCalculationsAsync(
+        return await _publisher.Treatments.PublishBolusCalculationsAsync(
             records,
             ConnectorSource,
             cancellationToken
@@ -627,7 +627,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishNotesAsync(records, ConnectorSource, cancellationToken);
+        return await _publisher.Metadata.PublishNotesAsync(records, ConnectorSource, cancellationToken);
     }
 
     /// <summary>
@@ -645,7 +645,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishDeviceEventsAsync(
+        return await _publisher.Device.PublishDeviceEventsAsync(
             records,
             ConnectorSource,
             cancellationToken
@@ -667,7 +667,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
             return false;
         }
 
-        return await _publisher.PublishTempBasalsAsync(
+        return await _publisher.Treatments.PublishTempBasalsAsync(
             records,
             ConnectorSource,
             cancellationToken

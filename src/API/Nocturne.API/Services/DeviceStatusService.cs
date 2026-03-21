@@ -1,6 +1,5 @@
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
-using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Core.Contracts.Repositories;
@@ -13,9 +12,8 @@ namespace Nocturne.API.Services;
 public class DeviceStatusService : IDeviceStatusService
 {
     private readonly IDeviceStatusRepository _deviceStatuses;
-    private readonly ISignalRBroadcastService _broadcastService;
+    private readonly IWriteSideEffects _sideEffects;
     private readonly ICacheService _cacheService;
-    private readonly IDecompositionPipeline _pipeline;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<DeviceStatusService> _logger;
     private const string CollectionName = "devicestatus";
@@ -25,20 +23,24 @@ public class DeviceStatusService : IDeviceStatusService
 
     public DeviceStatusService(
         IDeviceStatusRepository deviceStatuses,
-        ISignalRBroadcastService broadcastService,
+        IWriteSideEffects sideEffects,
         ICacheService cacheService,
-        IDecompositionPipeline pipeline,
         ITenantAccessor tenantAccessor,
         ILogger<DeviceStatusService> logger
     )
     {
         _deviceStatuses = deviceStatuses;
-        _broadcastService = broadcastService;
+        _sideEffects = sideEffects;
         _cacheService = cacheService;
-        _pipeline = pipeline;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
+
+    private WriteEffectOptions BuildWriteOptions() => new()
+    {
+        CacheKeysToRemove = [$"devicestatus:current:{TenantCacheId}"],
+        DecomposeToV4 = true,
+    };
 
     /// <inheritdoc />
     public async Task<IEnumerable<DeviceStatus>> GetDeviceStatusAsync(
@@ -118,43 +120,7 @@ public class DeviceStatusService : IDeviceStatusService
             cancellationToken
         );
 
-        // Invalidate current device status cache since new entries were created
-        try
-        {
-            await _cacheService.RemoveAsync($"devicestatus:current:{TenantCacheId}", cancellationToken);
-            _logger.LogDebug("Invalidated current device status cache after creating new entries");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to invalidate current device status cache");
-        }
-
-        // Broadcast create events for each device status entry (replaces legacy ctx.bus.emit('storage-socket-create'))
-        foreach (var deviceStatus in createdDeviceStatus)
-        {
-            try
-            {
-                await _broadcastService.BroadcastStorageCreateAsync(
-                    CollectionName,
-                    new { colName = CollectionName, doc = deviceStatus }
-                );
-                _logger.LogDebug(
-                    "Broadcasted storage create event for device status {DeviceStatusId}",
-                    deviceStatus.Id
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to broadcast storage create event for device status {DeviceStatusId}",
-                    deviceStatus.Id
-                );
-            }
-        }
-
-        // Decompose each device status into v4 snapshot tables
-        await _pipeline.DecomposeAsync<DeviceStatus>(createdDeviceStatus, cancellationToken);
+        await _sideEffects.OnCreatedAsync(CollectionName, createdDeviceStatus.ToList(), BuildWriteOptions(), cancellationToken);
 
         return createdDeviceStatus;
     }
@@ -174,42 +140,7 @@ public class DeviceStatusService : IDeviceStatusService
 
         if (updatedDeviceStatus != null)
         {
-            // Invalidate current device status cache since an entry was updated
-            try
-            {
-                await _cacheService.RemoveAsync($"devicestatus:current:{TenantCacheId}", cancellationToken);
-                _logger.LogDebug(
-                    "Invalidated current device status cache after updating device status {DeviceStatusId}",
-                    id
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to invalidate current device status cache");
-            }
-
-            try
-            {
-                await _broadcastService.BroadcastStorageUpdateAsync(
-                    CollectionName,
-                    new { colName = CollectionName, doc = updatedDeviceStatus }
-                );
-                _logger.LogDebug(
-                    "Broadcasted storage update event for device status {DeviceStatusId}",
-                    updatedDeviceStatus.Id
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to broadcast storage update event for device status {DeviceStatusId}",
-                    updatedDeviceStatus.Id
-                );
-            }
-
-            // Re-decompose updated device status into v4 snapshot tables
-            await _pipeline.DecomposeAsync(updatedDeviceStatus, cancellationToken);
+            await _sideEffects.OnUpdatedAsync(CollectionName, updatedDeviceStatus, BuildWriteOptions(), cancellationToken);
         }
 
         return updatedDeviceStatus;
@@ -221,8 +152,7 @@ public class DeviceStatusService : IDeviceStatusService
         CancellationToken cancellationToken = default
     )
     {
-        // Delete corresponding v4 snapshot records by LegacyId
-        await _pipeline.DeleteByLegacyIdAsync<DeviceStatus>(id, cancellationToken);
+        await _sideEffects.BeforeDeleteAsync<DeviceStatus>(id, BuildWriteOptions(), cancellationToken);
 
         // Get the device status before deleting for broadcasting
         var deviceStatusToDelete = await _deviceStatuses.GetDeviceStatusByIdAsync(
@@ -234,42 +164,7 @@ public class DeviceStatusService : IDeviceStatusService
 
         if (deleted)
         {
-            // Invalidate current device status cache since an entry was deleted
-            try
-            {
-                await _cacheService.RemoveAsync($"devicestatus:current:{TenantCacheId}", cancellationToken);
-                _logger.LogDebug(
-                    "Invalidated current device status cache after deleting device status {DeviceStatusId}",
-                    id
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to invalidate current device status cache");
-            }
-
-            if (deviceStatusToDelete != null)
-            {
-                try
-                {
-                    await _broadcastService.BroadcastStorageDeleteAsync(
-                        CollectionName,
-                        new { colName = CollectionName, doc = deviceStatusToDelete }
-                    );
-                    _logger.LogDebug(
-                        "Broadcasted storage delete event for device status {DeviceStatusId}",
-                        deviceStatusToDelete.Id
-                    );
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(
-                        ex,
-                        "Failed to broadcast storage delete event for device status {DeviceStatusId}",
-                        deviceStatusToDelete.Id
-                    );
-                }
-            }
+            await _sideEffects.OnDeletedAsync(CollectionName, deviceStatusToDelete, BuildWriteOptions(), cancellationToken);
         }
 
         return deleted;
@@ -286,42 +181,7 @@ public class DeviceStatusService : IDeviceStatusService
             cancellationToken
         );
 
-        if (deletedCount > 0)
-        {
-            // Invalidate current device status cache since entries were deleted
-            try
-            {
-                await _cacheService.RemoveAsync($"devicestatus:current:{TenantCacheId}", cancellationToken);
-                _logger.LogDebug(
-                    "Invalidated current device status cache after bulk deleting {Count} entries",
-                    deletedCount
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to invalidate current device status cache");
-            }
-
-            // Broadcast bulk delete event (replaces legacy ctx.bus.emit('storage-socket-delete'))
-            try
-            {
-                await _broadcastService.BroadcastStorageDeleteAsync(
-                    CollectionName,
-                    new { colName = CollectionName, deletedCount = deletedCount }
-                );
-                _logger.LogDebug(
-                    "Broadcasted storage delete event for {Count} device status entries",
-                    deletedCount
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to broadcast storage delete event for bulk device status deletion"
-                );
-            }
-        }
+        await _sideEffects.OnBulkDeletedAsync(CollectionName, deletedCount, BuildWriteOptions(), cancellationToken);
 
         return deletedCount;
     }

@@ -105,7 +105,7 @@ public class MyFitnessPalConnectorService : BaseConnectorService<MyFitnessPalCon
                 }
                 else
                 {
-                    var published = await _connectorPublisher.PublishConnectorFoodEntriesAsync(
+                    var published = await _connectorPublisher.Metadata.PublishConnectorFoodEntriesAsync(
                         foodEntryImports,
                         ConnectorSource,
                         cancellationToken

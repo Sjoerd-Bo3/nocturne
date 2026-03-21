@@ -1,0 +1,36 @@
+using Nocturne.Core.Models;
+
+namespace Nocturne.Connectors.Core.Interfaces;
+
+public interface IMetadataPublisher
+{
+    Task<bool> PublishProfilesAsync(
+        IEnumerable<Profile> profiles,
+        string source,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> PublishFoodAsync(
+        IEnumerable<Food> foods,
+        string source,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> PublishConnectorFoodEntriesAsync(
+        IEnumerable<ConnectorFoodEntryImport> entries,
+        string source,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> PublishActivityAsync(
+        IEnumerable<Activity> activities,
+        string source,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> PublishStateSpansAsync(
+        IEnumerable<StateSpan> stateSpans,
+        string source,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> PublishSystemEventsAsync(
+        IEnumerable<SystemEvent> systemEvents,
+        string source,
+        CancellationToken cancellationToken = default);
+}
