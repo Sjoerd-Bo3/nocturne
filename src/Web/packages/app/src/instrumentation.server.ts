@@ -7,13 +7,15 @@ import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 
 const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 
-const sdk = new NodeSDK({
-	resource: resourceFromAttributes({
-		[ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'nocturne-web',
-		[ATTR_SERVICE_VERSION]: '1.0.0'
-	}),
-	traceExporter: endpoint ? new OTLPTraceExporter({ url: `${endpoint}/v1/traces` }) : undefined,
-	instrumentations: [new HttpInstrumentation(), new FetchInstrumentation()]
-});
+if (endpoint) {
+	const sdk = new NodeSDK({
+		resource: resourceFromAttributes({
+			[ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'nocturne-web',
+			[ATTR_SERVICE_VERSION]: '1.0.0'
+		}),
+		traceExporter: new OTLPTraceExporter({ url: `${endpoint}/v1/traces` }),
+		instrumentations: [new HttpInstrumentation(), new FetchInstrumentation()]
+	});
 
-sdk.start();
+	sdk.start();
+}
