@@ -16,4 +16,8 @@ if (endpoint) {
 	});
 
 	sdk.start();
+
+	process.on('SIGTERM', () => {
+		sdk.shutdown().finally(() => process.exit(0));
+	});
 }
