@@ -6,7 +6,7 @@ using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Cache.Constants;
 using Nocturne.Infrastructure.Cache.Keys;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -15,7 +15,7 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class ProfileDataService : IProfileDataService
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IProfileRepository _profiles;
     private readonly ISignalRBroadcastService _broadcastService;
     private readonly ICacheService _cacheService;
     private readonly CacheConfiguration _cacheConfig;
@@ -26,7 +26,7 @@ public class ProfileDataService : IProfileDataService
         ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public ProfileDataService(
-        IPostgreSqlService postgreSqlService,
+        IProfileRepository profiles,
         ISignalRBroadcastService broadcastService,
         ICacheService cacheService,
         IOptions<CacheConfiguration> cacheConfig,
@@ -34,7 +34,7 @@ public class ProfileDataService : IProfileDataService
         ILogger<ProfileDataService> logger
     )
     {
-        _postgreSqlService = postgreSqlService;
+        _profiles = profiles;
         _broadcastService = broadcastService;
         _cacheService = cacheService;
         _cacheConfig = cacheConfig.Value;
@@ -50,7 +50,7 @@ public class ProfileDataService : IProfileDataService
         CancellationToken cancellationToken = default
     )
     {
-        return await _postgreSqlService.GetProfilesAsync(count ?? 10, skip ?? 0, cancellationToken);
+        return await _profiles.GetProfilesAsync(count ?? 10, skip ?? 0, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -59,7 +59,7 @@ public class ProfileDataService : IProfileDataService
         CancellationToken cancellationToken = default
     )
     {
-        return await _postgreSqlService.GetProfileByIdAsync(id, cancellationToken);
+        return await _profiles.GetProfileByIdAsync(id, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -79,7 +79,7 @@ public class ProfileDataService : IProfileDataService
 
         _logger.LogDebug("Cache MISS for current profile, fetching from database");
         // Get the current profile from MongoDB service
-        var profile = await _postgreSqlService.GetCurrentProfileAsync(cancellationToken);
+        var profile = await _profiles.GetCurrentProfileAsync(cancellationToken);
 
         if (profile != null)
         {
@@ -110,7 +110,7 @@ public class ProfileDataService : IProfileDataService
                     timestamp
                 );
 
-                var profile = await _postgreSqlService.GetProfileAtTimestampAsync(
+                var profile = await _profiles.GetProfileAtTimestampAsync(
                     timestamp,
                     cancellationToken
                 );
@@ -121,7 +121,7 @@ public class ProfileDataService : IProfileDataService
                         "No profile found at timestamp {Timestamp}, falling back to current profile",
                         timestamp
                     );
-                    profile = await _postgreSqlService.GetCurrentProfileAsync(cancellationToken);
+                    profile = await _profiles.GetCurrentProfileAsync(cancellationToken);
                 }
 
                 _logger.LogDebug(
@@ -142,7 +142,7 @@ public class ProfileDataService : IProfileDataService
         CancellationToken cancellationToken = default
     )
     {
-        var createdProfiles = await _postgreSqlService.CreateProfilesAsync(
+        var createdProfiles = await _profiles.CreateProfilesAsync(
             profiles,
             cancellationToken
         );
@@ -200,7 +200,7 @@ public class ProfileDataService : IProfileDataService
         CancellationToken cancellationToken = default
     )
     {
-        var updatedProfile = await _postgreSqlService.UpdateProfileAsync(
+        var updatedProfile = await _profiles.UpdateProfileAsync(
             id,
             profile,
             cancellationToken
@@ -267,9 +267,9 @@ public class ProfileDataService : IProfileDataService
     )
     {
         // Get the profile before deleting for broadcasting
-        var profileToDelete = await _postgreSqlService.GetProfileByIdAsync(id, cancellationToken);
+        var profileToDelete = await _profiles.GetProfileByIdAsync(id, cancellationToken);
 
-        var deleted = await _postgreSqlService.DeleteProfileAsync(id, cancellationToken);
+        var deleted = await _profiles.DeleteProfileAsync(id, cancellationToken);
 
         if (deleted)
         {
@@ -334,7 +334,7 @@ public class ProfileDataService : IProfileDataService
         CancellationToken cancellationToken = default
     )
     {
-        // TODO: Implement BulkDeleteProfilesAsync in IDataService
+        // TODO: Implement BulkDeleteProfilesAsync in IProfileRepository
         // For now, return 0 as bulk delete is not implemented for profiles
         _logger.LogWarning("Bulk delete for profiles is not implemented yet");
         return await Task.FromResult(0L);

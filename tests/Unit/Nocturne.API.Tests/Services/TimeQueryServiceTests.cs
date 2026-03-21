@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 using Xunit;
 using TimePatternQuery = Nocturne.Core.Contracts.TimePatternQuery;
 
@@ -15,19 +15,25 @@ namespace Nocturne.API.Tests.Services;
 /// </summary>
 public class TimeQueryServiceTests
 {
-    private readonly Mock<IPostgreSqlService> _mockPostgreSqlService;
+    private readonly Mock<IEntryRepository> _mockEntryRepository;
+    private readonly Mock<ITreatmentRepository> _mockTreatmentRepository;
+    private readonly Mock<IDeviceStatusRepository> _mockDeviceStatusRepository;
     private readonly Mock<IBraceExpansionService> _mockBraceExpansionService;
     private readonly Mock<ILogger<TimeQueryService>> _mockLogger;
     private readonly TimeQueryService _timeQueryService;
 
     public TimeQueryServiceTests()
     {
-        _mockPostgreSqlService = new Mock<IPostgreSqlService>();
+        _mockEntryRepository = new Mock<IEntryRepository>();
+        _mockTreatmentRepository = new Mock<ITreatmentRepository>();
+        _mockDeviceStatusRepository = new Mock<IDeviceStatusRepository>();
         _mockBraceExpansionService = new Mock<IBraceExpansionService>();
         _mockLogger = new Mock<ILogger<TimeQueryService>>();
 
         _timeQueryService = new TimeQueryService(
-            _mockPostgreSqlService.Object,
+            _mockEntryRepository.Object,
+            _mockTreatmentRepository.Object,
+            _mockDeviceStatusRepository.Object,
             _mockBraceExpansionService.Object,
             _mockLogger.Object
         );
@@ -66,7 +72,7 @@ public class TimeQueryServiceTests
             new Entry { Id = "1", Type = "sgv" },
             new Entry { Id = "2", Type = "sgv" },
         };
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string>(),
@@ -91,7 +97,7 @@ public class TimeQueryServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string>(),
@@ -128,7 +134,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -146,7 +152,7 @@ public class TimeQueryServiceTests
         await _timeQueryService.ExecuteTimeQueryAsync(prefix, regex, "entries", fieldName);
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -182,7 +188,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -200,7 +206,7 @@ public class TimeQueryServiceTests
         await _timeQueryService.ExecuteTimeQueryAsync(prefix, regex, "entries", fieldName);
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -241,7 +247,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -255,7 +261,7 @@ public class TimeQueryServiceTests
             )
             .ReturnsAsync(new List<Entry>());
 
-        _mockPostgreSqlService
+        _mockTreatmentRepository
             .Setup(x =>
                 x.GetTreatmentsWithAdvancedFilterAsync(
                     It.IsAny<int>(),
@@ -267,7 +273,7 @@ public class TimeQueryServiceTests
             )
             .ReturnsAsync(new List<Treatment>());
 
-        _mockPostgreSqlService
+        _mockDeviceStatusRepository
             .Setup(x =>
                 x.GetDeviceStatusWithAdvancedFilterAsync(
                     It.IsAny<int>(),
@@ -286,7 +292,7 @@ public class TimeQueryServiceTests
         switch (storageType.ToLowerInvariant())
         {
             case "entries":
-                _mockPostgreSqlService.Verify(
+                _mockEntryRepository.Verify(
                     x =>
                         x.GetEntriesWithAdvancedFilterAsync(
                             It.IsAny<string?>(),
@@ -301,7 +307,7 @@ public class TimeQueryServiceTests
                 );
                 break;
             case "treatments":
-                _mockPostgreSqlService.Verify(
+                _mockTreatmentRepository.Verify(
                     x =>
                         x.GetTreatmentsWithAdvancedFilterAsync(
                             It.IsAny<int>(),
@@ -314,7 +320,7 @@ public class TimeQueryServiceTests
                 );
                 break;
             case "devicestatus":
-                _mockPostgreSqlService.Verify(
+                _mockDeviceStatusRepository.Verify(
                     x =>
                         x.GetDeviceStatusWithAdvancedFilterAsync(
                             It.IsAny<int>(),
@@ -385,7 +391,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -409,7 +415,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -445,7 +451,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -490,7 +496,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -541,7 +547,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, field))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -588,7 +594,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, field))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -606,7 +612,7 @@ public class TimeQueryServiceTests
         await _timeQueryService.ExecuteSliceQueryAsync(storage, field, type, prefix, regex);
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -644,7 +650,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, field))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -662,7 +668,7 @@ public class TimeQueryServiceTests
         await _timeQueryService.ExecuteSliceQueryAsync(storage, field, type, prefix, regex);
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -704,7 +710,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, field))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -718,7 +724,7 @@ public class TimeQueryServiceTests
             )
             .ReturnsAsync(new List<Entry>());
 
-        _mockPostgreSqlService
+        _mockTreatmentRepository
             .Setup(x =>
                 x.GetTreatmentsWithAdvancedFilterAsync(
                     It.IsAny<int>(),
@@ -730,7 +736,7 @@ public class TimeQueryServiceTests
             )
             .ReturnsAsync(new List<Treatment>());
 
-        _mockPostgreSqlService
+        _mockDeviceStatusRepository
             .Setup(x =>
                 x.GetDeviceStatusWithAdvancedFilterAsync(
                     It.IsAny<int>(),
@@ -749,7 +755,7 @@ public class TimeQueryServiceTests
         switch (storageType.ToLowerInvariant())
         {
             case "entries":
-                _mockPostgreSqlService.Verify(
+                _mockEntryRepository.Verify(
                     x =>
                         x.GetEntriesWithAdvancedFilterAsync(
                             It.IsAny<string?>(),
@@ -764,7 +770,7 @@ public class TimeQueryServiceTests
                 );
                 break;
             case "treatments":
-                _mockPostgreSqlService.Verify(
+                _mockTreatmentRepository.Verify(
                     x =>
                         x.GetTreatmentsWithAdvancedFilterAsync(
                             It.IsAny<int>(),
@@ -777,7 +783,7 @@ public class TimeQueryServiceTests
                 );
                 break;
             case "devicestatus":
-                _mockPostgreSqlService.Verify(
+                _mockDeviceStatusRepository.Verify(
                     x =>
                         x.GetDeviceStatusWithAdvancedFilterAsync(
                             It.IsAny<int>(),
@@ -1110,7 +1116,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1134,7 +1140,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1181,7 +1187,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1205,7 +1211,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1248,7 +1254,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1272,7 +1278,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1312,7 +1318,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1330,7 +1336,7 @@ public class TimeQueryServiceTests
         await _timeQueryService.ExecuteTimeQueryAsync(prefix, regex, "entries", fieldName);
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1367,7 +1373,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1392,7 +1398,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1431,7 +1437,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, field))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1457,7 +1463,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1494,7 +1500,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1512,7 +1518,7 @@ public class TimeQueryServiceTests
         await _timeQueryService.ExecuteTimeQueryAsync(prefix, regex, storageType, fieldName);
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1550,7 +1556,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, field))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockTreatmentRepository
             .Setup(x =>
                 x.GetTreatmentsWithAdvancedFilterAsync(
                     It.IsAny<int>(),
@@ -1566,7 +1572,7 @@ public class TimeQueryServiceTests
         await _timeQueryService.ExecuteSliceQueryAsync(storage, field, type, prefix, regex);
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockTreatmentRepository.Verify(
             x =>
                 x.GetTreatmentsWithAdvancedFilterAsync(
                     It.IsAny<int>(),
@@ -1612,7 +1618,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1636,7 +1642,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1682,7 +1688,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, field))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1707,7 +1713,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1755,7 +1761,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1779,7 +1785,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1822,7 +1828,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1846,7 +1852,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1889,7 +1895,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1913,7 +1919,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1957,7 +1963,7 @@ public class TimeQueryServiceTests
             .Setup(x => x.PrepareTimePatterns(prefix, regex, fieldName))
             .Returns(expectedPatterns);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -1981,7 +1987,7 @@ public class TimeQueryServiceTests
         );
 
         // Assert
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),

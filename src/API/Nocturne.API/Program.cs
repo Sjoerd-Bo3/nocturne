@@ -314,7 +314,7 @@ app.MapDefaultEndpoints();
 // Skip database migrations when running in NSwag/OpenAPI generation mode
 // NSwag launches the app to extract the OpenAPI schema, but we don't need DB access for that
 var isNSwagGeneration = IsRunningInNSwagContext();
-if (!isNSwagGeneration)
+if (!isNSwagGeneration && !app.Environment.IsEnvironment("Testing"))
 {
     // Initialize PostgreSQL database with migrations
     // IMPORTANT: Do not catch exceptions here - if migrations fail, the app should not start
@@ -326,7 +326,7 @@ if (!isNSwagGeneration)
     // Seed default tenant if none exists and backfill tenant_id on existing rows
     await DefaultTenantSeeder.SeedDefaultTenantAsync(app.Services);
 }
-else
+else if (isNSwagGeneration)
 {
     Console.WriteLine("[NSwag] Skipping database migrations - running in OpenAPI generation mode");
 }

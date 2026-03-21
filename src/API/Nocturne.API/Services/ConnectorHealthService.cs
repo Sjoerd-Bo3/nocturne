@@ -2,13 +2,13 @@ using Nocturne.API.Models;
 using Nocturne.Connectors.Core.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Configuration;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services;
 
 public class ConnectorHealthService(
     IConfiguration configuration,
-    IPostgreSqlService postgreSqlService,
+    IEntryRepository entries,
     IConnectorConfigurationService connectorConfigService,
     ILogger<ConnectorHealthService> logger
 ) : IConnectorHealthService
@@ -86,7 +86,7 @@ public class ConnectorHealthService(
         }
 
         // Always get database stats for historical data (entries + treatments + state spans)
-        var dbStats = await postgreSqlService.GetEntryStatsBySourceAsync(
+        var dbStats = await entries.GetEntryStatsBySourceAsync(
             connector.DataSourceId,
             cancellationToken
         );

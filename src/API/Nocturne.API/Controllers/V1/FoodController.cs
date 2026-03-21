@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers.V1;
 
@@ -17,12 +17,12 @@ namespace Nocturne.API.Controllers.V1;
 [Authorize]
 public class FoodController : ControllerBase
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IFoodRepository _foodRepository;
     private readonly ILogger<FoodController> _logger;
 
-    public FoodController(IPostgreSqlService postgreSqlService, ILogger<FoodController> logger)
+    public FoodController(IFoodRepository foodRepository, ILogger<FoodController> logger)
     {
-        _postgreSqlService = postgreSqlService;
+        _foodRepository = foodRepository;
         _logger = logger;
     }
 
@@ -45,7 +45,7 @@ public class FoodController : ControllerBase
 
         try
         {
-            var foods = await _postgreSqlService.GetFoodAsync(cancellationToken);
+            var foods = await _foodRepository.GetFoodAsync(cancellationToken);
             var foodList = foods.ToList();
 
             // Note: Nightscout V1 GET /api/v1/food DOES NOT support find query parameters
@@ -108,7 +108,7 @@ public class FoodController : ControllerBase
 
         try
         {
-            var foods = await _postgreSqlService.GetFoodByTypeAsync("food", cancellationToken);
+            var foods = await _foodRepository.GetFoodByTypeAsync("food", cancellationToken);
             var foodArray = foods.ToArray();
 
             _logger.LogDebug(
@@ -151,7 +151,7 @@ public class FoodController : ControllerBase
 
         try
         {
-            var foods = await _postgreSqlService.GetFoodByTypeAsync("quickpick", cancellationToken);
+            var foods = await _foodRepository.GetFoodByTypeAsync("quickpick", cancellationToken);
 
             // Nightscout's listquickpicks filters by hidden='false' (string in MongoDB)
             // Since we use boolean Hidden, filter where Hidden == false
@@ -211,7 +211,7 @@ public class FoodController : ControllerBase
                 return BadRequest("Food ID cannot be null or empty");
             }
 
-            var food = await _postgreSqlService.GetFoodByIdAsync(id, cancellationToken);
+            var food = await _foodRepository.GetFoodByIdAsync(id, cancellationToken);
             if (food == null)
             {
                 _logger.LogDebug("Food record not found with ID: {Id}", id);
@@ -321,7 +321,7 @@ public class FoodController : ControllerBase
                 }
             }
 
-            var createdFoods = await _postgreSqlService.CreateFoodAsync(
+            var createdFoods = await _foodRepository.CreateFoodAsync(
                 foodsToCreate,
                 cancellationToken
             );
@@ -415,7 +415,7 @@ public class FoodController : ControllerBase
                 food.Gi = 2;
             }
 
-            var updatedFood = await _postgreSqlService.UpdateFoodAsync(id, food, cancellationToken);
+            var updatedFood = await _foodRepository.UpdateFoodAsync(id, food, cancellationToken);
             if (updatedFood == null)
             {
                 _logger.LogDebug("Food record not found for update with ID: {Id}", id);
@@ -495,7 +495,7 @@ public class FoodController : ControllerBase
                 return BadRequest("Food ID cannot be null or empty");
             }
 
-            var deleted = await _postgreSqlService.DeleteFoodAsync(id, cancellationToken);
+            var deleted = await _foodRepository.DeleteFoodAsync(id, cancellationToken);
             if (!deleted)
             {
                 _logger.LogDebug("Food record not found for deletion with ID: {Id}", id);
@@ -547,7 +547,7 @@ public class FoodController : ControllerBase
                 return Ok(new { });
             }
 
-            var deletedCount = await _postgreSqlService.BulkDeleteFoodAsync(findQuery, cancellationToken);
+            var deletedCount = await _foodRepository.BulkDeleteFoodAsync(findQuery, cancellationToken);
 
             _logger.LogDebug("Deleted {Count} food records matching filter: {Query}", deletedCount, findQuery);
 

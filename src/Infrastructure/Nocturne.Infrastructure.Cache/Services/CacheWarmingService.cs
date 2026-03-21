@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Cache.Constants;
@@ -39,19 +40,28 @@ public interface ICacheWarmingService
 public class CacheWarmingService : ICacheWarmingService
 {
     private readonly ICacheService _cacheService;
-    private readonly IDataService _mongoDbService;
+    private readonly IEntryRepository _entries;
+    private readonly ITreatmentRepository _treatments;
+    private readonly IProfileRepository _profiles;
+    private readonly ISettingsRepository _settings;
     private readonly CacheConfiguration _config;
     private readonly ILogger<CacheWarmingService> _logger;
 
     public CacheWarmingService(
         ICacheService cacheService,
-        IDataService mongoDbService,
+        IEntryRepository entries,
+        ITreatmentRepository treatments,
+        IProfileRepository profiles,
+        ISettingsRepository settings,
         IOptions<CacheConfiguration> config,
         ILogger<CacheWarmingService> logger
     )
     {
         _cacheService = cacheService;
-        _mongoDbService = mongoDbService;
+        _entries = entries;
+        _treatments = treatments;
+        _profiles = profiles;
+        _settings = settings;
         _config = config.Value;
         _logger = logger;
     }
@@ -161,7 +171,7 @@ public class CacheWarmingService : ICacheWarmingService
 
             if (!existsInCache)
             {
-                var currentEntry = await _mongoDbService.GetCurrentEntryAsync(cancellationToken);
+                var currentEntry = await _entries.GetCurrentEntryAsync(cancellationToken);
                 if (currentEntry != null)
                 {
                     await _cacheService.SetAsync(
@@ -200,7 +210,7 @@ public class CacheWarmingService : ICacheWarmingService
 
                 if (!existsInCache)
                 {
-                    var entries = await _mongoDbService.GetEntriesAsync(
+                    var entries = await _entries.GetEntriesAsync(
                         count: hours,
                         type: type,
                         cancellationToken: cancellationToken
@@ -244,7 +254,7 @@ public class CacheWarmingService : ICacheWarmingService
 
                 if (!existsInCache)
                 {
-                    var treatments = await _mongoDbService.GetTreatmentsAsync(
+                    var treatments = await _treatments.GetTreatmentsAsync(
                         count: 20,
                         cancellationToken: cancellationToken
                     );
@@ -282,7 +292,7 @@ public class CacheWarmingService : ICacheWarmingService
 
             if (!existsInCache)
             {
-                var profiles = await _mongoDbService.GetProfilesAsync(
+                var profiles = await _profiles.GetProfilesAsync(
                     count: 10,
                     skip: 0,
                     cancellationToken: cancellationToken
@@ -315,7 +325,7 @@ public class CacheWarmingService : ICacheWarmingService
 
             if (!existsInCache)
             {
-                var settings = await _mongoDbService.GetSettingsAsync(cancellationToken);
+                var settings = await _settings.GetSettingsAsync(cancellationToken);
                 if (settings.Any())
                 {
                     var systemData = new

@@ -6,8 +6,6 @@ using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.Repositories;
-using Nocturne.Infrastructure.Data.Abstractions;
-using Nocturne.Infrastructure.Data.Adapters;
 using Nocturne.Infrastructure.Data.Configuration;
 using Nocturne.Infrastructure.Data.Interceptors;
 using Nocturne.Infrastructure.Data.Repositories;
@@ -105,10 +103,6 @@ public static class ServiceCollectionExtensions
         // Register deduplication service (required by repositories)
         services.AddScoped<IDeduplicationService, DeduplicationService>();
 
-        // Register core repositories required by PostgreSqlService
-        services.AddScoped<EntryRepository>();
-        services.AddScoped<TreatmentRepository>();
-
         // Register all repositories via their port interfaces
         services.AddScoped<IEntryRepository, EntryRepository>();
         services.AddScoped<ITreatmentRepository, TreatmentRepository>();
@@ -117,12 +111,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFoodRepository, FoodRepository>();
         services.AddScoped<IActivityRepository, ActivityRepository>();
         services.AddScoped<ISettingsRepository, SettingsRepository>();
-
-        // Register PostgreSQL service
-        services.AddScoped<IPostgreSqlService, PostgreSqlService>();
-
-        // Register PostgreSQL adapter as IDataService for drop-in replacement
-        services.AddScoped<IDataService, PostgreSqlDataService>();
 
         // Register Nightscout query parser
         services.AddScoped<IQueryParser, QueryParser>();
@@ -214,8 +202,6 @@ public static class ServiceCollectionExtensions
         );
 
         // Register scoped NocturneDbContext that sets TenantId from ITenantAccessor.
-        // All existing constructor injections of NocturneDbContext continue to work.
-        // The context is returned to the pool when the scope ends.
         services.AddScoped(sp =>
         {
             var factory = sp.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
@@ -231,10 +217,6 @@ public static class ServiceCollectionExtensions
         // Register deduplication service (required by repositories)
         services.AddScoped<IDeduplicationService, DeduplicationService>();
 
-        // Register core repositories required by PostgreSqlService
-        services.AddScoped<EntryRepository>();
-        services.AddScoped<TreatmentRepository>();
-
         // Register all repositories via their port interfaces
         services.AddScoped<IEntryRepository, EntryRepository>();
         services.AddScoped<ITreatmentRepository, TreatmentRepository>();
@@ -243,12 +225,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFoodRepository, FoodRepository>();
         services.AddScoped<IActivityRepository, ActivityRepository>();
         services.AddScoped<ISettingsRepository, SettingsRepository>();
-
-        // Register PostgreSQL service
-        services.AddScoped<IPostgreSqlService, PostgreSqlService>();
-
-        // Register PostgreSQL adapter as IDataService for drop-in replacement
-        services.AddScoped<IDataService, PostgreSqlDataService>();
 
         // Register Nightscout query parser
         services.AddScoped<IQueryParser, QueryParser>();

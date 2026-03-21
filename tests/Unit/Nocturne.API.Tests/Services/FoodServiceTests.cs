@@ -4,7 +4,7 @@ using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services;
@@ -14,7 +14,7 @@ namespace Nocturne.API.Tests.Services;
 /// </summary>
 public class FoodServiceTests
 {
-    private readonly Mock<IPostgreSqlService> _mockPostgreSqlService;
+    private readonly Mock<IFoodRepository> _mockFoodRepository;
     private readonly Mock<IDocumentProcessingService> _mockDocumentProcessingService;
     private readonly Mock<ISignalRBroadcastService> _mockSignalRBroadcastService;
     private readonly Mock<ILogger<FoodService>> _mockLogger;
@@ -22,13 +22,13 @@ public class FoodServiceTests
 
     public FoodServiceTests()
     {
-        _mockPostgreSqlService = new Mock<IPostgreSqlService>();
+        _mockFoodRepository = new Mock<IFoodRepository>();
         _mockDocumentProcessingService = new Mock<IDocumentProcessingService>();
         _mockSignalRBroadcastService = new Mock<ISignalRBroadcastService>();
         _mockLogger = new Mock<ILogger<FoodService>>();
 
         _foodService = new FoodService(
-            _mockPostgreSqlService.Object,
+            _mockFoodRepository.Object,
             _mockDocumentProcessingService.Object,
             _mockSignalRBroadcastService.Object,
             _mockLogger.Object
@@ -44,7 +44,7 @@ public class FoodServiceTests
     {
         // Arrange & Act
         var service = new FoodService(
-            _mockPostgreSqlService.Object,
+            _mockFoodRepository.Object,
             _mockDocumentProcessingService.Object,
             _mockSignalRBroadcastService.Object,
             _mockLogger.Object
@@ -78,7 +78,7 @@ public class FoodServiceTests
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
             new FoodService(
-                _mockPostgreSqlService.Object,
+                _mockFoodRepository.Object,
                 null!,
                 _mockSignalRBroadcastService.Object,
                 _mockLogger.Object
@@ -94,7 +94,7 @@ public class FoodServiceTests
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
             new FoodService(
-                _mockPostgreSqlService.Object,
+                _mockFoodRepository.Object,
                 _mockDocumentProcessingService.Object,
                 null!,
                 _mockLogger.Object
@@ -110,7 +110,7 @@ public class FoodServiceTests
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
             new FoodService(
-                _mockPostgreSqlService.Object,
+                _mockFoodRepository.Object,
                 _mockDocumentProcessingService.Object,
                 _mockSignalRBroadcastService.Object,
                 null!
@@ -152,7 +152,7 @@ public class FoodServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedFoods);
 
@@ -162,7 +162,7 @@ public class FoodServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEquivalentTo(expectedFoods);
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.GetFoodAsync(It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -187,7 +187,7 @@ public class FoodServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedFoods);
 
@@ -197,7 +197,7 @@ public class FoodServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEquivalentTo(expectedFoods);
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.GetFoodAsync(It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -210,7 +210,7 @@ public class FoodServiceTests
     {
         // Arrange
         var expectedException = new InvalidOperationException("Database error");
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
@@ -247,7 +247,7 @@ public class FoodServiceTests
             Gi = 2,
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodByIdAsync(foodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedFood);
 
@@ -257,7 +257,7 @@ public class FoodServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEquivalentTo(expectedFood);
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.GetFoodByIdAsync(foodId, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -270,7 +270,7 @@ public class FoodServiceTests
     {
         // Arrange
         var foodId = "507f1f77bcf86cd799439011";
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodByIdAsync(foodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Food?)null);
 
@@ -279,7 +279,7 @@ public class FoodServiceTests
 
         // Assert
         result.Should().BeNull();
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.GetFoodByIdAsync(foodId, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -293,7 +293,7 @@ public class FoodServiceTests
         // Arrange
         var foodId = "507f1f77bcf86cd799439011";
         var expectedException = new InvalidOperationException("Database error");
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodByIdAsync(foodId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
@@ -361,7 +361,7 @@ public class FoodServiceTests
             )
             .ToList();
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>())
             )
@@ -379,7 +379,7 @@ public class FoodServiceTests
         result.Should().BeEquivalentTo(createdFoods);
         result.Count().Should().Be(2);
 
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -406,7 +406,7 @@ public class FoodServiceTests
         var inputFoods = new List<Food>();
         var createdFoods = new List<Food>();
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>())
             )
@@ -482,7 +482,7 @@ public class FoodServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>())
             )
@@ -511,7 +511,7 @@ public class FoodServiceTests
         var inputFoods = new List<Food> { new Food { Name = "Test Food" } };
         var expectedException = new InvalidOperationException("Database error");
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>())
             )
@@ -537,7 +537,7 @@ public class FoodServiceTests
         };
         var expectedException = new InvalidOperationException("SignalR error");
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>())
             )
@@ -592,7 +592,7 @@ public class FoodServiceTests
             Unit = updateFood.Unit,
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.UpdateFoodAsync(foodId, updateFood, It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedFood);
 
@@ -608,7 +608,7 @@ public class FoodServiceTests
         result.Should().BeEquivalentTo(updatedFood);
         result!.Id.Should().Be(foodId);
 
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.UpdateFoodAsync(foodId, updateFood, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -635,7 +635,7 @@ public class FoodServiceTests
         var foodId = "507f1f77bcf86cd799439011";
         var updateFood = new Food { Name = "Test Food" };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.UpdateFoodAsync(foodId, updateFood, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Food?)null);
 
@@ -645,7 +645,7 @@ public class FoodServiceTests
         // Assert
         result.Should().BeNull();
 
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.UpdateFoodAsync(foodId, updateFood, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -666,7 +666,7 @@ public class FoodServiceTests
         var updateFood = new Food { Name = "Test Food" };
         var expectedException = new InvalidOperationException("Database error");
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.UpdateFoodAsync(foodId, updateFood, It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
@@ -688,7 +688,7 @@ public class FoodServiceTests
         var updatedFood = new Food { Id = foodId, Name = "Test Food" };
         var expectedException = new InvalidOperationException("SignalR error");
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.UpdateFoodAsync(foodId, updateFood, It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedFood);
 
@@ -715,7 +715,7 @@ public class FoodServiceTests
         // Arrange
         var foodId = "507f1f77bcf86cd799439011";
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.DeleteFoodAsync(foodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -729,7 +729,7 @@ public class FoodServiceTests
         // Assert
         result.Should().BeTrue();
 
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.DeleteFoodAsync(foodId, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -755,7 +755,7 @@ public class FoodServiceTests
         // Arrange
         var foodId = "507f1f77bcf86cd799439011";
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.DeleteFoodAsync(foodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
@@ -765,7 +765,7 @@ public class FoodServiceTests
         // Assert
         result.Should().BeFalse();
 
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.DeleteFoodAsync(foodId, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -785,7 +785,7 @@ public class FoodServiceTests
         var foodId = "507f1f77bcf86cd799439011";
         var expectedException = new InvalidOperationException("Database error");
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.DeleteFoodAsync(foodId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
@@ -805,7 +805,7 @@ public class FoodServiceTests
         var foodId = "507f1f77bcf86cd799439011";
         var expectedException = new InvalidOperationException("SignalR error");
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.DeleteFoodAsync(foodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -832,7 +832,7 @@ public class FoodServiceTests
         // Arrange
         var deletedCount = 5L;
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.BulkDeleteFoodAsync("{}", It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedCount);
 
@@ -846,7 +846,7 @@ public class FoodServiceTests
         // Assert
         result.Should().Be(deletedCount);
 
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.BulkDeleteFoodAsync("{}", It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -876,7 +876,7 @@ public class FoodServiceTests
         var filter = "{\"category\":\"Fruit\"}";
         var deletedCount = 3L;
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.BulkDeleteFoodAsync(filter, It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedCount);
 
@@ -890,7 +890,7 @@ public class FoodServiceTests
         // Assert
         result.Should().Be(deletedCount);
 
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.BulkDeleteFoodAsync(filter, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -920,7 +920,7 @@ public class FoodServiceTests
         var filter = "{\"category\":\"NonExistent\"}";
         var deletedCount = 0L;
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.BulkDeleteFoodAsync(filter, It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedCount);
 
@@ -930,7 +930,7 @@ public class FoodServiceTests
         // Assert
         result.Should().Be(deletedCount);
 
-        _mockPostgreSqlService.Verify(
+        _mockFoodRepository.Verify(
             x => x.BulkDeleteFoodAsync(filter, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -950,7 +950,7 @@ public class FoodServiceTests
         var filter = "{\"category\":\"Fruit\"}";
         var expectedException = new InvalidOperationException("Database error");
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.BulkDeleteFoodAsync(filter, It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException);
 
@@ -971,7 +971,7 @@ public class FoodServiceTests
         var deletedCount = 3L;
         var expectedException = new InvalidOperationException("SignalR error");
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.BulkDeleteFoodAsync(filter, It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedCount);
 
@@ -1031,7 +1031,7 @@ public class FoodServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>())
             )
@@ -1109,7 +1109,7 @@ public class FoodServiceTests
             )
             .ToList();
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>())
             )
@@ -1178,7 +1178,7 @@ public class FoodServiceTests
             )
             .ToList();
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>())
             )

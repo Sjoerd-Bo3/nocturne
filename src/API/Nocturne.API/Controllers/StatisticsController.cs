@@ -7,7 +7,7 @@ using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Cache.Abstractions;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers;
 
@@ -23,7 +23,7 @@ public class StatisticsController : ControllerBase
 {
     private readonly IStatisticsService _statisticsService;
     private readonly ICacheService _cacheService;
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IProfileRepository _profileRepository;
     private readonly IProfileService _profileService;
     private readonly ISensorGlucoseRepository _sensorGlucoseRepository;
     private readonly IBolusRepository _bolusRepository;
@@ -42,7 +42,7 @@ public class StatisticsController : ControllerBase
     public StatisticsController(
         IStatisticsService statisticsService,
         ICacheService cacheService,
-        IPostgreSqlService postgreSqlService,
+        IProfileRepository profileRepository,
         IProfileService profileService,
         ISensorGlucoseRepository sensorGlucoseRepository,
         IBolusRepository bolusRepository,
@@ -58,7 +58,7 @@ public class StatisticsController : ControllerBase
     {
         _statisticsService = statisticsService;
         _cacheService = cacheService;
-        _postgreSqlService = postgreSqlService;
+        _profileRepository = profileRepository;
         _profileService = profileService;
         _sensorGlucoseRepository = sensorGlucoseRepository;
         _bolusRepository = bolusRepository;
@@ -561,7 +561,7 @@ public class StatisticsController : ControllerBase
             }
 
             // Load profile data for scheduled basal calculation
-            var profiles = await _postgreSqlService.GetProfilesAsync(
+            var profiles = await _profileRepository.GetProfilesAsync(
                 count: 10,
                 skip: 0,
                 cancellationToken: cancellationToken
@@ -979,7 +979,7 @@ public class StatisticsController : ControllerBase
 
             // Load basal rate profile so we can fill in ScheduledRate on temp basals
             // that don't have it (e.g. MyLife/CamAPS algorithm adjustments)
-            var profiles = await _postgreSqlService.GetProfilesAsync(count: 10, skip: 0);
+            var profiles = await _profileRepository.GetProfilesAsync(count: 10, skip: 0);
             var profileList = profiles.ToList();
             if (profileList.Any())
             {

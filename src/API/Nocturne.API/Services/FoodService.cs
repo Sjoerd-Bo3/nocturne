@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -12,20 +12,20 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class FoodService : IFoodService
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IFoodRepository _food;
     private readonly IDocumentProcessingService _documentProcessingService;
     private readonly ISignalRBroadcastService _signalRBroadcastService;
     private readonly ILogger<FoodService> _logger;
 
     public FoodService(
-        IPostgreSqlService postgreSqlService,
+        IFoodRepository food,
         IDocumentProcessingService documentProcessingService,
         ISignalRBroadcastService signalRBroadcastService,
         ILogger<FoodService> logger
     )
     {
-        _postgreSqlService =
-            postgreSqlService ?? throw new ArgumentNullException(nameof(postgreSqlService));
+        _food =
+            food ?? throw new ArgumentNullException(nameof(food));
         _documentProcessingService =
             documentProcessingService
             ?? throw new ArgumentNullException(nameof(documentProcessingService));
@@ -52,7 +52,7 @@ public class FoodService : IFoodService
                 skip
             );
             // Note: MongoDB service doesn't support find/count/skip parameters for food yet
-            return await _postgreSqlService.GetFoodAsync(cancellationToken);
+            return await _food.GetFoodAsync(cancellationToken);
         }
         catch (Exception ex)
         {
@@ -70,7 +70,7 @@ public class FoodService : IFoodService
         try
         {
             _logger.LogDebug("Getting food record by ID: {Id}", id);
-            return await _postgreSqlService.GetFoodByIdAsync(id, cancellationToken);
+            return await _food.GetFoodByIdAsync(id, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -94,7 +94,7 @@ public class FoodService : IFoodService
             var processedList = processedFoods.ToList();
 
             // Create in database
-            var createdFoods = await _postgreSqlService.CreateFoodAsync(
+            var createdFoods = await _food.CreateFoodAsync(
                 processedList,
                 cancellationToken
             );
@@ -258,7 +258,7 @@ public class FoodService : IFoodService
         {
             _logger.LogDebug("Updating food record with ID: {Id}", id);
 
-            var updatedFood = await _postgreSqlService.UpdateFoodAsync(id, food, cancellationToken);
+            var updatedFood = await _food.UpdateFoodAsync(id, food, cancellationToken);
 
             if (updatedFood != null)
             {
@@ -295,7 +295,7 @@ public class FoodService : IFoodService
         {
             _logger.LogDebug("Deleting food record with ID: {Id}", id);
 
-            var deleted = await _postgreSqlService.DeleteFoodAsync(id, cancellationToken);
+            var deleted = await _food.DeleteFoodAsync(id, cancellationToken);
 
             if (deleted)
             {
@@ -327,7 +327,7 @@ public class FoodService : IFoodService
         {
             _logger.LogDebug("Bulk deleting food records with filter: {Find}", find);
 
-            var deletedCount = await _postgreSqlService.BulkDeleteFoodAsync(
+            var deletedCount = await _food.BulkDeleteFoodAsync(
                 find ?? "{}",
                 cancellationToken
             );

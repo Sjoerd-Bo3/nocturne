@@ -1,6 +1,6 @@
 using Nocturne.API.Controllers.V4;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -11,14 +11,14 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class DeviceStatusPredictionService : IPredictionService
 {
-    private readonly IPostgreSqlService _postgresService;
+    private readonly IDeviceStatusRepository _deviceStatuses;
     private readonly ILogger<DeviceStatusPredictionService> _logger;
 
     public DeviceStatusPredictionService(
-        IPostgreSqlService postgresService,
+        IDeviceStatusRepository deviceStatuses,
         ILogger<DeviceStatusPredictionService> logger)
     {
-        _postgresService = postgresService;
+        _deviceStatuses = deviceStatuses;
         _logger = logger;
     }
 
@@ -26,7 +26,7 @@ public class DeviceStatusPredictionService : IPredictionService
         string? profileId = null,
         CancellationToken cancellationToken = default)
     {
-        var statuses = await _postgresService.GetDeviceStatusAsync(
+        var statuses = await _deviceStatuses.GetDeviceStatusAsync(
             count: 1,
             skip: 0,
             cancellationToken);

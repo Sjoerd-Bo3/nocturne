@@ -5,7 +5,7 @@ using Nocturne.API.Extensions;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+
 
 namespace Nocturne.API.Controllers.V4;
 
@@ -20,7 +20,6 @@ namespace Nocturne.API.Controllers.V4;
 [Authorize]
 public class DebugController : ControllerBase
 {
-    private readonly IPostgreSqlService _postgreSqlService;
     private readonly IInAppNotificationService _notificationService;
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<DebugController> _logger;
@@ -28,19 +27,15 @@ public class DebugController : ControllerBase
     /// <summary>
     /// Initializes a new instance of the DebugController
     /// </summary>
-    /// <param name="postgreSqlService">PostgreSQL service for data operations</param>
     /// <param name="notificationService">In-app notification service</param>
     /// <param name="environment">Web host environment</param>
     /// <param name="logger">Logger instance</param>
     public DebugController(
-        IPostgreSqlService postgreSqlService,
         IInAppNotificationService notificationService,
         IWebHostEnvironment environment,
         ILogger<DebugController> logger
     )
     {
-        _postgreSqlService =
-            postgreSqlService ?? throw new ArgumentNullException(nameof(postgreSqlService));
         _notificationService =
             notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));

@@ -1,4 +1,4 @@
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services.BackgroundServices;
 
@@ -173,15 +173,16 @@ public class DemoServiceHealthMonitor : BackgroundService
         try
         {
             using var scope = _serviceProvider.CreateScope();
-            var postgreSqlService = scope.ServiceProvider.GetRequiredService<IPostgreSqlService>();
+            var entryRepository = scope.ServiceProvider.GetRequiredService<IEntryRepository>();
+            var treatmentRepository = scope.ServiceProvider.GetRequiredService<ITreatmentRepository>();
 
             _logger.LogInformation("Cleaning up demo data...");
 
-            var entriesDeleted = await postgreSqlService.DeleteEntriesByDataSourceAsync(
+            var entriesDeleted = await entryRepository.DeleteEntriesByDataSourceAsync(
                 Core.Constants.DataSources.DemoService,
                 cancellationToken
             );
-            var treatmentsDeleted = await postgreSqlService.DeleteTreatmentsByDataSourceAsync(
+            var treatmentsDeleted = await treatmentRepository.DeleteTreatmentsByDataSourceAsync(
                 Core.Constants.DataSources.DemoService,
                 cancellationToken
             );

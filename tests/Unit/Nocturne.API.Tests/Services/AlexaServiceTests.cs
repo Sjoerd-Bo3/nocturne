@@ -3,7 +3,7 @@ using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services;
@@ -15,15 +15,15 @@ namespace Nocturne.API.Tests.Services;
 [Parity("api.alexa.test.js")]
 public class AlexaServiceTests
 {
-    private readonly Mock<IPostgreSqlService> _mockPostgreSqlService;
+    private readonly Mock<IEntryRepository> _mockEntryRepository;
     private readonly Mock<ILogger<AlexaService>> _mockLogger;
     private readonly AlexaService _alexaService;
 
     public AlexaServiceTests()
     {
-        _mockPostgreSqlService = new Mock<IPostgreSqlService>();
+        _mockEntryRepository = new Mock<IEntryRepository>();
         _mockLogger = new Mock<ILogger<AlexaService>>();
-        _alexaService = new AlexaService(_mockPostgreSqlService.Object, _mockLogger.Object);
+        _alexaService = new AlexaService(_mockEntryRepository.Object, _mockLogger.Object);
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class AlexaServiceTests
             Mills = DateTimeOffset.UtcNow.AddMinutes(-5).ToUnixTimeMilliseconds(),
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.GetEntriesAsync("sgv", 1, 0, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { mockEntry });
 
@@ -130,7 +130,7 @@ public class AlexaServiceTests
     public async Task ProcessRequestAsync_IntentRequest_NSBg_NoData_ReturnsNoDataMessage()
     {
         // Arrange
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.GetEntriesAsync("sgv", 1, 0, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Entry>());
 

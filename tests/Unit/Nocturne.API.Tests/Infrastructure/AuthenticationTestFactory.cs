@@ -11,7 +11,7 @@ using Moq;
 using Nocturne.Core.Contracts;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Data;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Tests.Infrastructure;
 
@@ -58,7 +58,13 @@ public class AuthenticationTestFactory : WebApplicationFactory<Nocturne.API.Prog
         {
             // Remove database-related services that cause issues in tests
             RemoveService<ICacheService>(services);
-            RemoveService<IPostgreSqlService>(services);
+            RemoveService<IEntryRepository>(services);
+            RemoveService<ITreatmentRepository>(services);
+            RemoveService<IProfileRepository>(services);
+            RemoveService<IDeviceStatusRepository>(services);
+            RemoveService<IFoodRepository>(services);
+            RemoveService<IActivityRepository>(services);
+            RemoveService<ISettingsRepository>(services);
 
             // Remove Entity Framework DbContext and related services to prevent migrations
             var dbContextServices = services
@@ -82,6 +88,45 @@ public class AuthenticationTestFactory : WebApplicationFactory<Nocturne.API.Prog
                         w.Ignore(RelationalEventId.PendingModelChangesWarning))
             );
 
+            // Build a temporary service provider to create the schema from the model
+            // (bypasses migrations which contain PostgreSQL-specific SQL)
+            var sp = services.BuildServiceProvider();
+            using var scope = sp.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<NocturneDbContext>();
+            db.Database.EnsureCreated();
+
+            // Seed a default tenant so tenant resolution middleware doesn't return 404
+            if (!db.Tenants.Any())
+            {
+                db.Tenants.Add(new Nocturne.Infrastructure.Data.Entities.TenantEntity
+                {
+                    Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                    Slug = "default",
+                    DisplayName = "Default",
+                    IsActive = true,
+                    IsDefault = true,
+                });
+                db.SaveChanges();
+            }
+
+            // Register IDbContextFactory that returns SQLite-backed contexts
+            var mockDbContextFactory = new Mock<IDbContextFactory<NocturneDbContext>>();
+            mockDbContextFactory
+                .Setup(f => f.CreateDbContext())
+                .Returns(() =>
+                {
+                    var opts = new DbContextOptionsBuilder<NocturneDbContext>()
+                        .UseSqlite(sqliteConnection)
+                        .ConfigureWarnings(w =>
+                            w.Ignore(RelationalEventId.PendingModelChangesWarning))
+                        .Options;
+                    return new NocturneDbContext(opts);
+                });
+            mockDbContextFactory
+                .Setup(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => mockDbContextFactory.Object.CreateDbContext());
+            services.AddSingleton<IDbContextFactory<NocturneDbContext>>(mockDbContextFactory.Object);
+
             // Add mock cache service
             var mockCacheService = new Mock<ICacheService>();
             mockCacheService
@@ -100,13 +145,19 @@ public class AuthenticationTestFactory : WebApplicationFactory<Nocturne.API.Prog
 
             services.AddSingleton(mockCacheService.Object);
 
-            // Mock database service to avoid PostgreSQL dependency
-            var mockPostgreSqlService = new Mock<IPostgreSqlService>();
-            mockPostgreSqlService
+            // Mock repository port interfaces
+            var mockEntryRepository = new Mock<IEntryRepository>();
+            mockEntryRepository
                 .Setup(x => x.GetCurrentEntryAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Core.Models.Entry?)null);
+            services.AddSingleton(mockEntryRepository.Object);
 
-            services.AddSingleton(mockPostgreSqlService.Object);
+            services.AddSingleton(new Mock<ITreatmentRepository>().Object);
+            services.AddSingleton(new Mock<IProfileRepository>().Object);
+            services.AddSingleton(new Mock<IDeviceStatusRepository>().Object);
+            services.AddSingleton(new Mock<IFoodRepository>().Object);
+            services.AddSingleton(new Mock<IActivityRepository>().Object);
+            services.AddSingleton(new Mock<ISettingsRepository>().Object);
 
             // Mock authorization service
             var mockAuthorizationService = new Mock<IAuthorizationService>();

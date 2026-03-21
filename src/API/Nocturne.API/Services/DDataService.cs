@@ -2,7 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -11,7 +11,12 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class DDataService : IDDataService
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IEntryRepository _entries;
+    private readonly ITreatmentRepository _treatments;
+    private readonly IProfileRepository _profiles;
+    private readonly IDeviceStatusRepository _deviceStatuses;
+    private readonly IFoodRepository _food;
+    private readonly IActivityRepository _activities;
     private readonly ILogger<DDataService> _logger;
 
     // Device type fields that should be considered for recent device status
@@ -27,9 +32,21 @@ public class DDataService : IDDataService
     // Constant for mmol/L to mg/dL conversion
     private const double MMOL_TO_MGDL = 18.0182;
 
-    public DDataService(IPostgreSqlService postgreSqlService, ILogger<DDataService> logger)
+    public DDataService(
+        IEntryRepository entries,
+        ITreatmentRepository treatments,
+        IProfileRepository profiles,
+        IDeviceStatusRepository deviceStatuses,
+        IFoodRepository food,
+        IActivityRepository activities,
+        ILogger<DDataService> logger)
     {
-        _postgreSqlService = postgreSqlService;
+        _entries = entries;
+        _treatments = treatments;
+        _profiles = profiles;
+        _deviceStatuses = deviceStatuses;
+        _food = food;
+        _activities = activities;
         _logger = logger;
     }
 
@@ -593,7 +610,7 @@ public class DDataService : IDDataService
         try
         {
             // Load SGV entries with type filter - reduced count to prevent memory issues
-            var sgvs = await _postgreSqlService.GetEntriesAsync(
+            var sgvs = await _entries.GetEntriesAsync(
                 type: "sgv",
                 count: 1000,
                 skip: 0,
@@ -616,7 +633,7 @@ public class DDataService : IDDataService
     {
         try
         {
-            var treatments = await _postgreSqlService.GetTreatmentsAsync(
+            var treatments = await _treatments.GetTreatmentsAsync(
                 count: 1000,
                 skip: 0,
                 cancellationToken: cancellationToken
@@ -639,7 +656,7 @@ public class DDataService : IDDataService
         try
         {
             // Load MBG entries with type filter - reduced count to prevent memory issues
-            var mbgs = await _postgreSqlService.GetEntriesAsync(
+            var mbgs = await _entries.GetEntriesAsync(
                 type: "mbg",
                 count: 1000,
                 skip: 0,
@@ -663,7 +680,7 @@ public class DDataService : IDDataService
         try
         {
             // Load calibration entries with type filter - reduced count to prevent memory issues
-            var cals = await _postgreSqlService.GetEntriesAsync(
+            var cals = await _entries.GetEntriesAsync(
                 type: "cal",
                 count: 1000,
                 skip: 0,
@@ -682,7 +699,7 @@ public class DDataService : IDDataService
     {
         try
         {
-            var profiles = await _postgreSqlService.GetProfilesAsync(
+            var profiles = await _profiles.GetProfilesAsync(
                 count: 10,
                 skip: 0,
                 cancellationToken: cancellationToken
@@ -704,7 +721,7 @@ public class DDataService : IDDataService
     {
         try
         {
-            var deviceStatuses = await _postgreSqlService.GetDeviceStatusAsync(
+            var deviceStatuses = await _deviceStatuses.GetDeviceStatusAsync(
                 count: 1000,
                 skip: 0,
                 cancellationToken: cancellationToken
@@ -722,7 +739,7 @@ public class DDataService : IDDataService
     {
         try
         {
-            var food = await _postgreSqlService.GetFoodAsync(cancellationToken: cancellationToken);
+            var food = await _food.GetFoodAsync(cancellationToken: cancellationToken);
             ddata.Food = food.ToList();
         }
         catch (Exception ex)
@@ -740,7 +757,7 @@ public class DDataService : IDDataService
     {
         try
         {
-            var activities = await _postgreSqlService.GetActivitiesAsync(
+            var activities = await _activities.GetActivitiesAsync(
                 count: 1000,
                 skip: 0,
                 cancellationToken: cancellationToken

@@ -1,5 +1,5 @@
 using Nocturne.API.Controllers.V4;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Oref;
 using OrefModels = Nocturne.Core.Oref.Models;
 
@@ -11,14 +11,20 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class PredictionService : IPredictionService
 {
-    private readonly IPostgreSqlService _postgresService;
+    private readonly IEntryRepository _entries;
+    private readonly ITreatmentRepository _treatments;
+    private readonly IProfileRepository _profiles;
     private readonly ILogger<PredictionService> _logger;
 
     public PredictionService(
-        IPostgreSqlService postgresService,
+        IEntryRepository entries,
+        ITreatmentRepository treatments,
+        IProfileRepository profiles,
         ILogger<PredictionService> logger)
     {
-        _postgresService = postgresService;
+        _entries = entries;
+        _treatments = treatments;
+        _profiles = profiles;
         _logger = logger;
     }
 
@@ -41,7 +47,7 @@ public class PredictionService : IPredictionService
         }
 
         // Fetch recent glucose readings (last 10 entries for delta calculation)
-        var glucoseEntries = await _postgresService.GetEntriesAsync(
+        var glucoseEntries = await _entries.GetEntriesAsync(
             type: "sgv",
             count: 10,
             skip: 0,
@@ -80,7 +86,7 @@ public class PredictionService : IPredictionService
         }
 
         // Fetch recent treatments (last 100 for IOB calculation)
-        var treatments = await _postgresService.GetTreatmentsAsync(
+        var treatments = await _treatments.GetTreatmentsAsync(
             count: 100,
             skip: 0,
             cancellationToken);
@@ -162,7 +168,7 @@ public class PredictionService : IPredictionService
         // Try to fetch profile from database
         try
         {
-            var profiles = await _postgresService.GetProfilesAsync(1, 0, cancellationToken);
+            var profiles = await _profiles.GetProfilesAsync(1, 0, cancellationToken);
             var dbProfile = profiles.FirstOrDefault();
 
             if (dbProfile?.Store != null && dbProfile.Store.Count > 0)
@@ -215,7 +221,7 @@ public class PredictionService : IPredictionService
         CancellationToken cancellationToken)
     {
         // Get current entry
-        var currentEntry = await _postgresService.GetCurrentEntryAsync(cancellationToken);
+        var currentEntry = await _entries.GetCurrentEntryAsync(cancellationToken);
 
         if (currentEntry?.Sgv == null)
         {

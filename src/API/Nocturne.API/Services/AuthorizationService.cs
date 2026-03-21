@@ -4,7 +4,6 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
 using AuthRole = Nocturne.Core.Models.Authorization.Role;
 using AuthSubject = Nocturne.Core.Models.Authorization.Subject;
 
@@ -15,7 +14,6 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class AuthorizationService : IAuthorizationService, IDisposable
 {
-    private readonly IPostgreSqlService _postgreSqlService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthorizationService> _logger;
     private readonly ISubjectService _subjectService;
@@ -30,7 +28,6 @@ public class AuthorizationService : IAuthorizationService, IDisposable
     private bool _disposed;
 
     public AuthorizationService(
-        IPostgreSqlService postgreSqlService,
         IConfiguration configuration,
         ILogger<AuthorizationService> logger,
         ISubjectService subjectService,
@@ -38,7 +35,6 @@ public class AuthorizationService : IAuthorizationService, IDisposable
         IJwtService jwtService
     )
     {
-        _postgreSqlService = postgreSqlService;
         _configuration = configuration;
         _logger = logger;
         _subjectService = subjectService;

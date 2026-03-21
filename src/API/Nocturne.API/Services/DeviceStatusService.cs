@@ -3,7 +3,7 @@ using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -12,7 +12,7 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class DeviceStatusService : IDeviceStatusService
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IDeviceStatusRepository _deviceStatuses;
     private readonly ISignalRBroadcastService _broadcastService;
     private readonly ICacheService _cacheService;
     private readonly IDecompositionPipeline _pipeline;
@@ -24,7 +24,7 @@ public class DeviceStatusService : IDeviceStatusService
         ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public DeviceStatusService(
-        IPostgreSqlService postgreSqlService,
+        IDeviceStatusRepository deviceStatuses,
         ISignalRBroadcastService broadcastService,
         ICacheService cacheService,
         IDecompositionPipeline pipeline,
@@ -32,7 +32,7 @@ public class DeviceStatusService : IDeviceStatusService
         ILogger<DeviceStatusService> logger
     )
     {
-        _postgreSqlService = postgreSqlService;
+        _deviceStatuses = deviceStatuses;
         _broadcastService = broadcastService;
         _cacheService = cacheService;
         _pipeline = pipeline;
@@ -65,7 +65,7 @@ public class DeviceStatusService : IDeviceStatusService
             }
 
             _logger.LogDebug("Cache MISS for current device status, fetching from database");
-            var deviceStatus = await _postgreSqlService.GetDeviceStatusAsync(
+            var deviceStatus = await _deviceStatuses.GetDeviceStatusAsync(
                 10,
                 0,
                 cancellationToken
@@ -90,7 +90,7 @@ public class DeviceStatusService : IDeviceStatusService
             count,
             skip
         );
-        return await _postgreSqlService.GetDeviceStatusWithAdvancedFilterAsync(
+        return await _deviceStatuses.GetDeviceStatusWithAdvancedFilterAsync(
             count: count ?? 10,
             skip: skip ?? 0,
             findQuery: find,
@@ -104,7 +104,7 @@ public class DeviceStatusService : IDeviceStatusService
         CancellationToken cancellationToken = default
     )
     {
-        return await _postgreSqlService.GetDeviceStatusByIdAsync(id, cancellationToken);
+        return await _deviceStatuses.GetDeviceStatusByIdAsync(id, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -113,7 +113,7 @@ public class DeviceStatusService : IDeviceStatusService
         CancellationToken cancellationToken = default
     )
     {
-        var createdDeviceStatus = await _postgreSqlService.CreateDeviceStatusAsync(
+        var createdDeviceStatus = await _deviceStatuses.CreateDeviceStatusAsync(
             deviceStatusEntries,
             cancellationToken
         );
@@ -166,7 +166,7 @@ public class DeviceStatusService : IDeviceStatusService
         CancellationToken cancellationToken = default
     )
     {
-        var updatedDeviceStatus = await _postgreSqlService.UpdateDeviceStatusAsync(
+        var updatedDeviceStatus = await _deviceStatuses.UpdateDeviceStatusAsync(
             id,
             deviceStatus,
             cancellationToken
@@ -225,12 +225,12 @@ public class DeviceStatusService : IDeviceStatusService
         await _pipeline.DeleteByLegacyIdAsync<DeviceStatus>(id, cancellationToken);
 
         // Get the device status before deleting for broadcasting
-        var deviceStatusToDelete = await _postgreSqlService.GetDeviceStatusByIdAsync(
+        var deviceStatusToDelete = await _deviceStatuses.GetDeviceStatusByIdAsync(
             id,
             cancellationToken
         );
 
-        var deleted = await _postgreSqlService.DeleteDeviceStatusAsync(id, cancellationToken);
+        var deleted = await _deviceStatuses.DeleteDeviceStatusAsync(id, cancellationToken);
 
         if (deleted)
         {
@@ -281,7 +281,7 @@ public class DeviceStatusService : IDeviceStatusService
         CancellationToken cancellationToken = default
     )
     {
-        var deletedCount = await _postgreSqlService.BulkDeleteDeviceStatusAsync(
+        var deletedCount = await _deviceStatuses.BulkDeleteDeviceStatusAsync(
             find ?? "{}",
             cancellationToken
         );
@@ -332,6 +332,6 @@ public class DeviceStatusService : IDeviceStatusService
         CancellationToken cancellationToken = default
     )
     {
-        return await _postgreSqlService.GetDeviceStatusAsync(count, 0, cancellationToken);
+        return await _deviceStatuses.GetDeviceStatusAsync(count, 0, cancellationToken);
     }
 }

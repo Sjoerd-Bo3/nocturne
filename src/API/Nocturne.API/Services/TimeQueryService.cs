@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -11,17 +11,23 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class TimeQueryService : ITimeQueryService
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IEntryRepository _entries;
+    private readonly ITreatmentRepository _treatments;
+    private readonly IDeviceStatusRepository _deviceStatuses;
     private readonly IBraceExpansionService _braceExpansionService;
     private readonly ILogger<TimeQueryService> _logger;
 
     public TimeQueryService(
-        IPostgreSqlService postgreSqlService,
+        IEntryRepository entries,
+        ITreatmentRepository treatments,
+        IDeviceStatusRepository deviceStatuses,
         IBraceExpansionService braceExpansionService,
         ILogger<TimeQueryService> logger
     )
     {
-        _postgreSqlService = postgreSqlService;
+        _entries = entries;
+        _treatments = treatments;
+        _deviceStatuses = deviceStatuses;
         _braceExpansionService = braceExpansionService;
         _logger = logger;
     }
@@ -146,14 +152,14 @@ public class TimeQueryService : ITimeQueryService
 
         return storage.ToLowerInvariant() switch
         {
-            "entries" => await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+            "entries" => await _entries.GetEntriesWithAdvancedFilterAsync(
                 count: 1000, // Default limit
                 skip: 0,
                 findQuery: findQuery,
                 cancellationToken: cancellationToken
             ),
             "treatments" => (
-                await _postgreSqlService.GetTreatmentsWithAdvancedFilterAsync(
+                await _treatments.GetTreatmentsWithAdvancedFilterAsync(
                     count: 1000,
                     skip: 0,
                     findQuery: findQuery,
@@ -161,7 +167,7 @@ public class TimeQueryService : ITimeQueryService
                 )
             ).Select(t => ConvertTreatmentToEntry(t)),
             "devicestatus" => (
-                await _postgreSqlService.GetDeviceStatusWithAdvancedFilterAsync(
+                await _deviceStatuses.GetDeviceStatusWithAdvancedFilterAsync(
                     count: 1000,
                     skip: 0,
                     findQuery: findQuery,
@@ -235,14 +241,14 @@ public class TimeQueryService : ITimeQueryService
 
         return storage.ToLowerInvariant() switch
         {
-            "entries" => await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+            "entries" => await _entries.GetEntriesWithAdvancedFilterAsync(
                 count: 1000, // Default limit
                 skip: 0,
                 findQuery: findQuery,
                 cancellationToken: cancellationToken
             ),
             "treatments" => (
-                await _postgreSqlService.GetTreatmentsWithAdvancedFilterAsync(
+                await _treatments.GetTreatmentsWithAdvancedFilterAsync(
                     count: 1000,
                     skip: 0,
                     findQuery: findQuery,
@@ -250,7 +256,7 @@ public class TimeQueryService : ITimeQueryService
                 )
             ).Select(t => ConvertTreatmentToEntry(t)),
             "devicestatus" => (
-                await _postgreSqlService.GetDeviceStatusWithAdvancedFilterAsync(
+                await _deviceStatuses.GetDeviceStatusWithAdvancedFilterAsync(
                     count: 1000,
                     skip: 0,
                     findQuery: findQuery,

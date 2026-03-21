@@ -6,7 +6,6 @@ using Nocturne.API.Services.Auth;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Authorization;
-using Nocturne.Infrastructure.Data.Abstractions;
 using AuthSubjectModel = Nocturne.Core.Models.Authorization.Subject;
 using AuthRoleModel = Nocturne.Core.Models.Authorization.Role;
 using LegacySubject = Nocturne.Core.Models.Subject;
@@ -20,7 +19,6 @@ namespace Nocturne.API.Tests.Services;
 /// </summary>
 public class AuthorizationServiceCrudTests
 {
-    private readonly Mock<IPostgreSqlService> _mockPostgreSqlService;
     private readonly Mock<IConfiguration> _mockConfiguration;
     private readonly Mock<ILogger<AuthorizationService>> _mockLogger;
     private readonly Mock<ISubjectService> _mockSubjectService;
@@ -30,7 +28,6 @@ public class AuthorizationServiceCrudTests
 
     public AuthorizationServiceCrudTests()
     {
-        _mockPostgreSqlService = new Mock<IPostgreSqlService>();
         _mockConfiguration = new Mock<IConfiguration>();
         _mockLogger = new Mock<ILogger<AuthorizationService>>();
         _mockSubjectService = new Mock<ISubjectService>();
@@ -43,7 +40,6 @@ public class AuthorizationServiceCrudTests
             .Returns("TestSecretKeyForNightscout");
 
         _authorizationService = new AuthorizationService(
-            _mockPostgreSqlService.Object,
             _mockConfiguration.Object,
             _mockLogger.Object,
             _mockSubjectService.Object,

@@ -1,6 +1,6 @@
 using Nocturne.Core.Constants;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.Services.Demo.Services;
 
@@ -18,15 +18,15 @@ public interface IDemoTreatmentService
 
 public class DemoTreatmentService : IDemoTreatmentService
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly ITreatmentRepository _treatmentRepository;
     private readonly ILogger<DemoTreatmentService> _logger;
 
     public DemoTreatmentService(
-        IPostgreSqlService postgreSqlService,
+        ITreatmentRepository treatmentRepository,
         ILogger<DemoTreatmentService> logger
     )
     {
-        _postgreSqlService = postgreSqlService;
+        _treatmentRepository = treatmentRepository;
         _logger = logger;
     }
 
@@ -45,7 +45,7 @@ public class DemoTreatmentService : IDemoTreatmentService
             treatment.DataSource = DataSources.DemoService;
         }
 
-        await _postgreSqlService.CreateTreatmentsAsync(treatmentList, cancellationToken);
+        await _treatmentRepository.CreateTreatmentsAsync(treatmentList, cancellationToken);
         _logger.LogDebug("Created {Count} demo treatments", treatmentList.Count);
     }
 
@@ -53,7 +53,7 @@ public class DemoTreatmentService : IDemoTreatmentService
         CancellationToken cancellationToken = default
     )
     {
-        var count = await _postgreSqlService.DeleteTreatmentsByDataSourceAsync(
+        var count = await _treatmentRepository.DeleteTreatmentsByDataSourceAsync(
             DataSources.DemoService,
             cancellationToken
         );

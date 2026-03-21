@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers.V1;
 
@@ -8,12 +8,12 @@ namespace Nocturne.API.Controllers.V1;
 [Route("api/v1/[controller]")]
 public class DebugController : ControllerBase
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IEntryRepository _entryRepository;
     private readonly ILogger<DebugController> _logger;
 
-    public DebugController(IPostgreSqlService postgreSqlService, ILogger<DebugController> logger)
+    public DebugController(IEntryRepository entryRepository, ILogger<DebugController> logger)
     {
-        _postgreSqlService = postgreSqlService;
+        _entryRepository = entryRepository;
         _logger = logger;
     }
 
@@ -25,11 +25,11 @@ public class DebugController : ControllerBase
             _logger.LogInformation("Testing PostgreSQL connection");
 
             // Count documents
-            var count = await _postgreSqlService.CountEntriesAsync();
+            var count = await _entryRepository.CountEntriesAsync();
             _logger.LogInformation("Entries table document count: {Count}", count);
 
             // Try to get recent entries
-            var entries = await _postgreSqlService.GetEntriesAsync("sgv", 1, 0);
+            var entries = await _entryRepository.GetEntriesAsync("sgv", 1, 0);
             var firstEntry = entries.FirstOrDefault();
 
             return Ok(
@@ -63,7 +63,7 @@ public class DebugController : ControllerBase
     {
         try
         {
-            var entries = await _postgreSqlService.GetEntriesAsync("sgv", 5, 0);
+            var entries = await _entryRepository.GetEntriesAsync("sgv", 5, 0);
             return Ok(entries);
         }
         catch (Exception ex)

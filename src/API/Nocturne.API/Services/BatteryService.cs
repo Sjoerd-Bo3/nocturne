@@ -1,7 +1,7 @@
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Battery;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -10,15 +10,15 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class BatteryService : IBatteryService
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IDeviceStatusRepository _deviceStatuses;
     private readonly ILogger<BatteryService> _logger;
 
     private const int DefaultWarnThreshold = 30;
     private const int DefaultUrgentThreshold = 20;
 
-    public BatteryService(IPostgreSqlService postgreSqlService, ILogger<BatteryService> logger)
+    public BatteryService(IDeviceStatusRepository deviceStatuses, ILogger<BatteryService> logger)
     {
-        _postgreSqlService = postgreSqlService;
+        _deviceStatuses = deviceStatuses;
         _logger = logger;
     }
 
@@ -36,7 +36,7 @@ public class BatteryService : IBatteryService
                 DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - (recentMinutes * 60 * 1000);
 
             // Get recent device status entries
-            var deviceStatuses = await _postgreSqlService.GetDeviceStatusWithAdvancedFilterAsync(
+            var deviceStatuses = await _deviceStatuses.GetDeviceStatusWithAdvancedFilterAsync(
                 count: 100,
                 skip: 0,
                 findQuery: $"{{\"mills\":{{\"$gte\":{recentMills}}}}}",
@@ -157,7 +157,7 @@ public class BatteryService : IBatteryService
 
             var findQuery = filters.Any() ? "{" + string.Join(",", filters) + "}" : null;
 
-            var deviceStatuses = await _postgreSqlService.GetDeviceStatusWithAdvancedFilterAsync(
+            var deviceStatuses = await _deviceStatuses.GetDeviceStatusWithAdvancedFilterAsync(
                 count: 10000,
                 skip: 0,
                 findQuery: findQuery,
@@ -272,7 +272,7 @@ public class BatteryService : IBatteryService
         try
         {
             // Get recent device statuses to find all devices with battery data
-            var deviceStatuses = await _postgreSqlService.GetDeviceStatusAsync(
+            var deviceStatuses = await _deviceStatuses.GetDeviceStatusAsync(
                 count: 1000,
                 cancellationToken: cancellationToken
             );

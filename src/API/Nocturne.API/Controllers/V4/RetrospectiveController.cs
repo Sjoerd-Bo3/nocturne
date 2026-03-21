@@ -3,7 +3,7 @@ using Nocturne.API.Attributes;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 namespace Nocturne.API.Controllers.V4;
 /// <summary>
 /// Retrospective data controller for day-in-review functionality
@@ -21,7 +21,7 @@ public class RetrospectiveController : ControllerBase
     private readonly ITreatmentService _treatmentService;
     private readonly IDeviceStatusService _deviceStatusService;
     private readonly IProfileService _profileService;
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IEntryRepository _entryRepository;
     private readonly ILogger<RetrospectiveController> _logger;
     public RetrospectiveController(
         IIobService iobService,
@@ -30,7 +30,7 @@ public class RetrospectiveController : ControllerBase
         ITreatmentService treatmentService,
         IDeviceStatusService deviceStatusService,
         IProfileService profileService,
-        IPostgreSqlService postgreSqlService,
+        IEntryRepository entryRepository,
         ILogger<RetrospectiveController> logger
     )
     {
@@ -40,7 +40,7 @@ public class RetrospectiveController : ControllerBase
         _treatmentService = treatmentService;
         _deviceStatusService = deviceStatusService;
         _profileService = profileService;
-        _postgreSqlService = postgreSqlService;
+        _entryRepository = entryRepository;
         _logger = logger;
     }
     /// <summary>
@@ -74,7 +74,7 @@ public class RetrospectiveController : ControllerBase
             var fromMills = time - (30 * 60 * 1000); // 30 minutes before
             var toMills = time + (5 * 60 * 1000);    // 5 minutes after
             var findQuery = $"{{\"mills\":{{\"$gte\":{fromMills},\"$lte\":{toMills}}}}}";
-            var entries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+            var entries = await _entryRepository.GetEntriesWithAdvancedFilterAsync(
                 type: "sgv",
                 count: 50,
                 skip: 0,

@@ -8,7 +8,7 @@ using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Tests.Shared.Mocks;
 using Xunit;
 
@@ -20,7 +20,7 @@ namespace Nocturne.API.Tests.Services;
 [Parity("api.entries.test.js")]
 public class EntryServiceTests
 {
-    private readonly Mock<IPostgreSqlService> _mockPostgreSqlService;
+    private readonly Mock<IEntryRepository> _mockEntryRepository;
     private readonly Mock<ISignalRBroadcastService> _mockSignalRBroadcastService;
     private readonly Mock<ICacheService> _mockCacheService;
     private readonly Mock<IOptions<CacheConfiguration>> _mockCacheConfig;
@@ -35,7 +35,7 @@ public class EntryServiceTests
 
     public EntryServiceTests()
     {
-        _mockPostgreSqlService = new Mock<IPostgreSqlService>();
+        _mockEntryRepository = new Mock<IEntryRepository>();
         _mockSignalRBroadcastService = new Mock<ISignalRBroadcastService>();
         _mockCacheService = new Mock<ICacheService>();
         _mockCacheConfig = new Mock<IOptions<CacheConfiguration>>();
@@ -48,7 +48,7 @@ public class EntryServiceTests
         _mockDemoModeService.Setup(x => x.IsEnabled).Returns(false);
 
         _entryService = new EntryService(
-            _mockPostgreSqlService.Object,
+            _mockEntryRepository.Object,
             _mockSignalRBroadcastService.Object,
             _mockCacheService.Object,
             _mockCacheConfig.Object,
@@ -84,7 +84,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     "sgv",
@@ -143,7 +143,7 @@ public class EntryServiceTests
 
         // GetEntriesAsync internally calls GetEntriesWithAdvancedFilterAsync with the demo filter applied
         // Use loose matching for the mock setup to avoid parameter mismatch issues
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -195,7 +195,7 @@ public class EntryServiceTests
             Mills = 1234567890,
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.GetEntryByIdAsync(entryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedEntry);
 
@@ -215,7 +215,7 @@ public class EntryServiceTests
         // Arrange
         var entryId = "invalidid";
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.GetEntryByIdAsync(entryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Entry?)null);
 
@@ -259,7 +259,7 @@ public class EntryServiceTests
 
         var createdEntries = processedEntries.ToList();
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.CreateEntriesAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>())
             )
@@ -272,7 +272,7 @@ public class EntryServiceTests
         Assert.NotNull(result);
         Assert.Equal(2, result.Count());
         // Removed document processing service mock
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.CreateEntriesAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()),
             Times.Once
@@ -305,7 +305,7 @@ public class EntryServiceTests
             Mills = 1234567890,
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.UpdateEntryAsync(entryId, entry, It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedEntry);
 
@@ -316,7 +316,7 @@ public class EntryServiceTests
         Assert.NotNull(result);
         Assert.Equal(entryId, result.Id);
         Assert.Equal(125, result.Sgv);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x => x.UpdateEntryAsync(entryId, entry, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -340,7 +340,7 @@ public class EntryServiceTests
             Mills = 1234567890,
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.UpdateEntryAsync(entryId, entry, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Entry?)null);
 
@@ -370,11 +370,11 @@ public class EntryServiceTests
             Mills = 1234567890,
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.GetEntryByIdAsync(entryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entryToDelete);
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.DeleteEntryAsync(entryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -383,7 +383,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.True(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x => x.DeleteEntryAsync(entryId, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -401,7 +401,7 @@ public class EntryServiceTests
         // Arrange
         var entryId = "invalidid";
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.DeleteEntryAsync(entryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
@@ -425,7 +425,7 @@ public class EntryServiceTests
         var find = "{\"type\":\"sgv\"}";
         var deletedCount = 5L;
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.BulkDeleteEntriesAsync(find, It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedCount);
 
@@ -434,7 +434,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.Equal(deletedCount, result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x => x.BulkDeleteEntriesAsync(find, It.IsAny<CancellationToken>()),
             Times.Once
         );
@@ -453,7 +453,7 @@ public class EntryServiceTests
         var find = "{\"type\":\"nonexistent\"}";
         var deletedCount = 0L;
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x => x.BulkDeleteEntriesAsync(find, It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedCount);
 
@@ -483,7 +483,7 @@ public class EntryServiceTests
         };
 
         // GetCurrentEntryAsync internally calls GetEntriesWithAdvancedFilterAsync with count=1 and demo filter
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     "sgv",
@@ -517,7 +517,7 @@ public class EntryServiceTests
     {
         // Arrange
         // GetCurrentEntryAsync internally calls GetEntriesWithAdvancedFilterAsync with count=1 and demo filter
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     "sgv",
@@ -572,7 +572,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string>(),
@@ -616,7 +616,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.CreateEntriesAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>())
             )
@@ -655,7 +655,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -681,7 +681,7 @@ public class EntryServiceTests
         Assert.NotNull(result);
         Assert.Single(result);
         Assert.Equal(expectedEntries.First().Id, result.First().Id);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -725,7 +725,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -750,7 +750,7 @@ public class EntryServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count());
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -788,7 +788,7 @@ public class EntryServiceTests
             new Entry { Id = "1", Sgv = 120 },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -812,7 +812,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -853,7 +853,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -877,7 +877,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -922,7 +922,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -946,7 +946,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -988,7 +988,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -1013,7 +1013,7 @@ public class EntryServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count());
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1049,7 +1049,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -1074,7 +1074,7 @@ public class EntryServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Single(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1105,7 +1105,7 @@ public class EntryServiceTests
         var reverseResults = true;
         var expectedEntries = new List<Entry> { new Entry { Id = "1" } };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     type,
@@ -1132,7 +1132,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     type,
@@ -1164,7 +1164,7 @@ public class EntryServiceTests
         var skip = 0;
         var expectedEntries = new List<Entry> { new Entry { Id = "1" } };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -1188,7 +1188,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1222,7 +1222,7 @@ public class EntryServiceTests
         var skip = 0;
         var expectedEntries = new List<Entry>(); // Service should handle gracefully and return empty
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -1247,7 +1247,7 @@ public class EntryServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Empty(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1289,7 +1289,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -1313,7 +1313,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1356,7 +1356,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -1380,7 +1380,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1421,7 +1421,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -1445,7 +1445,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1472,7 +1472,7 @@ public class EntryServiceTests
         var count = 10;
         var skip = 0;
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -1496,7 +1496,7 @@ public class EntryServiceTests
             )
         );
 
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1525,7 +1525,7 @@ public class EntryServiceTests
         var cancellationToken = new CancellationToken();
         var expectedEntries = new List<Entry> { new Entry { Id = "1" } };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null, // type
@@ -1549,7 +1549,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1592,7 +1592,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1616,7 +1616,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1658,7 +1658,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1682,7 +1682,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1726,7 +1726,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1751,7 +1751,7 @@ public class EntryServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Single(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1792,7 +1792,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1816,7 +1816,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1860,7 +1860,7 @@ public class EntryServiceTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1884,7 +1884,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     null,
@@ -1913,7 +1913,7 @@ public class EntryServiceTests
         double? sgv = 120;
         var mills = 1234567890L;
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.CheckForDuplicateEntryAsync(
                     device,
@@ -1938,7 +1938,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.Null(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.CheckForDuplicateEntryAsync(
                     device,
@@ -1970,7 +1970,7 @@ public class EntryServiceTests
             Mills = mills - 60000, // 1 minute earlier
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.CheckForDuplicateEntryAsync(
                     device,
@@ -1999,7 +1999,7 @@ public class EntryServiceTests
         Assert.Equal(device, result.Device);
         Assert.Equal(type, result.Type);
         Assert.Equal(sgv, result.Sgv);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.CheckForDuplicateEntryAsync(
                     device,
@@ -2023,7 +2023,7 @@ public class EntryServiceTests
         double? sgv = 120;
         var mills = 1234567890L;
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.CheckForDuplicateEntryAsync(
                     device,
@@ -2048,7 +2048,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.Null(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.CheckForDuplicateEntryAsync(
                     device,
@@ -2073,7 +2073,7 @@ public class EntryServiceTests
         var mills = 1234567890L;
         var customWindow = 10; // 10 minutes
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.CheckForDuplicateEntryAsync(
                     device,
@@ -2098,7 +2098,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.Null(result);
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.CheckForDuplicateEntryAsync(
                     device,

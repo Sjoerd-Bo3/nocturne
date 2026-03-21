@@ -5,7 +5,7 @@ using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Services;
 using Nocturne.Infrastructure.Data;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -15,17 +15,20 @@ namespace Nocturne.API.Services;
 public class DataSourceService : IDataSourceService
 {
     private readonly NocturneDbContext _context;
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IEntryRepository _entries;
+    private readonly ITreatmentRepository _treatments;
     private readonly ILogger<DataSourceService> _logger;
 
     public DataSourceService(
         NocturneDbContext context,
-        IPostgreSqlService postgreSqlService,
+        IEntryRepository entries,
+        ITreatmentRepository treatments,
         ILogger<DataSourceService> logger
     )
     {
         _context = context;
-        _postgreSqlService = postgreSqlService;
+        _entries = entries;
+        _treatments = treatments;
         _logger = logger;
     }
 
@@ -1018,13 +1021,13 @@ public class DataSourceService : IDataSourceService
         try
         {
             // Delete entries by data source
-            var entriesDeleted = await _postgreSqlService.DeleteEntriesByDataSourceAsync(
+            var entriesDeleted = await _entries.DeleteEntriesByDataSourceAsync(
                 DataSources.DemoService,
                 cancellationToken
             );
 
             // Delete treatments by data source
-            var treatmentsDeleted = await _postgreSqlService.DeleteTreatmentsByDataSourceAsync(
+            var treatmentsDeleted = await _treatments.DeleteTreatmentsByDataSourceAsync(
                 DataSources.DemoService,
                 cancellationToken
             );

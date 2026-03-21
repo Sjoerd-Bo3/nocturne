@@ -4,7 +4,7 @@ using Nocturne.API.Models;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Services;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers.V4;
 
@@ -20,7 +20,8 @@ namespace Nocturne.API.Controllers.V4;
 public class ServicesController : ControllerBase
 {
     private readonly IDataSourceService _dataSourceService;
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IEntryRepository _entryRepository;
+    private readonly ITreatmentRepository _treatmentRepository;
     private readonly IConnectorHealthService _connectorHealthService;
     private readonly IConnectorSyncService _connectorSyncService;
     private readonly ILogger<ServicesController> _logger;
@@ -28,7 +29,8 @@ public class ServicesController : ControllerBase
 
     public ServicesController(
         IDataSourceService dataSourceService,
-        IPostgreSqlService postgreSqlService,
+        IEntryRepository entryRepository,
+        ITreatmentRepository treatmentRepository,
         IConnectorHealthService connectorHealthService,
         IConnectorSyncService connectorSyncService,
         ILogger<ServicesController> logger,
@@ -36,7 +38,8 @@ public class ServicesController : ControllerBase
     )
     {
         _dataSourceService = dataSourceService;
-        _postgreSqlService = postgreSqlService;
+        _entryRepository = entryRepository;
+        _treatmentRepository = treatmentRepository;
         _connectorHealthService = connectorHealthService;
         _connectorSyncService = connectorSyncService;
         _logger = logger;
@@ -459,25 +462,25 @@ public class ServicesController : ControllerBase
             var dataSource = MapConnectorIdToDataSource(id);
 
             // Get latest timestamps from database
-            var entryTimestamp = await _postgreSqlService.GetLatestEntryTimestampBySourceAsync(
+            var entryTimestamp = await _entryRepository.GetLatestEntryTimestampBySourceAsync(
                 dataSource,
                 cancellationToken
             );
 
             var oldestEntryTimestamp =
-                await _postgreSqlService.GetOldestEntryTimestampBySourceAsync(
+                await _entryRepository.GetOldestEntryTimestampBySourceAsync(
                     dataSource,
                     cancellationToken
                 );
 
             var treatmentTimestamp =
-                await _postgreSqlService.GetLatestTreatmentTimestampBySourceAsync(
+                await _treatmentRepository.GetLatestTreatmentTimestampBySourceAsync(
                     dataSource,
                     cancellationToken
                 );
 
             var oldestTreatmentTimestamp =
-                await _postgreSqlService.GetOldestTreatmentTimestampBySourceAsync(
+                await _treatmentRepository.GetOldestTreatmentTimestampBySourceAsync(
                     dataSource,
                     cancellationToken
                 );

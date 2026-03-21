@@ -8,7 +8,7 @@ using Nocturne.API.Controllers.V1;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 using Xunit;
 
 namespace Nocturne.API.Tests.Controllers;
@@ -20,15 +20,15 @@ namespace Nocturne.API.Tests.Controllers;
 [Trait("Category", "Unit")]
 public class FoodControllerTests
 {
-    private readonly Mock<IPostgreSqlService> _mockPostgreSqlService;
+    private readonly Mock<IFoodRepository> _mockFoodRepository;
     private readonly Mock<ILogger<FoodController>> _mockLogger;
     private readonly FoodController _controller;
 
     public FoodControllerTests()
     {
-        _mockPostgreSqlService = new Mock<IPostgreSqlService>();
+        _mockFoodRepository = new Mock<IFoodRepository>();
         _mockLogger = new Mock<ILogger<FoodController>>();
-        _controller = new FoodController(_mockPostgreSqlService.Object, _mockLogger.Object);
+        _controller = new FoodController(_mockFoodRepository.Object, _mockLogger.Object);
 
         // Set up HttpContext for the controller
         var httpContext = new DefaultHttpContext();
@@ -70,7 +70,7 @@ public class FoodControllerTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedFood);
 
@@ -91,7 +91,7 @@ public class FoodControllerTests
     public async Task GetFood_WhenNoFoodExists_ShouldReturnEmptyArray()
     {
         // Arrange
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Food>());
 
@@ -109,7 +109,7 @@ public class FoodControllerTests
     public async Task GetFood_WhenServiceThrows_ShouldReturnInternalServerError()
     {
         // Arrange
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Database error"));
 
@@ -134,7 +134,7 @@ public class FoodControllerTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedFood);
 
@@ -163,7 +163,7 @@ public class FoodControllerTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodByTypeAsync("food", It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedFood);
         // Act
@@ -191,7 +191,7 @@ public class FoodControllerTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodByTypeAsync("quickpick", It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedFood);
         // Act
@@ -216,7 +216,7 @@ public class FoodControllerTests
             Name = "Test Food",
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.GetFoodByIdAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>())
             )
@@ -240,7 +240,7 @@ public class FoodControllerTests
     public async Task GetFoodById_WhenFoodNotFound_ShouldReturnNotFound()
     {
         // Arrange
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.GetFoodByIdAsync("nonexistent", It.IsAny<CancellationToken>()))
             .ReturnsAsync((Food?)null);
 
@@ -272,7 +272,7 @@ public class FoodControllerTests
             Carbs = 10,
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.CreateFoodAsync(It.IsAny<List<Food>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Food> { createdFood });
 
@@ -317,7 +317,7 @@ public class FoodControllerTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.CreateFoodAsync(It.IsAny<List<Food>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdFoods);
 
@@ -355,7 +355,7 @@ public class FoodControllerTests
             Carbs = 15,
         };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.UpdateFoodAsync(
                     "507f1f77bcf86cd799439011",
@@ -386,7 +386,7 @@ public class FoodControllerTests
         // Arrange
         var updateFood = new Food { Name = "Updated Food" };
 
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.UpdateFoodAsync("nonexistent", updateFood, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Food?)null);
 
@@ -405,7 +405,7 @@ public class FoodControllerTests
     public async Task DeleteFood_WhenFoodExists_ShouldReturnNoContent()
     {
         // Arrange
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x =>
                 x.DeleteFoodAsync("507f1f77bcf86cd799439011", It.IsAny<CancellationToken>())
             )
@@ -425,7 +425,7 @@ public class FoodControllerTests
     public async Task DeleteFood_WhenFoodNotFound_ShouldReturnNotFound()
     {
         // Arrange
-        _mockPostgreSqlService
+        _mockFoodRepository
             .Setup(x => x.DeleteFoodAsync("nonexistent", It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 

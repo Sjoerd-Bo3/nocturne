@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers.V1;
 
@@ -13,12 +13,30 @@ namespace Nocturne.API.Controllers.V1;
 [Route("api/v1/[controller]")]
 public class CountController : ControllerBase
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IEntryRepository _entryRepository;
+    private readonly ITreatmentRepository _treatmentRepository;
+    private readonly IDeviceStatusRepository _deviceStatusRepository;
+    private readonly IProfileRepository _profileRepository;
+    private readonly IFoodRepository _foodRepository;
+    private readonly IActivityRepository _activityRepository;
     private readonly ILogger<CountController> _logger;
 
-    public CountController(IPostgreSqlService postgreSqlService, ILogger<CountController> logger)
+    public CountController(
+        IEntryRepository entryRepository,
+        ITreatmentRepository treatmentRepository,
+        IDeviceStatusRepository deviceStatusRepository,
+        IProfileRepository profileRepository,
+        IFoodRepository foodRepository,
+        IActivityRepository activityRepository,
+        ILogger<CountController> logger
+    )
     {
-        _postgreSqlService = postgreSqlService;
+        _entryRepository = entryRepository;
+        _treatmentRepository = treatmentRepository;
+        _deviceStatusRepository = deviceStatusRepository;
+        _profileRepository = profileRepository;
+        _foodRepository = foodRepository;
+        _activityRepository = activityRepository;
         _logger = logger;
     }
 
@@ -47,7 +65,7 @@ public class CountController : ControllerBase
 
         try
         {
-            var count = await _postgreSqlService.CountEntriesAsync(find, type, cancellationToken);
+            var count = await _entryRepository.CountEntriesAsync(find, type, cancellationToken);
 
             _logger.LogDebug("Found {Count} entries matching criteria", count);
             return Ok(new CountResponse { Count = count });
@@ -94,7 +112,7 @@ public class CountController : ControllerBase
 
         try
         {
-            var count = await _postgreSqlService.CountTreatmentsAsync(find, cancellationToken);
+            var count = await _treatmentRepository.CountTreatmentsAsync(find, cancellationToken);
 
             _logger.LogDebug("Found {Count} treatments matching criteria", count);
             return Ok(new CountResponse { Count = count });
@@ -136,7 +154,7 @@ public class CountController : ControllerBase
 
         try
         {
-            var count = await _postgreSqlService.CountDeviceStatusAsync(find, cancellationToken);
+            var count = await _deviceStatusRepository.CountDeviceStatusAsync(find, cancellationToken);
 
             _logger.LogDebug("Found {Count} device status entries matching criteria", count);
             return Ok(new CountResponse { Count = count });
@@ -178,7 +196,7 @@ public class CountController : ControllerBase
 
         try
         {
-            var count = await _postgreSqlService.CountActivitiesAsync(find, cancellationToken);
+            var count = await _activityRepository.CountActivitiesAsync(find, cancellationToken);
 
             _logger.LogDebug("Found {Count} activity entries matching criteria", count);
             return Ok(new CountResponse { Count = count });
@@ -254,29 +272,29 @@ public class CountController : ControllerBase
             switch (storage.ToLowerInvariant())
             {
                 case "entries":
-                    count = await _postgreSqlService.CountEntriesAsync(
+                    count = await _entryRepository.CountEntriesAsync(
                         find,
                         type,
                         cancellationToken
                     );
                     break;
                 case "treatments":
-                    count = await _postgreSqlService.CountTreatmentsAsync(find, cancellationToken);
+                    count = await _treatmentRepository.CountTreatmentsAsync(find, cancellationToken);
                     break;
                 case "devicestatus":
-                    count = await _postgreSqlService.CountDeviceStatusAsync(
+                    count = await _deviceStatusRepository.CountDeviceStatusAsync(
                         find,
                         cancellationToken
                     );
                     break;
                 case "profile":
-                    count = await _postgreSqlService.CountProfilesAsync(find, cancellationToken);
+                    count = await _profileRepository.CountProfilesAsync(find, cancellationToken);
                     break;
                 case "food":
-                    count = await _postgreSqlService.CountFoodAsync(find, type, cancellationToken);
+                    count = await _foodRepository.CountFoodAsync(find, type, cancellationToken);
                     break;
                 case "activity":
-                    count = await _postgreSqlService.CountActivitiesAsync(find, cancellationToken);
+                    count = await _activityRepository.CountActivitiesAsync(find, cancellationToken);
                     break;
                 default:
                     // This shouldn't happen due to validation above, but just in case

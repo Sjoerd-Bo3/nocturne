@@ -8,7 +8,7 @@ using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Cache.Constants;
 using Nocturne.Infrastructure.Cache.Keys;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -17,7 +17,7 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class EntryService : IEntryService
 {
-    private readonly IPostgreSqlService _postgreSqlService;
+    private readonly IEntryRepository _entries;
     private readonly ISignalRBroadcastService _broadcastService;
     private readonly ICacheService _cacheService;
     private readonly CacheConfiguration _cacheConfig;
@@ -31,7 +31,7 @@ public class EntryService : IEntryService
         ?? throw new InvalidOperationException("Tenant context is not resolved");
 
     public EntryService(
-        IPostgreSqlService postgreSqlService,
+        IEntryRepository entries,
         ISignalRBroadcastService broadcastService,
         ICacheService cacheService,
         IOptions<CacheConfiguration> cacheConfig,
@@ -42,7 +42,7 @@ public class EntryService : IEntryService
         ILogger<EntryService> logger
     )
     {
-        _postgreSqlService = postgreSqlService;
+        _entries = entries;
         _broadcastService = broadcastService;
         _cacheService = cacheService;
         _cacheConfig = cacheConfig.Value;
@@ -93,7 +93,7 @@ public class EntryService : IEntryService
                         _demoModeService.IsEnabled,
                         findQuery
                     );
-                    var entries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+                    var entries = await _entries.GetEntriesWithAdvancedFilterAsync(
                         type: "sgv", // Default to SGV entries
                         count: actualCount,
                         skip: actualSkip,
@@ -121,7 +121,7 @@ public class EntryService : IEntryService
 
         // Non-cached path for non-standard queries — fetch from skip=0 so the merge can
         // correctly interleave legacy and projected entries before applying the final skip.
-        var allLegacyEntries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+        var allLegacyEntries = await _entries.GetEntriesWithAdvancedFilterAsync(
             type: "sgv", // Default to SGV entries
             count: actualCount + actualSkip,
             skip: 0,
@@ -177,7 +177,7 @@ public class EntryService : IEntryService
                         _demoModeService.IsEnabled,
                         findQuery
                     );
-                    var entries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+                    var entries = await _entries.GetEntriesWithAdvancedFilterAsync(
                         type,
                         count,
                         skip,
@@ -207,7 +207,7 @@ public class EntryService : IEntryService
 
         // Non-cached path for non-standard queries — fetch from skip=0 so the merge can
         // correctly interleave legacy and projected entries before applying the final skip.
-        var allLegacyEntries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+        var allLegacyEntries = await _entries.GetEntriesWithAdvancedFilterAsync(
             type,
             count + skip,
             0,
@@ -414,7 +414,7 @@ public class EntryService : IEntryService
         CancellationToken cancellationToken = default
     )
     {
-        return await _postgreSqlService.GetEntryByIdAsync(id, cancellationToken);
+        return await _entries.GetEntryByIdAsync(id, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -427,7 +427,7 @@ public class EntryService : IEntryService
         CancellationToken cancellationToken = default
     )
     {
-        return await _postgreSqlService.CheckForDuplicateEntryAsync(
+        return await _entries.CheckForDuplicateEntryAsync(
             device,
             type,
             sgv,
@@ -443,7 +443,7 @@ public class EntryService : IEntryService
         CancellationToken cancellationToken = default
     )
     {
-        var createdEntries = await _postgreSqlService.CreateEntriesAsync(
+        var createdEntries = await _entries.CreateEntriesAsync(
             entries,
             cancellationToken
         );
@@ -522,7 +522,7 @@ public class EntryService : IEntryService
         CancellationToken cancellationToken = default
     )
     {
-        var updatedEntry = await _postgreSqlService.UpdateEntryAsync(id, entry, cancellationToken);
+        var updatedEntry = await _entries.UpdateEntryAsync(id, entry, cancellationToken);
 
         if (updatedEntry != null)
         {
@@ -590,9 +590,9 @@ public class EntryService : IEntryService
         await _pipeline.DeleteByLegacyIdAsync<Entry>(id, cancellationToken);
 
         // Get the entry before deleting for broadcasting
-        var entryToDelete = await _postgreSqlService.GetEntryByIdAsync(id, cancellationToken);
+        var entryToDelete = await _entries.GetEntryByIdAsync(id, cancellationToken);
 
-        var deleted = await _postgreSqlService.DeleteEntryAsync(id, cancellationToken);
+        var deleted = await _entries.DeleteEntryAsync(id, cancellationToken);
 
         if (deleted)
         {
@@ -658,7 +658,7 @@ public class EntryService : IEntryService
     {
         // For bulk operations, we'd need to get the entries first if we want to broadcast individual delete events
         // For now, just delete without individual broadcasting (matches current controller behavior)
-        var deletedCount = await _postgreSqlService.BulkDeleteEntriesAsync(
+        var deletedCount = await _entries.BulkDeleteEntriesAsync(
             find ?? "{}",
             cancellationToken
         );
@@ -721,7 +721,7 @@ public class EntryService : IEntryService
         // Fetch from legacy entries table and V4 projection sequentially.
         // They share a scoped DbContext which is not thread-safe for concurrent access.
         var findQuery = BuildDemoModeFilterQuery(null);
-        var legacyEntry = (await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+        var legacyEntry = (await _entries.GetEntriesWithAdvancedFilterAsync(
             type: "sgv",
             count: 1,
             skip: 0,
@@ -768,7 +768,7 @@ public class EntryService : IEntryService
     {
         // Add demo mode filter to the existing query
         var findQuery = BuildDemoModeFilterQuery(find);
-        var entries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+        var entries = await _entries.GetEntriesWithAdvancedFilterAsync(
             null,
             count,
             skip,
@@ -793,7 +793,7 @@ public class EntryService : IEntryService
     {
         // Add demo mode filter to the existing query
         var demoFilteredQuery = BuildDemoModeFilterQuery(findQuery);
-        var entries = await _postgreSqlService.GetEntriesWithAdvancedFilterAsync(
+        var entries = await _entries.GetEntriesWithAdvancedFilterAsync(
             type,
             count,
             skip,

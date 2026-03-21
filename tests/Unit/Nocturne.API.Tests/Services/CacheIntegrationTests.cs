@@ -13,7 +13,7 @@ using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Data;
-using Nocturne.Infrastructure.Data.Abstractions;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Tests.Shared.Infrastructure;
 using Nocturne.Tests.Shared.Mocks;
 using Xunit;
@@ -25,7 +25,7 @@ namespace Nocturne.API.Tests.Services;
 /// </summary>
 public class CacheIntegrationTests
 {
-    private readonly Mock<IPostgreSqlService> _mockPostgreSqlService;
+    private readonly Mock<IEntryRepository> _mockEntryRepository;
     private readonly Mock<ISignalRBroadcastService> _mockSignalRBroadcastService;
     private readonly Mock<ICacheService> _mockCacheService;
     private readonly Mock<IOptions<CacheConfiguration>> _mockCacheConfig;
@@ -38,7 +38,7 @@ public class CacheIntegrationTests
 
     public CacheIntegrationTests()
     {
-        _mockPostgreSqlService = new Mock<IPostgreSqlService>();
+        _mockEntryRepository = new Mock<IEntryRepository>();
         _mockSignalRBroadcastService = new Mock<ISignalRBroadcastService>();
         _mockCacheService = new Mock<ICacheService>();
         _mockCacheConfig = new Mock<IOptions<CacheConfiguration>>();
@@ -72,7 +72,7 @@ public class CacheIntegrationTests
             .ReturnsAsync(cachedEntry);
 
         var entryService = new EntryService(
-            _mockPostgreSqlService.Object,
+            _mockEntryRepository.Object,
             _mockSignalRBroadcastService.Object,
             _mockCacheService.Object,
             _mockCacheConfig.Object,
@@ -96,7 +96,7 @@ public class CacheIntegrationTests
             x => x.GetAsync<Entry>("entries:current:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x => x.GetCurrentEntryAsync(It.IsAny<CancellationToken>()),
             Times.Never
         );
@@ -121,7 +121,7 @@ public class CacheIntegrationTests
             .ReturnsAsync((Entry?)null);
 
         // Production code now uses GetEntriesWithAdvancedFilterAsync with demo mode filter
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -136,7 +136,7 @@ public class CacheIntegrationTests
             .ReturnsAsync(new[] { dbEntry });
 
         var entryService = new EntryService(
-            _mockPostgreSqlService.Object,
+            _mockEntryRepository.Object,
             _mockSignalRBroadcastService.Object,
             _mockCacheService.Object,
             _mockCacheConfig.Object,
@@ -160,7 +160,7 @@ public class CacheIntegrationTests
             x => x.GetAsync<Entry>("entries:current:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mockPostgreSqlService.Verify(
+        _mockEntryRepository.Verify(
             x =>
                 x.GetEntriesWithAdvancedFilterAsync(
                     It.IsAny<string?>(),
@@ -202,14 +202,14 @@ public class CacheIntegrationTests
             },
         };
 
-        _mockPostgreSqlService
+        _mockEntryRepository
             .Setup(x =>
                 x.CreateEntriesAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>())
             )
             .ReturnsAsync(newEntries);
 
         var entryService = new EntryService(
-            _mockPostgreSqlService.Object,
+            _mockEntryRepository.Object,
             _mockSignalRBroadcastService.Object,
             _mockCacheService.Object,
             _mockCacheConfig.Object,

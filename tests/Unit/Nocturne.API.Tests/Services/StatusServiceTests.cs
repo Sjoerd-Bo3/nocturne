@@ -301,9 +301,10 @@ public class StatusServiceTests
     {
         // Arrange
         var now = DateTime.UtcNow;
-        await using var context = TestDbContextFactory.CreateInMemoryContext();
+        var dbName = $"nocturne_lastmod_{Guid.NewGuid()}";
+        await using var context = TestDbContextFactory.CreateInMemoryContext(dbName);
         SeedLastModifiedData(context, now);
-        var service = CreateStatusService(_configuration, context);
+        var service = CreateStatusService(_configuration, context, dbName);
 
         // Act
         var result = await service.GetLastModifiedAsync();
@@ -871,15 +872,26 @@ public class StatusServiceTests
 
     private StatusService CreateStatusService(
         IConfiguration configuration,
-        NocturneDbContext? context = null
+        NocturneDbContext? context = null,
+        string? databaseName = null
     )
     {
+        var dbName = databaseName ?? $"nocturne_status_tests_{Guid.NewGuid()}";
+        var ctx = context ?? TestDbContextFactory.CreateInMemoryContext(dbName);
         var mockDbContextFactory = new Mock<IDbContextFactory<NocturneDbContext>>();
+        mockDbContextFactory
+            .Setup(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() =>
+            {
+                var factoryCtx = TestDbContextFactory.CreateInMemoryContext(dbName);
+                factoryCtx.TenantId = ctx.TenantId;
+                return factoryCtx;
+            });
         return new StatusService(
             configuration,
             _mockCacheService.Object,
             _mockDemoModeService.Object,
-            context ?? TestDbContextFactory.CreateInMemoryContext(),
+            ctx,
             mockDbContextFactory.Object,
             _httpContextAccessor,
             _mockTenantAccessor.Object,

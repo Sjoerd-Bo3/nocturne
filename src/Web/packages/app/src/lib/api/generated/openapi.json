@@ -436,7 +436,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetAllSubjects"
         ]
@@ -512,7 +512,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetAllSubjects"
         ]
@@ -1257,7 +1257,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetPendingPasswordResets"
         ]
@@ -1304,7 +1304,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetPendingPasswordResets"
         ]
@@ -3324,7 +3324,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "get": {
         "tags": [
@@ -3487,7 +3487,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "delete": {
         "tags": [
@@ -3605,7 +3605,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "get": {
         "tags": [
@@ -3768,7 +3768,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "delete": {
         "tags": [
@@ -3984,7 +3984,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       }
     },
     "/api/v4/insulin/boluses/{id}": {
@@ -4049,7 +4049,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "delete": {
         "tags": [
@@ -4265,7 +4265,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       }
     },
     "/api/v4/glucose/calibrations/{id}": {
@@ -4330,7 +4330,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "delete": {
         "tags": [
@@ -6469,7 +6469,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "get": {
         "tags": [
@@ -6632,7 +6632,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "delete": {
         "tags": [
@@ -7765,7 +7765,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       }
     },
     "/api/v4/glucose/meter/{id}": {
@@ -7830,7 +7830,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "delete": {
         "tags": [
@@ -7949,7 +7949,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       }
     },
     "/api/v4/migration/start": {
@@ -7993,7 +7993,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       }
     },
     "/api/v4/migration/{jobId}/status": {
@@ -8340,7 +8340,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "get": {
         "tags": [
@@ -8503,7 +8503,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "delete": {
         "tags": [
@@ -8868,7 +8868,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetCarbIntakes"
         ]
@@ -8979,7 +8979,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetCarbIntakes",
           "GetCarbIntakeById"
@@ -9366,7 +9366,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetPatientRecord"
         ]
@@ -9426,7 +9426,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetDevices"
         ]
@@ -9475,7 +9475,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetDevices"
         ]
@@ -9563,7 +9563,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetInsulins"
         ]
@@ -9612,7 +9612,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetInsulins"
         ]
@@ -10035,7 +10035,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetProfileSummary",
           "GetTherapySettings"
@@ -10183,7 +10183,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetProfileSummary",
           "GetTherapySettings",
@@ -10351,7 +10351,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetProfileSummary",
           "GetBasalSchedulesByName"
@@ -10421,7 +10421,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetProfileSummary",
           "GetBasalSchedulesByName",
@@ -11624,7 +11624,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       }
     },
     "/api/v4/glucose/sensor/{id}": {
@@ -11689,7 +11689,7 @@
             }
           }
         },
-        "x-remote-type": "command"
+        "x-remote-type": "form"
       },
       "delete": {
         "tags": [
@@ -13613,7 +13613,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetDefinitions"
         ]
@@ -13694,7 +13694,7 @@
             }
           }
         },
-        "x-remote-type": "command",
+        "x-remote-type": "form",
         "x-remote-invalidates": [
           "GetDefinitions",
           "GetDefinition"

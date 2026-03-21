@@ -52,7 +52,8 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
     /// to the Config singleton. This ensures DB-stored values (including encrypted
     /// passwords) are available to the connector at runtime.
     /// </summary>
-    protected async Task LoadDatabaseConfigurationAsync(IServiceProvider scopeProvider, CancellationToken ct)
+    /// <returns>True if a database configuration exists for this connector, false otherwise.</returns>
+    protected async Task<bool> LoadDatabaseConfigurationAsync(IServiceProvider scopeProvider, CancellationToken ct)
     {
         try
         {
@@ -60,7 +61,13 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
 
             // Load runtime configuration from DB
             var dbConfig = await configService.GetConfigurationAsync(ConnectorName, ct);
-            if (dbConfig?.Configuration != null)
+            if (dbConfig == null)
+            {
+                Logger.LogDebug("No configuration found for {ConnectorName}, skipping sync", ConnectorName);
+                return false;
+            }
+
+            if (dbConfig.Configuration != null)
             {
                 ApplyJsonToConfig(dbConfig.Configuration);
                 Logger.LogDebug("Applied database configuration for {ConnectorName}", ConnectorName);
@@ -73,12 +80,15 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
                 ApplySecretsToConfig(secrets);
                 Logger.LogDebug("Applied {Count} secrets for {ConnectorName}", secrets.Count, ConnectorName);
             }
+
+            return true;
         }
         catch (Exception ex)
         {
             Logger.LogWarning(ex,
                 "Failed to load database configuration for {ConnectorName}, using environment/startup values",
                 ConnectorName);
+            return false;
         }
     }
 
@@ -245,8 +255,10 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
         var tenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
         tenantAccessor.SetTenant(new TenantContext(tenantId, tenantSlug, displayName, true));
 
-        // Load tenant-specific connector configuration
-        await LoadDatabaseConfigurationAsync(scope.ServiceProvider, stoppingToken);
+        // Load tenant-specific connector configuration; skip if no config exists in DB
+        var hasConfig = await LoadDatabaseConfigurationAsync(scope.ServiceProvider, stoppingToken);
+        if (!hasConfig)
+            return;
 
         if (!Config.Enabled || Config.SyncIntervalMinutes <= 0)
             return;
