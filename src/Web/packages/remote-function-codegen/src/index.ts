@@ -25,7 +25,7 @@ async function main() {
 
   if (parsed.operations.length === 0) {
     console.log('No operations with remote annotations found.');
-    console.log('Add [RemoteQuery] or [RemoteCommand] attributes to controller methods.');
+    console.log('Add [RemoteQuery], [RemoteCommand], or [RemoteForm] attributes to controller methods.');
     process.exit(0);
   }
 

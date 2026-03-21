@@ -6,6 +6,7 @@ type OperationWithExtensions = OpenAPIV3.OperationObject & {
   'x-remote-type'?: RemoteType;
   'x-remote-invalidates'?: string[];
   'x-client-property'?: string;
+  'x-remote-batch'?: boolean;
 };
 
 export function parseOpenApiSpec(spec: OpenAPIV3.Document): ParsedSpec {
@@ -45,7 +46,8 @@ export function parseOpenApiSpec(spec: OpenAPIV3.Document): ParsedSpec {
         parseResponse(operation.responses?.['202'] as OpenAPIV3.ResponseObject | undefined);
 
       // Detect void response: commands with no JSON response body (204 No Content, or 200 with no body)
-      const isVoidResponse = !responseSchema && remoteType === 'command';
+      const isVoidResponse = !responseSchema && (remoteType === 'command' || remoteType === 'form');
+      const isBatch = remoteType === 'query' && (operation['x-remote-batch'] === true);
 
       operations.push({
         operationId: operation.operationId ?? `${method}_${path}`,
@@ -61,6 +63,7 @@ export function parseOpenApiSpec(spec: OpenAPIV3.Document): ParsedSpec {
         inlineRequestBody: requestBodyResult?.inline,
         responseSchema,
         isVoidResponse,
+        isBatch,
         summary: operation.summary,
         clientPropertyName: operation['x-client-property'],
       });

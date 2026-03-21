@@ -172,4 +172,112 @@ describe('generateRemoteFunctions', () => {
       expect(consoleIndex).toBeLessThan(error500Index);
     });
   });
+
+  describe('form functions', () => {
+    it('generates form() wrapper for form operations', () => {
+      const parsed: ParsedSpec = {
+        operations: [createOperation({
+          operationId: 'Foods_AddFavorite',
+          remoteType: 'form',
+          requestBodySchema: 'AddFavoriteRequestSchema',
+        })],
+        tags: ['V4 Foods'],
+      };
+
+      const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
+      expect(content).toContain('= form(');
+      expect(content).not.toContain('= command(');
+    });
+
+    it('imports form from $app/server when forms present', () => {
+      const parsed: ParsedSpec = {
+        operations: [createOperation({
+          operationId: 'Foods_AddFavorite',
+          remoteType: 'form',
+          requestBodySchema: 'AddFavoriteRequestSchema',
+        })],
+        tags: ['V4 Foods'],
+      };
+
+      const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
+      expect(content).toContain("import { getRequestEvent, form } from '$app/server'");
+    });
+
+    it('imports invalid from @sveltejs/kit when forms present', () => {
+      const parsed: ParsedSpec = {
+        operations: [createOperation({
+          operationId: 'Foods_AddFavorite',
+          remoteType: 'form',
+          requestBodySchema: 'AddFavoriteRequestSchema',
+        })],
+        tags: ['V4 Foods'],
+      };
+
+      const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
+      expect(content).toContain("import { error, redirect, invalid } from '@sveltejs/kit'");
+    });
+
+    it('includes refresh calls in form functions', () => {
+      const parsed: ParsedSpec = {
+        operations: [
+          createOperation({
+            operationId: 'Foods_GetFavorites',
+            remoteType: 'query',
+          }),
+          createOperation({
+            operationId: 'Foods_AddFavorite',
+            remoteType: 'form',
+            requestBodySchema: 'AddFavoriteRequestSchema',
+            invalidates: ['GetFavorites'],
+          }),
+        ],
+        tags: ['V4 Foods'],
+      };
+
+      const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
+      expect(content).toContain('refresh()');
+    });
+
+    it('does not import invalid when no forms present', () => {
+      const parsed: ParsedSpec = {
+        operations: [createOperation()],
+        tags: ['V4 Foods'],
+      };
+
+      const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
+      expect(content).not.toContain('invalid');
+    });
+  });
+
+  describe('batch query functions', () => {
+    it('generates query.batch() for batch queries', () => {
+      const parsed: ParsedSpec = {
+        operations: [createOperation({
+          operationId: 'Foods_GetById',
+          remoteType: 'query',
+          isBatch: true,
+          parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
+        })],
+        tags: ['V4 Foods'],
+      };
+
+      const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
+      expect(content).toContain('= query.batch(');
+    });
+
+    it('falls back to regular query for no-arg batch', () => {
+      const parsed: ParsedSpec = {
+        operations: [createOperation({
+          operationId: 'Foods_GetAll',
+          remoteType: 'query',
+          isBatch: true,
+          parameters: [],
+        })],
+        tags: ['V4 Foods'],
+      };
+
+      const content = getGeneratedFile(parsed, 'foods.generated.remote.ts');
+      expect(content).toContain('= query(async');
+    });
+  });
 });

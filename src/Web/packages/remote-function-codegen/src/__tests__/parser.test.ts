@@ -471,4 +471,106 @@ describe('parseOpenApiSpec', () => {
     const result = parseOpenApiSpec(spec);
     expect(result).not.toHaveProperty('schemas');
   });
+
+  it('parses form remote type', () => {
+    const spec = createSpec({
+      paths: {
+        '/api/v4/foods/favorites': {
+          post: {
+            tags: ['V4 Foods'],
+            operationId: 'Foods_AddFavorite',
+            'x-remote-type': 'form',
+            'x-remote-invalidates': ['GetFavorites'],
+            parameters: [],
+            requestBody: {
+              content: { 'application/json': { schema: { $ref: '#/components/schemas/AddFavoriteRequest' } } },
+            },
+            responses: { '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/FoodDto' } } } } },
+          } as any,
+        },
+      },
+    });
+
+    const result = parseOpenApiSpec(spec);
+    expect(result.operations[0].remoteType).toBe('form');
+    expect(result.operations[0].invalidates).toEqual(['GetFavorites']);
+  });
+
+  it('detects void response for form endpoints', () => {
+    const spec = createSpec({
+      paths: {
+        '/api/v4/foods/favorites/{id}': {
+          delete: {
+            tags: ['V4 Foods'],
+            operationId: 'Foods_RemoveFavorite',
+            'x-remote-type': 'form',
+            parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+            responses: { '204': { description: 'No content' } },
+          } as any,
+        },
+      },
+    });
+
+    const result = parseOpenApiSpec(spec);
+    expect(result.operations[0].isVoidResponse).toBe(true);
+  });
+
+  it('parses x-remote-batch on query endpoints', () => {
+    const spec = createSpec({
+      paths: {
+        '/api/v4/trackers/{id}': {
+          get: {
+            tags: ['V4 Trackers'],
+            operationId: 'Trackers_GetDefinition',
+            'x-remote-type': 'query',
+            'x-remote-batch': true,
+            parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+            responses: { '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/TrackerDefinitionDto' } } } } },
+          } as any,
+        },
+      },
+    });
+
+    const result = parseOpenApiSpec(spec);
+    expect(result.operations[0].isBatch).toBe(true);
+  });
+
+  it('isBatch is false when x-remote-batch is absent', () => {
+    const spec = createSpec({
+      paths: {
+        '/api/v4/trackers/{id}': {
+          get: {
+            tags: ['V4 Trackers'],
+            operationId: 'Trackers_GetDefinition',
+            'x-remote-type': 'query',
+            parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+            responses: { '200': { description: 'OK' } },
+          } as any,
+        },
+      },
+    });
+
+    const result = parseOpenApiSpec(spec);
+    expect(result.operations[0].isBatch).toBe(false);
+  });
+
+  it('isBatch is false for command endpoints even with x-remote-batch', () => {
+    const spec = createSpec({
+      paths: {
+        '/api/v4/trackers/{id}': {
+          delete: {
+            tags: ['V4 Trackers'],
+            operationId: 'Trackers_DeleteDefinition',
+            'x-remote-type': 'command',
+            'x-remote-batch': true,
+            parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+            responses: { '204': { description: 'No content' } },
+          } as any,
+        },
+      },
+    });
+
+    const result = parseOpenApiSpec(spec);
+    expect(result.operations[0].isBatch).toBe(false);
+  });
 });

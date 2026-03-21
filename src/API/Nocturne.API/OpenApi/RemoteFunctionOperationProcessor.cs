@@ -17,11 +17,18 @@ public class RemoteFunctionOperationProcessor : IOperationProcessor
 
         var queryAttr = methodInfo.GetCustomAttribute<RemoteQueryAttribute>();
         var commandAttr = methodInfo.GetCustomAttribute<RemoteCommandAttribute>();
+        var formAttr = methodInfo.GetCustomAttribute<RemoteFormAttribute>();
 
         if (queryAttr != null && !queryAttr.Skip)
         {
             context.OperationDescription.Operation.ExtensionData ??= new Dictionary<string, object?>();
             context.OperationDescription.Operation.ExtensionData["x-remote-type"] = "query";
+
+            var batchAttr = methodInfo.GetCustomAttribute<RemoteBatchAttribute>();
+            if (batchAttr != null)
+            {
+                context.OperationDescription.Operation.ExtensionData["x-remote-batch"] = true;
+            }
         }
         else if (commandAttr != null && !commandAttr.Skip)
         {
@@ -31,6 +38,16 @@ public class RemoteFunctionOperationProcessor : IOperationProcessor
             if (commandAttr.Invalidates.Length > 0)
             {
                 context.OperationDescription.Operation.ExtensionData["x-remote-invalidates"] = commandAttr.Invalidates;
+            }
+        }
+        else if (formAttr != null && !formAttr.Skip)
+        {
+            context.OperationDescription.Operation.ExtensionData ??= new Dictionary<string, object?>();
+            context.OperationDescription.Operation.ExtensionData["x-remote-type"] = "form";
+
+            if (formAttr.Invalidates.Length > 0)
+            {
+                context.OperationDescription.Operation.ExtensionData["x-remote-invalidates"] = formAttr.Invalidates;
             }
         }
 

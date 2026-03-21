@@ -1,4 +1,4 @@
-export type RemoteType = 'query' | 'command';
+export type RemoteType = 'query' | 'command' | 'form';
 
 export interface ParameterInfo {
   name: string;
@@ -36,6 +36,8 @@ export interface OperationInfo {
   inlineRequestBody?: InlineRequestBody;
   responseSchema?: string;
   isVoidResponse: boolean;
+  /** Whether this query should use query.batch() for N+1 prevention */
+  isBatch?: boolean;
   summary?: string;
   clientPropertyName?: string;
 }
