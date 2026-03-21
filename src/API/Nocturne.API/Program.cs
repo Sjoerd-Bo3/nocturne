@@ -299,6 +299,10 @@ builder.Services.AddScoped<IConnectorSyncService, ConnectorSyncService>();
 
 // Connector runtime services (single executable)
 builder.Services.AddBaseConnectorServices();
+builder.Services.AddScoped<IGlucosePublisher, GlucosePublisher>();
+builder.Services.AddScoped<ITreatmentPublisher, TreatmentPublisher>();
+builder.Services.AddScoped<IDevicePublisher, DevicePublisher>();
+builder.Services.AddScoped<IMetadataPublisher, MetadataPublisher>();
 builder.Services.AddScoped<IConnectorPublisher, InProcessConnectorPublisher>();
 builder.Services.AddDexcomConnector(builder.Configuration);
 builder.Services.AddGlookoConnector(builder.Configuration);
