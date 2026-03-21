@@ -180,6 +180,7 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<ITreatmentStore, Nocturne.API.Services.Treatments.DualPathTreatmentStore>();
         services.AddScoped<ITreatmentCache, Nocturne.API.Services.Treatments.TreatmentCacheAdapter>();
         services.AddScoped<ITreatmentEventSink, Nocturne.API.Services.Treatments.SignalRTreatmentEventSink>();
+        services.AddScoped<IWriteSideEffects, WriteSideEffectsService>();
         services.AddScoped<IEntryService, EntryService>();
         services.AddScoped<IStateSpanService, StateSpanService>();
         services.AddScoped<IDeviceStatusService, DeviceStatusService>();
