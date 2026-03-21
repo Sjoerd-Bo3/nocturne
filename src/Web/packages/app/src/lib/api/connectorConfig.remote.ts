@@ -1,9 +1,9 @@
 /**
  * Remote functions for connector configuration management
  */
-import { getRequestEvent, query, command } from '$app/server';
+import { getRequestEvent, query, command, form } from '$app/server';
 import { z } from 'zod';
-import { error } from '@sveltejs/kit';
+import { error, invalid } from '@sveltejs/kit';
 
 /**
  * JSON Schema types for connector configuration
@@ -131,7 +131,7 @@ export const getConnectorEffectiveConfig = query(z.string(), async (connectorNam
 /**
  * Save connector configuration
  */
-export const saveConnectorConfiguration = command(
+export const saveConnectorConfiguration = form(
 	z.object({
 		connectorName: z.string(),
 		configuration: z.record(z.string(), z.unknown()),
@@ -165,7 +165,7 @@ export const saveConnectorConfiguration = command(
 /**
  * Save connector secrets
  */
-export const saveConnectorSecrets = command(
+export const saveConnectorSecrets = form(
 	z.object({
 		connectorName: z.string(),
 		secrets: z.record(z.string(), z.string()),

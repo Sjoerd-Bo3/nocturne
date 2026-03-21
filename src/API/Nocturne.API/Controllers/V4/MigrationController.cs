@@ -27,7 +27,7 @@ public class MigrationController : ControllerBase
     /// Test a migration source connection
     /// </summary>
     [HttpPost("test")]
-    [RemoteCommand]
+    [RemoteForm]
     [ProducesResponseType(typeof(TestMigrationConnectionResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TestMigrationConnectionResult>> TestConnection(
@@ -42,7 +42,7 @@ public class MigrationController : ControllerBase
     /// Start a new migration job
     /// </summary>
     [HttpPost("start")]
-    [RemoteCommand]
+    [RemoteForm]
     [ProducesResponseType(typeof(MigrationJobInfo), StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MigrationJobInfo>> StartMigration(

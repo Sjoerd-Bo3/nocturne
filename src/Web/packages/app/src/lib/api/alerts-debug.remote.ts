@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { error } from "@sveltejs/kit";
-import { getRequestEvent, query, command } from "$app/server";
+import { error, invalid } from "@sveltejs/kit";
+import { getRequestEvent, query, command, form } from "$app/server";
 import type { Entry, SensorGlucose, UserAlarmConfiguration } from "$lib/api";
 
 const DebugSnapshotSchema = z
@@ -43,7 +43,7 @@ const CreateFakeEntrySchema = z.object({
   device: z.string().optional(),
 });
 
-export const createFakeEntry = command(
+export const createFakeEntry = form(
   CreateFakeEntrySchema,
   async ({ sgv, device }) => {
     const { locals } = getRequestEvent();

@@ -12,7 +12,7 @@ public abstract class V4CrudControllerBase<TModel, TRepository>(TRepository repo
     where TRepository : IV4Repository<TModel>
 {
     [HttpPost]
-    [RemoteCommand]
+    [RemoteForm]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public virtual async Task<ActionResult<TModel>> Create([FromBody] TModel model, CancellationToken ct = default)
@@ -26,7 +26,7 @@ public abstract class V4CrudControllerBase<TModel, TRepository>(TRepository repo
     }
 
     [HttpPut("{id:guid}")]
-    [RemoteCommand]
+    [RemoteForm]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

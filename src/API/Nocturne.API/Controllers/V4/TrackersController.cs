@@ -156,7 +156,7 @@ public class TrackersController : ControllerBase
     /// </summary>
     [HttpPost("definitions")]
     [Authorize]
-    [RemoteCommand(Invalidates = ["GetDefinitions"])]
+    [RemoteForm(Invalidates = ["GetDefinitions"])]
     [ProducesResponseType(typeof(TrackerDefinitionDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<TrackerDefinitionDto>> CreateDefinition(
         [FromBody] CreateTrackerDefinitionRequest request
@@ -239,7 +239,7 @@ public class TrackersController : ControllerBase
     /// </summary>
     [HttpPut("definitions/{id:guid}")]
     [Authorize]
-    [RemoteCommand(Invalidates = ["GetDefinitions", "GetDefinition"])]
+    [RemoteForm(Invalidates = ["GetDefinitions", "GetDefinition"])]
     [ProducesResponseType(typeof(TrackerDefinitionDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<TrackerDefinitionDto>> UpdateDefinition(
         Guid id,

@@ -52,7 +52,7 @@ public class PatientRecordController : ControllerBase
     /// Update the patient record
     /// </summary>
     [HttpPut]
-    [RemoteCommand(Invalidates = ["GetPatientRecord"])]
+    [RemoteForm(Invalidates = ["GetPatientRecord"])]
     [ProducesResponseType(typeof(PatientRecord), StatusCodes.Status200OK)]
     public async Task<ActionResult<PatientRecord>> UpdatePatientRecord(
         [FromBody] PatientRecord model,
@@ -82,7 +82,7 @@ public class PatientRecordController : ControllerBase
     /// Create a new patient device
     /// </summary>
     [HttpPost("devices")]
-    [RemoteCommand(Invalidates = ["GetDevices"])]
+    [RemoteForm(Invalidates = ["GetDevices"])]
     [ProducesResponseType(typeof(PatientDevice), StatusCodes.Status201Created)]
     public async Task<ActionResult<PatientDevice>> CreateDevice(
         [FromBody] PatientDevice model,
@@ -97,7 +97,7 @@ public class PatientRecordController : ControllerBase
     /// Update a patient device
     /// </summary>
     [HttpPut("devices/{id:guid}")]
-    [RemoteCommand(Invalidates = ["GetDevices"])]
+    [RemoteForm(Invalidates = ["GetDevices"])]
     [ProducesResponseType(typeof(PatientDevice), StatusCodes.Status200OK)]
     public async Task<ActionResult<PatientDevice>> UpdateDevice(
         Guid id,
@@ -154,7 +154,7 @@ public class PatientRecordController : ControllerBase
     /// Create a new patient insulin
     /// </summary>
     [HttpPost("insulins")]
-    [RemoteCommand(Invalidates = ["GetInsulins"])]
+    [RemoteForm(Invalidates = ["GetInsulins"])]
     [ProducesResponseType(typeof(PatientInsulin), StatusCodes.Status201Created)]
     public async Task<ActionResult<PatientInsulin>> CreateInsulin(
         [FromBody] PatientInsulin model,
@@ -168,7 +168,7 @@ public class PatientRecordController : ControllerBase
     /// Update a patient insulin
     /// </summary>
     [HttpPut("insulins/{id:guid}")]
-    [RemoteCommand(Invalidates = ["GetInsulins"])]
+    [RemoteForm(Invalidates = ["GetInsulins"])]
     [ProducesResponseType(typeof(PatientInsulin), StatusCodes.Status200OK)]
     public async Task<ActionResult<PatientInsulin>> UpdateInsulin(
         Guid id,

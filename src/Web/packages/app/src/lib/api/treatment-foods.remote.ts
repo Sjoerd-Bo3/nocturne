@@ -7,8 +7,8 @@
  *
  * Kept here: functions with custom logic or broken generated equivalents.
  */
-import { getRequestEvent, query, command } from "$app/server";
-import { error } from "@sveltejs/kit";
+import { getRequestEvent, query, command, form } from "$app/server";
+import { error, invalid } from "@sveltejs/kit";
 import { z } from "zod";
 import { type CarbIntakeFoodRequest, type Food } from "$lib/api";
 import { CarbIntakeFoodRequestSchema, FoodSchema } from "$lib/api/generated/schemas";
@@ -19,7 +19,7 @@ import { getRecentFoods } from "$api/generated/foods.generated.remote";
  * Update a food breakdown entry
  * NOTE: Generated version is broken (missing parameters in codegen), so kept here.
  */
-export const updateCarbIntakeFood = command(
+export const updateCarbIntakeFood = form(
   z.object({
     carbIntakeId: z.string(),
     entryId: z.string(),
@@ -105,7 +105,7 @@ export const getFoodById = query(z.string(), async (foodId) => {
 /**
  * Create a new food record
  */
-export const createNewFood = command(
+export const createNewFood = form(
   FoodSchema,
   async (food) => {
     const { locals } = getRequestEvent();
@@ -128,7 +128,7 @@ export const createNewFood = command(
 /**
  * Update an existing food record
  */
-export const updateExistingFood = command(FoodSchema, async (food) => {
+export const updateExistingFood = form(FoodSchema, async (food) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   const f = food as Food;

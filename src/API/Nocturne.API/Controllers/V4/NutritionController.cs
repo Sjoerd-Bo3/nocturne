@@ -83,7 +83,7 @@ public class NutritionController : ControllerBase
     /// Create a new carb intake
     /// </summary>
     [HttpPost("carbs")]
-    [RemoteCommand(Invalidates = ["GetCarbIntakes"])]
+    [RemoteForm(Invalidates = ["GetCarbIntakes"])]
     [ProducesResponseType(typeof(CarbIntake), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CarbIntake>> CreateCarbIntake([FromBody] CarbIntake model, CancellationToken ct = default)
@@ -98,7 +98,7 @@ public class NutritionController : ControllerBase
     /// Update an existing carb intake
     /// </summary>
     [HttpPut("carbs/{id:guid}")]
-    [RemoteCommand(Invalidates = ["GetCarbIntakes", "GetCarbIntakeById"])]
+    [RemoteForm(Invalidates = ["GetCarbIntakes", "GetCarbIntakeById"])]
     [ProducesResponseType(typeof(CarbIntake), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

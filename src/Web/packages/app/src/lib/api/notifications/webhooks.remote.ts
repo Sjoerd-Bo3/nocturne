@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { error } from "@sveltejs/kit";
-import { getRequestEvent, query, command } from "$app/server";
+import { error, invalid } from "@sveltejs/kit";
+import { getRequestEvent, query, command, form } from "$app/server";
 import type { WebhookNotificationSettings, WebhookTestResult } from "$lib/api";
 
 const WebhookSettingsSchema = z.object({
@@ -26,7 +26,7 @@ export const getWebhookSettings = query(async () => {
   }
 });
 
-export const saveWebhookSettings = command(
+export const saveWebhookSettings = form(
   WebhookSettingsSchema,
   async (settings) => {
     const { locals } = getRequestEvent();

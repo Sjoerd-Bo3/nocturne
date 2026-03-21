@@ -206,7 +206,7 @@ public class ProfileController : ControllerBase
     /// Create a new therapy settings record
     /// </summary>
     [HttpPost("settings")]
-    [RemoteCommand(Invalidates = ["GetProfileSummary", "GetTherapySettings"])]
+    [RemoteForm(Invalidates = ["GetProfileSummary", "GetTherapySettings"])]
     [ProducesResponseType(typeof(TherapySettings), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TherapySettings>> CreateTherapySettings(
@@ -224,7 +224,7 @@ public class ProfileController : ControllerBase
     /// Update an existing therapy settings record
     /// </summary>
     [HttpPut("settings/{id:guid}")]
-    [RemoteCommand(
+    [RemoteForm(
         Invalidates = ["GetProfileSummary", "GetTherapySettings", "GetTherapySettingsById"]
     )]
     [ProducesResponseType(typeof(TherapySettings), StatusCodes.Status200OK)]
@@ -308,7 +308,7 @@ public class ProfileController : ControllerBase
     /// Create a new basal schedule
     /// </summary>
     [HttpPost("basal")]
-    [RemoteCommand(Invalidates = ["GetProfileSummary", "GetBasalSchedulesByName"])]
+    [RemoteForm(Invalidates = ["GetProfileSummary", "GetBasalSchedulesByName"])]
     [ProducesResponseType(typeof(BasalSchedule), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<BasalSchedule>> CreateBasalSchedule(
@@ -326,7 +326,7 @@ public class ProfileController : ControllerBase
     /// Update an existing basal schedule
     /// </summary>
     [HttpPut("basal/{id:guid}")]
-    [RemoteCommand(
+    [RemoteForm(
         Invalidates = ["GetProfileSummary", "GetBasalSchedulesByName", "GetBasalScheduleById"]
     )]
     [ProducesResponseType(typeof(BasalSchedule), StatusCodes.Status200OK)]
