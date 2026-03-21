@@ -2,7 +2,6 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
-using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
@@ -18,11 +17,10 @@ namespace Nocturne.API.Services;
 public class EntryService : IEntryService
 {
     private readonly IEntryRepository _entries;
-    private readonly ISignalRBroadcastService _broadcastService;
+    private readonly IWriteSideEffects _sideEffects;
     private readonly ICacheService _cacheService;
     private readonly CacheConfiguration _cacheConfig;
     private readonly IDemoModeService _demoModeService;
-    private readonly IDecompositionPipeline _pipeline;
     private readonly IV4ToLegacyProjectionService _projectionService;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<EntryService> _logger;
@@ -32,26 +30,46 @@ public class EntryService : IEntryService
 
     public EntryService(
         IEntryRepository entries,
-        ISignalRBroadcastService broadcastService,
+        IWriteSideEffects sideEffects,
         ICacheService cacheService,
         IOptions<CacheConfiguration> cacheConfig,
         IDemoModeService demoModeService,
-        IDecompositionPipeline pipeline,
         IV4ToLegacyProjectionService projectionService,
         ITenantAccessor tenantAccessor,
         ILogger<EntryService> logger
     )
     {
         _entries = entries;
-        _broadcastService = broadcastService;
+        _sideEffects = sideEffects;
         _cacheService = cacheService;
         _cacheConfig = cacheConfig.Value;
         _demoModeService = demoModeService;
-        _pipeline = pipeline;
         _projectionService = projectionService;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
+
+    private WriteEffectOptions BuildWriteOptions() => new()
+    {
+        CacheKeysToRemove = [CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId)],
+        CachePatternsToClear = [CacheKeyBuilder.BuildRecentEntriesPattern(TenantCacheId)],
+        DecomposeToV4 = true,
+        BroadcastDataUpdate = true,
+    };
+
+    private WriteEffectOptions BuildWriteOptionsNoBroadcastDataUpdate() => new()
+    {
+        CacheKeysToRemove = [CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId)],
+        CachePatternsToClear = [CacheKeyBuilder.BuildRecentEntriesPattern(TenantCacheId)],
+        DecomposeToV4 = true,
+        BroadcastDataUpdate = false,
+    };
+
+    private WriteEffectOptions BuildCacheOnlyOptions() => new()
+    {
+        CacheKeysToRemove = [CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId)],
+        CachePatternsToClear = [CacheKeyBuilder.BuildRecentEntriesPattern(TenantCacheId)],
+    };
 
     /// <inheritdoc />
     public async Task<IEnumerable<Entry>> GetEntriesAsync(
@@ -448,69 +466,7 @@ public class EntryService : IEntryService
             cancellationToken
         );
 
-        // Invalidate current entry cache since new entries were created
-        try
-        {
-            var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId);
-            await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
-            _logger.LogInformation(
-                "Cache INVALIDATION: {CacheKey} after creating {Count} entries",
-                currentEntryKey,
-                createdEntries.Count()
-            );
-
-            // Invalidate all recent entries caches using pattern matching
-            var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(TenantCacheId);
-            await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
-            _logger.LogInformation(
-                "Cache INVALIDATION: recent entries pattern '{Pattern}' after creating {Count} entries",
-                recentEntriesPattern,
-                createdEntries.Count()
-            );
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to invalidate entry caches");
-        }
-
-        // Broadcast create events for each entry (replaces legacy ctx.bus.emit('storage-socket-create'))
-        foreach (var entry in createdEntries)
-        {
-            try
-            {
-                await _broadcastService.BroadcastStorageCreateAsync(
-                    CollectionName,
-                    new { colName = CollectionName, doc = entry }
-                );
-                _logger.LogDebug("Broadcasted storage create event for entry {EntryId}", entry.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to broadcast storage create event for entry {EntryId}",
-                    entry.Id
-                );
-            }
-        }
-
-        // Broadcast data update for real-time glucose updates (replaces legacy ctx.bus.emit('data-update'))
-        try
-        {
-            await _broadcastService.BroadcastDataUpdateAsync(createdEntries.ToArray());
-            _logger.LogDebug("Broadcasted data update for {Count} entries", createdEntries.Count());
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(
-                ex,
-                "Failed to broadcast data update for {Count} entries",
-                createdEntries.Count()
-            );
-        }
-
-        // Decompose each created entry into v4 tables
-        await _pipeline.DecomposeAsync<Entry>(createdEntries, cancellationToken);
+        await _sideEffects.OnCreatedAsync(CollectionName, createdEntries.ToList(), BuildWriteOptions(), cancellationToken);
 
         return createdEntries;
     }
@@ -526,55 +482,7 @@ public class EntryService : IEntryService
 
         if (updatedEntry != null)
         {
-            // Invalidate current entry cache since an entry was updated
-            try
-            {
-                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId);
-                await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
-                _logger.LogInformation(
-                    "Cache INVALIDATION: {CacheKey} after updating entry {EntryId}",
-                    currentEntryKey,
-                    id
-                );
-
-                // Invalidate all recent entries caches using pattern matching
-                var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(
-                    TenantCacheId
-                );
-                await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
-                _logger.LogInformation(
-                    "Cache INVALIDATION: recent entries pattern '{Pattern}' after updating entry {EntryId}",
-                    recentEntriesPattern,
-                    id
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to invalidate entry caches");
-            }
-
-            try
-            {
-                await _broadcastService.BroadcastStorageUpdateAsync(
-                    CollectionName,
-                    new { colName = CollectionName, doc = updatedEntry }
-                );
-                _logger.LogDebug(
-                    "Broadcasted storage update event for entry {EntryId}",
-                    updatedEntry.Id
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to broadcast storage update event for entry {EntryId}",
-                    updatedEntry.Id
-                );
-            }
-
-            // Re-decompose the updated entry to keep v4 tables in sync
-            await _pipeline.DecomposeAsync(updatedEntry, cancellationToken);
+            await _sideEffects.OnUpdatedAsync(CollectionName, updatedEntry, BuildWriteOptionsNoBroadcastDataUpdate(), cancellationToken);
         }
 
         return updatedEntry;
@@ -586,8 +494,7 @@ public class EntryService : IEntryService
         CancellationToken cancellationToken = default
     )
     {
-        // Delete corresponding v4 records by LegacyId
-        await _pipeline.DeleteByLegacyIdAsync<Entry>(id, cancellationToken);
+        await _sideEffects.BeforeDeleteAsync<Entry>(id, BuildWriteOptions(), cancellationToken);
 
         // Get the entry before deleting for broadcasting
         var entryToDelete = await _entries.GetEntryByIdAsync(id, cancellationToken);
@@ -596,55 +503,7 @@ public class EntryService : IEntryService
 
         if (deleted)
         {
-            // Invalidate current entry cache since an entry was deleted
-            try
-            {
-                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId);
-                await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
-                _logger.LogInformation(
-                    "Cache INVALIDATION: {CacheKey} after deleting entry {EntryId}",
-                    currentEntryKey,
-                    id
-                );
-
-                // Invalidate all recent entries caches using pattern matching
-                var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(
-                    TenantCacheId
-                );
-                await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
-                _logger.LogInformation(
-                    "Cache INVALIDATION: recent entries pattern '{Pattern}' after deleting entry {EntryId}",
-                    recentEntriesPattern,
-                    id
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to invalidate entry caches");
-            }
-
-            if (entryToDelete != null)
-            {
-                try
-                {
-                    await _broadcastService.BroadcastStorageDeleteAsync(
-                        CollectionName,
-                        new { colName = CollectionName, doc = entryToDelete }
-                    );
-                    _logger.LogDebug(
-                        "Broadcasted storage delete event for entry {EntryId}",
-                        entryToDelete.Id
-                    );
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(
-                        ex,
-                        "Failed to broadcast storage delete event for entry {EntryId}",
-                        entryToDelete.Id
-                    );
-                }
-            }
+            await _sideEffects.OnDeletedAsync(CollectionName, entryToDelete, BuildWriteOptions(), cancellationToken);
         }
 
         return deleted;
@@ -663,35 +522,7 @@ public class EntryService : IEntryService
             cancellationToken
         );
 
-        if (deletedCount > 0)
-        {
-            // Invalidate current entry cache since entries were deleted
-            try
-            {
-                var currentEntryKey = CacheKeyBuilder.BuildCurrentEntriesKey(TenantCacheId);
-                await _cacheService.RemoveAsync(currentEntryKey, cancellationToken);
-                _logger.LogDebug(
-                    "Invalidated {CacheKey} cache after bulk deleting {Count} entries",
-                    currentEntryKey,
-                    deletedCount
-                );
-
-                // Invalidate all recent entries caches using pattern matching
-                var recentEntriesPattern = CacheKeyBuilder.BuildRecentEntriesPattern(
-                    TenantCacheId
-                );
-                await _cacheService.RemoveByPatternAsync(recentEntriesPattern, cancellationToken);
-                _logger.LogDebug(
-                    "Invalidated recent entries pattern '{Pattern}' after bulk deleting {Count} entries",
-                    recentEntriesPattern,
-                    deletedCount
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to invalidate entry caches");
-            }
-        }
+        await _sideEffects.OnBulkDeletedAsync(CollectionName, deletedCount, BuildCacheOnlyOptions(), cancellationToken);
 
         return deletedCount;
     }

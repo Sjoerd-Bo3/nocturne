@@ -4,7 +4,6 @@ using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts;
-using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
@@ -21,11 +20,10 @@ namespace Nocturne.API.Tests.Services;
 public class EntryServiceTests
 {
     private readonly Mock<IEntryRepository> _mockEntryRepository;
-    private readonly Mock<ISignalRBroadcastService> _mockSignalRBroadcastService;
+    private readonly Mock<IWriteSideEffects> _mockSideEffects;
     private readonly Mock<ICacheService> _mockCacheService;
     private readonly Mock<IOptions<CacheConfiguration>> _mockCacheConfig;
     private readonly Mock<IDemoModeService> _mockDemoModeService;
-    private readonly Mock<IDecompositionPipeline> _mockPipeline;
     private readonly Mock<IV4ToLegacyProjectionService> _mockProjectionService;
     private readonly Mock<ILogger<EntryService>> _mockLogger;
     private readonly EntryService _entryService;
@@ -36,11 +34,10 @@ public class EntryServiceTests
     public EntryServiceTests()
     {
         _mockEntryRepository = new Mock<IEntryRepository>();
-        _mockSignalRBroadcastService = new Mock<ISignalRBroadcastService>();
+        _mockSideEffects = new Mock<IWriteSideEffects>();
         _mockCacheService = new Mock<ICacheService>();
         _mockCacheConfig = new Mock<IOptions<CacheConfiguration>>();
         _mockDemoModeService = new Mock<IDemoModeService>();
-        _mockPipeline = new Mock<IDecompositionPipeline>();
         _mockProjectionService = new Mock<IV4ToLegacyProjectionService>();
         _mockLogger = new Mock<ILogger<EntryService>>();
 
@@ -49,11 +46,10 @@ public class EntryServiceTests
 
         _entryService = new EntryService(
             _mockEntryRepository.Object,
-            _mockSignalRBroadcastService.Object,
+            _mockSideEffects.Object,
             _mockCacheService.Object,
             _mockCacheConfig.Object,
             _mockDemoModeService.Object,
-            _mockPipeline.Object,
             _mockProjectionService.Object,
             MockTenantAccessor.Create().Object,
             _mockLogger.Object
@@ -277,9 +273,14 @@ public class EntryServiceTests
                 x.CreateEntriesAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageCreateAsync("entries", It.IsAny<object>()),
-            Times.Exactly(2)
+        _mockSideEffects.Verify(
+            x => x.OnCreatedAsync(
+                "entries",
+                It.IsAny<IReadOnlyList<Entry>>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
+            Times.Once
         );
     }
 
@@ -320,8 +321,13 @@ public class EntryServiceTests
             x => x.UpdateEntryAsync(entryId, entry, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageUpdateAsync("entries", It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnUpdatedAsync(
+                "entries",
+                It.IsAny<Entry>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -349,8 +355,13 @@ public class EntryServiceTests
 
         // Assert
         Assert.Null(result);
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageUpdateAsync(It.IsAny<string>(), It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnUpdatedAsync(
+                It.IsAny<string>(),
+                It.IsAny<Entry>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Never
         );
     }
@@ -387,8 +398,13 @@ public class EntryServiceTests
             x => x.DeleteEntryAsync(entryId, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageDeleteAsync("entries", It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnDeletedAsync(
+                "entries",
+                It.IsAny<Entry?>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -410,8 +426,13 @@ public class EntryServiceTests
 
         // Assert
         Assert.False(result);
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageDeleteAsync(It.IsAny<string>(), It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnDeletedAsync(
+                It.IsAny<string>(),
+                It.IsAny<Entry?>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Never
         );
     }
@@ -419,7 +440,7 @@ public class EntryServiceTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Category", "Parity")]
-    public async Task DeleteEntriesAsync_WithValidFilter_ReturnsDeletedCountAndBroadcasts()
+    public async Task DeleteEntriesAsync_WithValidFilter_ReturnsDeletedCountAndCallsSideEffects()
     {
         // Arrange
         var find = "{\"type\":\"sgv\"}";
@@ -438,16 +459,21 @@ public class EntryServiceTests
             x => x.BulkDeleteEntriesAsync(find, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageDeleteAsync("entries", It.IsAny<object>()),
-            Times.Never
+        _mockSideEffects.Verify(
+            x => x.OnBulkDeletedAsync(
+                "entries",
+                deletedCount,
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
+            Times.Once
         );
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Category", "Parity")]
-    public async Task DeleteEntriesAsync_WithNoMatches_ReturnsZeroAndDoesNotBroadcast()
+    public async Task DeleteEntriesAsync_WithNoMatches_ReturnsZeroAndCallsSideEffects()
     {
         // Arrange
         var find = "{\"type\":\"nonexistent\"}";
@@ -462,9 +488,14 @@ public class EntryServiceTests
 
         // Assert
         Assert.Equal(0, result);
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageDeleteAsync(It.IsAny<string>(), It.IsAny<object>()),
-            Times.Never
+        _mockSideEffects.Verify(
+            x => x.OnBulkDeletedAsync(
+                "entries",
+                0,
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
+            Times.Once
         );
     }
 
@@ -626,8 +657,13 @@ public class EntryServiceTests
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _entryService.CreateEntriesAsync(entries, CancellationToken.None)
         );
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageCreateAsync(It.IsAny<string>(), It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnCreatedAsync(
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<Entry>>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Never
         );
     }

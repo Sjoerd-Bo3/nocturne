@@ -7,7 +7,6 @@ using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
-using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Cache.Abstractions;
@@ -26,11 +25,10 @@ namespace Nocturne.API.Tests.Services;
 public class CacheIntegrationTests
 {
     private readonly Mock<IEntryRepository> _mockEntryRepository;
-    private readonly Mock<ISignalRBroadcastService> _mockSignalRBroadcastService;
+    private readonly Mock<IWriteSideEffects> _mockSideEffects;
     private readonly Mock<ICacheService> _mockCacheService;
     private readonly Mock<IOptions<CacheConfiguration>> _mockCacheConfig;
     private readonly Mock<IDemoModeService> _mockDemoModeService;
-    private readonly Mock<IDecompositionPipeline> _mockPipeline;
     private readonly Mock<IV4ToLegacyProjectionService> _mockProjectionService;
     private readonly Mock<ILogger<EntryService>> _mockEntryLogger;
     private readonly Mock<ILogger<StatusService>> _mockStatusLogger;
@@ -39,11 +37,10 @@ public class CacheIntegrationTests
     public CacheIntegrationTests()
     {
         _mockEntryRepository = new Mock<IEntryRepository>();
-        _mockSignalRBroadcastService = new Mock<ISignalRBroadcastService>();
+        _mockSideEffects = new Mock<IWriteSideEffects>();
         _mockCacheService = new Mock<ICacheService>();
         _mockCacheConfig = new Mock<IOptions<CacheConfiguration>>();
         _mockDemoModeService = new Mock<IDemoModeService>();
-        _mockPipeline = new Mock<IDecompositionPipeline>();
         _mockProjectionService = new Mock<IV4ToLegacyProjectionService>();
         _mockEntryLogger = new Mock<ILogger<EntryService>>();
         _mockStatusLogger = new Mock<ILogger<StatusService>>();
@@ -73,11 +70,10 @@ public class CacheIntegrationTests
 
         var entryService = new EntryService(
             _mockEntryRepository.Object,
-            _mockSignalRBroadcastService.Object,
+            _mockSideEffects.Object,
             _mockCacheService.Object,
             _mockCacheConfig.Object,
             _mockDemoModeService.Object,
-            _mockPipeline.Object,
             _mockProjectionService.Object,
             _mockTenantAccessor.Object,
             _mockEntryLogger.Object
@@ -137,11 +133,10 @@ public class CacheIntegrationTests
 
         var entryService = new EntryService(
             _mockEntryRepository.Object,
-            _mockSignalRBroadcastService.Object,
+            _mockSideEffects.Object,
             _mockCacheService.Object,
             _mockCacheConfig.Object,
             _mockDemoModeService.Object,
-            _mockPipeline.Object,
             _mockProjectionService.Object,
             _mockTenantAccessor.Object,
             _mockEntryLogger.Object
@@ -210,11 +205,10 @@ public class CacheIntegrationTests
 
         var entryService = new EntryService(
             _mockEntryRepository.Object,
-            _mockSignalRBroadcastService.Object,
+            _mockSideEffects.Object,
             _mockCacheService.Object,
             _mockCacheConfig.Object,
             _mockDemoModeService.Object,
-            _mockPipeline.Object,
             _mockProjectionService.Object,
             _mockTenantAccessor.Object,
             _mockEntryLogger.Object
@@ -227,15 +221,14 @@ public class CacheIntegrationTests
         Assert.NotNull(result);
         Assert.Single(result);
 
-        // Verify cache was invalidated
-        _mockCacheService.Verify(
-            x => x.RemoveAsync("entries:current:00000000-0000-0000-0000-000000000001", It.IsAny<CancellationToken>()),
-            Times.Once
-        );
-
-        // Verify WebSocket broadcast was called
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageCreateAsync("entries", It.IsAny<object>()),
+        // Verify side effects were triggered
+        _mockSideEffects.Verify(
+            x => x.OnCreatedAsync(
+                "entries",
+                It.IsAny<IReadOnlyList<Entry>>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
