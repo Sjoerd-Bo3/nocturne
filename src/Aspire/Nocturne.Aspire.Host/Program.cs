@@ -289,6 +289,10 @@ class Program
                 "COOKIE_REFRESH_TOKEN_NAME",
                 builder.Configuration["Oidc:Cookie:RefreshTokenName"] ?? ".Nocturne.RefreshToken"
             )
+            // OpenTelemetry configuration — send traces to the Aspire dashboard OTLP endpoint
+            .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT",
+                Environment.GetEnvironmentVariable("DOTNET_DASHBOARD_OTLP_ENDPOINT_URL") ?? "")
+            .WithEnvironment("OTEL_SERVICE_NAME", "nocturne-web")
             .PublishAsDockerComposeService((_, _) => { })
             .WithContainerBuildOptions(options =>
             {
