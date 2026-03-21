@@ -263,7 +263,7 @@ export class RealtimeStore {
         apiClient.notifications.getNotifications().catch(() => []),
         apiClient.boluses.getAll(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load boluses:", e); return []; }),
         apiClient.nutrition.getCarbIntakes(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load carbIntakes:", e); return []; }),
-        apiClient.bgChecks.getAll(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load bgChecks:", e); return []; }),
+        apiClient.bGChecks.getAll(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load bgChecks:", e); return []; }),
         apiClient.notes.getAll(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load notes:", e); return []; }),
         apiClient.deviceEvents.getAll(oneDayAgo, now, 500).then((r) => r.data ?? []).catch((e) => { console.error("Failed to load deviceEvents:", e); return []; }),
       ]);
@@ -768,7 +768,7 @@ export class RealtimeStore {
         apiClient.deviceStatus.getDeviceStatus2(100).catch(() => []),
         apiClient.boluses.getAll(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
         apiClient.nutrition.getCarbIntakes(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
-        apiClient.bgChecks.getAll(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
+        apiClient.bGChecks.getAll(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
         apiClient.notes.getAll(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
         apiClient.deviceEvents.getAll(backfillFromDate, nowDate, 500).then((r) => r.data ?? []).catch(() => []),
       ]);

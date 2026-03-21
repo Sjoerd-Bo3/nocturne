@@ -62,7 +62,7 @@ export const getTreatmentsData = query(
 			await Promise.all([
 				apiClient.boluses.getAll(startDate, endDate, 10000),
 				apiClient.nutrition.getCarbIntakes(startDate, endDate, 10000),
-				apiClient.bgChecks.getAll(startDate, endDate, 10000),
+				apiClient.bGChecks.getAll(startDate, endDate, 10000),
 				apiClient.notes.getAll(startDate, endDate, 10000),
 				apiClient.deviceEvents.getAll(startDate, endDate, 10000),
 			]);
@@ -114,7 +114,7 @@ export const deleteEntryForm = form(
 					await apiClient.nutrition.deleteCarbIntake(entryId);
 					break;
 				case 'bgCheck':
-					await apiClient.bgChecks.delete(entryId);
+					await apiClient.bGChecks.delete(entryId);
 					break;
 				case 'note':
 					await apiClient.notes.delete(entryId);
@@ -163,7 +163,7 @@ export const bulkDeleteEntries = command(
 						await apiClient.nutrition.deleteCarbIntake(item.id);
 						break;
 					case 'bgCheck':
-						await apiClient.bgChecks.delete(item.id);
+						await apiClient.bGChecks.delete(item.id);
 						break;
 					case 'note':
 						await apiClient.notes.delete(item.id);
@@ -215,7 +215,7 @@ export const updateEntry = command(
 			case 'carbs':
 				return await apiClient.nutrition.updateCarbIntake(id, data as CarbIntake);
 			case 'bgCheck':
-				return await apiClient.bgChecks.update(id, data as BGCheck);
+				return await apiClient.bGChecks.update(id, data as BGCheck);
 			case 'note':
 				return await apiClient.notes.update(id, data as Note);
 			case 'deviceEvent':

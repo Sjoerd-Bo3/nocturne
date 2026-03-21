@@ -82,7 +82,7 @@ export const getEntryByTreatmentId = query(treatmentIdSchema, async ({ treatment
   const fetchers = [
     { kind: "bolus" as const, fetch: () => apiClient.boluses.getById(treatmentId) },
     { kind: "carbs" as const, fetch: () => apiClient.nutrition.getCarbIntakeById(treatmentId) },
-    { kind: "bgCheck" as const, fetch: () => apiClient.bgChecks.getById(treatmentId) },
+    { kind: "bgCheck" as const, fetch: () => apiClient.bGChecks.getById(treatmentId) },
     { kind: "note" as const, fetch: () => apiClient.notes.getById(treatmentId) },
     { kind: "deviceEvent" as const, fetch: () => apiClient.deviceEvents.getById(treatmentId) },
   ];
