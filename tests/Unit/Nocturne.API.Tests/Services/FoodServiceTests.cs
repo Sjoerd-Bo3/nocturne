@@ -16,7 +16,7 @@ public class FoodServiceTests
 {
     private readonly Mock<IFoodRepository> _mockFoodRepository;
     private readonly Mock<IDocumentProcessingService> _mockDocumentProcessingService;
-    private readonly Mock<ISignalRBroadcastService> _mockSignalRBroadcastService;
+    private readonly Mock<IWriteSideEffects> _mockSideEffects;
     private readonly Mock<ILogger<FoodService>> _mockLogger;
     private readonly FoodService _foodService;
 
@@ -24,13 +24,13 @@ public class FoodServiceTests
     {
         _mockFoodRepository = new Mock<IFoodRepository>();
         _mockDocumentProcessingService = new Mock<IDocumentProcessingService>();
-        _mockSignalRBroadcastService = new Mock<ISignalRBroadcastService>();
+        _mockSideEffects = new Mock<IWriteSideEffects>();
         _mockLogger = new Mock<ILogger<FoodService>>();
 
         _foodService = new FoodService(
             _mockFoodRepository.Object,
             _mockDocumentProcessingService.Object,
-            _mockSignalRBroadcastService.Object,
+            _mockSideEffects.Object,
             _mockLogger.Object
         );
     }
@@ -46,7 +46,7 @@ public class FoodServiceTests
         var service = new FoodService(
             _mockFoodRepository.Object,
             _mockDocumentProcessingService.Object,
-            _mockSignalRBroadcastService.Object,
+            _mockSideEffects.Object,
             _mockLogger.Object
         );
 
@@ -64,7 +64,7 @@ public class FoodServiceTests
             new FoodService(
                 null!,
                 _mockDocumentProcessingService.Object,
-                _mockSignalRBroadcastService.Object,
+                _mockSideEffects.Object,
                 _mockLogger.Object
             )
         );
@@ -80,7 +80,7 @@ public class FoodServiceTests
             new FoodService(
                 _mockFoodRepository.Object,
                 null!,
-                _mockSignalRBroadcastService.Object,
+                _mockSideEffects.Object,
                 _mockLogger.Object
             )
         );
@@ -112,7 +112,7 @@ public class FoodServiceTests
             new FoodService(
                 _mockFoodRepository.Object,
                 _mockDocumentProcessingService.Object,
-                _mockSignalRBroadcastService.Object,
+                _mockSideEffects.Object,
                 null!
             )
         );
@@ -367,10 +367,6 @@ public class FoodServiceTests
             )
             .ReturnsAsync(createdFoods);
 
-        _mockSignalRBroadcastService.Setup(x =>
-            x.BroadcastStorageCreateAsync(It.IsAny<string>(), It.IsAny<object>())
-        );
-
         // Act
         var result = await _foodService.CreateFoodAsync(inputFoods, CancellationToken.None);
 
@@ -384,15 +380,13 @@ public class FoodServiceTests
             Times.Once
         );
 
-        _mockSignalRBroadcastService.Verify(
-            x =>
-                x.BroadcastStorageCreateAsync(
-                    "food",
-                    It.Is<object>(o =>
-                        o.GetType().GetProperty("collection")!.GetValue(o)!.Equals("food")
-                        && o.GetType().GetProperty("count")!.GetValue(o)!.Equals(2)
-                    )
-                ),
+        _mockSideEffects.Verify(
+            x => x.OnCreatedAsync(
+                "food",
+                It.IsAny<IReadOnlyList<Food>>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -412,10 +406,6 @@ public class FoodServiceTests
             )
             .ReturnsAsync(createdFoods);
 
-        _mockSignalRBroadcastService.Setup(x =>
-            x.BroadcastStorageCreateAsync(It.IsAny<string>(), It.IsAny<object>())
-        );
-
         // Act
         var result = await _foodService.CreateFoodAsync(inputFoods, CancellationToken.None);
 
@@ -423,12 +413,13 @@ public class FoodServiceTests
         result.Should().NotBeNull();
         result.Should().BeEmpty();
 
-        _mockSignalRBroadcastService.Verify(
-            x =>
-                x.BroadcastStorageCreateAsync(
-                    "food",
-                    It.Is<object>(o => o.GetType().GetProperty("count")!.GetValue(o)!.Equals(0))
-                ),
+        _mockSideEffects.Verify(
+            x => x.OnCreatedAsync(
+                "food",
+                It.IsAny<IReadOnlyList<Food>>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -488,10 +479,6 @@ public class FoodServiceTests
             )
             .ReturnsAsync(createdFoods);
 
-        _mockSignalRBroadcastService.Setup(x =>
-            x.BroadcastStorageCreateAsync(It.IsAny<string>(), It.IsAny<object>())
-        );
-
         // Act
         var result = await _foodService.CreateFoodAsync(inputFoods, CancellationToken.None);
 
@@ -543,8 +530,13 @@ public class FoodServiceTests
             )
             .ReturnsAsync(createdFoods);
 
-        _mockSignalRBroadcastService
-            .Setup(x => x.BroadcastStorageCreateAsync(It.IsAny<string>(), It.IsAny<object>()))
+        _mockSideEffects
+            .Setup(x => x.OnCreatedAsync(
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<Food>>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
@@ -596,10 +588,6 @@ public class FoodServiceTests
             .Setup(x => x.UpdateFoodAsync(foodId, updateFood, It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedFood);
 
-        _mockSignalRBroadcastService.Setup(x =>
-            x.BroadcastStorageUpdateAsync(It.IsAny<string>(), It.IsAny<object>())
-        );
-
         // Act
         var result = await _foodService.UpdateFoodAsync(foodId, updateFood, CancellationToken.None);
 
@@ -613,15 +601,13 @@ public class FoodServiceTests
             Times.Once
         );
 
-        _mockSignalRBroadcastService.Verify(
-            x =>
-                x.BroadcastStorageUpdateAsync(
-                    "food",
-                    It.Is<object>(o =>
-                        o.GetType().GetProperty("collection")!.GetValue(o)!.Equals("food")
-                        && o.GetType().GetProperty("id")!.GetValue(o)!.Equals(foodId)
-                    )
-                ),
+        _mockSideEffects.Verify(
+            x => x.OnUpdatedAsync(
+                "food",
+                It.IsAny<Food>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -650,8 +636,13 @@ public class FoodServiceTests
             Times.Once
         );
 
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageUpdateAsync(It.IsAny<string>(), It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnUpdatedAsync(
+                It.IsAny<string>(),
+                It.IsAny<Food>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Never
         );
     }
@@ -692,8 +683,13 @@ public class FoodServiceTests
             .Setup(x => x.UpdateFoodAsync(foodId, updateFood, It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedFood);
 
-        _mockSignalRBroadcastService
-            .Setup(x => x.BroadcastStorageUpdateAsync(It.IsAny<string>(), It.IsAny<object>()))
+        _mockSideEffects
+            .Setup(x => x.OnUpdatedAsync(
+                It.IsAny<string>(),
+                It.IsAny<Food>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
@@ -719,10 +715,6 @@ public class FoodServiceTests
             .Setup(x => x.DeleteFoodAsync(foodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockSignalRBroadcastService.Setup(x =>
-            x.BroadcastStorageDeleteAsync(It.IsAny<string>(), It.IsAny<object>())
-        );
-
         // Act
         var result = await _foodService.DeleteFoodAsync(foodId, CancellationToken.None);
 
@@ -734,15 +726,13 @@ public class FoodServiceTests
             Times.Once
         );
 
-        _mockSignalRBroadcastService.Verify(
-            x =>
-                x.BroadcastStorageDeleteAsync(
-                    "food",
-                    It.Is<object>(o =>
-                        o.GetType().GetProperty("collection")!.GetValue(o)!.Equals("food")
-                        && o.GetType().GetProperty("id")!.GetValue(o)!.Equals(foodId)
-                    )
-                ),
+        _mockSideEffects.Verify(
+            x => x.OnDeletedAsync<Food>(
+                "food",
+                It.IsAny<Food?>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -770,8 +760,13 @@ public class FoodServiceTests
             Times.Once
         );
 
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageDeleteAsync(It.IsAny<string>(), It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnDeletedAsync<Food>(
+                It.IsAny<string>(),
+                It.IsAny<Food?>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Never
         );
     }
@@ -809,8 +804,13 @@ public class FoodServiceTests
             .Setup(x => x.DeleteFoodAsync(foodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockSignalRBroadcastService
-            .Setup(x => x.BroadcastStorageDeleteAsync(It.IsAny<string>(), It.IsAny<object>()))
+        _mockSideEffects
+            .Setup(x => x.OnDeletedAsync<Food>(
+                It.IsAny<string>(),
+                It.IsAny<Food?>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
@@ -836,10 +836,6 @@ public class FoodServiceTests
             .Setup(x => x.BulkDeleteFoodAsync("{}", It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedCount);
 
-        _mockSignalRBroadcastService.Setup(x =>
-            x.BroadcastStorageDeleteAsync(It.IsAny<string>(), It.IsAny<object>())
-        );
-
         // Act
         var result = await _foodService.DeleteMultipleFoodAsync(null, CancellationToken.None);
 
@@ -851,18 +847,13 @@ public class FoodServiceTests
             Times.Once
         );
 
-        _mockSignalRBroadcastService.Verify(
-            x =>
-                x.BroadcastStorageDeleteAsync(
-                    "food",
-                    It.Is<object>(o =>
-                        o.GetType().GetProperty("collection")!.GetValue(o)!.Equals("food")
-                        && o.GetType()
-                            .GetProperty("deletedCount")!
-                            .GetValue(o)!
-                            .Equals(deletedCount)
-                    )
-                ),
+        _mockSideEffects.Verify(
+            x => x.OnBulkDeletedAsync(
+                "food",
+                deletedCount,
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -880,10 +871,6 @@ public class FoodServiceTests
             .Setup(x => x.BulkDeleteFoodAsync(filter, It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedCount);
 
-        _mockSignalRBroadcastService.Setup(x =>
-            x.BroadcastStorageDeleteAsync(It.IsAny<string>(), It.IsAny<object>())
-        );
-
         // Act
         var result = await _foodService.DeleteMultipleFoodAsync(filter, CancellationToken.None);
 
@@ -895,18 +882,13 @@ public class FoodServiceTests
             Times.Once
         );
 
-        _mockSignalRBroadcastService.Verify(
-            x =>
-                x.BroadcastStorageDeleteAsync(
-                    "food",
-                    It.Is<object>(o =>
-                        o.GetType().GetProperty("filter")!.GetValue(o)!.Equals(filter)
-                        && o.GetType()
-                            .GetProperty("deletedCount")!
-                            .GetValue(o)!
-                            .Equals(deletedCount)
-                    )
-                ),
+        _mockSideEffects.Verify(
+            x => x.OnBulkDeletedAsync(
+                "food",
+                deletedCount,
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -935,8 +917,13 @@ public class FoodServiceTests
             Times.Once
         );
 
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageDeleteAsync(It.IsAny<string>(), It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnBulkDeletedAsync(
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Never
         );
     }
@@ -975,8 +962,13 @@ public class FoodServiceTests
             .Setup(x => x.BulkDeleteFoodAsync(filter, It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedCount);
 
-        _mockSignalRBroadcastService
-            .Setup(x => x.BroadcastStorageDeleteAsync(It.IsAny<string>(), It.IsAny<object>()))
+        _mockSideEffects
+            .Setup(x => x.OnBulkDeletedAsync(
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ))
             .ThrowsAsync(expectedException);
 
         // Act & Assert
@@ -1036,10 +1028,6 @@ public class FoodServiceTests
                 x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>())
             )
             .ReturnsAsync(createdFoods);
-
-        _mockSignalRBroadcastService.Setup(x =>
-            x.BroadcastStorageCreateAsync(It.IsAny<string>(), It.IsAny<object>())
-        );
 
         // Act
         var result = await _foodService.CreateFoodAsync(inputFoods, CancellationToken.None);
@@ -1115,10 +1103,6 @@ public class FoodServiceTests
             )
             .ReturnsAsync(createdFoods);
 
-        _mockSignalRBroadcastService.Setup(x =>
-            x.BroadcastStorageCreateAsync(It.IsAny<string>(), It.IsAny<object>())
-        );
-
         // Act
         var result = await _foodService.CreateFoodAsync(
             foodsWithDifferentUnits,
@@ -1183,10 +1167,6 @@ public class FoodServiceTests
                 x.CreateFoodAsync(It.IsAny<IEnumerable<Food>>(), It.IsAny<CancellationToken>())
             )
             .ReturnsAsync(createdFoods);
-
-        _mockSignalRBroadcastService.Setup(x =>
-            x.BroadcastStorageCreateAsync(It.IsAny<string>(), It.IsAny<object>())
-        );
 
         // Act
         var result = await _foodService.CreateFoodAsync(foodsWithGi, CancellationToken.None);

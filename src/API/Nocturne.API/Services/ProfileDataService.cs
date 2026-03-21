@@ -16,7 +16,7 @@ namespace Nocturne.API.Services;
 public class ProfileDataService : IProfileDataService
 {
     private readonly IProfileRepository _profiles;
-    private readonly ISignalRBroadcastService _broadcastService;
+    private readonly IWriteSideEffects _sideEffects;
     private readonly ICacheService _cacheService;
     private readonly CacheConfiguration _cacheConfig;
     private readonly ITenantAccessor _tenantAccessor;
@@ -27,7 +27,7 @@ public class ProfileDataService : IProfileDataService
 
     public ProfileDataService(
         IProfileRepository profiles,
-        ISignalRBroadcastService broadcastService,
+        IWriteSideEffects sideEffects,
         ICacheService cacheService,
         IOptions<CacheConfiguration> cacheConfig,
         ITenantAccessor tenantAccessor,
@@ -35,12 +35,18 @@ public class ProfileDataService : IProfileDataService
     )
     {
         _profiles = profiles;
-        _broadcastService = broadcastService;
+        _sideEffects = sideEffects;
         _cacheService = cacheService;
         _cacheConfig = cacheConfig.Value;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
+
+    private WriteEffectOptions BuildWriteOptions() => new()
+    {
+        CacheKeysToRemove = [CacheKeyBuilder.BuildCurrentProfileKey(TenantCacheId)],
+        CachePatternsToClear = [CacheKeyBuilder.BuildProfileTimestampPattern(TenantCacheId)],
+    };
 
     /// <inheritdoc />
     public async Task<IEnumerable<Profile>> GetProfilesAsync(
@@ -147,48 +153,7 @@ public class ProfileDataService : IProfileDataService
             cancellationToken
         );
 
-        // Invalidate current profile cache since new profiles were created
-        try
-        {
-            await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantCacheId), cancellationToken);
-            _logger.LogDebug("Invalidated current profile cache after creating new profiles");
-
-            // Invalidate all profile timestamp caches since profiles were created
-            var profileTimestampPattern = CacheKeyBuilder.BuildProfileTimestampPattern(
-                TenantCacheId
-            );
-            await _cacheService.RemoveByPatternAsync(profileTimestampPattern, cancellationToken);
-            _logger.LogDebug(
-                "Invalidated profile timestamp pattern '{Pattern}' after creating {Count} profiles",
-                profileTimestampPattern,
-                createdProfiles.Count()
-            );
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to invalidate profile caches");
-        }
-
-        // Broadcast create events for the profiles (replaces legacy ctx.bus.emit('storage-socket-create'))
-        try
-        {
-            await _broadcastService.BroadcastStorageCreateAsync(
-                CollectionName,
-                new { colName = CollectionName, doc = createdProfiles }
-            );
-            _logger.LogDebug(
-                "Broadcasted storage create event for {ProfileCount} profiles",
-                createdProfiles.Count()
-            );
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(
-                ex,
-                "Failed to broadcast storage create event for {ProfileCount} profiles",
-                createdProfiles.Count()
-            );
-        }
+        await _sideEffects.OnCreatedAsync(CollectionName, createdProfiles.ToList(), BuildWriteOptions(), cancellationToken);
 
         return createdProfiles;
     }
@@ -208,53 +173,7 @@ public class ProfileDataService : IProfileDataService
 
         if (updatedProfile != null)
         {
-            // Invalidate current profile cache since a profile was updated
-            try
-            {
-                await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantCacheId), cancellationToken);
-                _logger.LogDebug(
-                    "Invalidated current profile cache after updating profile {ProfileId}",
-                    id
-                );
-
-                // Invalidate all profile timestamp caches since a profile was updated
-                var profileTimestampPattern = CacheKeyBuilder.BuildProfileTimestampPattern(
-                    TenantCacheId
-                );
-                await _cacheService.RemoveByPatternAsync(
-                    profileTimestampPattern,
-                    cancellationToken
-                );
-                _logger.LogDebug(
-                    "Invalidated profile timestamp pattern '{Pattern}' after updating profile {ProfileId}",
-                    profileTimestampPattern,
-                    id
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to invalidate profile caches");
-            }
-
-            try
-            {
-                await _broadcastService.BroadcastStorageUpdateAsync(
-                    CollectionName,
-                    new { colName = CollectionName, doc = updatedProfile }
-                );
-                _logger.LogDebug(
-                    "Broadcasted storage update event for profile {ProfileId}",
-                    updatedProfile.Id
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to broadcast storage update event for profile {ProfileId}",
-                    updatedProfile.Id
-                );
-            }
+            await _sideEffects.OnUpdatedAsync(CollectionName, updatedProfile, BuildWriteOptions(), cancellationToken);
         }
 
         return updatedProfile;
@@ -273,56 +192,7 @@ public class ProfileDataService : IProfileDataService
 
         if (deleted)
         {
-            // Invalidate current profile cache since a profile was deleted
-            try
-            {
-                await _cacheService.RemoveAsync(CacheKeyBuilder.BuildCurrentProfileKey(TenantCacheId), cancellationToken);
-                _logger.LogDebug(
-                    "Invalidated current profile cache after deleting profile {ProfileId}",
-                    id
-                );
-
-                // Invalidate all profile timestamp caches since a profile was deleted
-                var profileTimestampPattern = CacheKeyBuilder.BuildProfileTimestampPattern(
-                    TenantCacheId
-                );
-                await _cacheService.RemoveByPatternAsync(
-                    profileTimestampPattern,
-                    cancellationToken
-                );
-                _logger.LogDebug(
-                    "Invalidated profile timestamp pattern '{Pattern}' after deleting profile {ProfileId}",
-                    profileTimestampPattern,
-                    id
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to invalidate profile caches");
-            }
-
-            if (profileToDelete != null)
-            {
-                try
-                {
-                    await _broadcastService.BroadcastStorageDeleteAsync(
-                        CollectionName,
-                        new { colName = CollectionName, doc = profileToDelete }
-                    );
-                    _logger.LogDebug(
-                        "Broadcasted storage delete event for profile {ProfileId}",
-                        profileToDelete.Id
-                    );
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(
-                        ex,
-                        "Failed to broadcast storage delete event for profile {ProfileId}",
-                        profileToDelete.Id
-                    );
-                }
-            }
+            await _sideEffects.OnDeletedAsync(CollectionName, profileToDelete, BuildWriteOptions(), cancellationToken);
         }
 
         return deleted;

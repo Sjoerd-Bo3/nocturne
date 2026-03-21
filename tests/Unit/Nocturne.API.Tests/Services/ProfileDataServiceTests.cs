@@ -18,7 +18,7 @@ namespace Nocturne.API.Tests.Services;
 public class ProfileDataServiceTests
 {
     private readonly Mock<IProfileRepository> _mockProfileRepository;
-    private readonly Mock<ISignalRBroadcastService> _mockSignalRBroadcastService;
+    private readonly Mock<IWriteSideEffects> _mockSideEffects;
     private readonly Mock<ICacheService> _mockCacheService;
     private readonly Mock<IOptions<CacheConfiguration>> _mockCacheConfig;
     private readonly Mock<ILogger<ProfileDataService>> _mockLogger;
@@ -27,7 +27,7 @@ public class ProfileDataServiceTests
     public ProfileDataServiceTests()
     {
         _mockProfileRepository = new Mock<IProfileRepository>();
-        _mockSignalRBroadcastService = new Mock<ISignalRBroadcastService>();
+        _mockSideEffects = new Mock<IWriteSideEffects>();
         _mockCacheService = new Mock<ICacheService>();
         _mockCacheConfig = new Mock<IOptions<CacheConfiguration>>();
         _mockLogger = new Mock<ILogger<ProfileDataService>>();
@@ -36,7 +36,7 @@ public class ProfileDataServiceTests
 
         _profileDataService = new ProfileDataService(
             _mockProfileRepository.Object,
-            _mockSignalRBroadcastService.Object,
+            _mockSideEffects.Object,
             _mockCacheService.Object,
             _mockCacheConfig.Object,
             MockTenantAccessor.Create().Object,
@@ -205,8 +205,13 @@ public class ProfileDataServiceTests
             x => x.CreateProfilesAsync(profiles, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageCreateAsync("profiles", It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnCreatedAsync(
+                "profiles",
+                It.IsAny<IReadOnlyList<Profile>>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -250,8 +255,13 @@ public class ProfileDataServiceTests
             x => x.UpdateProfileAsync(profileId, profile, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageUpdateAsync("profiles", It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnUpdatedAsync(
+                "profiles",
+                It.IsAny<Profile>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -278,8 +288,13 @@ public class ProfileDataServiceTests
 
         // Assert
         Assert.Null(result);
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageUpdateAsync(It.IsAny<string>(), It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnUpdatedAsync(
+                It.IsAny<string>(),
+                It.IsAny<Profile>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Never
         );
     }
@@ -318,8 +333,13 @@ public class ProfileDataServiceTests
             x => x.DeleteProfileAsync(profileId, It.IsAny<CancellationToken>()),
             Times.Once
         );
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageDeleteAsync("profiles", It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnDeletedAsync(
+                "profiles",
+                It.IsAny<Profile>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Once
         );
     }
@@ -344,8 +364,13 @@ public class ProfileDataServiceTests
 
         // Assert
         Assert.False(result);
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageDeleteAsync(It.IsAny<string>(), It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnDeletedAsync(
+                It.IsAny<string>(),
+                It.IsAny<Profile>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Never
         );
     }
@@ -449,8 +474,13 @@ public class ProfileDataServiceTests
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _profileDataService.CreateProfilesAsync(profiles, CancellationToken.None)
         );
-        _mockSignalRBroadcastService.Verify(
-            x => x.BroadcastStorageCreateAsync(It.IsAny<string>(), It.IsAny<object>()),
+        _mockSideEffects.Verify(
+            x => x.OnCreatedAsync(
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<Profile>>(),
+                It.IsAny<WriteEffectOptions>(),
+                It.IsAny<CancellationToken>()
+            ),
             Times.Never
         );
     }

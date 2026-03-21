@@ -14,13 +14,14 @@ public class FoodService : IFoodService
 {
     private readonly IFoodRepository _food;
     private readonly IDocumentProcessingService _documentProcessingService;
-    private readonly ISignalRBroadcastService _signalRBroadcastService;
+    private readonly IWriteSideEffects _sideEffects;
     private readonly ILogger<FoodService> _logger;
+    private const string CollectionName = "food";
 
     public FoodService(
         IFoodRepository food,
         IDocumentProcessingService documentProcessingService,
-        ISignalRBroadcastService signalRBroadcastService,
+        IWriteSideEffects sideEffects,
         ILogger<FoodService> logger
     )
     {
@@ -29,9 +30,9 @@ public class FoodService : IFoodService
         _documentProcessingService =
             documentProcessingService
             ?? throw new ArgumentNullException(nameof(documentProcessingService));
-        _signalRBroadcastService =
-            signalRBroadcastService
-            ?? throw new ArgumentNullException(nameof(signalRBroadcastService));
+        _sideEffects =
+            sideEffects
+            ?? throw new ArgumentNullException(nameof(sideEffects));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -100,16 +101,7 @@ public class FoodService : IFoodService
             );
             var resultList = createdFoods.ToList();
 
-            // Broadcast WebSocket event for storage create
-            await _signalRBroadcastService.BroadcastStorageCreateAsync(
-                "food",
-                new
-                {
-                    collection = "food",
-                    data = resultList,
-                    count = resultList.Count,
-                }
-            );
+            await _sideEffects.OnCreatedAsync(CollectionName, resultList, cancellationToken: cancellationToken);
 
             _logger.LogDebug("Successfully created {Count} food records", resultList.Count);
             return resultList;
@@ -262,17 +254,7 @@ public class FoodService : IFoodService
 
             if (updatedFood != null)
             {
-                // Broadcast WebSocket event for storage update
-                await _signalRBroadcastService.BroadcastStorageUpdateAsync(
-                    "food",
-                    new
-                    {
-                        collection = "food",
-                        data = updatedFood,
-                        id = id,
-                    }
-                );
-
+                await _sideEffects.OnUpdatedAsync(CollectionName, updatedFood, cancellationToken: cancellationToken);
                 _logger.LogDebug("Successfully updated food record with ID: {Id}", id);
             }
 
@@ -299,12 +281,7 @@ public class FoodService : IFoodService
 
             if (deleted)
             {
-                // Broadcast WebSocket event for storage delete
-                await _signalRBroadcastService.BroadcastStorageDeleteAsync(
-                    "food",
-                    new { collection = "food", id = id }
-                );
-
+                await _sideEffects.OnDeletedAsync<Food>(CollectionName, null, cancellationToken: cancellationToken);
                 _logger.LogDebug("Successfully deleted food record with ID: {Id}", id);
             }
 
@@ -334,17 +311,7 @@ public class FoodService : IFoodService
 
             if (deletedCount > 0)
             {
-                // Broadcast WebSocket event for bulk storage delete
-                await _signalRBroadcastService.BroadcastStorageDeleteAsync(
-                    "food",
-                    new
-                    {
-                        collection = "food",
-                        filter = find,
-                        deletedCount = deletedCount,
-                    }
-                );
-
+                await _sideEffects.OnBulkDeletedAsync(CollectionName, deletedCount, cancellationToken: cancellationToken);
                 _logger.LogDebug("Successfully bulk deleted {Count} food records", deletedCount);
             }
 
