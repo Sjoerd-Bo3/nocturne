@@ -1,24 +1,29 @@
 import type { Chat } from "chat";
+import { createStateToken } from "../lib/state-tokens.js";
 import { createLogger } from "../lib/logger.js";
 
 const logger = createLogger();
 
-export function registerAccountCommands(bot: Chat) {
+export function registerAccountCommands(bot: Chat, nocturneUrl: string) {
   bot.onSlashCommand("/connect", async (event) => {
-    await event.thread.post(
-      "Account linking is not yet available. This feature is coming soon.",
-    );
+    const platformIdentity = `${event.adapter.name}:${event.user.userId}`;
+    const token = createStateToken(platformIdentity);
+    const link = `${nocturneUrl}/auth/bot/authorize?state=${token}`;
+
+    const message = `To connect your Nocturne account, click here: ${link}\n\nThis link expires in 10 minutes.`;
+
+    try {
+      await event.channel.postEphemeral(event.user, message, { fallbackToDM: true });
+    } catch {
+      await event.channel.post(message);
+    }
   });
 
   bot.onSlashCommand("/disconnect", async (event) => {
-    await event.thread.post(
-      "Account unlinking is not yet available. This feature is coming soon.",
-    );
+    await event.channel.post("Account unlinking is not yet available.");
   });
 
   bot.onSlashCommand("/status", async (event) => {
-    await event.thread.post(
-      "Status checking is not yet available. This feature is coming soon.",
-    );
+    await event.channel.post("Status checking is not yet available.");
   });
 }

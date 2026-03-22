@@ -6,24 +6,24 @@ import { createLogger } from "../lib/logger.js";
 const logger = createLogger();
 
 export function registerGlucoseCommands(bot: Chat, api: BotApiClient) {
-  const handleBg = async (thread: any) => {
+  const handleBg = async (channel: { post(msg: any): Promise<any> }) => {
     try {
-      const result = await api.sensorGlucose.getAll(1, 1);
-      const readings = result.items ?? [];
+      const result = await api.sensorGlucose.getAll(undefined, undefined, 1);
+      const readings = result.data ?? [];
 
       if (!readings.length) {
-        await thread.post("No recent glucose readings found.");
+        await channel.post("No recent glucose readings found.");
         return;
       }
 
       const card = GlucoseCard({ reading: readings[0] });
-      await thread.post(card);
+      await channel.post(card);
     } catch (err) {
       logger.error("Error handling /bg command:", err);
-      await thread.post("Failed to fetch glucose data. Please try again.");
+      await channel.post("Failed to fetch glucose data. Please try again.");
     }
   };
 
-  bot.onSlashCommand("/bg", async (event) => handleBg(event.thread));
-  bot.onSlashCommand("/glucose", async (event) => handleBg(event.thread));
+  bot.onSlashCommand("/bg", async (event) => handleBg(event.channel));
+  bot.onSlashCommand("/glucose", async (event) => handleBg(event.channel));
 }

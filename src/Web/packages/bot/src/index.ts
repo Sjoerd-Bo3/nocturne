@@ -3,5 +3,18 @@ export { AlertDeliveryHandler } from "./alerts/deliver.js";
 export { AlertCard, AcknowledgedCard, ResolvedCard } from "./cards/alert.js";
 export { GlucoseCard } from "./cards/glucose.js";
 export { registerAllCommands } from "./commands/index.js";
+export { createStateToken, resolveStateToken } from "./lib/state-tokens.js";
 export { formatGlucose, trendArrow, TREND_ARROWS } from "./lib/format.js";
-export type { BotApiClient, AlertDispatchEvent, AlertPayload, SensorGlucoseReading, ChatIdentityLink } from "./types.js";
+export type {
+  BotApiClient,
+  AlertDispatchEvent,
+  AlertPayload,
+  SensorGlucoseReading,
+  ChatIdentityLinkResponse,
+  PendingDeliveryResponse,
+  AcknowledgeRequest,
+  MarkDeliveredRequest,
+  MarkFailedRequest,
+  HeartbeatRequest,
+  CreateChatIdentityLinkRequest,
+} from "./types.js";

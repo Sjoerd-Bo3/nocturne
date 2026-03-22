@@ -23,9 +23,16 @@ export class AlertDeliveryHandler {
       const card = AlertCard({ payload });
       const sent = await target.post(card);
 
+      await this.api.alerts.markDelivered(deliveryId, {
+        platformMessageId: sent?.id,
+      });
+
       logger.info(`Alert delivered via ${channelType} to ${destination}`);
     } catch (err) {
       logger.error(`Alert delivery failed for ${deliveryId}:`, err);
+      await this.api.alerts.markFailed(deliveryId, {
+        error: err instanceof Error ? err.message : String(err),
+      }).catch((e) => logger.error("Failed to report delivery failure:", e));
     }
   }
 }
