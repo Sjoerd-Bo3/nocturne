@@ -1,0 +1,500 @@
+using System.Text.Json;
+using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
+using Moq;
+using Nocturne.API.Services.Alerts.Evaluators;
+using Nocturne.Core.Contracts.Alerts;
+using Nocturne.Core.Models;
+using Xunit;
+
+namespace Nocturne.API.Tests.Services.Alerts;
+
+#region ThresholdEvaluator
+
+[Trait("Category", "Unit")]
+public class ThresholdEvaluatorTests
+{
+    private readonly ThresholdEvaluator _sut = new();
+
+    [Fact]
+    public void ConditionType_ShouldBeThreshold()
+    {
+        _sut.ConditionType.Should().Be("threshold");
+    }
+
+    [Fact]
+    public void Below_TriggersWhenValueBelowThreshold()
+    {
+        var json = """{"direction": "below", "value": 70}""";
+        var context = MakeContext(latestValue: 65);
+
+        _sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Below_DoesNotTriggerWhenValueAboveThreshold()
+    {
+        var json = """{"direction": "below", "value": 70}""";
+        var context = MakeContext(latestValue: 85);
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Below_ExactBoundaryReturnsFalse()
+    {
+        var json = """{"direction": "below", "value": 70}""";
+        var context = MakeContext(latestValue: 70);
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Above_TriggersWhenValueAboveThreshold()
+    {
+        var json = """{"direction": "above", "value": 250}""";
+        var context = MakeContext(latestValue: 260);
+
+        _sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Above_DoesNotTriggerWhenValueBelowThreshold()
+    {
+        var json = """{"direction": "above", "value": 250}""";
+        var context = MakeContext(latestValue: 200);
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Above_ExactBoundaryReturnsFalse()
+    {
+        var json = """{"direction": "above", "value": 250}""";
+        var context = MakeContext(latestValue: 250);
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void NullLatestValue_ReturnsFalse()
+    {
+        var json = """{"direction": "below", "value": 70}""";
+        var context = MakeContext(latestValue: null);
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void UnknownDirection_ReturnsFalse()
+    {
+        var json = """{"direction": "sideways", "value": 70}""";
+        var context = MakeContext(latestValue: 50);
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    private static SensorContext MakeContext(decimal? latestValue = 100) => new()
+    {
+        LatestValue = latestValue,
+        LatestTimestamp = DateTime.UtcNow,
+        TrendRate = 0m,
+        LastReadingAt = DateTime.UtcNow
+    };
+}
+
+#endregion
+
+#region RateOfChangeEvaluator
+
+[Trait("Category", "Unit")]
+public class RateOfChangeEvaluatorTests
+{
+    private readonly RateOfChangeEvaluator _sut = new();
+
+    [Fact]
+    public void ConditionType_ShouldBeRateOfChange()
+    {
+        _sut.ConditionType.Should().Be("rate_of_change");
+    }
+
+    [Fact]
+    public void Falling_TriggersWhenRateAtNegativeThreshold()
+    {
+        // rate = -3.0, threshold = 3.0 => -3.0 <= -3.0 => true
+        var json = """{"direction": "falling", "rate": 3.0}""";
+        var context = MakeContext(trendRate: -3.0m);
+
+        _sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Falling_TriggersWhenRateBelowNegativeThreshold()
+    {
+        var json = """{"direction": "falling", "rate": 3.0}""";
+        var context = MakeContext(trendRate: -4.0m);
+
+        _sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Falling_DoesNotTriggerWhenRateAboveNegativeThreshold()
+    {
+        var json = """{"direction": "falling", "rate": 3.0}""";
+        var context = MakeContext(trendRate: -2.0m);
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Rising_TriggersWhenRateAtThreshold()
+    {
+        var json = """{"direction": "rising", "rate": 3.0}""";
+        var context = MakeContext(trendRate: 3.0m);
+
+        _sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Rising_TriggersWhenRateAboveThreshold()
+    {
+        var json = """{"direction": "rising", "rate": 3.0}""";
+        var context = MakeContext(trendRate: 5.0m);
+
+        _sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Rising_DoesNotTriggerWhenRateBelowThreshold()
+    {
+        var json = """{"direction": "rising", "rate": 3.0}""";
+        var context = MakeContext(trendRate: 2.0m);
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void NullTrendRate_ReturnsFalse()
+    {
+        var json = """{"direction": "falling", "rate": 3.0}""";
+        var context = MakeContext(trendRate: null);
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void UnknownDirection_ReturnsFalse()
+    {
+        var json = """{"direction": "spinning", "rate": 3.0}""";
+        var context = MakeContext(trendRate: 10m);
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    private static SensorContext MakeContext(decimal? trendRate = 0m) => new()
+    {
+        LatestValue = 100m,
+        LatestTimestamp = DateTime.UtcNow,
+        TrendRate = trendRate,
+        LastReadingAt = DateTime.UtcNow
+    };
+}
+
+#endregion
+
+#region SignalLossEvaluator
+
+[Trait("Category", "Unit")]
+public class SignalLossEvaluatorTests
+{
+    // Use a fixed "now" so tests are deterministic.
+    // FakeTimeProvider is set to this exact instant.
+    private static readonly DateTime FixedNow = new(2026, 3, 22, 12, 0, 0, DateTimeKind.Utc);
+    private readonly SignalLossEvaluator _sut;
+
+    public SignalLossEvaluatorTests()
+    {
+        var timeProvider = new FakeTimeProvider(new DateTimeOffset(FixedNow));
+        _sut = new SignalLossEvaluator(timeProvider);
+    }
+
+    [Fact]
+    public void ConditionType_ShouldBeSignalLoss()
+    {
+        _sut.ConditionType.Should().Be("signal_loss");
+    }
+
+    [Fact]
+    public void TriggersWhenElapsedExceedsTimeout()
+    {
+        var json = """{"timeout_minutes": 15}""";
+        // Last reading was 20 minutes ago
+        var context = MakeContext(lastReadingAt: FixedNow.AddMinutes(-20));
+
+        _sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void DoesNotTriggerWhenWithinWindow()
+    {
+        var json = """{"timeout_minutes": 15}""";
+        // Last reading was 10 minutes ago
+        var context = MakeContext(lastReadingAt: FixedNow.AddMinutes(-10));
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void DoesNotTriggerAtExactBoundary()
+    {
+        var json = """{"timeout_minutes": 15}""";
+        // Last reading was exactly 15 minutes ago — not exceeded, so no alert
+        var context = MakeContext(lastReadingAt: FixedNow.AddMinutes(-15));
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void NullLastReadingAt_ReturnsTrue()
+    {
+        var json = """{"timeout_minutes": 15}""";
+        var context = MakeContext(lastReadingAt: null);
+
+        _sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    private static SensorContext MakeContext(DateTime? lastReadingAt) => new()
+    {
+        LatestValue = 100m,
+        LatestTimestamp = FixedNow,
+        TrendRate = 0m,
+        LastReadingAt = lastReadingAt
+    };
+}
+
+#endregion
+
+#region CompositeEvaluator
+
+[Trait("Category", "Unit")]
+public class CompositeEvaluatorTests
+{
+    private static readonly JsonSerializerOptions SnakeCaseOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        PropertyNameCaseInsensitive = true
+    };
+
+    private readonly ConditionEvaluatorRegistry _registry;
+    private readonly CompositeEvaluator _sut;
+
+    public CompositeEvaluatorTests()
+    {
+        var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 3, 22, 12, 0, 0, TimeSpan.Zero));
+        var evaluators = new IConditionEvaluator[]
+        {
+            new ThresholdEvaluator(),
+            new RateOfChangeEvaluator(),
+            new SignalLossEvaluator(timeProvider)
+        };
+
+        _registry = new ConditionEvaluatorRegistry(evaluators);
+        _sut = new CompositeEvaluator(_registry);
+    }
+
+    [Fact]
+    public void ConditionType_ShouldBeComposite()
+    {
+        _sut.ConditionType.Should().Be("composite");
+    }
+
+    [Fact]
+    public void And_AllTrue_ReturnsTrue()
+    {
+        // Both conditions true: value < 70 AND falling rate <= -3
+        var composite = new CompositeCondition("and", new List<ConditionNode>
+        {
+            new("threshold", Threshold: new ThresholdCondition("below", 70)),
+            new("rate_of_change", RateOfChange: new RateOfChangeCondition("falling", 3.0m))
+        });
+        var json = JsonSerializer.Serialize(composite, SnakeCaseOptions);
+        var context = new SensorContext
+        {
+            LatestValue = 60m,
+            LatestTimestamp = DateTime.UtcNow,
+            TrendRate = -4.0m,
+            LastReadingAt = DateTime.UtcNow
+        };
+
+        _sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void And_OneFalse_ReturnsFalse()
+    {
+        // First true (value < 70), second false (rate > -3)
+        var composite = new CompositeCondition("and", new List<ConditionNode>
+        {
+            new("threshold", Threshold: new ThresholdCondition("below", 70)),
+            new("rate_of_change", RateOfChange: new RateOfChangeCondition("falling", 3.0m))
+        });
+        var json = JsonSerializer.Serialize(composite, SnakeCaseOptions);
+        var context = new SensorContext
+        {
+            LatestValue = 60m,
+            LatestTimestamp = DateTime.UtcNow,
+            TrendRate = -1.0m,
+            LastReadingAt = DateTime.UtcNow
+        };
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Or_AnyTrue_ReturnsTrue()
+    {
+        // First false (value > 70), second true (rate <= -3)
+        var composite = new CompositeCondition("or", new List<ConditionNode>
+        {
+            new("threshold", Threshold: new ThresholdCondition("below", 70)),
+            new("rate_of_change", RateOfChange: new RateOfChangeCondition("falling", 3.0m))
+        });
+        var json = JsonSerializer.Serialize(composite, SnakeCaseOptions);
+        var context = new SensorContext
+        {
+            LatestValue = 100m,
+            LatestTimestamp = DateTime.UtcNow,
+            TrendRate = -4.0m,
+            LastReadingAt = DateTime.UtcNow
+        };
+
+        _sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Or_AllFalse_ReturnsFalse()
+    {
+        var composite = new CompositeCondition("or", new List<ConditionNode>
+        {
+            new("threshold", Threshold: new ThresholdCondition("below", 70)),
+            new("rate_of_change", RateOfChange: new RateOfChangeCondition("falling", 3.0m))
+        });
+        var json = JsonSerializer.Serialize(composite, SnakeCaseOptions);
+        var context = new SensorContext
+        {
+            LatestValue = 100m,
+            LatestTimestamp = DateTime.UtcNow,
+            TrendRate = -1.0m,
+            LastReadingAt = DateTime.UtcNow
+        };
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void EmptyConditionsList_ReturnsFalse()
+    {
+        var composite = new CompositeCondition("and", new List<ConditionNode>());
+        var json = JsonSerializer.Serialize(composite, SnakeCaseOptions);
+        var context = new SensorContext
+        {
+            LatestValue = 60m,
+            LatestTimestamp = DateTime.UtcNow,
+            TrendRate = -4.0m,
+            LastReadingAt = DateTime.UtcNow
+        };
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+
+    [Fact]
+    public void NestedComposite_Works()
+    {
+        // Register the composite evaluator itself in the registry
+        var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 3, 22, 12, 0, 0, TimeSpan.Zero));
+        var evaluators = new List<IConditionEvaluator>
+        {
+            new ThresholdEvaluator(),
+            new RateOfChangeEvaluator(),
+            new SignalLossEvaluator(timeProvider)
+        };
+        var registry = new ConditionEvaluatorRegistry(evaluators);
+        var compositeEval = new CompositeEvaluator(registry);
+        // Re-create registry with composite included
+        evaluators.Add(compositeEval);
+        var fullRegistry = new ConditionEvaluatorRegistry(evaluators);
+        var sut = new CompositeEvaluator(fullRegistry);
+
+        // Outer OR: (inner AND fails) OR (threshold succeeds)
+        var inner = new CompositeCondition("and", new List<ConditionNode>
+        {
+            new("threshold", Threshold: new ThresholdCondition("below", 70)),
+            new("rate_of_change", RateOfChange: new RateOfChangeCondition("falling", 3.0m))
+        });
+
+        var outer = new CompositeCondition("or", new List<ConditionNode>
+        {
+            new("composite", Composite: inner),
+            new("threshold", Threshold: new ThresholdCondition("above", 250))
+        });
+
+        var json = JsonSerializer.Serialize(outer, SnakeCaseOptions);
+        var context = new SensorContext
+        {
+            LatestValue = 300m, // above 250 is true, below 70 is false
+            LatestTimestamp = DateTime.UtcNow,
+            TrendRate = -1.0m, // not falling fast enough for inner AND
+            LastReadingAt = DateTime.UtcNow
+        };
+
+        sut.Evaluate(json, context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void UnknownOperator_ReturnsFalse()
+    {
+        var composite = new CompositeCondition("xor", new List<ConditionNode>
+        {
+            new("threshold", Threshold: new ThresholdCondition("below", 70))
+        });
+        var json = JsonSerializer.Serialize(composite, SnakeCaseOptions);
+        var context = new SensorContext
+        {
+            LatestValue = 60m,
+            LatestTimestamp = DateTime.UtcNow,
+            TrendRate = 0m,
+            LastReadingAt = DateTime.UtcNow
+        };
+
+        _sut.Evaluate(json, context).Should().BeFalse();
+    }
+}
+
+#endregion
+
+#region ConditionEvaluatorRegistry
+
+[Trait("Category", "Unit")]
+public class ConditionEvaluatorRegistryTests
+{
+    [Fact]
+    public void GetEvaluator_ReturnsCorrectEvaluatorByType()
+    {
+        var threshold = new ThresholdEvaluator();
+        var roc = new RateOfChangeEvaluator();
+        var registry = new ConditionEvaluatorRegistry(new IConditionEvaluator[] { threshold, roc });
+
+        registry.GetEvaluator("threshold").Should().BeSameAs(threshold);
+        registry.GetEvaluator("rate_of_change").Should().BeSameAs(roc);
+    }
+
+    [Fact]
+    public void GetEvaluator_ReturnsNullForUnknownType()
+    {
+        var registry = new ConditionEvaluatorRegistry(new IConditionEvaluator[] { new ThresholdEvaluator() });
+
+        registry.GetEvaluator("nonexistent").Should().BeNull();
+    }
+}
+
+#endregion

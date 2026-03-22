@@ -3,13 +3,13 @@
 // Source: openapi.json
 
 import { getRequestEvent, query, command, form } from '$app/server';
-import { error, redirect, invalid } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { TestMigrationConnectionRequestSchema, StartMigrationRequestSchema } from '$lib/api/generated/schemas';
 import { type TestMigrationConnectionRequest, type StartMigrationRequest } from '$api';
 
 /** Test a migration source connection */
-export const testConnection = form(TestMigrationConnectionRequestSchema, async (request) => {
+export const testConnection = form(TestMigrationConnectionRequestSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -25,7 +25,7 @@ export const testConnection = form(TestMigrationConnectionRequestSchema, async (
 });
 
 /** Start a new migration job */
-export const startMigration = form(StartMigrationRequestSchema, async (request) => {
+export const startMigration = form(StartMigrationRequestSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

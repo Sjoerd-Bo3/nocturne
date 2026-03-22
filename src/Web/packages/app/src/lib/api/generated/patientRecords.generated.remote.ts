@@ -3,7 +3,7 @@
 // Source: openapi.json
 
 import { getRequestEvent, query, command, form } from '$app/server';
-import { error, redirect, invalid } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { PatientRecordSchema, PatientDeviceSchema, PatientInsulinSchema } from '$lib/api/generated/schemas';
 import { type PatientRecord, type PatientDevice, type PatientInsulin } from '$api';
@@ -58,7 +58,7 @@ export const getDevices = query(async () => {
 });
 
 /** Create a new patient device */
-export const createDevice = form(PatientDeviceSchema, async (request) => {
+export const createDevice = form(PatientDeviceSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -77,7 +77,7 @@ export const createDevice = form(PatientDeviceSchema, async (request) => {
 });
 
 /** Update a patient device */
-export const updateDevice = form(z.object({ id: z.string(), request: PatientDeviceSchema }), async ({ id, request }) => {
+export const updateDevice = form(z.object({ id: z.string(), request: PatientDeviceSchema }) as any, async ({ id, request }) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -130,7 +130,7 @@ export const getInsulins = query(async () => {
 });
 
 /** Create a new patient insulin */
-export const createInsulin = form(PatientInsulinSchema, async (request) => {
+export const createInsulin = form(PatientInsulinSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -149,7 +149,7 @@ export const createInsulin = form(PatientInsulinSchema, async (request) => {
 });
 
 /** Update a patient insulin */
-export const updateInsulin = form(z.object({ id: z.string(), request: PatientInsulinSchema }), async ({ id, request }) => {
+export const updateInsulin = form(z.object({ id: z.string(), request: PatientInsulinSchema }) as any, async ({ id, request }) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

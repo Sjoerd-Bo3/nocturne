@@ -3,7 +3,7 @@
 // Source: openapi.json
 
 import { getRequestEvent, query, form } from '$app/server';
-import { error, redirect, invalid } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { SetTemporaryPasswordRequestSchema } from '$lib/api/generated/schemas';
 import { type SetTemporaryPasswordRequest } from '$api';
@@ -24,7 +24,7 @@ export const getPendingPasswordResets = query(async () => {
 });
 
 /** Set a temporary password for a user (admin only) */
-export const setTemporaryPassword = form(SetTemporaryPasswordRequestSchema, async (request) => {
+export const setTemporaryPassword = form(SetTemporaryPasswordRequestSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -43,7 +43,7 @@ export const setTemporaryPassword = form(SetTemporaryPasswordRequestSchema, asyn
 });
 
 /** Handle a password reset request by generating a reset link (admin only) */
-export const handlePasswordReset = form(z.string(), async (requestId) => {
+export const handlePasswordReset = form(z.string() as any, async (requestId) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

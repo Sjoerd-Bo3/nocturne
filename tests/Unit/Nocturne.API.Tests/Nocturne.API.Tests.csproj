@@ -8,11 +8,9 @@
         <NoWarn>$(NoWarn);NU1608;NU1605</NoWarn>
     </PropertyGroup>
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
-        <PackageReference Include="xunit"/>
+        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
         <PackageReference Include="xunit.runner.visualstudio">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
@@ -21,17 +19,17 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
-        <PackageReference Include="Moq"/>
-        <PackageReference Include="FluentAssertions"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"/>
-        <PackageReference Include="Microsoft.Extensions.Options"/>
-        <PackageReference Include="Microsoft.Data.Sqlite"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+        <PackageReference Include="Moq" />
+        <PackageReference Include="FluentAssertions" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Options" />
+        <PackageReference Include="Microsoft.Data.Sqlite" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\API\Nocturne.API\Nocturne.API.csproj"/>
-        <ProjectReference Include="..\..\..\src\Connectors\Nocturne.Connectors.Glooko\Nocturne.Connectors.Glooko.csproj"/>
-        <ProjectReference Include="..\..\Shared\Nocturne.Tests.Shared\Nocturne.Tests.Shared.csproj"/>
+        <ProjectReference Include="..\..\..\src\API\Nocturne.API\Nocturne.API.csproj" />
+        <ProjectReference Include="..\..\..\src\Connectors\Nocturne.Connectors.Glooko\Nocturne.Connectors.Glooko.csproj" />
+        <ProjectReference Include="..\..\Shared\Nocturne.Tests.Shared\Nocturne.Tests.Shared.csproj" />
     </ItemGroup>
 </Project>

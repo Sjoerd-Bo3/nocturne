@@ -3,7 +3,7 @@
 // Source: openapi.json
 
 import { getRequestEvent, query, command, form } from '$app/server';
-import { error, redirect, invalid } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { CarbIntakeSchema, CarbIntakeFoodRequestSchema } from '$lib/api/generated/schemas';
 import { type CarbIntake, type CarbIntakeFoodRequest } from '$api';
@@ -24,7 +24,7 @@ export const getCarbIntakes = query(z.object({ from: z.coerce.date().optional(),
 });
 
 /** Create a new carb intake */
-export const createCarbIntake = form(CarbIntakeSchema, async (request) => {
+export const createCarbIntake = form(CarbIntakeSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -58,7 +58,7 @@ export const getCarbIntakeById = query(z.string(), async (id) => {
 });
 
 /** Update an existing carb intake */
-export const updateCarbIntake = form(z.object({ id: z.string(), request: CarbIntakeSchema }), async ({ id, request }) => {
+export const updateCarbIntake = form(z.object({ id: z.string(), request: CarbIntakeSchema }) as any, async ({ id, request }) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

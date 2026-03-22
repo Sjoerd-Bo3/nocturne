@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // src/Web/packages/remote-function-codegen/src/index.ts
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { defaultConfig } from './config.js';
 import { parseOpenApiSpec } from './parser.js';
@@ -35,6 +35,15 @@ async function main() {
 
   const remoteFunctionsDir = resolve(defaultConfig.outputDir, defaultConfig.remoteFunctionsOutput);
   mkdirSync(remoteFunctionsDir, { recursive: true });
+
+  // Clean up stale generated files not in the current output
+  const generatedFileNames = new Set(remoteFunctions.keys());
+  for (const existing of readdirSync(remoteFunctionsDir)) {
+    if (existing.endsWith('.generated.remote.ts') && !generatedFileNames.has(existing)) {
+      unlinkSync(resolve(remoteFunctionsDir, existing));
+      console.log(`  Removed stale: ${defaultConfig.remoteFunctionsOutput}/${existing}`);
+    }
+  }
 
   for (const [fileName, content] of remoteFunctions) {
     const filePath = resolve(remoteFunctionsDir, fileName);

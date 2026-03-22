@@ -3,7 +3,7 @@
 // Source: openapi.json
 
 import { getRequestEvent, query, command, form } from '$app/server';
-import { error, redirect, invalid } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { NoteSchema } from '$lib/api/generated/schemas';
 import { type Note } from '$api';
@@ -22,7 +22,7 @@ export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.c
   }
 });
 
-export const create = form(NoteSchema, async (request) => {
+export const create = form(NoteSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -51,7 +51,7 @@ export const getById = query(z.string(), async (id) => {
   }
 });
 
-export const update = form(z.object({ id: z.string(), request: NoteSchema }), async ({ id, request }) => {
+export const update = form(z.object({ id: z.string(), request: NoteSchema }) as any, async ({ id, request }) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

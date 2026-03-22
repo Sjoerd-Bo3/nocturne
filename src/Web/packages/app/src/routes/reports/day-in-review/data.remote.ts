@@ -5,7 +5,7 @@
 import { z } from 'zod';
 import { getRequestEvent, query } from '$app/server';
 import { error } from '@sveltejs/kit';
-import { getApsSnapshots } from '$api/generated';
+import { getAll as getApsSnapshots } from '$api/generated/apsSnapshots.generated.remote';
 import { getInsulinDeliveryStatistics } from '$api/generated/statistics.generated.remote';
 import { getProfileSummary } from '$api/generated/profiles.generated.remote';
 import { getLocalDayBoundariesUtc } from '$lib/utils/timezone';

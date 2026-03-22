@@ -3,7 +3,7 @@
 // Source: openapi.json
 
 import { getRequestEvent, query, command, form } from '$app/server';
-import { error, redirect, invalid } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { SubjectSchema, RoleSchema } from '$lib/api/generated/schemas';
 import { type Subject, type Role } from '$api';
@@ -54,7 +54,7 @@ export const getAllSubjects = query(async () => {
 });
 
 /** Create a new subject */
-export const createSubject = form(SubjectSchema, async (request) => {
+export const createSubject = form(SubjectSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
@@ -73,7 +73,7 @@ export const createSubject = form(SubjectSchema, async (request) => {
 });
 
 /** Update an existing subject */
-export const updateSubject = form(SubjectSchema, async (request) => {
+export const updateSubject = form(SubjectSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

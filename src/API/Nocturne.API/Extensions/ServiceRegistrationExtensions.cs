@@ -4,7 +4,10 @@ using Nocturne.API.Services;
 using Nocturne.API.Services.AidDetection;
 using Nocturne.API.Services.ChartData;
 using Nocturne.API.Services.ChartData.Stages;
+using Nocturne.API.Services.Alerts;
+using Nocturne.API.Services.Alerts.Evaluators;
 using Nocturne.API.Services.Alerts.Webhooks;
+using Nocturne.Core.Contracts.Alerts;
 using Nocturne.API.Services.Auth;
 using Nocturne.API.Services.BackgroundServices;
 using Nocturne.API.Services.ConnectorPublishing;
@@ -379,6 +382,16 @@ public static class ServiceRegistrationExtensions
 
         // Webhook infrastructure (reused by new alert engine)
         services.AddScoped<WebhookRequestSender>();
+
+        // Condition evaluators
+        services.AddSingleton<IConditionEvaluator, ThresholdEvaluator>();
+        services.AddSingleton<IConditionEvaluator, RateOfChangeEvaluator>();
+        services.AddSingleton<IConditionEvaluator, SignalLossEvaluator>();
+        services.AddSingleton<IConditionEvaluator, CompositeEvaluator>();
+        services.AddSingleton<ConditionEvaluatorRegistry>();
+
+        // Excursion tracker
+        services.AddScoped<IExcursionTracker, ExcursionTracker>();
 
         return services;
     }

@@ -37,16 +37,20 @@
     addCarbIntakeFood,
   } from "$api/generated/nutritions.generated.remote";
   import {
-    createBGCheck,
-    updateBGCheck,
-    deleteBGCheck,
-    createNote,
-    updateNote,
-    deleteNote,
-    createDeviceEvent,
-    updateDeviceEvent,
-    deleteDeviceEvent,
-  } from "$api/generated/observations.generated.remote";
+    create as createBGCheck,
+    update as updateBGCheck,
+    remove as deleteBGCheck,
+  } from "$api/generated/bgChecks.generated.remote";
+  import {
+    create as createNote,
+    update as updateNote,
+    remove as deleteNote,
+  } from "$api/generated/notes.generated.remote";
+  import {
+    create as createDeviceEvent,
+    update as updateDeviceEvent,
+    remove as deleteDeviceEvent,
+  } from "$api/generated/deviceEvents.generated.remote";
 
   interface Sections {
     bolus: Partial<Bolus> | null;
@@ -82,12 +86,10 @@
   let isDeleting = $state(false);
   let carbsPendingFoods = $state<PendingFood[]>([]);
 
-  // Form element refs for programmatic submission
-  let bolusFormRef = $state<HTMLFormElement | null>(null);
+  // Form element ref for programmatic submission (carbs only — bolus uses command())
   let carbsFormRef = $state<HTMLFormElement | null>(null);
 
-  // Track form submission completion
-  let bolusFormDone = $state(false);
+  // Track form/command completion
   let carbsFormDone = $state(false);
   let commandsDone = $state(false);
   let saveError = $state<string | null>(null);
@@ -114,12 +116,6 @@
     ),
   );
 
-  // Determine which bolus form to use
-  const existingBolusRecord = $derived(findExistingRecord("bolus"));
-  const activeBolusForm = $derived(
-    existingBolusRecord?.data.id ? updateBolusForm : createBolusForm,
-  );
-
   // Determine which carbs form to use
   const existingCarbsRecord = $derived(findExistingRecord("carbs"));
   const activeCarbsForm = $derived(
@@ -128,8 +124,6 @@
 
   // Aggregate pending state
   const formsPending = $derived(
-    !!createBolusForm.pending ||
-    !!updateBolusForm.pending ||
     !!createCarbIntakeForm.pending ||
     !!updateCarbIntakeForm.pending,
   );
@@ -235,26 +229,39 @@
   async function handleSave() {
     isSaving = true;
     saveError = null;
-    bolusFormDone = sections.bolus == null;
     carbsFormDone = sections.carbs == null;
     commandsDone = false;
 
     try {
       const promises: Promise<unknown>[] = [];
 
-      // Submit bolus form if active
-      if (sections.bolus != null && bolusFormRef) {
-        bolusFormRef.requestSubmit();
-      }
-
       // Submit carbs form if active
       if (sections.carbs != null && carbsFormRef) {
         carbsFormRef.requestSubmit();
       }
 
-      // Handle command()-based sections (observations)
+      // Handle command()-based sections (bolus + observations)
       const correlationId =
         activeSectionCount > 1 ? crypto.randomUUID() : undefined;
+
+      if (sections.bolus != null) {
+        const data: Partial<Bolus> = {
+          ...sections.bolus,
+          mills,
+          correlationId,
+        };
+        const existing = findExistingRecord("bolus");
+        if (existing?.data.id) {
+          promises.push(
+            updateBolusForm({
+              id: existing.data.id,
+              request: data as Bolus,
+            }),
+          );
+        } else {
+          promises.push(createBolusForm(data as Bolus));
+        }
+      }
 
       if (sections.bgCheck != null) {
         const data: Partial<BGCheck> = {
@@ -323,7 +330,7 @@
   }
 
   function checkAllDone() {
-    if (bolusFormDone && carbsFormDone && commandsDone) {
+    if (carbsFormDone && commandsDone) {
       if (!saveError) {
         toast.success(isEditing ? "Entry updated" : "Entry created");
         open = false;
@@ -337,7 +344,7 @@
 
   // Watch for form completion
   $effect(() => {
-    if (isSaving && bolusFormDone && carbsFormDone && commandsDone) {
+    if (isSaving && carbsFormDone && commandsDone) {
       checkAllDone();
     }
   });
@@ -401,55 +408,6 @@
     }
   }
 </script>
-
-<!-- Hidden bolus form -->
-{#if sections.bolus != null}
-  {@const correlationId = activeSectionCount > 1 ? crypto.randomUUID() : undefined}
-  <form
-    bind:this={bolusFormRef}
-    class="hidden"
-    {...activeBolusForm.enhance(async ({ submit }) => {
-      await submit();
-      if (activeBolusForm.result) {
-        bolusFormDone = true;
-      } else {
-        saveError = "Failed to save bolus";
-        bolusFormDone = true;
-      }
-    })}
-  >
-    {#if existingBolusRecord?.data.id}
-      <input type="hidden" name="id" value={existingBolusRecord.data.id} />
-    {/if}
-    <input type="hidden" name="mills" value={mills} />
-    {#if correlationId}
-      <input type="hidden" name="correlationId" value={correlationId} />
-    {/if}
-    <input type="hidden" name="insulin" value={sections.bolus?.insulin ?? 0} />
-    {#if sections.bolus?.programmed != null}
-      <input type="hidden" name="programmed" value={sections.bolus.programmed} />
-    {/if}
-    {#if sections.bolus?.delivered != null}
-      <input type="hidden" name="delivered" value={sections.bolus.delivered} />
-    {/if}
-    {#if sections.bolus?.bolusType}
-      <input type="hidden" name="bolusType" value={sections.bolus.bolusType} />
-    {/if}
-    <input type="hidden" name="automatic" value={sections.bolus?.automatic ?? false} />
-    {#if sections.bolus?.kind}
-      <input type="hidden" name="kind" value={sections.bolus.kind} />
-    {/if}
-    {#if sections.bolus?.duration != null}
-      <input type="hidden" name="duration" value={sections.bolus.duration} />
-    {/if}
-    {#if sections.bolus?.insulinType}
-      <input type="hidden" name="insulinType" value={sections.bolus.insulinType} />
-    {/if}
-    {#if sections.bolus?.unabsorbed != null}
-      <input type="hidden" name="unabsorbed" value={sections.bolus.unabsorbed} />
-    {/if}
-  </form>
-{/if}
 
 <!-- Hidden carbs form -->
 {#if sections.carbs != null}

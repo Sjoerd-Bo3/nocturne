@@ -11,7 +11,7 @@
   import type { EntryRecord } from "$lib/constants/entry-categories";
   import { ENTRY_CATEGORIES } from "$lib/constants/entry-categories";
   import { getAll as getBolusCalculations } from "$lib/api/generated/bolusCalculations.generated.remote";
-  import { getApsSnapshots } from "$lib/api/generated";
+  import { getAll as getApsSnapshots } from "$lib/api/generated/apsSnapshots.generated.remote";
   import { apsSnapshotToPrediction } from "$lib/utils/aps-snapshot-to-prediction";
   import GlucoseResponseChart from "./GlucoseResponseChart.svelte";
 
