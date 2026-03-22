@@ -156,6 +156,15 @@ internal sealed class AlertDeliveryService(
                 }
                 break;
 
+            case var ch when Providers.ChatBotProvider.SupportedChannelTypes.Contains(ch):
+                var chatBotProvider = serviceProvider.GetService<Providers.ChatBotProvider>();
+                if (chatBotProvider is not null)
+                {
+                    await chatBotProvider.SendAsync(delivery.Id, delivery.ChannelType, delivery.Destination, payload, ct);
+                    // Do not mark as delivered here — the bot reports back via MarkDeliveredAsync
+                }
+                break;
+
             default:
                 logger.LogWarning("Unsupported channel type '{ChannelType}' for delivery {DeliveryId}",
                     delivery.ChannelType, delivery.Id);
