@@ -1,13 +1,9 @@
 using System.Security.Claims;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Nocturne.API.Attributes;
 using Nocturne.Connectors.Core.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Configuration;
-using Nocturne.Infrastructure.Data.Entities;
-using Nocturne.Infrastructure.Data.Repositories;
 
 namespace Nocturne.API.Controllers.V4;
 
@@ -25,24 +21,18 @@ public class UISettingsController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IUISettingsService _settingsService;
-    private readonly AlertRuleRepository _alertRuleRepository;
-    private readonly NotificationPreferencesRepository _notificationPreferencesRepository;
 
     public UISettingsController(
         ILogger<UISettingsController> logger,
         IConfiguration configuration,
         IHttpClientFactory httpClientFactory,
-        IUISettingsService settingsService,
-        AlertRuleRepository alertRuleRepository,
-        NotificationPreferencesRepository notificationPreferencesRepository
+        IUISettingsService settingsService
     )
     {
         _logger = logger;
         _configuration = configuration;
         _httpClientFactory = httpClientFactory;
         _settingsService = settingsService;
-        _alertRuleRepository = alertRuleRepository;
-        _notificationPreferencesRepository = notificationPreferencesRepository;
     }
 
     /// <summary>
@@ -256,43 +246,9 @@ public class UISettingsController : ControllerBase
                 return Ok(GenerateDefaultAlarmConfiguration());
             }
 
-            // Get base config from settings service (for global settings like Volume, etc.)
             var config =
                 await _settingsService.GetAlarmConfigurationAsync(cancellationToken)
                 ?? GenerateDefaultAlarmConfiguration();
-
-            // Overlay data from AlertRuleRepository and NotificationPreferencesRepository
-            var userId = GetUserId();
-
-            // 1. Get Quiet Hours
-            var mapPreferences =
-                await _notificationPreferencesRepository.GetPreferencesForUserAsync(
-                    userId,
-                    cancellationToken
-                );
-            if (mapPreferences != null)
-            {
-                config.QuietHours = new QuietHoursConfiguration
-                {
-                    Enabled = mapPreferences.QuietHoursEnabled,
-                    StartTime = mapPreferences.QuietHoursStart?.ToString("HH:mm") ?? "22:00",
-                    EndTime = mapPreferences.QuietHoursEnd?.ToString("HH:mm") ?? "07:00",
-                    AllowCritical = mapPreferences.EmergencyOverrideQuietHours,
-                    // These are not yet in NotificationPreferencesEntity, so we keep what was in config or default
-                    ReduceVolume = config.QuietHours?.ReduceVolume ?? true,
-                    QuietVolume = config.QuietHours?.QuietVolume ?? 0,
-                };
-            }
-
-            // 2. Get Alarm Profiles
-            var activeRules = await _alertRuleRepository.GetRulesForUserAsync(
-                userId,
-                cancellationToken
-            );
-            if (activeRules.Length > 0)
-            {
-                config.Profiles = activeRules.Select(MapRuleToProfile).ToList();
-            }
 
             return Ok(config);
         }
@@ -331,142 +287,10 @@ public class UISettingsController : ControllerBase
                 return Ok(config);
             }
 
-            // 1. Save to legacy JSON store (backup/global settings)
             var savedConfig = await _settingsService.SaveAlarmConfigurationAsync(
                 config,
                 cancellationToken
             );
-
-            // 2. Save to new Repositories
-            var userId = GetUserId();
-
-            // Sync Quiet Hours
-            if (config.QuietHours != null)
-            {
-                TimeOnly? start = null;
-                TimeOnly? end = null;
-
-                if (TimeOnly.TryParse(config.QuietHours.StartTime, out var parsedStart))
-                    start = parsedStart;
-
-                if (TimeOnly.TryParse(config.QuietHours.EndTime, out var parsedEnd))
-                    end = parsedEnd;
-
-                var updated = await _notificationPreferencesRepository.UpdateQuietHoursAsync(
-                    userId,
-                    config.QuietHours.Enabled,
-                    start,
-                    end,
-                    config.QuietHours.AllowCritical,
-                    cancellationToken
-                );
-
-                if (!updated)
-                {
-                    var pref = new NotificationPreferencesEntity
-                    {
-                        UserId = userId,
-                        QuietHoursEnabled = config.QuietHours.Enabled,
-                        EmergencyOverrideQuietHours = config.QuietHours.AllowCritical,
-                        QuietHoursStart = start,
-                        QuietHoursEnd = end,
-                    };
-
-                    await _notificationPreferencesRepository.UpsertPreferencesAsync(
-                        pref,
-                        cancellationToken
-                    );
-                }
-            }
-
-            // Sync Profiles
-            if (config.Profiles != null)
-            {
-                // Get existing rules to handle deletions
-                var existingRules = await _alertRuleRepository.GetRulesForUserAsync(
-                    userId,
-                    cancellationToken
-                );
-                var validRuleIds = new HashSet<Guid>();
-
-                foreach (var profile in config.Profiles)
-                {
-                    var rule = MapProfileToRule(profile, userId);
-
-                    // Check if existing rule matches (by ID if strictly UUID, or by Name/Type logic if needed)
-                    // The Profile ID in app is string, Entity ID is Guid.
-                    // If Profile.Id is a Guid, we update. If not (e.g. "default-low"), we might creating new entries repeatedly?
-                    // We must ensure stable IDs.
-
-                    Guid ruleId;
-                    if (Guid.TryParse(profile.Id, out ruleId))
-                    {
-                        rule.Id = ruleId;
-                        var existing = existingRules.FirstOrDefault(r => r.Id == ruleId);
-                        if (existing != null)
-                        {
-                            await _alertRuleRepository.UpdateRuleAsync(
-                                ruleId,
-                                rule,
-                                cancellationToken
-                            );
-                            validRuleIds.Add(ruleId);
-                        }
-                        else
-                        {
-                            // If ID is Guid but not found, create new (with that ID if possible, or new)
-                            await _alertRuleRepository.CreateRuleAsync(rule, cancellationToken);
-                            validRuleIds.Add(rule.Id);
-                        }
-                    }
-                    else
-                    {
-                        // Profile ID is not a Guid (e.g. "default-urgent-low").
-                        // We should check if we already have a rule for this AlarmType?
-                        // Or just create a new one and let the frontend update its ID?
-                        // Better: Try to match by Name or AlarmType if no Guid ID.
-                        var existing = existingRules.FirstOrDefault(r => r.Name == profile.Name); // Heuristic
-
-                        if (existing != null)
-                        {
-                            rule.Id = existing.Id; // Keep existing ID
-                            await _alertRuleRepository.UpdateRuleAsync(
-                                existing.Id,
-                                rule,
-                                cancellationToken
-                            );
-                            validRuleIds.Add(existing.Id);
-                            // Update the profile ID in returned config to match the GUID
-                            profile.Id = existing.Id.ToString();
-                        }
-                        else
-                        {
-                            var created = await _alertRuleRepository.CreateRuleAsync(
-                                rule,
-                                cancellationToken
-                            );
-                            validRuleIds.Add(created.Id);
-                            profile.Id = created.Id.ToString();
-                        }
-                    }
-                }
-
-                // Disable rules not present in the update to avoid FK violations in alert_history.
-                foreach (var inputRule in existingRules)
-                {
-                    if (!validRuleIds.Contains(inputRule.Id))
-                    {
-                        await _alertRuleRepository.SetRuleEnabledAsync(
-                            inputRule.Id,
-                            false,
-                            cancellationToken
-                        );
-                    }
-                }
-
-                // Update config with the (potentially new) IDs
-                savedConfig.Profiles = config.Profiles;
-            }
 
             return Ok(savedConfig);
         }
@@ -507,53 +331,7 @@ public class UISettingsController : ControllerBase
                 );
             }
 
-            // Logic: Save to Repo then refresh full config
-            var userId = GetUserId();
-            var rule = MapProfileToRule(profile, userId);
-
-            if (Guid.TryParse(profile.Id, out var ruleId))
-            {
-                var existing = await _alertRuleRepository.GetRuleByIdAsync(
-                    ruleId,
-                    cancellationToken
-                );
-                if (existing != null)
-                {
-                    await _alertRuleRepository.UpdateRuleAsync(ruleId, rule, cancellationToken);
-                }
-                else
-                {
-                    await _alertRuleRepository.CreateRuleAsync(rule, cancellationToken);
-                }
-            }
-            else
-            {
-                // Try match by name
-                var existingRules = await _alertRuleRepository.GetRulesForUserAsync(
-                    userId,
-                    cancellationToken
-                );
-                var existing = existingRules.FirstOrDefault(r => r.Name == profile.Name);
-                if (existing != null)
-                {
-                    await _alertRuleRepository.UpdateRuleAsync(
-                        existing.Id,
-                        rule,
-                        cancellationToken
-                    );
-                }
-                else
-                {
-                    await _alertRuleRepository.CreateRuleAsync(rule, cancellationToken);
-                }
-            }
-
-            // Also update legacy store to keep in sync
-            // NOTE: This might ideally be done by fetching fresh data and saving it back to settings service
-            // but for now we'll just rely on SaveAlarmConfiguration doing the heavy lifting if the frontend calls it.
-            // If the frontend calls this endpoint, we might get out of sync with SettingsService JSON.
-            // It's safer to fetch the full config from Repo and save to SettingsService.
-
+            // TODO: Re-implement with new alert engine
             return await GetAlarmConfiguration(cancellationToken);
         }
         catch (Exception ex)
@@ -590,12 +368,7 @@ public class UISettingsController : ControllerBase
                 );
             }
 
-            if (Guid.TryParse(profileId, out var ruleId))
-            {
-                await _alertRuleRepository.DeleteRuleAsync(ruleId, cancellationToken);
-            }
-
-            // Sync legacy check omitted for brevity/performance, but ideally we should update it too.
+            // TODO: Re-implement with new alert engine
 
             return await GetAlarmConfiguration(cancellationToken);
         }
@@ -617,133 +390,6 @@ public class UISettingsController : ControllerBase
             return "00000000-0000-0000-0000-000000000001";
         }
         return userId;
-    }
-
-    private AlertRuleEntity MapProfileToRule(AlarmProfileConfiguration profile, string userId)
-    {
-        var rule = new AlertRuleEntity
-        {
-            // Id is handled by caller logic
-            UserId = userId,
-            Name = profile.Name,
-            IsEnabled = profile.Enabled,
-            // Threshold mapping based on AlarmType
-            ForecastLeadTimeMinutes = profile.ForecastLeadTimeMinutes,
-
-            // Map common properties
-            MaxSnoozeMinutes = 240, // Default cap
-            DefaultSnoozeMinutes = 15, // Default
-
-            // Serialize client config
-            ClientConfiguration = JsonSerializer.Serialize(
-                new
-                {
-                    Audio = profile.Audio,
-                    Visual = profile.Visual,
-                    Priority = profile.Priority,
-                    DisplayOrder = profile.DisplayOrder,
-                    AlarmType = profile.AlarmType.ToString(),
-                    OverrideQuietHours = profile.OverrideQuietHours,
-                    PersistenceMinutes = profile.PersistenceMinutes,
-                }
-            ),
-        };
-
-        // Threshold mapping
-        if (profile.AlarmType == AlarmTriggerType.UrgentLow)
-            rule.UrgentLowThreshold = profile.Threshold;
-        else if (profile.AlarmType == AlarmTriggerType.Low)
-            rule.LowThreshold = profile.Threshold;
-        else if (profile.AlarmType == AlarmTriggerType.High)
-            rule.HighThreshold = profile.Threshold;
-        else if (profile.AlarmType == AlarmTriggerType.UrgentHigh)
-            rule.UrgentHighThreshold = profile.Threshold;
-        else if (profile.AlarmType == AlarmTriggerType.ForecastLow)
-        {
-            // For ForecastLow, we usually use the LowThreshold as the target level
-            rule.LowThreshold = profile.Threshold;
-            // Forecast logic will look at ForecastLeadTimeMinutes AND LowThreshold
-        }
-
-        return rule;
-    }
-
-    private AlarmProfileConfiguration MapRuleToProfile(AlertRuleEntity rule)
-    {
-        var profile = new AlarmProfileConfiguration
-        {
-            Id = rule.Id.ToString(),
-            Name = rule.Name,
-            Enabled = rule.IsEnabled,
-            ForecastLeadTimeMinutes = rule.ForecastLeadTimeMinutes,
-        };
-
-        // Determine AlarmType and Threshold from entity properties
-        if (rule.UrgentLowThreshold.HasValue)
-        {
-            profile.Threshold = (int)rule.UrgentLowThreshold.Value;
-            profile.AlarmType = AlarmTriggerType.UrgentLow;
-        }
-        else if (rule.UrgentHighThreshold.HasValue)
-        {
-            profile.Threshold = (int)rule.UrgentHighThreshold.Value;
-            profile.AlarmType = AlarmTriggerType.UrgentHigh;
-        }
-        else if (rule.HighThreshold.HasValue)
-        {
-            profile.Threshold = (int)rule.HighThreshold.Value;
-            profile.AlarmType = AlarmTriggerType.High;
-        }
-        else if (rule.LowThreshold.HasValue)
-        {
-            profile.Threshold = (int)rule.LowThreshold.Value;
-            // Could be Low or ForecastLow based on ForecastLeadTimeMinutes
-            if (rule.ForecastLeadTimeMinutes.HasValue && rule.ForecastLeadTimeMinutes > 0)
-                profile.AlarmType = AlarmTriggerType.ForecastLow;
-            else
-                profile.AlarmType = AlarmTriggerType.Low;
-        }
-
-        // Deserialize ClientConfiguration
-        if (!string.IsNullOrEmpty(rule.ClientConfiguration))
-        {
-            try
-            {
-                var doc = JsonDocument.Parse(rule.ClientConfiguration);
-                if (doc.RootElement.TryGetProperty("Audio", out var audioEl))
-                    profile.Audio = JsonSerializer.Deserialize<AlarmAudioSettings>(audioEl) ?? profile.Audio;
-                if (doc.RootElement.TryGetProperty("Visual", out var visualEl))
-                    profile.Visual = JsonSerializer.Deserialize<AlarmVisualSettings>(visualEl) ?? profile.Visual;
-                if (doc.RootElement.TryGetProperty("Priority", out var prioEl))
-                    profile.Priority = Enum.Parse<AlarmPriority>(prioEl.GetString() ?? "Normal");
-                if (doc.RootElement.TryGetProperty("DisplayOrder", out var orderEl))
-                    profile.DisplayOrder = orderEl.GetInt32();
-                if (doc.RootElement.TryGetProperty("OverrideQuietHours", out var oqhEl))
-                    profile.OverrideQuietHours = oqhEl.GetBoolean();
-                if (doc.RootElement.TryGetProperty("PersistenceMinutes", out var pmEl))
-                    profile.PersistenceMinutes = pmEl.GetInt32();
-
-                // If AlarmType was stored explicitly, use it (overrides inference)
-                if (doc.RootElement.TryGetProperty("AlarmType", out var typeEl))
-                {
-                    var typeStr = typeEl.GetString();
-                    if (Enum.TryParse<AlarmTriggerType>(typeStr, out var savedType))
-                    {
-                        profile.AlarmType = savedType;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "Failed to deserialize ClientConfiguration for rule {RuleId}",
-                    rule.Id
-                );
-            }
-        }
-
-        return profile;
     }
 
     private static UserAlarmConfiguration GenerateDefaultAlarmConfiguration()

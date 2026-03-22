@@ -4,8 +4,6 @@ using Nocturne.API.Services;
 using Nocturne.API.Services.AidDetection;
 using Nocturne.API.Services.ChartData;
 using Nocturne.API.Services.ChartData.Stages;
-using Nocturne.API.Services.Alerts;
-using Nocturne.API.Services.Alerts.Notifiers;
 using Nocturne.API.Services.Alerts.Webhooks;
 using Nocturne.API.Services.Auth;
 using Nocturne.API.Services.BackgroundServices;
@@ -14,9 +12,7 @@ using Nocturne.API.Services.V4;
 using Nocturne.API.Multitenancy;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
-using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts;
-using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
@@ -381,35 +377,8 @@ public static class ServiceRegistrationExtensions
         );
         services.AddHostedService(sp => sp.GetRequiredService<CompressionLowDetectionService>());
 
-        // Alert monitoring
-        services.Configure<AlertMonitoringOptions>(
-            configuration.GetSection(AlertMonitoringOptions.SectionName)
-        );
+        // Webhook infrastructure (reused by new alert engine)
         services.AddScoped<WebhookRequestSender>();
-        services.AddScoped<IAlertRulesEngine, AlertRulesEngine>();
-        services.AddScoped<IAlertProcessingService, AlertProcessingService>();
-        services.AddScoped<IAlertOrchestrator, AlertOrchestrator>();
-        // Notifier dispatch
-        services.AddScoped<INotifierDispatcher, NotifierDispatcher>();
-        services.AddScoped<INotifier, SignalRNotifier>();
-        services.AddScoped<INotifier, WebhookNotifier>();
-
-        // Pushover (conditional)
-        var pushoverApiToken =
-            configuration[ServiceNames.ConfigKeys.PushoverApiToken]
-            ?? configuration[ServiceNames.ConfigKeys.PushoverApiTokenEnv];
-        var pushoverUserKey =
-            configuration[ServiceNames.ConfigKeys.PushoverUserKey]
-            ?? configuration[ServiceNames.ConfigKeys.PushoverUserKeyEnv];
-
-        if (
-            !string.IsNullOrWhiteSpace(pushoverApiToken)
-            && !string.IsNullOrWhiteSpace(pushoverUserKey)
-        )
-        {
-            services.AddHttpClient<IPushoverService, PushoverService>();
-            services.AddScoped<INotifier, PushoverNotifier>();
-        }
 
         return services;
     }

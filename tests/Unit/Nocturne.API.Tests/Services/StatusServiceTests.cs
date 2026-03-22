@@ -840,32 +840,6 @@ public class StatusServiceTests
             }
         );
 
-        context.NotificationPreferences.Add(
-            new NotificationPreferencesEntity
-            {
-                Id = Guid.CreateVersion7(),
-                UserId = "test-user",
-                EmailEnabled = true,
-                UpdatedAt = now.AddMinutes(-15),
-            }
-        );
-
-        context.AlertRules.Add(
-            new AlertRuleEntity
-            {
-                Id = Guid.CreateVersion7(),
-                Name = "test-rule",
-                UpdatedAt = now.AddMinutes(-15),
-            }
-        );
-
-        context.AlertHistory.Add(
-            new AlertHistoryEntity
-            {
-                Id = Guid.CreateVersion7(),
-                UpdatedAt = now.AddMinutes(-15),
-            }
-        );
 
         context.SaveChanges();
     }

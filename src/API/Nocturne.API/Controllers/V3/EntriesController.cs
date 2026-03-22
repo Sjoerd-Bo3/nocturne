@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.Core.Contracts;
-using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Extensions;
 using Nocturne.Core.Contracts.Repositories;
@@ -22,20 +21,17 @@ public class EntriesController : BaseV3Controller<Entry>
 {
     private readonly IEntryRepository _entries;
     private readonly IEntryService _entryService;
-    private readonly IAlertOrchestrator _alertOrchestrator;
 
     public EntriesController(
         IEntryRepository entries,
         IDocumentProcessingService documentProcessingService,
         IEntryService entryService,
-        IAlertOrchestrator alertOrchestrator,
         ILogger<EntriesController> logger
     )
         : base(documentProcessingService, logger)
     {
         _entries = entries;
         _entryService = entryService;
-        _alertOrchestrator = alertOrchestrator;
     }
 
     /// <summary>
@@ -238,19 +234,6 @@ public class EntriesController : BaseV3Controller<Entry>
 
             _logger.LogDebug("Successfully created V3 entry {Id}", createdEntry.Id);
 
-            try
-            {
-                var userId = GetUserId();
-                await _alertOrchestrator.EvaluateAndProcessEntriesAsync(
-                    createdEntries,
-                    userId,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogWarning(ex, "Failed to process alerts for V3 entry creation");
-            }
 
             // Set location header for created resource
             Response.Headers["Location"] = $"/api/v3/entries/{createdEntry.Id}";
@@ -331,19 +314,6 @@ public class EntriesController : BaseV3Controller<Entry>
                 createdEntries.Count()
             );
 
-            try
-            {
-                var userId = GetUserId();
-                await _alertOrchestrator.EvaluateAndProcessEntriesAsync(
-                    createdEntries,
-                    userId,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogWarning(ex, "Failed to process alerts for V3 bulk entries");
-            }
 
             return StatusCode(201, createdEntries.ToV3Responses());
         }

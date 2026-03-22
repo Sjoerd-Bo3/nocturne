@@ -49,16 +49,13 @@ public interface ITrackerAlertService
 public class TrackerAlertService : ITrackerAlertService
 {
     private readonly TrackerRepository _repository;
-    private readonly NotificationPreferencesRepository _notificationPreferences;
     private readonly ILogger<TrackerAlertService> _logger;
 
     public TrackerAlertService(
         TrackerRepository repository,
-        NotificationPreferencesRepository notificationPreferences,
         ILogger<TrackerAlertService> logger)
     {
         _repository = repository;
-        _notificationPreferences = notificationPreferences;
         _logger = logger;
     }
 
@@ -96,17 +93,9 @@ public class TrackerAlertService : ITrackerAlertService
     /// <inheritdoc />
     public async Task<List<TrackerAlert>> GetPendingAlertsAsync(string userId, CancellationToken ct = default)
     {
-        // Get user notification preferences for quiet hours check
-        var preferences = await _notificationPreferences.GetPreferencesForUserAsync(userId, ct);
-        var isInQuietHours = IsInQuietHours(preferences);
-
         // Evaluate all active trackers
-        var allAlerts = await EvaluateActiveTrackersAsync(userId, ct);
-
-        // Filter based on quiet hours and snooze status
-        return allAlerts
-            .Where(a => !a.Config.RespectQuietHours || !isInQuietHours)
-            .ToList();
+        // TODO: Re-add quiet hours filtering when new alert engine is implemented
+        return await EvaluateActiveTrackersAsync(userId, ct);
     }
 
     /// <summary>
@@ -239,31 +228,4 @@ public class TrackerAlertService : ITrackerAlertService
         return DateTime.UtcNow < snoozeEnd;
     }
 
-    /// <summary>
-    /// Check if current time is within quiet hours
-    /// </summary>
-    private static bool IsInQuietHours(NotificationPreferencesEntity? preferences)
-    {
-        if (preferences == null || !preferences.QuietHoursEnabled)
-        {
-            return false;
-        }
-
-        if (!preferences.QuietHoursStart.HasValue || !preferences.QuietHoursEnd.HasValue)
-        {
-            return false;
-        }
-
-        var now = TimeOnly.FromDateTime(DateTime.Now);
-        var start = preferences.QuietHoursStart.Value;
-        var end = preferences.QuietHoursEnd.Value;
-
-        // Handle overnight quiet hours (e.g., 22:00 to 06:00)
-        if (start > end)
-        {
-            return now >= start || now <= end;
-        }
-
-        return now >= start && now <= end;
-    }
 }

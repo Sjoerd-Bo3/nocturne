@@ -98,25 +98,6 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<DiscrepancyDetailEntity> DiscrepancyDetails { get; set; }
 
-    /// <summary>
-    /// Gets or sets the AlertRules table for notification alert rules
-    /// </summary>
-    public DbSet<AlertRuleEntity> AlertRules { get; set; }
-
-    /// <summary>
-    /// Gets or sets the AlertHistory table for notification alert history
-    /// </summary>
-    public DbSet<AlertHistoryEntity> AlertHistory { get; set; }
-
-    /// <summary>
-    /// Gets or sets the NotificationPreferences table for user notification preferences
-    /// </summary>
-    public DbSet<NotificationPreferencesEntity> NotificationPreferences { get; set; }
-
-    /// <summary>
-    /// Gets or sets the EmergencyContacts table for escalation contact management
-    /// </summary>
-    public DbSet<EmergencyContactEntity> EmergencyContacts { get; set; }
 
     // Authentication and Authorization entities
 
@@ -711,107 +692,6 @@ public class NocturneDbContext : DbContext
             .HasIndex(d => d.DiscrepancyType)
             .HasDatabaseName("ix_discrepancy_details_type");
 
-        // Alert Rules indexes - optimized for user queries
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .HasIndex(a => a.UserId)
-            .HasDatabaseName("ix_alert_rules_user_id");
-
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .HasIndex(a => a.IsEnabled)
-            .HasDatabaseName("ix_alert_rules_is_enabled");
-
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .HasIndex(a => new { a.UserId, a.IsEnabled })
-            .HasDatabaseName("ix_alert_rules_user_enabled");
-
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .HasIndex(a => a.CreatedAt)
-            .HasDatabaseName("ix_alert_rules_created_at");
-
-        // Alert History indexes - optimized for monitoring and dashboard queries
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .HasIndex(h => h.UserId)
-            .HasDatabaseName("ix_alert_history_user_id");
-
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .HasIndex(h => h.Status)
-            .HasDatabaseName("ix_alert_history_status");
-
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .HasIndex(h => h.AlertType)
-            .HasDatabaseName("ix_alert_history_alert_type");
-
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .HasIndex(h => h.TriggerTime)
-            .HasDatabaseName("ix_alert_history_trigger_time")
-            .IsDescending(); // Most recent first
-
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .HasIndex(h => new { h.UserId, h.Status })
-            .HasDatabaseName("ix_alert_history_user_status");
-
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .HasIndex(h => new { h.UserId, h.TriggerTime })
-            .HasDatabaseName("ix_alert_history_user_trigger_time")
-            .IsDescending(false, true); // UserId asc, TriggerTime desc
-
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .HasIndex(h => h.AlertRuleId)
-            .HasDatabaseName("ix_alert_history_alert_rule_id");
-
-        // Notification Preferences indexes - optimized for user lookups
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .HasIndex(p => new { p.TenantId, p.UserId })
-            .HasDatabaseName("ix_notification_preferences_tenant_user")
-            .IsUnique(); // One preference set per user per tenant
-
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .HasIndex(p => p.EmailEnabled)
-            .HasDatabaseName("ix_notification_preferences_email_enabled");
-
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .HasIndex(p => p.PushoverEnabled)
-            .HasDatabaseName("ix_notification_preferences_pushover_enabled");
-
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .HasIndex(p => p.SmsEnabled)
-            .HasDatabaseName("ix_notification_preferences_sms_enabled");
-
-        // Emergency Contacts indexes - optimized for escalation queries
-        modelBuilder
-            .Entity<EmergencyContactEntity>()
-            .HasIndex(c => c.UserId)
-            .HasDatabaseName("ix_emergency_contacts_user_id");
-
-        modelBuilder
-            .Entity<EmergencyContactEntity>()
-            .HasIndex(c => c.IsActive)
-            .HasDatabaseName("ix_emergency_contacts_is_active");
-
-        modelBuilder
-            .Entity<EmergencyContactEntity>()
-            .HasIndex(c => c.Priority)
-            .HasDatabaseName("ix_emergency_contacts_priority");
-
-        modelBuilder
-            .Entity<EmergencyContactEntity>()
-            .HasIndex(c => c.ContactType)
-            .HasDatabaseName("ix_emergency_contacts_contact_type");
 
         // Refresh Token indexes - optimized for auth lookups
         modelBuilder
@@ -1679,23 +1559,7 @@ public class NocturneDbContext : DbContext
             .Entity<DiscrepancyDetailEntity>()
             .Property(d => d.Id)
             .HasValueGenerator<GuidV7ValueGenerator>();
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .Property(a => a.Id)
-            .HasValueGenerator<GuidV7ValueGenerator>();
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .Property(a => a.Id)
-            .HasValueGenerator<GuidV7ValueGenerator>();
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .Property(n => n.Id)
-            .HasValueGenerator<GuidV7ValueGenerator>();
-        modelBuilder
-            .Entity<EmergencyContactEntity>()
-            .Property(e => e.Id)
-            .HasValueGenerator<GuidV7ValueGenerator>();
-        // Auth entity UUID generators
+// Auth entity UUID generators
         modelBuilder
             .Entity<RefreshTokenEntity>()
             .Property(t => t.Id)
@@ -2032,108 +1896,6 @@ public class NocturneDbContext : DbContext
                 .HasDefaultValue("null");
         }
 
-        // Configure AlertRule defaults and constraints
-        modelBuilder.Entity<AlertRuleEntity>().Property(a => a.IsEnabled).HasDefaultValue(true);
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .Property(a => a.EscalationDelayMinutes)
-            .HasDefaultValue(15);
-        modelBuilder.Entity<AlertRuleEntity>().Property(a => a.MaxEscalations).HasDefaultValue(3);
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .Property(a => a.DefaultSnoozeMinutes)
-            .HasDefaultValue(30);
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .Property(a => a.MaxSnoozeMinutes)
-            .HasDefaultValue(120);
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .Property(a => a.NotificationChannels)
-            .HasDefaultValue("[]");
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .Property(a => a.CreatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP");
-        modelBuilder
-            .Entity<AlertRuleEntity>()
-            .Property(a => a.UpdatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnAddOrUpdate();
-
-        // Configure AlertHistory defaults and constraints
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .Property(h => h.EscalationLevel)
-            .HasDefaultValue(0);
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .Property(h => h.NotificationsSent)
-            .HasDefaultValue("[]");
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .Property(h => h.CreatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP");
-        modelBuilder
-            .Entity<AlertHistoryEntity>()
-            .Property(h => h.UpdatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnAddOrUpdate();
-
-        // Configure NotificationPreferences defaults
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .Property(p => p.EmailEnabled)
-            .HasDefaultValue(true);
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .Property(p => p.PushoverEnabled)
-            .HasDefaultValue(false);
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .Property(p => p.SmsEnabled)
-            .HasDefaultValue(false);
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .Property(p => p.WebhookEnabled)
-            .HasDefaultValue(false);
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .Property(p => p.QuietHoursEnabled)
-            .HasDefaultValue(false);
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .Property(p => p.EmergencyOverrideQuietHours)
-            .HasDefaultValue(true);
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .Property(p => p.CreatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP");
-        modelBuilder
-            .Entity<NotificationPreferencesEntity>()
-            .Property(p => p.UpdatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnAddOrUpdate();
-
-        // Configure EmergencyContacts defaults and constraints
-        modelBuilder
-            .Entity<EmergencyContactEntity>()
-            .Property(c => c.IsActive)
-            .HasDefaultValue(true);
-        modelBuilder.Entity<EmergencyContactEntity>().Property(c => c.Priority).HasDefaultValue(1);
-        modelBuilder
-            .Entity<EmergencyContactEntity>()
-            .Property(c => c.AlertTypes)
-            .HasDefaultValue("[]");
-        modelBuilder
-            .Entity<EmergencyContactEntity>()
-            .Property(c => c.CreatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP");
-        modelBuilder
-            .Entity<EmergencyContactEntity>()
-            .Property(c => c.UpdatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnAddOrUpdate();
 
         // Configure RefreshToken entity relationships and defaults
         modelBuilder.Entity<RefreshTokenEntity>(entity =>
@@ -2499,39 +2261,7 @@ public class NocturneDbContext : DbContext
                 }
                 profileEntity.UpdatedAtPg = utcNow;
             }
-            else if (entry.Entity is AlertRuleEntity alertRuleEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    alertRuleEntity.CreatedAt = utcNow;
-                }
-                alertRuleEntity.UpdatedAt = utcNow;
-            }
-            else if (entry.Entity is AlertHistoryEntity alertHistoryEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    alertHistoryEntity.CreatedAt = utcNow;
-                }
-                alertHistoryEntity.UpdatedAt = utcNow;
-            }
-            else if (entry.Entity is NotificationPreferencesEntity notificationPreferencesEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    notificationPreferencesEntity.CreatedAt = utcNow;
-                }
-                notificationPreferencesEntity.UpdatedAt = utcNow;
-            }
-            else if (entry.Entity is EmergencyContactEntity emergencyContactEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    emergencyContactEntity.CreatedAt = utcNow;
-                }
-                emergencyContactEntity.UpdatedAt = utcNow;
-            }
-            // Auth entities
+// Auth entities
             else if (entry.Entity is RefreshTokenEntity refreshTokenEntity)
             {
                 if (entry.State == EntityState.Added)

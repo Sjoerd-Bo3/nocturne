@@ -1,6 +1,5 @@
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Core.Contracts;
-using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
@@ -11,18 +10,15 @@ internal sealed class GlucosePublisher : IGlucosePublisher
 {
     private readonly IEntryService _entryService;
     private readonly ISensorGlucoseRepository _sensorGlucoseRepository;
-    private readonly IAlertOrchestrator _alertOrchestrator;
     private readonly ILogger<GlucosePublisher> _logger;
 
     public GlucosePublisher(
         IEntryService entryService,
         ISensorGlucoseRepository sensorGlucoseRepository,
-        IAlertOrchestrator alertOrchestrator,
         ILogger<GlucosePublisher> logger)
     {
         _entryService = entryService ?? throw new ArgumentNullException(nameof(entryService));
         _sensorGlucoseRepository = sensorGlucoseRepository ?? throw new ArgumentNullException(nameof(sensorGlucoseRepository));
-        _alertOrchestrator = alertOrchestrator ?? throw new ArgumentNullException(nameof(alertOrchestrator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -55,10 +51,6 @@ internal sealed class GlucosePublisher : IGlucosePublisher
             if (recordList.Count == 0) return true;
 
             await _sensorGlucoseRepository.BulkCreateAsync(recordList, cancellationToken);
-
-            var latest = recordList.OrderByDescending(r => r.Timestamp).First();
-            await _alertOrchestrator.EvaluateAndProcessSensorGlucoseAsync(
-                [latest], null, cancellationToken);
 
             _logger.LogDebug("Published {Count} SensorGlucose records for {Source}", recordList.Count, source);
             return true;

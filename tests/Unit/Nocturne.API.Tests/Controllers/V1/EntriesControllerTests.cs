@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Controllers.V1;
 using Nocturne.Core.Contracts;
-using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models;
 using Xunit;
 
@@ -19,7 +18,6 @@ public class EntriesControllerTests
     private readonly Mock<IEntryService> _mockEntryService;
     private readonly Mock<IDocumentProcessingService> _mockDocumentProcessingService;
     private readonly Mock<IProcessingStatusService> _mockProcessingStatusService;
-    private readonly Mock<IAlertOrchestrator> _mockAlertOrchestrator;
     private readonly Mock<ILogger<EntriesController>> _mockLogger;
     private readonly EntriesController _controller;
 
@@ -28,14 +26,12 @@ public class EntriesControllerTests
         _mockEntryService = new Mock<IEntryService>();
         _mockDocumentProcessingService = new Mock<IDocumentProcessingService>();
         _mockProcessingStatusService = new Mock<IProcessingStatusService>();
-        _mockAlertOrchestrator = new Mock<IAlertOrchestrator>();
         _mockLogger = new Mock<ILogger<EntriesController>>();
 
         _controller = new EntriesController(
             _mockEntryService.Object,
             _mockDocumentProcessingService.Object,
             _mockProcessingStatusService.Object,
-            _mockAlertOrchestrator.Object,
             _mockLogger.Object
         );
 

@@ -308,9 +308,6 @@ public static class ServiceCollectionExtensions
     /// <returns>Service collection for chaining</returns>
     public static IServiceCollection AddAlertRepositories(this IServiceCollection services)
     {
-        services.AddScoped<AlertRuleRepository>();
-        services.AddScoped<AlertHistoryRepository>();
-        services.AddScoped<NotificationPreferencesRepository>();
         services.AddScoped<TrackerRepository>();
         services.AddScoped<StateSpanRepository>();
         services.AddScoped<SystemEventRepository>();

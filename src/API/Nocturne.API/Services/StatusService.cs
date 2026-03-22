@@ -539,26 +539,10 @@ public class StatusService : IStatusService
             .Select(p => (DateTime?)p.UpdatedAt)
             .FirstOrDefaultAsync());
 
-        var notificationPreferencesTask = LastModifiedAsync(ctx => ctx.NotificationPreferences.AsNoTracking()
-            .OrderByDescending(p => p.UpdatedAt)
-            .Select(p => (DateTime?)p.UpdatedAt)
-            .FirstOrDefaultAsync());
-
-        var alertRulesTask = LastModifiedAsync(ctx => ctx.AlertRules.AsNoTracking()
-            .OrderByDescending(a => a.UpdatedAt)
-            .Select(a => (DateTime?)a.UpdatedAt)
-            .FirstOrDefaultAsync());
-
-        var alertHistoryTask = LastModifiedAsync(ctx => ctx.AlertHistory.AsNoTracking()
-            .OrderByDescending(h => h.UpdatedAt)
-            .Select(h => (DateTime?)h.UpdatedAt)
-            .FirstOrDefaultAsync());
-
         await Task.WhenAll(
             entriesTask, treatmentsTask, profileTask, deviceStatusTask,
             foodTask, settingsTask, activityTask, authSubjectsTask,
-            roleTask, oidcProviderTask, notificationPreferencesTask,
-            alertRulesTask, alertHistoryTask);
+            roleTask, oidcProviderTask);
 
         var additional = new Dictionary<string, DateTime>();
 
@@ -572,15 +556,6 @@ public class StatusService : IStatusService
             additional["auth"] = authLastModified.Value;
         }
 
-        var notificationsLastModified = GetMostRecentTimestamp(
-            await notificationPreferencesTask,
-            await alertRulesTask,
-            await alertHistoryTask
-        );
-        if (notificationsLastModified.HasValue)
-        {
-            additional["notifications"] = notificationsLastModified.Value;
-        }
 
         var response = new LastModifiedResponse
         {

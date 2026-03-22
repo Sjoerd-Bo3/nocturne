@@ -5,7 +5,6 @@ using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
-using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Extensions;
 
@@ -23,21 +22,18 @@ public class EntriesController : ControllerBase
     private readonly IEntryService _entryService;
     private readonly IDocumentProcessingService _documentProcessingService;
     private readonly IProcessingStatusService _processingStatusService;
-    private readonly IAlertOrchestrator _alertOrchestrator;
     private readonly ILogger<EntriesController> _logger;
 
     public EntriesController(
         IEntryService entryService,
         IDocumentProcessingService documentProcessingService,
         IProcessingStatusService processingStatusService,
-        IAlertOrchestrator alertOrchestrator,
         ILogger<EntriesController> logger
     )
     {
         _entryService = entryService;
         _documentProcessingService = documentProcessingService;
         _processingStatusService = processingStatusService;
-        _alertOrchestrator = alertOrchestrator;
         _logger = logger;
     }
 
@@ -752,19 +748,6 @@ public class EntriesController : ControllerBase
 
             _logger.LogDebug("Created {Count} entries", createdArray.Length);
 
-            try
-            {
-                var userId = GetUserId();
-                await _alertOrchestrator.EvaluateAndProcessEntriesAsync(
-                    createdArray,
-                    userId,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogWarning(ex, "Failed to process alerts for created entries");
-            }
 
             return StatusCode(201, createdArray.ToV1Responses());
         }
@@ -1326,19 +1309,6 @@ public class EntriesController : ControllerBase
                 createdEntries.Count()
             );
 
-            try
-            {
-                var userId = GetUserId();
-                await _alertOrchestrator.EvaluateAndProcessEntriesAsync(
-                    createdEntries,
-                    userId,
-                    cancellationToken
-                );
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogWarning(ex, "Failed to process alerts for async entries");
-            }
 
             return Accepted(response);
         }
