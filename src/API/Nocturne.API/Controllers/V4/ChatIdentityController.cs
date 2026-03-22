@@ -36,11 +36,7 @@ public class ChatIdentityController : ControllerBase
     {
         var tenantId = _tenantAccessor.TenantId;
 
-        // Get all active links for this tenant (across all users)
-        var links = await _chatIdentityService.GetByUserAsync(tenantId, Guid.Empty, ct);
-
-        // If no userId filter, we need a tenant-wide query - use resolve pattern
-        // For now, return links for the current tenant user context
+        var links = await _chatIdentityService.GetByTenantAsync(tenantId, ct);
         return Ok(links.Select(l => new ChatIdentityLinkResponse
         {
             Id = l.Id,

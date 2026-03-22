@@ -45,7 +45,7 @@ export function createBot() {
       : undefined,
   });
 
-  const client = new NocturneClient(config.apiUrl);
+  const client = new NocturneClient(config.apiUrl, config.serviceToken);
 
   registerAllCommands(bot, client);
 

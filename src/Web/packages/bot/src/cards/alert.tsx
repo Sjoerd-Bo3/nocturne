@@ -1,20 +1,6 @@
 import { Card, CardText, Fields, Field, Actions, Button } from "chat";
 import type { AlertPayload } from "../lib/nocturne-client.js";
-
-const TREND_ARROWS: Record<string, string> = {
-  DoubleUp: "^^",
-  SingleUp: "^",
-  FortyFiveUp: "/",
-  Flat: "->",
-  FortyFiveDown: "\\",
-  SingleDown: "v",
-  DoubleDown: "vv",
-};
-
-function formatGlucose(mgdl: number, unit: "mg/dL" | "mmol/L"): string {
-  if (unit === "mmol/L") return `${(mgdl / 18.0182).toFixed(1)} mmol/L`;
-  return `${mgdl} mg/dL`;
-}
+import { formatGlucose, trendArrow } from "../lib/format.js";
 
 export function AlertCard(props: {
   payload: AlertPayload;
@@ -25,9 +11,7 @@ export function AlertCard(props: {
     payload.glucoseValue != null
       ? formatGlucose(payload.glucoseValue, unit)
       : "N/A";
-  const arrow = payload.trend
-    ? (TREND_ARROWS[payload.trend] ?? payload.trend)
-    : "";
+  const arrow = payload.trend ? trendArrow(payload.trend) : "";
 
   return (
     <Card title={`Alert: ${payload.ruleName}`}>

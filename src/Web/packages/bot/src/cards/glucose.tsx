@@ -1,22 +1,6 @@
 import { Card, Fields, Field } from "chat";
 import type { GlucoseReading } from "../lib/nocturne-client.js";
-
-const TREND_ARROWS: Record<string, string> = {
-  DoubleUp: "^^",
-  SingleUp: "^",
-  FortyFiveUp: "/",
-  Flat: "->",
-  FortyFiveDown: "\\",
-  SingleDown: "v",
-  DoubleDown: "vv",
-  "NOT COMPUTABLE": "?",
-  "RATE OUT OF RANGE": "?",
-};
-
-function formatGlucose(mgdl: number, unit: "mg/dL" | "mmol/L"): string {
-  if (unit === "mmol/L") return `${(mgdl / 18.0182).toFixed(1)} mmol/L`;
-  return `${mgdl} mg/dL`;
-}
+import { formatGlucose, trendArrow } from "../lib/format.js";
 
 function timeAgo(dateMs: number): string {
   const diffMs = Date.now() - dateMs;
@@ -32,7 +16,7 @@ export function GlucoseCard(props: {
 }) {
   const { reading, unit = "mg/dL" } = props;
   const value = formatGlucose(reading.sgv, unit);
-  const arrow = TREND_ARROWS[reading.direction] ?? reading.direction;
+  const arrow = trendArrow(reading.direction);
   const delta =
     reading.delta != null
       ? `${reading.delta > 0 ? "+" : ""}${formatGlucose(reading.delta, unit)}`

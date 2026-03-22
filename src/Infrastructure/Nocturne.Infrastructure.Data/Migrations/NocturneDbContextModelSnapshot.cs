@@ -761,6 +761,60 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.ToTable("auth_audit_log");
                 });
 
+            modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.ChatIdentityLinkEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DisplayUnit")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("display_unit");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid>("NocturneUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("nocturne_user_id");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("platform");
+
+                    b.Property<string>("PlatformChannelId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("platform_channel_id");
+
+                    b.Property<string>("PlatformUserId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("platform_user_id");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("chat_identity_links");
+                });
+
             modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.ClockFaceEntity", b =>
                 {
                     b.Property<Guid>("Id")

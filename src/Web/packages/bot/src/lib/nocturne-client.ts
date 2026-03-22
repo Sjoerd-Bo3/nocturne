@@ -26,9 +26,11 @@ export interface AlertPayload {
 
 export class NocturneClient {
   private baseUrl: string;
+  private serviceToken: string;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, serviceToken: string = "") {
     this.baseUrl = baseUrl.replace(/\/$/, "");
+    this.serviceToken = serviceToken;
   }
 
   private async request<T>(
@@ -90,6 +92,7 @@ export class NocturneClient {
       `/api/v4/alerts/deliveries/${deliveryId}/delivered`,
       {
         method: "POST",
+        token: this.serviceToken,
         body: JSON.stringify({ platformMessageId, platformThreadId }),
       },
     );
@@ -100,6 +103,7 @@ export class NocturneClient {
       `/api/v4/alerts/deliveries/${deliveryId}/failed`,
       {
         method: "POST",
+        token: this.serviceToken,
         body: JSON.stringify({ error }),
       },
     );
@@ -109,12 +113,15 @@ export class NocturneClient {
     const params = channelTypes
       .map((t) => `channelType=${encodeURIComponent(t)}`)
       .join("&");
-    return this.request<any[]>(`/api/v4/alerts/deliveries/pending?${params}`);
+    return this.request<any[]>(`/api/v4/alerts/deliveries/pending?${params}`, {
+      token: this.serviceToken,
+    });
   }
 
   async sendHeartbeat(platforms: string[]): Promise<void> {
     return this.request<void>("/api/v4/system/heartbeat", {
       method: "POST",
+      token: this.serviceToken,
       body: JSON.stringify({ platforms, service: "nocturne-bot" }),
     });
   }

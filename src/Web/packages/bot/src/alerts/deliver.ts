@@ -20,7 +20,15 @@ export class AlertDeliveryHandler {
 
     try {
       // channelType format: "discord_dm", "slack_channel", "telegram_dm", etc.
-      const target = await this.bot.openDM(destination);
+      const isDM = channelType.endsWith("_dm");
+
+      let target;
+      if (isDM) {
+        target = await this.bot.openDM(destination);
+      } else {
+        // Channel delivery — destination is the channel ID in "adapter:channelId" format
+        target = this.bot.channel(destination);
+      }
 
       const card = AlertCard({ payload });
       const sent = await target.post(card);

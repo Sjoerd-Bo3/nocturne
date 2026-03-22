@@ -1,5 +1,6 @@
 export interface BotConfig {
   apiUrl: string;
+  serviceToken: string;
   platforms: {
     discord: boolean;
     slack: boolean;
@@ -15,8 +16,14 @@ export function loadConfig(): BotConfig {
   const apiUrl = process.env.API_URL;
   if (!apiUrl) throw new Error("API_URL is required");
 
+  const serviceToken = process.env.BOT_SERVICE_TOKEN ?? "";
+  if (!serviceToken) {
+    console.warn("BOT_SERVICE_TOKEN not set — API calls requiring auth will fail");
+  }
+
   return {
     apiUrl,
+    serviceToken,
     platforms: {
       discord: !!process.env.DISCORD_TOKEN,
       slack: !!process.env.SLACK_BOT_TOKEN && !!process.env.SLACK_SIGNING_SECRET,

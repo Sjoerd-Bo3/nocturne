@@ -36,6 +36,19 @@ public sealed class ChatIdentityService(
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<ChatIdentityLinkEntity>> GetByTenantAsync(
+        Guid tenantId, CancellationToken ct)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(ct);
+        db.TenantId = tenantId;
+
+        return await db.ChatIdentityLinks
+            .AsNoTracking()
+            .Where(l => l.IsActive)
+            .OrderByDescending(l => l.CreatedAt)
+            .ToListAsync(ct);
+    }
+
     public async Task<ChatIdentityLinkEntity> CreateLinkAsync(
         Guid tenantId, Guid userId, string platform, string platformUserId,
         string? platformChannelId, CancellationToken ct)

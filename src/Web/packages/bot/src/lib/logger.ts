@@ -1,8 +1,12 @@
 import winston from "winston";
 
-export function createLogger() {
+let instance: winston.Logger | null = null;
+
+export function createLogger(): winston.Logger {
+  if (instance) return instance;
+
   const isDev = process.env.NODE_ENV !== "production";
-  return winston.createLogger({
+  instance = winston.createLogger({
     level: process.env.LOG_LEVEL ?? "info",
     format: isDev
       ? winston.format.combine(
@@ -16,4 +20,6 @@ export function createLogger() {
         ),
     transports: [new winston.transports.Console()],
   });
+
+  return instance;
 }
