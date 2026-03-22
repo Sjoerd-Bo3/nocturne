@@ -3,7 +3,7 @@ import { createDiscordAdapter } from "@chat-adapter/discord";
 import { createSlackAdapter } from "@chat-adapter/slack";
 import { createTelegramAdapter } from "@chat-adapter/telegram";
 import { createWhatsAppAdapter } from "@chat-adapter/whatsapp";
-import { createPgState } from "@chat-adapter/state-postgres";
+import { createPostgresState } from "@chat-adapter/state-pg";
 import { createLogger } from "./lib/logger.js";
 
 const logger = createLogger();
@@ -15,10 +15,10 @@ export interface BotOptions {
     telegram?: boolean;
     whatsapp?: boolean;
   };
-  postgresConnectionString?: string;
+  postgresUrl: string;
 }
 
-export function createBot(options: BotOptions = {}): Chat {
+export function createBot(options: BotOptions): Chat {
   const adapters: Record<string, any> = {};
   const platforms = options.platforms ?? {};
 
@@ -46,8 +46,6 @@ export function createBot(options: BotOptions = {}): Chat {
   return new Chat({
     userName: "nocturne",
     adapters,
-    state: options.postgresConnectionString
-      ? createPgState({ connectionString: options.postgresConnectionString })
-      : undefined,
+    state: createPostgresState({ url: options.postgresUrl }),
   });
 }

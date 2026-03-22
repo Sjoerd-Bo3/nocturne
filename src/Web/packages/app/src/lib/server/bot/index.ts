@@ -14,7 +14,7 @@ export function getBot(): Chat {
 				telegram: !!env.TELEGRAM_BOT_TOKEN,
 				whatsapp: !!env.WHATSAPP_ACCESS_TOKEN,
 			},
-			postgresConnectionString: env.ConnectionStrings__nocturne_postgres,
+			postgresUrl: env.ConnectionStrings__nocturne_postgres ?? "",
 		});
 	}
 	return botInstance;
