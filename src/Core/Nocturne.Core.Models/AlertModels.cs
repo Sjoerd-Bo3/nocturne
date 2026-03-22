@@ -26,3 +26,22 @@ public record ConditionNode(
     SignalLossCondition? SignalLoss = null,
     CompositeCondition? Composite = null
 );
+
+// Excursion tracker states
+public enum TrackerState { Idle, Confirming, Active, Hysteresis }
+
+// Alert payload — what delivery providers receive (structured data, not pre-rendered text)
+public record AlertPayload
+{
+    public required string AlertType { get; init; }
+    public required string RuleName { get; init; }
+    public required decimal? GlucoseValue { get; init; }
+    public required string? Trend { get; init; }
+    public required decimal? TrendRate { get; init; }
+    public required DateTime ReadingTimestamp { get; init; }
+    public required Guid ExcursionId { get; init; }
+    public required Guid InstanceId { get; init; }
+    public required Guid TenantId { get; init; }
+    public required string SubjectName { get; init; }
+    public required int ActiveExcursionCount { get; init; }
+}
