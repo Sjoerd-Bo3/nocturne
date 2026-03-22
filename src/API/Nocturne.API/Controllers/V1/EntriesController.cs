@@ -5,6 +5,7 @@ using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Extensions;
 
@@ -22,18 +23,21 @@ public class EntriesController : ControllerBase
     private readonly IEntryService _entryService;
     private readonly IDocumentProcessingService _documentProcessingService;
     private readonly IProcessingStatusService _processingStatusService;
+    private readonly IAlertOrchestrator _alertOrchestrator;
     private readonly ILogger<EntriesController> _logger;
 
     public EntriesController(
         IEntryService entryService,
         IDocumentProcessingService documentProcessingService,
         IProcessingStatusService processingStatusService,
+        IAlertOrchestrator alertOrchestrator,
         ILogger<EntriesController> logger
     )
     {
         _entryService = entryService;
         _documentProcessingService = documentProcessingService;
         _processingStatusService = processingStatusService;
+        _alertOrchestrator = alertOrchestrator;
         _logger = logger;
     }
 
@@ -748,6 +752,8 @@ public class EntriesController : ControllerBase
 
             _logger.LogDebug("Created {Count} entries", createdArray.Length);
 
+            // Evaluate alert rules against the latest created entry
+            await EvaluateAlertsAsync(createdArray, cancellationToken);
 
             return StatusCode(201, createdArray.ToV1Responses());
         }
@@ -1356,5 +1362,32 @@ public class EntriesController : ControllerBase
     {
         return HttpContext.GetSubjectIdString()
             ?? "00000000-0000-0000-0000-000000000001";
+    }
+
+    private async Task EvaluateAlertsAsync(Entry[] entries, CancellationToken ct)
+    {
+        try
+        {
+            var latest = entries
+                .Where(e => e.Sgv.HasValue && e.Sgv.Value > 0)
+                .OrderByDescending(e => e.Mills)
+                .FirstOrDefault();
+
+            if (latest is null) return;
+
+            var context = new SensorContext
+            {
+                LatestValue = (decimal?)latest.Sgv,
+                LatestTimestamp = latest.Date ?? DateTimeOffset.FromUnixTimeMilliseconds(latest.Mills).UtcDateTime,
+                TrendRate = (decimal?)latest.TrendRate,
+                LastReadingAt = latest.Date ?? DateTimeOffset.FromUnixTimeMilliseconds(latest.Mills).UtcDateTime,
+            };
+
+            await _alertOrchestrator.EvaluateAsync(context, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Alert evaluation failed after V1 entry creation");
+        }
     }
 }

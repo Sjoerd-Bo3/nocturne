@@ -98,6 +98,14 @@ public interface ISignalRBroadcastService
     /// <param name="userId">The user ID to broadcast to</param>
     /// <param name="notification">The notification that was updated</param>
     Task BroadcastNotificationUpdatedAsync(string userId, InAppNotificationDto notification);
+
+    /// <summary>
+    /// Broadcast an alert engine event (alert_dispatch, alert_resolved, alert_acknowledged)
+    /// to the tenant's alert subscribers group.
+    /// </summary>
+    /// <param name="eventName">The event name to broadcast</param>
+    /// <param name="payload">The event payload</param>
+    Task BroadcastAlertEventAsync(string eventName, object payload);
 }
 
 /// <summary>
@@ -108,6 +116,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
     private readonly IHubContext<DataHub> _dataHubContext;
     private readonly IHubContext<AlarmHub> _alarmHubContext;
     private readonly IHubContext<ConfigHub> _configHubContext;
+    private readonly IHubContext<AlertHub> _alertHubContext;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<SignalRBroadcastService> _logger;
 
@@ -115,6 +124,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         IHubContext<DataHub> dataHubContext,
         IHubContext<AlarmHub> alarmHubContext,
         IHubContext<ConfigHub> configHubContext,
+        IHubContext<AlertHub> alertHubContext,
         ITenantAccessor tenantAccessor,
         ILogger<SignalRBroadcastService> logger
     )
@@ -122,6 +132,7 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         _dataHubContext = dataHubContext;
         _alarmHubContext = alarmHubContext;
         _configHubContext = configHubContext;
+        _alertHubContext = alertHubContext;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
@@ -507,6 +518,22 @@ public class SignalRBroadcastService : ISignalRBroadcastService
                 "Error broadcasting notification updated to user {UserId}",
                 userId
             );
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task BroadcastAlertEventAsync(string eventName, object payload)
+    {
+        try
+        {
+            _logger.LogDebug("Broadcasting alert event {EventName}", eventName);
+            await _alertHubContext
+                .Clients.Group(TenantGroup("alert-subscribers"))
+                .SendCoreAsync(eventName, new[] { payload });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error broadcasting alert event {EventName}", eventName);
         }
     }
 }

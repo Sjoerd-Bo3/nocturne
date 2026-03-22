@@ -19,13 +19,16 @@ public class SignalRBroadcastServiceTests
     private readonly Mock<IHubContext<DataHub>> _mockDataHubContext;
     private readonly Mock<IHubContext<AlarmHub>> _mockAlarmHubContext;
     private readonly Mock<IHubContext<ConfigHub>> _mockConfigHubContext;
+    private readonly Mock<IHubContext<AlertHub>> _mockAlertHubContext;
     private readonly Mock<ILogger<SignalRBroadcastService>> _mockLogger;
     private readonly Mock<IHubClients> _mockDataClients;
     private readonly Mock<IHubClients> _mockAlarmClients;
     private readonly Mock<IHubClients> _mockConfigClients;
+    private readonly Mock<IHubClients> _mockAlertClients;
     private readonly Mock<IClientProxy> _mockDataGroupProxy;
     private readonly Mock<IClientProxy> _mockAlarmGroupProxy;
     private readonly Mock<IClientProxy> _mockConfigGroupProxy;
+    private readonly Mock<IClientProxy> _mockAlertGroupProxy;
     private readonly SignalRBroadcastService _service;
 
     public SignalRBroadcastServiceTests()
@@ -33,17 +36,21 @@ public class SignalRBroadcastServiceTests
         _mockDataHubContext = new Mock<IHubContext<DataHub>>();
         _mockAlarmHubContext = new Mock<IHubContext<AlarmHub>>();
         _mockConfigHubContext = new Mock<IHubContext<ConfigHub>>();
+        _mockAlertHubContext = new Mock<IHubContext<AlertHub>>();
         _mockLogger = new Mock<ILogger<SignalRBroadcastService>>();
         _mockDataClients = new Mock<IHubClients>();
         _mockAlarmClients = new Mock<IHubClients>();
         _mockConfigClients = new Mock<IHubClients>();
+        _mockAlertClients = new Mock<IHubClients>();
         _mockDataGroupProxy = new Mock<IClientProxy>();
         _mockAlarmGroupProxy = new Mock<IClientProxy>();
         _mockConfigGroupProxy = new Mock<IClientProxy>();
+        _mockAlertGroupProxy = new Mock<IClientProxy>();
 
         _mockDataHubContext.Setup(x => x.Clients).Returns(_mockDataClients.Object);
         _mockAlarmHubContext.Setup(x => x.Clients).Returns(_mockAlarmClients.Object);
         _mockConfigHubContext.Setup(x => x.Clients).Returns(_mockConfigClients.Object);
+        _mockAlertHubContext.Setup(x => x.Clients).Returns(_mockAlertClients.Object);
         _mockDataClients
             .Setup(x => x.Group(It.IsAny<string>()))
             .Returns(_mockDataGroupProxy.Object);
@@ -53,11 +60,15 @@ public class SignalRBroadcastServiceTests
         _mockConfigClients
             .Setup(x => x.Group(It.IsAny<string>()))
             .Returns(_mockConfigGroupProxy.Object);
+        _mockAlertClients
+            .Setup(x => x.Group(It.IsAny<string>()))
+            .Returns(_mockAlertGroupProxy.Object);
 
         _service = new SignalRBroadcastService(
             _mockDataHubContext.Object,
             _mockAlarmHubContext.Object,
             _mockConfigHubContext.Object,
+            _mockAlertHubContext.Object,
             MockTenantAccessor.Create().Object,
             _mockLogger.Object
         );

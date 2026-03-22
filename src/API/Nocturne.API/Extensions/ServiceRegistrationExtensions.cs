@@ -393,6 +393,18 @@ public static class ServiceRegistrationExtensions
         // Excursion tracker
         services.AddScoped<IExcursionTracker, ExcursionTracker>();
 
+        // Alert engine core
+        services.AddScoped<IAlertOrchestrator, AlertOrchestrator>();
+        services.AddScoped<IAlertDeliveryService, AlertDeliveryService>();
+        services.AddScoped<IAlertAcknowledgementService, AlertAcknowledgementService>();
+
+        // Delivery providers
+        services.AddScoped<Nocturne.API.Services.Alerts.Providers.WebPushProvider>();
+        services.AddScoped<Nocturne.API.Services.Alerts.Providers.WebhookProvider>();
+
+        // Background sweep
+        services.AddHostedService<AlertSweepService>();
+
         return services;
     }
 

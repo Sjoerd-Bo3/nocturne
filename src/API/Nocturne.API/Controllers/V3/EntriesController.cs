@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Extensions;
 using Nocturne.Core.Contracts.Repositories;
@@ -21,17 +22,20 @@ public class EntriesController : BaseV3Controller<Entry>
 {
     private readonly IEntryRepository _entries;
     private readonly IEntryService _entryService;
+    private readonly IAlertOrchestrator _alertOrchestrator;
 
     public EntriesController(
         IEntryRepository entries,
         IDocumentProcessingService documentProcessingService,
         IEntryService entryService,
+        IAlertOrchestrator alertOrchestrator,
         ILogger<EntriesController> logger
     )
         : base(documentProcessingService, logger)
     {
         _entries = entries;
         _entryService = entryService;
+        _alertOrchestrator = alertOrchestrator;
     }
 
     /// <summary>
@@ -234,6 +238,7 @@ public class EntriesController : BaseV3Controller<Entry>
 
             _logger.LogDebug("Successfully created V3 entry {Id}", createdEntry.Id);
 
+            await EvaluateAlertsAsync(new[] { createdEntry }, cancellationToken);
 
             // Set location header for created resource
             Response.Headers["Location"] = $"/api/v3/entries/{createdEntry.Id}";
@@ -314,6 +319,7 @@ public class EntriesController : BaseV3Controller<Entry>
                 createdEntries.Count()
             );
 
+            await EvaluateAlertsAsync(createdEntries.ToArray(), cancellationToken);
 
             return StatusCode(201, createdEntries.ToV3Responses());
         }
@@ -625,6 +631,33 @@ public class EntriesController : BaseV3Controller<Entry>
     private string GetUserId()
     {
         return HttpContext.GetSubjectIdString() ?? "00000000-0000-0000-0000-000000000001";
+    }
+
+    private async Task EvaluateAlertsAsync(Entry[] entries, CancellationToken ct)
+    {
+        try
+        {
+            var latest = entries
+                .Where(e => e.Sgv.HasValue && e.Sgv.Value > 0)
+                .OrderByDescending(e => e.Mills)
+                .FirstOrDefault();
+
+            if (latest is null) return;
+
+            var context = new SensorContext
+            {
+                LatestValue = (decimal?)latest.Sgv,
+                LatestTimestamp = latest.Date ?? DateTimeOffset.FromUnixTimeMilliseconds(latest.Mills).UtcDateTime,
+                TrendRate = (decimal?)latest.TrendRate,
+                LastReadingAt = latest.Date ?? DateTimeOffset.FromUnixTimeMilliseconds(latest.Mills).UtcDateTime,
+            };
+
+            await _alertOrchestrator.EvaluateAsync(context, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Alert evaluation failed after V3 entry creation");
+        }
     }
 
     #endregion

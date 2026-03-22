@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Controllers.V4;
+using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models.V4;
 using Xunit;
@@ -14,12 +15,14 @@ namespace Nocturne.API.Tests.Controllers.V4;
 public class SensorGlucoseControllerTests
 {
     private readonly Mock<ISensorGlucoseRepository> _repoMock = new();
+    private readonly Mock<IAlertOrchestrator> _alertOrchestratorMock = new();
     private readonly Mock<ILogger<SensorGlucoseController>> _loggerMock = new();
 
     private SensorGlucoseController CreateController()
     {
         var controller = new SensorGlucoseController(
             _repoMock.Object,
+            _alertOrchestratorMock.Object,
             _loggerMock.Object);
 
         controller.ControllerContext = new ControllerContext

@@ -238,6 +238,7 @@ app.MapControllers();
 // Map SignalR hubs for real-time communication
 app.MapHub<DataHub>("/hubs/data");
 app.MapHub<AlarmHub>("/hubs/alarms");
+app.MapHub<AlertHub>("/hubs/alerts");
 app.MapHub<ConfigHub>("/hubs/config");
 
 // Note: Using NSwag instead of Microsoft.AspNetCore.OpenApi for better compatibility

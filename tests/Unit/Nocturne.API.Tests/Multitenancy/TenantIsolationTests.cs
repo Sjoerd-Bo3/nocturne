@@ -291,8 +291,14 @@ public class TenantIsolationTests
             mockAccessor.Setup(x => x.IsResolved).Returns(false);
         }
 
+        var mockAlertHub = new Mock<IHubContext<AlertHub>>();
+        var alertClients = new Mock<IHubClients>();
+        var alertProxy = new Mock<IClientProxy>();
+        mockAlertHub.Setup(x => x.Clients).Returns(alertClients.Object);
+        alertClients.Setup(x => x.Group(It.IsAny<string>())).Returns(alertProxy.Object);
+
         var service = new SignalRBroadcastService(
-            mockDataHub.Object, mockAlarmHub.Object, mockConfigHub.Object,
+            mockDataHub.Object, mockAlarmHub.Object, mockConfigHub.Object, mockAlertHub.Object,
             mockAccessor.Object, mockLogger.Object);
 
         return (service, dataClients, alarmClients, configClients, dataProxy, alarmProxy, configProxy);

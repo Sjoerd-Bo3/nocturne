@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
@@ -15,6 +16,7 @@ internal sealed class GlucosePublisher : IGlucosePublisher
     private readonly ISensorGlucoseRepository _sensorGlucoseRepository;
     private readonly IDbContextFactory<NocturneDbContext> _contextFactory;
     private readonly ITenantAccessor _tenantAccessor;
+    private readonly IAlertOrchestrator _alertOrchestrator;
     private readonly ILogger<GlucosePublisher> _logger;
 
     public GlucosePublisher(
@@ -22,12 +24,14 @@ internal sealed class GlucosePublisher : IGlucosePublisher
         ISensorGlucoseRepository sensorGlucoseRepository,
         IDbContextFactory<NocturneDbContext> contextFactory,
         ITenantAccessor tenantAccessor,
+        IAlertOrchestrator alertOrchestrator,
         ILogger<GlucosePublisher> logger)
     {
         _entryService = entryService ?? throw new ArgumentNullException(nameof(entryService));
         _sensorGlucoseRepository = sensorGlucoseRepository ?? throw new ArgumentNullException(nameof(sensorGlucoseRepository));
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _tenantAccessor = tenantAccessor ?? throw new ArgumentNullException(nameof(tenantAccessor));
+        _alertOrchestrator = alertOrchestrator ?? throw new ArgumentNullException(nameof(alertOrchestrator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -38,8 +42,10 @@ internal sealed class GlucosePublisher : IGlucosePublisher
     {
         try
         {
-            await _entryService.CreateEntriesAsync(entries, cancellationToken);
+            var entryList = entries.ToList();
+            await _entryService.CreateEntriesAsync(entryList, cancellationToken);
             await UpdateLastReadingAtAsync(cancellationToken);
+            await EvaluateAlertsForEntriesAsync(entryList, cancellationToken);
             return true;
         }
         catch (OperationCanceledException) { throw; }
@@ -62,6 +68,7 @@ internal sealed class GlucosePublisher : IGlucosePublisher
 
             await _sensorGlucoseRepository.BulkCreateAsync(recordList, cancellationToken);
             await UpdateLastReadingAtAsync(cancellationToken);
+            await EvaluateAlertsForSensorGlucoseAsync(recordList, cancellationToken);
 
             _logger.LogDebug("Published {Count} SensorGlucose records for {Source}", recordList.Count, source);
             return true;
@@ -117,6 +124,66 @@ internal sealed class GlucosePublisher : IGlucosePublisher
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to update tenant LastReadingAt timestamp");
+        }
+    }
+
+    /// <summary>
+    /// Build a SensorContext from the most recent Entry and evaluate alert rules.
+    /// </summary>
+    private async Task EvaluateAlertsForEntriesAsync(List<Entry> entries, CancellationToken ct)
+    {
+        try
+        {
+            var latest = entries
+                .Where(e => e.Sgv.HasValue && e.Sgv.Value > 0)
+                .OrderByDescending(e => e.Mills)
+                .FirstOrDefault();
+
+            if (latest is null) return;
+
+            var context = new SensorContext
+            {
+                LatestValue = (decimal?)latest.Sgv,
+                LatestTimestamp = latest.Date ?? DateTimeOffset.FromUnixTimeMilliseconds(latest.Mills).UtcDateTime,
+                TrendRate = (decimal?)latest.TrendRate,
+                LastReadingAt = latest.Date ?? DateTimeOffset.FromUnixTimeMilliseconds(latest.Mills).UtcDateTime,
+            };
+
+            await _alertOrchestrator.EvaluateAsync(context, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Alert evaluation failed after entry publish");
+        }
+    }
+
+    /// <summary>
+    /// Build a SensorContext from the most recent SensorGlucose record and evaluate alert rules.
+    /// </summary>
+    private async Task EvaluateAlertsForSensorGlucoseAsync(List<SensorGlucose> records, CancellationToken ct)
+    {
+        try
+        {
+            var latest = records
+                .Where(r => r.Mgdl > 0)
+                .OrderByDescending(r => r.Timestamp)
+                .FirstOrDefault();
+
+            if (latest is null) return;
+
+            var context = new SensorContext
+            {
+                LatestValue = (decimal)latest.Mgdl,
+                LatestTimestamp = latest.Timestamp,
+                TrendRate = (decimal?)latest.TrendRate,
+                LastReadingAt = latest.Timestamp,
+            };
+
+            await _alertOrchestrator.EvaluateAsync(context, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Alert evaluation failed after SensorGlucose publish");
         }
     }
 }
