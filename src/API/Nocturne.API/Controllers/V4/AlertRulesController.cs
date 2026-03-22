@@ -101,6 +101,10 @@ public class AlertRulesController : ControllerBase
             ConfirmationReadings = request.ConfirmationReadings > 0 ? request.ConfirmationReadings : 1,
             IsEnabled = request.IsEnabled,
             SortOrder = request.SortOrder,
+            Severity = request.Severity ?? "normal",
+            ClientConfiguration = request.ClientConfiguration is not null
+                ? JsonSerializer.Serialize(request.ClientConfiguration)
+                : "{}",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };
@@ -181,6 +185,10 @@ public class AlertRulesController : ControllerBase
         rule.ConfirmationReadings = request.ConfirmationReadings > 0 ? request.ConfirmationReadings : 1;
         rule.IsEnabled = request.IsEnabled;
         rule.SortOrder = request.SortOrder;
+        rule.Severity = request.Severity ?? "normal";
+        rule.ClientConfiguration = request.ClientConfiguration is not null
+            ? JsonSerializer.Serialize(request.ClientConfiguration)
+            : "{}";
         rule.UpdatedAt = DateTime.UtcNow;
 
         if (request.Schedules is not null)
@@ -332,6 +340,8 @@ public class AlertRulesController : ControllerBase
         ConfirmationReadings = entity.ConfirmationReadings,
         IsEnabled = entity.IsEnabled,
         SortOrder = entity.SortOrder,
+        Severity = entity.Severity,
+        ClientConfiguration = DeserializeJson(entity.ClientConfiguration),
         Schedules = entity.Schedules
             .Select(s => new AlertScheduleResponse
             {
@@ -394,6 +404,8 @@ public class AlertRuleResponse
     public int ConfirmationReadings { get; set; }
     public bool IsEnabled { get; set; }
     public int SortOrder { get; set; }
+    public string Severity { get; set; } = "normal";
+    public object ClientConfiguration { get; set; } = new { };
     public List<AlertScheduleResponse> Schedules { get; set; } = [];
 }
 
@@ -435,6 +447,8 @@ public class CreateAlertRuleRequest
     public int ConfirmationReadings { get; set; } = 1;
     public bool IsEnabled { get; set; } = true;
     public int SortOrder { get; set; }
+    public string? Severity { get; set; }
+    public object? ClientConfiguration { get; set; }
     public List<CreateAlertScheduleRequest>? Schedules { get; set; }
 }
 
@@ -448,6 +462,8 @@ public class UpdateAlertRuleRequest
     public int ConfirmationReadings { get; set; } = 1;
     public bool IsEnabled { get; set; } = true;
     public int SortOrder { get; set; }
+    public string? Severity { get; set; }
+    public object? ClientConfiguration { get; set; }
     public List<CreateAlertScheduleRequest>? Schedules { get; set; }
 }
 
