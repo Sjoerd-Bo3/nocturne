@@ -352,6 +352,53 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<TenantMemberEntity> TenantMembers { get; set; } = null!;
 
+    // Alert Engine entities
+
+    /// <summary>
+    /// Gets or sets the AlertRules table for composable alert condition definitions
+    /// </summary>
+    public DbSet<AlertRuleEntity> AlertRules { get; set; }
+
+    /// <summary>
+    /// Gets or sets the AlertSchedules table for time-of-day/day-of-week schedule windows
+    /// </summary>
+    public DbSet<AlertScheduleEntity> AlertSchedules { get; set; }
+
+    /// <summary>
+    /// Gets or sets the AlertEscalationSteps table for ordered escalation chain steps
+    /// </summary>
+    public DbSet<AlertEscalationStepEntity> AlertEscalationSteps { get; set; }
+
+    /// <summary>
+    /// Gets or sets the AlertStepChannels table for delivery channels per escalation step
+    /// </summary>
+    public DbSet<AlertStepChannelEntity> AlertStepChannels { get; set; }
+
+    /// <summary>
+    /// Gets or sets the AlertTrackerState table for per-rule state machine tracking
+    /// </summary>
+    public DbSet<AlertTrackerStateEntity> AlertTrackerState { get; set; }
+
+    /// <summary>
+    /// Gets or sets the AlertExcursions table for continuous out-of-range episodes
+    /// </summary>
+    public DbSet<AlertExcursionEntity> AlertExcursions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the AlertInstances table for schedule-bound alert instances within excursions
+    /// </summary>
+    public DbSet<AlertInstanceEntity> AlertInstances { get; set; }
+
+    /// <summary>
+    /// Gets or sets the AlertDeliveries table for individual channel delivery attempts
+    /// </summary>
+    public DbSet<AlertDeliveryEntity> AlertDeliveries { get; set; }
+
+    /// <summary>
+    /// Gets or sets the AlertInvites table for shareable follower invite tokens
+    /// </summary>
+    public DbSet<AlertInviteEntity> AlertInvites { get; set; }
+
 
     /// <summary>
     /// Configure the database model and relationships
@@ -1495,6 +1542,39 @@ public class NocturneDbContext : DbContext
         modelBuilder.Entity<PatientInsulinEntity>()
             .HasIndex(e => new { e.TenantId, e.IsCurrent })
             .HasDatabaseName("ix_patient_insulins_tenant_is_current");
+
+        // Alert Engine indexes
+
+        // Sweep query: find instances that need escalation
+        modelBuilder.Entity<AlertInstanceEntity>()
+            .HasIndex(e => new { e.Status, e.NextEscalationAt })
+            .HasDatabaseName("ix_alert_instances_status_next_escalation");
+
+        // Active excursion lookup by tenant
+        modelBuilder.Entity<AlertExcursionEntity>()
+            .HasIndex(e => new { e.TenantId, e.EndedAt })
+            .HasDatabaseName("ix_alert_excursions_tenant_ended_at");
+
+        // Per-rule excursion lookup
+        modelBuilder.Entity<AlertExcursionEntity>()
+            .HasIndex(e => new { e.AlertRuleId, e.EndedAt })
+            .HasDatabaseName("ix_alert_excursions_rule_ended_at");
+
+        // Pending delivery sweep
+        modelBuilder.Entity<AlertDeliveryEntity>()
+            .HasIndex(e => new { e.Status, e.CreatedAt })
+            .HasDatabaseName("ix_alert_deliveries_status_created_at");
+
+        // Unique invite token lookup
+        modelBuilder.Entity<AlertInviteEntity>()
+            .HasIndex(e => e.Token)
+            .HasDatabaseName("ix_alert_invites_token")
+            .IsUnique();
+
+        // Signal loss sweep: find tenants that haven't reported recently
+        modelBuilder.Entity<TenantEntity>()
+            .HasIndex(t => t.LastReadingAt)
+            .HasDatabaseName("ix_tenants_last_reading_at");
     }
 
     private static void ConfigureEntities(ModelBuilder modelBuilder)
@@ -2107,6 +2187,148 @@ public class NocturneDbContext : DbContext
         modelBuilder.Entity<TenantMemberEntity>()
             .Property(tm => tm.Role)
             .HasConversion<string>();
+
+        // ───────────────────────────────────────────────
+        // Alert Engine entity configuration
+        // ───────────────────────────────────────────────
+
+        // AlertRuleEntity
+        modelBuilder.Entity<AlertRuleEntity>(entity =>
+        {
+            entity.ToTable("alert_rules");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.ConditionParams).HasColumnType("jsonb").HasDefaultValue("{}");
+            entity.Property(e => e.ConfirmationReadings).HasDefaultValue(1);
+            entity.Property(e => e.IsEnabled).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        // AlertScheduleEntity
+        modelBuilder.Entity<AlertScheduleEntity>(entity =>
+        {
+            entity.ToTable("alert_schedules");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.DaysOfWeek).HasColumnType("jsonb");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(e => e.AlertRule)
+                .WithMany(r => r.Schedules)
+                .HasForeignKey(e => e.AlertRuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AlertEscalationStepEntity
+        modelBuilder.Entity<AlertEscalationStepEntity>(entity =>
+        {
+            entity.ToTable("alert_escalation_steps");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(e => e.AlertSchedule)
+                .WithMany(s => s.EscalationSteps)
+                .HasForeignKey(e => e.AlertScheduleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AlertStepChannelEntity
+        modelBuilder.Entity<AlertStepChannelEntity>(entity =>
+        {
+            entity.ToTable("alert_step_channels");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(e => e.EscalationStep)
+                .WithMany(s => s.Channels)
+                .HasForeignKey(e => e.EscalationStepId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AlertTrackerStateEntity (1:1 with AlertRule, PK = AlertRuleId)
+        modelBuilder.Entity<AlertTrackerStateEntity>(entity =>
+        {
+            entity.ToTable("alert_tracker_state");
+            entity.HasKey(e => e.AlertRuleId);
+            entity.Property(e => e.AlertRuleId).ValueGeneratedNever();
+            entity.Property(e => e.State).HasDefaultValue("idle");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(e => e.AlertRule)
+                .WithOne(r => r.TrackerState)
+                .HasForeignKey<AlertTrackerStateEntity>(e => e.AlertRuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ActiveExcursion)
+                .WithMany()
+                .HasForeignKey(e => e.ActiveExcursionId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // AlertExcursionEntity
+        modelBuilder.Entity<AlertExcursionEntity>(entity =>
+        {
+            entity.ToTable("alert_excursions");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+
+            entity.HasOne(e => e.AlertRule)
+                .WithMany()
+                .HasForeignKey(e => e.AlertRuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AlertInstanceEntity
+        modelBuilder.Entity<AlertInstanceEntity>(entity =>
+        {
+            entity.ToTable("alert_instances");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.Status).HasDefaultValue("triggered");
+
+            entity.HasOne(e => e.AlertExcursion)
+                .WithMany(ex => ex.Instances)
+                .HasForeignKey(e => e.AlertExcursionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.AlertSchedule)
+                .WithMany()
+                .HasForeignKey(e => e.AlertScheduleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AlertDeliveryEntity
+        modelBuilder.Entity<AlertDeliveryEntity>(entity =>
+        {
+            entity.ToTable("alert_deliveries");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.Payload).HasColumnType("jsonb").HasDefaultValue("{}");
+            entity.Property(e => e.Status).HasDefaultValue("pending");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.RetryCount).HasDefaultValue(0);
+
+            entity.HasOne(e => e.AlertInstance)
+                .WithMany()
+                .HasForeignKey(e => e.AlertInstanceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.EscalationStep)
+                .WithMany()
+                .HasForeignKey(e => e.EscalationStepId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // AlertInviteEntity
+        modelBuilder.Entity<AlertInviteEntity>(entity =>
+        {
+            entity.ToTable("alert_invites");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.PermissionScope).HasDefaultValue("view_acknowledge");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(e => e.EscalationStep)
+                .WithMany()
+                .HasForeignKey(e => e.EscalationStepId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
     }
 
