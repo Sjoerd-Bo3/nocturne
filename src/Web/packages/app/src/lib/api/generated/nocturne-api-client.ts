@@ -3691,6 +3691,633 @@ export class WellKnownClient {
     }
 }
 
+export class AlertInvitesClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Generate an invite link for a follower to join an escalation step.
+     */
+    createInvite(request: CreateAlertInviteRequest, signal?: AbortSignal): Promise<AlertInviteResponse> {
+        let url_ = this.baseUrl + "/api/v4/alert-invites";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateInvite(_response);
+        });
+    }
+
+    protected processCreateInvite(response: Response): Promise<AlertInviteResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertInviteResponse;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertInviteResponse>(null as any);
+    }
+
+    /**
+     * Validate an invite token (public endpoint for redemption flow).
+     */
+    validateInvite(token: string, signal?: AbortSignal): Promise<AlertInviteResponse> {
+        let url_ = this.baseUrl + "/api/v4/alert-invites/{token}";
+        if (token === undefined || token === null)
+            throw new globalThis.Error("The parameter 'token' must be defined.");
+        url_ = url_.replace("{token}", encodeURIComponent("" + token));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processValidateInvite(_response);
+        });
+    }
+
+    protected processValidateInvite(response: Response): Promise<AlertInviteResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertInviteResponse;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status === 410) {
+            return response.text().then((_responseText) => {
+            let result410: any = null;
+            result410 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result410);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertInviteResponse>(null as any);
+    }
+
+    /**
+     * Redeem an invite token.
+     */
+    redeemInvite(token: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/alert-invites/{token}/redeem";
+        if (token === undefined || token === null)
+            throw new globalThis.Error("The parameter 'token' must be defined.");
+        url_ = url_.replace("{token}", encodeURIComponent("" + token));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRedeemInvite(_response);
+        });
+    }
+
+    protected processRedeemInvite(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status === 410) {
+            return response.text().then((_responseText) => {
+            let result410: any = null;
+            result410 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result410);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Revoke an unredeemed invite.
+     */
+    revokeInvite(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/alert-invites/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRevokeInvite(_response);
+        });
+    }
+
+    protected processRevokeInvite(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            result409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+}
+
+export class AlertRulesClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * List all alert rules for the current tenant with schedules and escalation steps.
+     */
+    getRules(signal?: AbortSignal): Promise<AlertRuleResponse[]> {
+        let url_ = this.baseUrl + "/api/v4/alert-rules";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetRules(_response);
+        });
+    }
+
+    protected processGetRules(response: Response): Promise<AlertRuleResponse[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertRuleResponse[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertRuleResponse[]>(null as any);
+    }
+
+    /**
+     * Create an alert rule with nested schedules, escalation steps, and channels.
+     */
+    createRule(request: CreateAlertRuleRequest, signal?: AbortSignal): Promise<AlertRuleResponse> {
+        let url_ = this.baseUrl + "/api/v4/alert-rules";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateRule(_response);
+        });
+    }
+
+    protected processCreateRule(response: Response): Promise<AlertRuleResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertRuleResponse;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertRuleResponse>(null as any);
+    }
+
+    /**
+     * Get a single alert rule with full schedule/escalation tree.
+     */
+    getRule(id: string, signal?: AbortSignal): Promise<AlertRuleResponse> {
+        let url_ = this.baseUrl + "/api/v4/alert-rules/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetRule(_response);
+        });
+    }
+
+    protected processGetRule(response: Response): Promise<AlertRuleResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertRuleResponse;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertRuleResponse>(null as any);
+    }
+
+    /**
+     * Update an alert rule.
+     */
+    updateRule(id: string, request: UpdateAlertRuleRequest, signal?: AbortSignal): Promise<AlertRuleResponse> {
+        let url_ = this.baseUrl + "/api/v4/alert-rules/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateRule(_response);
+        });
+    }
+
+    protected processUpdateRule(response: Response): Promise<AlertRuleResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertRuleResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertRuleResponse>(null as any);
+    }
+
+    /**
+     * Delete an alert rule (cascades to schedules, steps, channels).
+     */
+    deleteRule(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/alert-rules/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteRule(_response);
+        });
+    }
+
+    protected processDeleteRule(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Toggle an alert rule enabled/disabled.
+     */
+    toggleRule(id: string, signal?: AbortSignal): Promise<AlertRuleResponse> {
+        let url_ = this.baseUrl + "/api/v4/alert-rules/{id}/toggle";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "PATCH",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processToggleRule(_response);
+        });
+    }
+
+    protected processToggleRule(response: Response): Promise<AlertRuleResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertRuleResponse;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertRuleResponse>(null as any);
+    }
+}
+
+export class AlertsClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * List active (unresolved) excursions for the current tenant.
+     */
+    getActiveAlerts(signal?: AbortSignal): Promise<ActiveExcursionResponse[]> {
+        let url_ = this.baseUrl + "/api/v4/alerts/active";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetActiveAlerts(_response);
+        });
+    }
+
+    protected processGetActiveAlerts(response: Response): Promise<ActiveExcursionResponse[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ActiveExcursionResponse[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ActiveExcursionResponse[]>(null as any);
+    }
+
+    /**
+     * Get paginated history of resolved excursions.
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     */
+    getAlertHistory(page?: number | undefined, pageSize?: number | undefined, signal?: AbortSignal): Promise<AlertHistoryResponse> {
+        let url_ = this.baseUrl + "/api/v4/alerts/history?";
+        if (page === null)
+            throw new globalThis.Error("The parameter 'page' cannot be null.");
+        else if (page !== undefined)
+            url_ += "page=" + encodeURIComponent("" + page) + "&";
+        if (pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
+        else if (pageSize !== undefined)
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAlertHistory(_response);
+        });
+    }
+
+    protected processGetAlertHistory(response: Response): Promise<AlertHistoryResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertHistoryResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertHistoryResponse>(null as any);
+    }
+
+    /**
+     * Acknowledge all active alerts for the current tenant.
+     */
+    acknowledge(request: AcknowledgeRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/alerts/acknowledge";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAcknowledge(_response);
+        });
+    }
+
+    protected processAcknowledge(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+}
+
 export class ApsSnapshotClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -25223,6 +25850,149 @@ export interface OAuthAuthorizationServerMetadata {
     scopesSupported?: string[];
     codeChallengeMethodsSupported?: string[];
     serviceDocumentation?: string | undefined;
+}
+
+export interface AlertInviteResponse {
+    id?: string;
+    token?: string;
+    escalationStepId?: string;
+    permissionScope?: string;
+    isUsed?: boolean;
+    expiresAt?: Date;
+    createdAt?: Date;
+}
+
+export interface CreateAlertInviteRequest {
+    escalationStepId?: string;
+    permissionScope?: string | undefined;
+}
+
+export interface AlertRuleResponse {
+    id?: string;
+    name?: string;
+    description?: string | undefined;
+    conditionType?: string;
+    conditionParams?: any;
+    hysteresisMinutes?: number;
+    confirmationReadings?: number;
+    isEnabled?: boolean;
+    sortOrder?: number;
+    schedules?: AlertScheduleResponse[];
+}
+
+export interface AlertScheduleResponse {
+    id?: string;
+    name?: string;
+    isDefault?: boolean;
+    daysOfWeek?: number[] | undefined;
+    startTime?: string | undefined;
+    endTime?: string | undefined;
+    timezone?: string;
+    escalationSteps?: AlertEscalationStepResponse[];
+}
+
+export interface AlertEscalationStepResponse {
+    id?: string;
+    stepOrder?: number;
+    delaySeconds?: number;
+    channels?: AlertStepChannelResponse[];
+}
+
+export interface AlertStepChannelResponse {
+    id?: string;
+    channelType?: string;
+    destination?: string;
+    destinationLabel?: string | undefined;
+}
+
+export interface CreateAlertRuleRequest {
+    name?: string;
+    description?: string | undefined;
+    conditionType?: string;
+    conditionParams?: any | undefined;
+    hysteresisMinutes?: number;
+    confirmationReadings?: number;
+    isEnabled?: boolean;
+    sortOrder?: number;
+    schedules?: CreateAlertScheduleRequest[] | undefined;
+}
+
+export interface CreateAlertScheduleRequest {
+    name?: string | undefined;
+    isDefault?: boolean;
+    daysOfWeek?: number[] | undefined;
+    startTime?: string | undefined;
+    endTime?: string | undefined;
+    timezone?: string | undefined;
+    escalationSteps?: CreateAlertEscalationStepRequest[] | undefined;
+}
+
+export interface CreateAlertEscalationStepRequest {
+    stepOrder?: number;
+    delaySeconds?: number;
+    channels?: CreateAlertStepChannelRequest[] | undefined;
+}
+
+export interface CreateAlertStepChannelRequest {
+    channelType?: string;
+    destination?: string;
+    destinationLabel?: string | undefined;
+}
+
+export interface UpdateAlertRuleRequest {
+    name?: string;
+    description?: string | undefined;
+    conditionType?: string;
+    conditionParams?: any | undefined;
+    hysteresisMinutes?: number;
+    confirmationReadings?: number;
+    isEnabled?: boolean;
+    sortOrder?: number;
+    schedules?: CreateAlertScheduleRequest[] | undefined;
+}
+
+export interface ActiveExcursionResponse {
+    id?: string;
+    alertRuleId?: string;
+    ruleName?: string;
+    conditionType?: string;
+    startedAt?: Date;
+    acknowledgedAt?: Date | undefined;
+    acknowledgedBy?: string | undefined;
+    hysteresisStartedAt?: Date | undefined;
+    activeInstances?: ActiveInstanceResponse[];
+}
+
+export interface ActiveInstanceResponse {
+    id?: string;
+    scheduleId?: string;
+    status?: string;
+    currentStepOrder?: number;
+    triggeredAt?: Date;
+    nextEscalationAt?: Date | undefined;
+}
+
+export interface AlertHistoryResponse {
+    page?: number;
+    pageSize?: number;
+    totalCount?: number;
+    totalPages?: number;
+    items?: HistoryExcursionResponse[];
+}
+
+export interface HistoryExcursionResponse {
+    id?: string;
+    alertRuleId?: string;
+    ruleName?: string;
+    conditionType?: string;
+    startedAt?: Date;
+    endedAt?: Date;
+    acknowledgedAt?: Date | undefined;
+    acknowledgedBy?: string | undefined;
+}
+
+export interface AcknowledgeRequest {
+    acknowledgedBy?: string | undefined;
 }
 
 export interface PaginatedResponseOfApsSnapshot {

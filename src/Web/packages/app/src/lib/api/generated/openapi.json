@@ -2844,6 +2844,563 @@
         "x-client-property": "oidcDiscovery"
       }
     },
+    "/api/v4/alert-invites": {
+      "post": {
+        "tags": [
+          "V4 Alert Invites"
+        ],
+        "summary": "Generate an invite link for a follower to join an escalation step.",
+        "operationId": "AlertInvites_CreateInvite",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAlertInviteRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertInviteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/v4/alert-invites/{token}": {
+      "get": {
+        "tags": [
+          "V4 Alert Invites"
+        ],
+        "summary": "Validate an invite token (public endpoint for redemption flow).",
+        "operationId": "AlertInvites_ValidateInvite",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertInviteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/alert-invites/{token}/redeem": {
+      "post": {
+        "tags": [
+          "V4 Alert Invites"
+        ],
+        "summary": "Redeem an invite token.",
+        "operationId": "AlertInvites_RedeemInvite",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/v4/alert-invites/{id}": {
+      "delete": {
+        "tags": [
+          "V4 Alert Invites"
+        ],
+        "summary": "Revoke an unredeemed invite.",
+        "operationId": "AlertInvites_RevokeInvite",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/v4/alert-rules": {
+      "get": {
+        "tags": [
+          "V4 Alert Rules"
+        ],
+        "summary": "List all alert rules for the current tenant with schedules and escalation steps.",
+        "operationId": "AlertRules_GetRules",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertRuleResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "post": {
+        "tags": [
+          "V4 Alert Rules"
+        ],
+        "summary": "Create an alert rule with nested schedules, escalation steps, and channels.",
+        "operationId": "AlertRules_CreateRule",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAlertRuleRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetRules"
+        ]
+      }
+    },
+    "/api/v4/alert-rules/{id}": {
+      "get": {
+        "tags": [
+          "V4 Alert Rules"
+        ],
+        "summary": "Get a single alert rule with full schedule/escalation tree.",
+        "operationId": "AlertRules_GetRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "put": {
+        "tags": [
+          "V4 Alert Rules"
+        ],
+        "summary": "Update an alert rule.",
+        "operationId": "AlertRules_UpdateRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAlertRuleRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetRules",
+          "GetRule"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "V4 Alert Rules"
+        ],
+        "summary": "Delete an alert rule (cascades to schedules, steps, channels).",
+        "operationId": "AlertRules_DeleteRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetRules"
+        ]
+      }
+    },
+    "/api/v4/alert-rules/{id}/toggle": {
+      "patch": {
+        "tags": [
+          "V4 Alert Rules"
+        ],
+        "summary": "Toggle an alert rule enabled/disabled.",
+        "operationId": "AlertRules_ToggleRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetRules",
+          "GetRule"
+        ]
+      }
+    },
+    "/api/v4/alerts/active": {
+      "get": {
+        "tags": [
+          "V4 Alerts"
+        ],
+        "summary": "List active (unresolved) excursions for the current tenant.",
+        "operationId": "Alerts_GetActiveAlerts",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActiveExcursionResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/alerts/history": {
+      "get": {
+        "tags": [
+          "V4 Alerts"
+        ],
+        "summary": "Get paginated history of resolved excursions.",
+        "operationId": "Alerts_GetAlertHistory",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            },
+            "x-position": 1
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertHistoryResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/alerts/acknowledge": {
+      "post": {
+        "tags": [
+          "V4 Alerts"
+        ],
+        "summary": "Acknowledge all active alerts for the current tenant.",
+        "operationId": "Alerts_Acknowledge",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcknowledgeRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetActiveAlerts"
+        ]
+      }
+    },
     "/api/v4/device-status/aps": {
       "get": {
         "tags": [
@@ -26826,6 +27383,486 @@
             }
           },
           "serviceDocumentation": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AlertInviteResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "token": {
+            "type": "string"
+          },
+          "escalationStepId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "permissionScope": {
+            "type": "string"
+          },
+          "isUsed": {
+            "type": "boolean"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateAlertInviteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "escalationStepId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "permissionScope": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AlertRuleResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "conditionType": {
+            "type": "string"
+          },
+          "conditionParams": {},
+          "hysteresisMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "confirmationReadings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isEnabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "schedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertScheduleResponse"
+            }
+          }
+        }
+      },
+      "AlertScheduleResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "daysOfWeek": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "escalationSteps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertEscalationStepResponse"
+            }
+          }
+        }
+      },
+      "AlertEscalationStepResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "stepOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "delaySeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertStepChannelResponse"
+            }
+          }
+        }
+      },
+      "AlertStepChannelResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "channelType": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "destinationLabel": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CreateAlertRuleRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "conditionType": {
+            "type": "string"
+          },
+          "conditionParams": {
+            "nullable": true
+          },
+          "hysteresisMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "confirmationReadings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isEnabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "schedules": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/CreateAlertScheduleRequest"
+            }
+          }
+        }
+      },
+      "CreateAlertScheduleRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "daysOfWeek": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "timezone": {
+            "type": "string",
+            "nullable": true
+          },
+          "escalationSteps": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/CreateAlertEscalationStepRequest"
+            }
+          }
+        }
+      },
+      "CreateAlertEscalationStepRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "stepOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "delaySeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "channels": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/CreateAlertStepChannelRequest"
+            }
+          }
+        }
+      },
+      "CreateAlertStepChannelRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "channelType": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "destinationLabel": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateAlertRuleRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "conditionType": {
+            "type": "string"
+          },
+          "conditionParams": {
+            "nullable": true
+          },
+          "hysteresisMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "confirmationReadings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isEnabled": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "schedules": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/CreateAlertScheduleRequest"
+            }
+          }
+        }
+      },
+      "ActiveExcursionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "alertRuleId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "ruleName": {
+            "type": "string"
+          },
+          "conditionType": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "acknowledgedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "hysteresisStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "activeInstances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActiveInstanceResponse"
+            }
+          }
+        }
+      },
+      "ActiveInstanceResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "scheduleId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "currentStepOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "triggeredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextEscalationAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "AlertHistoryResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoryExcursionResponse"
+            }
+          }
+        }
+      },
+      "HistoryExcursionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "alertRuleId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "ruleName": {
+            "type": "string"
+          },
+          "conditionType": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "acknowledgedBy": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AcknowledgeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "acknowledgedBy": {
             "type": "string",
             "nullable": true
           }

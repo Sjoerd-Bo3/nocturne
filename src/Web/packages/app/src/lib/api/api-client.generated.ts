@@ -5,6 +5,9 @@
 import {
   ActivityClient,
   BackfillClient,
+  AlertInvitesClient,
+  AlertRulesClient,
+  AlertsClient,
   AlexaClient,
   AnalyticsClient,
   ApsSnapshotClient,
@@ -89,6 +92,9 @@ export class ApiClient {
   public readonly baseUrl: string;
   public readonly activity: ActivityClient;
   public readonly admin: BackfillClient;
+  public readonly alertInvites: AlertInvitesClient;
+  public readonly alertRules: AlertRulesClient;
+  public readonly alerts: AlertsClient;
   public readonly alexa: AlexaClient;
   public readonly analytics: AnalyticsClient;
   public readonly aPSSnapshots: ApsSnapshotClient;
@@ -173,6 +179,9 @@ export class ApiClient {
 
     this.activity = new ActivityClient(apiBaseUrl, http);
     this.admin = new BackfillClient(apiBaseUrl, http);
+    this.alertInvites = new AlertInvitesClient(apiBaseUrl, http);
+    this.alertRules = new AlertRulesClient(apiBaseUrl, http);
+    this.alerts = new AlertsClient(apiBaseUrl, http);
     this.alexa = new AlexaClient(apiBaseUrl, http);
     this.analytics = new AnalyticsClient(apiBaseUrl, http);
     this.aPSSnapshots = new ApsSnapshotClient(apiBaseUrl, http);

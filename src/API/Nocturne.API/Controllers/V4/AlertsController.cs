@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Infrastructure.Data;
@@ -37,6 +38,7 @@ public class AlertsController : ControllerBase
     /// List active (unresolved) excursions for the current tenant.
     /// </summary>
     [HttpGet("active")]
+    [RemoteQuery]
     [ProducesResponseType(typeof(List<ActiveExcursionResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<ActiveExcursionResponse>>> GetActiveAlerts(CancellationToken ct)
     {
@@ -81,6 +83,7 @@ public class AlertsController : ControllerBase
     /// Get paginated history of resolved excursions.
     /// </summary>
     [HttpGet("history")]
+    [RemoteQuery]
     [ProducesResponseType(typeof(AlertHistoryResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<AlertHistoryResponse>> GetAlertHistory(
         [FromQuery] int page = 1,
@@ -132,6 +135,7 @@ public class AlertsController : ControllerBase
     /// Acknowledge all active alerts for the current tenant.
     /// </summary>
     [HttpPost("acknowledge")]
+    [RemoteCommand(Invalidates = ["GetActiveAlerts"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult> Acknowledge(
         [FromBody] AcknowledgeRequest request, CancellationToken ct)

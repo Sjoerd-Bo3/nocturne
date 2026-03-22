@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models;
 
@@ -12,12 +13,16 @@ public class CompositeEvaluator : IConditionEvaluator
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly ConditionEvaluatorRegistry _registry;
+    private readonly IServiceProvider _serviceProvider;
+    private ConditionEvaluatorRegistry? _registry;
 
-    public CompositeEvaluator(ConditionEvaluatorRegistry registry)
+    public CompositeEvaluator(IServiceProvider serviceProvider)
     {
-        _registry = registry;
+        _serviceProvider = serviceProvider;
     }
+
+    private ConditionEvaluatorRegistry Registry =>
+        _registry ??= _serviceProvider.GetRequiredService<ConditionEvaluatorRegistry>();
 
     public string ConditionType => "composite";
 
@@ -37,7 +42,7 @@ public class CompositeEvaluator : IConditionEvaluator
 
     private bool EvaluateNode(ConditionNode node, SensorContext context)
     {
-        var evaluator = _registry.GetEvaluator(node.Type);
+        var evaluator = Registry.GetEvaluator(node.Type);
         if (evaluator is null)
             return false;
 

@@ -7,6 +7,9 @@ export * from './localauths.generated.remote';
 export * from './metadatas.generated.remote';
 export * from './oidcs.generated.remote';
 export * from './statistics.generated.remote';
+export * from './alertInvites.generated.remote';
+export * from './alertRules.generated.remote';
+export * from './alerts.generated.remote';
 // './apsSnapshots.generated.remote' - all exports collide, import directly
 export * from './batteries.generated.remote';
 // './bgChecks.generated.remote' - all exports collide, import directly

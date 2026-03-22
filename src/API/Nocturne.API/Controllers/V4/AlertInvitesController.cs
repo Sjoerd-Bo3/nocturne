@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -32,6 +33,7 @@ public class AlertInvitesController : ControllerBase
     /// </summary>
     [HttpPost]
     [Authorize]
+    [RemoteCommand]
     [ProducesResponseType(typeof(AlertInviteResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AlertInviteResponse>> CreateInvite(
@@ -89,6 +91,7 @@ public class AlertInvitesController : ControllerBase
     /// </summary>
     [HttpGet("{token}")]
     [AllowAnonymous]
+    [RemoteQuery]
     [ProducesResponseType(typeof(AlertInviteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status410Gone)]
@@ -126,6 +129,7 @@ public class AlertInvitesController : ControllerBase
     /// </summary>
     [HttpPost("{token}/redeem")]
     [Authorize]
+    [RemoteCommand]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status410Gone)]
@@ -161,6 +165,7 @@ public class AlertInvitesController : ControllerBase
     /// </summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
+    [RemoteCommand]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

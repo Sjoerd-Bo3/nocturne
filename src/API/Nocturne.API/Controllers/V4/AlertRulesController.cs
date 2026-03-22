@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Nocturne.API.Attributes;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
 
@@ -31,6 +32,7 @@ public class AlertRulesController : ControllerBase
     /// List all alert rules for the current tenant with schedules and escalation steps.
     /// </summary>
     [HttpGet]
+    [RemoteQuery]
     [ProducesResponseType(typeof(List<AlertRuleResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<AlertRuleResponse>>> GetRules(CancellationToken ct)
     {
@@ -51,6 +53,7 @@ public class AlertRulesController : ControllerBase
     /// Get a single alert rule with full schedule/escalation tree.
     /// </summary>
     [HttpGet("{id:guid}")]
+    [RemoteQuery]
     [ProducesResponseType(typeof(AlertRuleResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AlertRuleResponse>> GetRule(Guid id, CancellationToken ct)
@@ -74,6 +77,7 @@ public class AlertRulesController : ControllerBase
     /// Create an alert rule with nested schedules, escalation steps, and channels.
     /// </summary>
     [HttpPost]
+    [RemoteCommand(Invalidates = ["GetRules"])]
     [ProducesResponseType(typeof(AlertRuleResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AlertRuleResponse>> CreateRule(
@@ -147,6 +151,7 @@ public class AlertRulesController : ControllerBase
     /// Update an alert rule.
     /// </summary>
     [HttpPut("{id:guid}")]
+    [RemoteCommand(Invalidates = ["GetRules", "GetRule"])]
     [ProducesResponseType(typeof(AlertRuleResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -212,6 +217,7 @@ public class AlertRulesController : ControllerBase
     /// Delete an alert rule (cascades to schedules, steps, channels).
     /// </summary>
     [HttpDelete("{id:guid}")]
+    [RemoteCommand(Invalidates = ["GetRules"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteRule(Guid id, CancellationToken ct)
@@ -232,6 +238,7 @@ public class AlertRulesController : ControllerBase
     /// Toggle an alert rule enabled/disabled.
     /// </summary>
     [HttpPatch("{id:guid}/toggle")]
+    [RemoteCommand(Invalidates = ["GetRules", "GetRule"])]
     [ProducesResponseType(typeof(AlertRuleResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AlertRuleResponse>> ToggleRule(Guid id, CancellationToken ct)
