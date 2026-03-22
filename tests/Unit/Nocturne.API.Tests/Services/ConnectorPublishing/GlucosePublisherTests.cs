@@ -1,11 +1,14 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nocturne.API.Services.ConnectorPublishing;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
+using Nocturne.Infrastructure.Data;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services.ConnectorPublishing;
@@ -25,6 +28,8 @@ public class GlucosePublisherTests
         _publisher = new GlucosePublisher(
             _mockEntryService.Object,
             _mockSensorGlucoseRepository.Object,
+            Mock.Of<IDbContextFactory<NocturneDbContext>>(),
+            Mock.Of<ITenantAccessor>(),
             NullLogger<GlucosePublisher>.Instance
         );
     }
