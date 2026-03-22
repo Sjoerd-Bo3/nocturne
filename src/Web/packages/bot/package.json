@@ -13,12 +13,12 @@
   "author": "Nocturne Project",
   "license": "MIT",
   "dependencies": {
-    "chat": "latest",
-    "@chat-adapter/discord": "latest",
-    "@chat-adapter/slack": "latest",
-    "@chat-adapter/telegram": "latest",
-    "@chat-adapter/whatsapp": "latest",
-    "@chat-adapter/state-postgres": "latest",
+    "chat": "4.20.2",
+    "@chat-adapter/discord": "4.20.2",
+    "@chat-adapter/slack": "4.20.2",
+    "@chat-adapter/telegram": "4.20.2",
+    "@chat-adapter/whatsapp": "4.20.2",
+    "@chat-adapter/state-pg": "4.20.2",
     "winston": "^3.11.0"
   },
   "devDependencies": {

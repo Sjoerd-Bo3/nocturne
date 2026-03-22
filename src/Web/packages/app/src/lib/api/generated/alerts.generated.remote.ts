@@ -109,3 +109,19 @@ export const snoozeInstance = command(z.object({ instanceId: z.string(), request
     throw error(500, 'Failed to snooze instance');
   }
 });
+
+/** Get pending deliveries for the specified channel types.
+Used by bot/adapter services to poll for work. */
+export const getPendingDeliveries = query(z.object({ channelType: z.array(z.string()).optional() }).optional(), async (params) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    return await apiClient.alerts.getPendingDeliveries(params?.channelType);
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in alerts.getPendingDeliveries:', err);
+    throw error(500, 'Failed to get pending deliveries');
+  }
+});

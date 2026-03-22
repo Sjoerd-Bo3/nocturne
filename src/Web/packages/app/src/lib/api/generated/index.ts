@@ -18,6 +18,7 @@ export * from './batteries.generated.remote';
 // './boluses.generated.remote' - all exports collide, import directly
 // './calibrations.generated.remote' - all exports collide, import directly
 export * from './chartDatas.generated.remote';
+export * from './chatIdentities.generated.remote';
 export { list } from './clockFaces.generated.remote';
 export { getSuggestion, deleteSuggestion, acceptSuggestion, dismissSuggestion, triggerDetection } from './compressionLows.generated.remote';
 export * from './dataOverviews.generated.remote';

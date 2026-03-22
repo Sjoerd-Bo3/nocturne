@@ -4656,6 +4656,131 @@ export class AlertsClient {
         }
         return Promise.resolve<void>(null as any);
     }
+
+    /**
+     * Mark a delivery as successfully sent by the channel adapter.
+     */
+    markDelivered(deliveryId: string, request: MarkDeliveredRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/alerts/deliveries/{deliveryId}/delivered";
+        if (deliveryId === undefined || deliveryId === null)
+            throw new globalThis.Error("The parameter 'deliveryId' must be defined.");
+        url_ = url_.replace("{deliveryId}", encodeURIComponent("" + deliveryId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMarkDelivered(_response);
+        });
+    }
+
+    protected processMarkDelivered(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Mark a delivery as failed by the channel adapter.
+     */
+    markFailed(deliveryId: string, request: MarkFailedRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/alerts/deliveries/{deliveryId}/failed";
+        if (deliveryId === undefined || deliveryId === null)
+            throw new globalThis.Error("The parameter 'deliveryId' must be defined.");
+        url_ = url_.replace("{deliveryId}", encodeURIComponent("" + deliveryId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMarkFailed(_response);
+        });
+    }
+
+    protected processMarkFailed(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Get pending deliveries for the specified channel types.
+    Used by bot/adapter services to poll for work.
+     * @param channelType (optional) 
+     */
+    getPendingDeliveries(channelType?: string[] | undefined, signal?: AbortSignal): Promise<PendingDeliveryResponse[]> {
+        let url_ = this.baseUrl + "/api/v4/alerts/deliveries/pending?";
+        if (channelType === null)
+            throw new globalThis.Error("The parameter 'channelType' cannot be null.");
+        else if (channelType !== undefined)
+            channelType && channelType.forEach(item => { url_ += "channelType=" + encodeURIComponent("" + item) + "&"; });
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetPendingDeliveries(_response);
+        });
+    }
+
+    protected processGetPendingDeliveries(response: Response): Promise<PendingDeliveryResponse[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PendingDeliveryResponse[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PendingDeliveryResponse[]>(null as any);
+    }
 }
 
 export class ApsSnapshotClient {
@@ -6167,6 +6292,186 @@ export class ChartDataClient {
             });
         }
         return Promise.resolve<DashboardChartData>(null as any);
+    }
+}
+
+export class ChatIdentityClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * List active chat identity links for the current tenant.
+     */
+    getLinks(signal?: AbortSignal): Promise<ChatIdentityLinkResponse[]> {
+        let url_ = this.baseUrl + "/api/v4/chat-identity";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetLinks(_response);
+        });
+    }
+
+    protected processGetLinks(response: Response): Promise<ChatIdentityLinkResponse[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ChatIdentityLinkResponse[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ChatIdentityLinkResponse[]>(null as any);
+    }
+
+    /**
+     * Create a new chat identity link.
+     */
+    createLink(request: CreateChatIdentityLinkRequest, signal?: AbortSignal): Promise<ChatIdentityLinkResponse> {
+        let url_ = this.baseUrl + "/api/v4/chat-identity";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateLink(_response);
+        });
+    }
+
+    protected processCreateLink(response: Response): Promise<ChatIdentityLinkResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ChatIdentityLinkResponse;
+            return result201;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ChatIdentityLinkResponse>(null as any);
+    }
+
+    /**
+     * Revoke (soft-delete) a chat identity link.
+     */
+    revokeLink(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/chat-identity/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRevokeLink(_response);
+        });
+    }
+
+    protected processRevokeLink(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Resolve a platform identity to a Nocturne user. Used by the bot service
+    to look up which tenant/user a chat message belongs to.
+     * @param platform (optional) 
+     * @param platformUserId (optional) 
+     */
+    resolve(platform?: string | undefined, platformUserId?: string | undefined, signal?: AbortSignal): Promise<ChatIdentityLinkResponse> {
+        let url_ = this.baseUrl + "/api/v4/chat-identity/resolve?";
+        if (platform === null)
+            throw new globalThis.Error("The parameter 'platform' cannot be null.");
+        else if (platform !== undefined)
+            url_ += "platform=" + encodeURIComponent("" + platform) + "&";
+        if (platformUserId === null)
+            throw new globalThis.Error("The parameter 'platformUserId' cannot be null.");
+        else if (platformUserId !== undefined)
+            url_ += "platformUserId=" + encodeURIComponent("" + platformUserId) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processResolve(_response);
+        });
+    }
+
+    protected processResolve(response: Response): Promise<ChatIdentityLinkResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ChatIdentityLinkResponse;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ChatIdentityLinkResponse>(null as any);
     }
 }
 
@@ -16523,6 +16828,56 @@ export class StepCountClient {
     }
 }
 
+export class SystemClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Accept a heartbeat from an external service (e.g. bot adapter).
+    Returns 200 OK. Actual health tracking will be added later.
+     */
+    heartbeat(request: HeartbeatRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/system/heartbeat";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processHeartbeat(_response);
+        });
+    }
+
+    protected processHeartbeat(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+}
+
 export class SystemEventsClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -26367,6 +26722,25 @@ export interface SnoozeRequest {
     minutes?: number;
 }
 
+export interface MarkDeliveredRequest {
+    platformMessageId?: string | undefined;
+    platformThreadId?: string | undefined;
+}
+
+export interface MarkFailedRequest {
+    error?: string;
+}
+
+export interface PendingDeliveryResponse {
+    id?: string;
+    alertInstanceId?: string;
+    channelType?: string;
+    destination?: string;
+    payload?: string;
+    createdAt?: Date;
+    retryCount?: number;
+}
+
 export interface PaginatedResponseOfApsSnapshot {
     data?: ApsSnapshot[];
     pagination?: PaginationInfo;
@@ -26808,6 +27182,24 @@ export enum TrackerCategory {
     Sensor = "Sensor",
     Cannula = "Cannula",
     Battery = "Battery",
+}
+
+export interface ChatIdentityLinkResponse {
+    id?: string;
+    nocturneUserId?: string;
+    platform?: string;
+    platformUserId?: string;
+    platformChannelId?: string | undefined;
+    displayUnit?: string;
+    isActive?: boolean;
+    createdAt?: Date;
+}
+
+export interface CreateChatIdentityLinkRequest {
+    nocturneUserId?: string;
+    platform?: string;
+    platformUserId?: string;
+    platformChannelId?: string | undefined;
 }
 
 export interface ClockFacePublicDto {
@@ -28502,6 +28894,11 @@ export interface StepCount extends ProcessableDocumentBase {
 
 export function isStepCount(object: any): object is StepCount {
     return object && object[''] === 'StepCount';
+}
+
+export interface HeartbeatRequest {
+    platforms?: string[];
+    service?: string;
 }
 
 export interface SystemEvent {

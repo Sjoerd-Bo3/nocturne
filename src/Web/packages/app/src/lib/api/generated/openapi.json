@@ -3699,6 +3699,122 @@
         ]
       }
     },
+    "/api/v4/alerts/deliveries/{deliveryId}/delivered": {
+      "post": {
+        "tags": [
+          "V4 Alerts"
+        ],
+        "summary": "Mark a delivery as successfully sent by the channel adapter.",
+        "operationId": "Alerts_MarkDelivered",
+        "parameters": [
+          {
+            "name": "deliveryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkDeliveredRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v4/alerts/deliveries/{deliveryId}/failed": {
+      "post": {
+        "tags": [
+          "V4 Alerts"
+        ],
+        "summary": "Mark a delivery as failed by the channel adapter.",
+        "operationId": "Alerts_MarkFailed",
+        "parameters": [
+          {
+            "name": "deliveryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkFailedRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v4/alerts/deliveries/pending": {
+      "get": {
+        "tags": [
+          "V4 Alerts"
+        ],
+        "summary": "Get pending deliveries for the specified channel types.\nUsed by bot/adapter services to poll for work.",
+        "operationId": "Alerts_GetPendingDeliveries",
+        "parameters": [
+          {
+            "name": "channelType",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingDeliveryResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
     "/api/v4/device-status/aps": {
       "get": {
         "tags": [
@@ -5323,6 +5439,146 @@
           },
           "500": {
             "description": ""
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/chat-identity": {
+      "get": {
+        "tags": [
+          "V4 Chat Identity"
+        ],
+        "summary": "List active chat identity links for the current tenant.",
+        "operationId": "ChatIdentity_GetLinks",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChatIdentityLinkResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "post": {
+        "tags": [
+          "V4 Chat Identity"
+        ],
+        "summary": "Create a new chat identity link.",
+        "operationId": "ChatIdentity_CreateLink",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatIdentityLinkRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatIdentityLinkResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetLinks"
+        ]
+      }
+    },
+    "/api/v4/chat-identity/{id}": {
+      "delete": {
+        "tags": [
+          "V4 Chat Identity"
+        ],
+        "summary": "Revoke (soft-delete) a chat identity link.",
+        "operationId": "ChatIdentity_RevokeLink",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetLinks"
+        ]
+      }
+    },
+    "/api/v4/chat-identity/resolve": {
+      "get": {
+        "tags": [
+          "V4 Chat Identity"
+        ],
+        "summary": "Resolve a platform identity to a Nocturne user. Used by the bot service\nto look up which tenant/user a chat message belongs to.",
+        "operationId": "ChatIdentity_Resolve",
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "platformUserId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatIdentityLinkResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "x-remote-type": "query"
@@ -14139,6 +14395,32 @@
             }
           },
           "500": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v4/system/heartbeat": {
+      "post": {
+        "tags": [
+          "V4 System"
+        ],
+        "summary": "Accept a heartbeat from an external service (e.g. bot adapter).\nReturns 200 OK. Actual health tracking will be added later.",
+        "operationId": "System_Heartbeat",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HeartbeatRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
             "description": ""
           }
         }
@@ -28258,6 +28540,60 @@
           }
         }
       },
+      "MarkDeliveredRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "platformMessageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "platformThreadId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "MarkFailedRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "PendingDeliveryResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "alertInstanceId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "channelType": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "retryCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "PaginatedResponseOfApsSnapshot": {
         "type": "object",
         "additionalProperties": false,
@@ -29755,6 +30091,60 @@
           "Cannula",
           "Battery"
         ]
+      },
+      "ChatIdentityLinkResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nocturneUserId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "platformUserId": {
+            "type": "string"
+          },
+          "platformChannelId": {
+            "type": "string",
+            "nullable": true
+          },
+          "displayUnit": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateChatIdentityLinkRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "nocturneUserId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "platformUserId": {
+            "type": "string"
+          },
+          "platformChannelId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       },
       "ClockFacePublicDto": {
         "type": "object",
@@ -35287,6 +35677,21 @@
             }
           }
         ]
+      },
+      "HeartbeatRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "platforms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "service": {
+            "type": "string"
+          }
+        }
       },
       "SystemEvent": {
         "type": "object",

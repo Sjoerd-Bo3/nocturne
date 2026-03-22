@@ -20,6 +20,7 @@ import {
   BolusClient,
   CalibrationClient,
   ChartDataClient,
+  ChatIdentityClient,
   ClockFacesClient,
   CompatibilityClient,
   CompressionLowClient,
@@ -68,6 +69,7 @@ import {
   StatisticsClient,
   StatusClient,
   StepCountClient,
+  SystemClient,
   SystemEventsClient,
   TenantClient,
   TimeQueryClient,
@@ -108,6 +110,7 @@ export class ApiClient {
   public readonly boluses: BolusClient;
   public readonly calibrations: CalibrationClient;
   public readonly chartData: ChartDataClient;
+  public readonly chatIdentity: ChatIdentityClient;
   public readonly clockFaces: ClockFacesClient;
   public readonly compatibility: CompatibilityClient;
   public readonly compressionLows: CompressionLowClient;
@@ -156,6 +159,7 @@ export class ApiClient {
   public readonly statistics: StatisticsClient;
   public readonly status: StatusClient;
   public readonly stepCount: StepCountClient;
+  public readonly system: SystemClient;
   public readonly systemEvents: SystemEventsClient;
   public readonly tenant: TenantClient;
   public readonly timeQuery: TimeQueryClient;
@@ -196,6 +200,7 @@ export class ApiClient {
     this.boluses = new BolusClient(apiBaseUrl, http);
     this.calibrations = new CalibrationClient(apiBaseUrl, http);
     this.chartData = new ChartDataClient(apiBaseUrl, http);
+    this.chatIdentity = new ChatIdentityClient(apiBaseUrl, http);
     this.clockFaces = new ClockFacesClient(apiBaseUrl, http);
     this.compatibility = new CompatibilityClient(apiBaseUrl, http);
     this.compressionLows = new CompressionLowClient(apiBaseUrl, http);
@@ -244,6 +249,7 @@ export class ApiClient {
     this.statistics = new StatisticsClient(apiBaseUrl, http);
     this.status = new StatusClient(apiBaseUrl, http);
     this.stepCount = new StepCountClient(apiBaseUrl, http);
+    this.system = new SystemClient(apiBaseUrl, http);
     this.systemEvents = new SystemEventsClient(apiBaseUrl, http);
     this.tenant = new TenantClient(apiBaseUrl, http);
     this.timeQuery = new TimeQueryClient(apiBaseUrl, http);
