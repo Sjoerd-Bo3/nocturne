@@ -9,6 +9,8 @@
     getActiveAlerts,
     getAlertHistory,
     acknowledge,
+    getQuietHours,
+    updateQuietHours,
   } from "$api/generated/alerts.generated.remote";
   import type {
     AlertRuleResponse,
@@ -25,6 +27,8 @@
   import { Button } from "$lib/components/ui/button";
   import { Badge } from "$lib/components/ui/badge";
   import { Switch } from "$lib/components/ui/switch";
+  import { Label } from "$lib/components/ui/label";
+  import { Input } from "$lib/components/ui/input";
   import { Separator } from "$lib/components/ui/separator";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import SettingsPageSkeleton from "$lib/components/settings/SettingsPageSkeleton.svelte";
@@ -44,8 +48,12 @@
     TrendingDown,
     TrendingUp,
     ArrowUpRight,
+    Moon,
+    Save,
   } from "lucide-svelte";
   import { goto } from "$app/navigation";
+  import RuleEditorSheet from "$lib/components/alerts/RuleEditorSheet.svelte";
+  import { Pencil } from "lucide-svelte";
 
   let rules = $state<AlertRuleResponse[]>([]);
   let activeAlerts = $state<ActiveExcursionResponse[]>([]);
@@ -58,6 +66,15 @@
   let acknowledging = $state(false);
   let historyPage = $state(1);
   let historyLoading = $state(false);
+  let editorOpen = $state(false);
+  let editingRule = $state<AlertRuleResponse | null>(null);
+
+  // Quiet hours
+  let quietHoursEnabled = $state(false);
+  let quietHoursStart = $state("22:00");
+  let quietHoursEnd = $state("07:00");
+  let quietHoursOverrideCritical = $state(true);
+  let quietHoursSaving = $state(false);
 
   function getConditionIcon(conditionType: string | undefined) {
     switch (conditionType) {
@@ -159,14 +176,21 @@
     loading = true;
     error = null;
     try {
-      const [rulesResult, alertsResult, historyResult] = await Promise.all([
+      const [rulesResult, alertsResult, historyResult, qhResult] = await Promise.all([
         getRules(),
         getActiveAlerts(),
         getAlertHistory({ page: 1, pageSize: 10 }),
+        getQuietHours().catch(() => null),
       ]);
       rules = Array.isArray(rulesResult) ? rulesResult : [];
       activeAlerts = Array.isArray(alertsResult) ? alertsResult : [];
       history = historyResult ?? null;
+      if (qhResult) {
+        quietHoursEnabled = qhResult.enabled ?? false;
+        quietHoursStart = qhResult.startTime ?? "22:00";
+        quietHoursEnd = qhResult.endTime ?? "07:00";
+        quietHoursOverrideCritical = qhResult.overrideCritical ?? true;
+      }
     } catch (err) {
       error =
         err instanceof Error ? err.message : "Failed to load alert settings";
@@ -231,6 +255,37 @@
     expandedRuleId = expandedRuleId === ruleId ? null : ruleId;
   }
 
+  async function handleSaveQuietHours() {
+    quietHoursSaving = true;
+    try {
+      await updateQuietHours({
+        enabled: quietHoursEnabled,
+        startTime: quietHoursEnabled ? quietHoursStart : undefined,
+        endTime: quietHoursEnabled ? quietHoursEnd : undefined,
+        overrideCritical: quietHoursOverrideCritical,
+      });
+    } catch {
+      // Error handled by remote function
+    } finally {
+      quietHoursSaving = false;
+    }
+  }
+
+  function openCreateEditor() {
+    editingRule = null;
+    editorOpen = true;
+  }
+
+  function openEditEditor(rule: AlertRuleResponse) {
+    editingRule = rule;
+    editorOpen = true;
+  }
+
+  async function handleEditorSave() {
+    const result = await getRules();
+    rules = Array.isArray(result) ? result : [];
+  }
+
   onMount(() => {
     loadData();
   });
@@ -254,7 +309,7 @@
         <Zap class="h-4 w-4 mr-2" />
         Setup Wizard
       </Button>
-      <Button onclick={() => goto("/settings/alerts/setup")}>
+      <Button onclick={openCreateEditor}>
         <Plus class="h-4 w-4 mr-2" />
         Add Rule
       </Button>
@@ -516,6 +571,14 @@
                   <!-- Actions -->
                   <Separator />
                   <div class="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onclick={() => openEditEditor(rule)}
+                    >
+                      <Pencil class="h-4 w-4 mr-2" />
+                      Edit Rule
+                    </Button>
                     <AlertDialog.Root>
                       <AlertDialog.Trigger>
                         {#snippet child({ props })}
@@ -558,6 +621,63 @@
             </div>
           {/each}
         {/if}
+      </CardContent>
+    </Card>
+
+    <!-- Quiet Hours -->
+    <Card>
+      <CardHeader>
+        <CardTitle class="flex items-center gap-2">
+          <Moon class="h-5 w-5" />
+          Quiet Hours
+        </CardTitle>
+        <CardDescription>
+          Suppress non-critical alerts during specific hours
+        </CardDescription>
+      </CardHeader>
+      <CardContent class="space-y-4">
+        <div class="flex items-center justify-between">
+          <Label for="qh-enabled">Enable quiet hours</Label>
+          <Switch id="qh-enabled" bind:checked={quietHoursEnabled} />
+        </div>
+
+        {#if quietHoursEnabled}
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <Label for="qh-start">Start Time</Label>
+              <Input id="qh-start" type="time" bind:value={quietHoursStart} />
+            </div>
+            <div class="space-y-2">
+              <Label for="qh-end">End Time</Label>
+              <Input id="qh-end" type="time" bind:value={quietHoursEnd} />
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div>
+              <Label for="qh-override">Allow critical alerts during quiet hours</Label>
+              <p class="text-xs text-muted-foreground">
+                Critical alerts bypass quiet hours
+              </p>
+            </div>
+            <Switch id="qh-override" bind:checked={quietHoursOverrideCritical} />
+          </div>
+        {/if}
+
+        <div class="flex justify-end">
+          <Button
+            size="sm"
+            onclick={handleSaveQuietHours}
+            disabled={quietHoursSaving}
+          >
+            {#if quietHoursSaving}
+              <Loader2 class="h-4 w-4 mr-2 animate-spin" />
+            {:else}
+              <Save class="h-4 w-4 mr-2" />
+            {/if}
+            Save
+          </Button>
+        </div>
       </CardContent>
     </Card>
 
@@ -663,3 +783,5 @@
     </Card>
   {/if}
 </div>
+
+<RuleEditorSheet bind:open={editorOpen} rule={editingRule} onSave={handleEditorSave} />

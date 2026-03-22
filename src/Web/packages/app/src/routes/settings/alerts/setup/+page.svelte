@@ -49,6 +49,8 @@
     confirmationReadings: number;
     hysteresisMinutes: number;
     enabled: boolean;
+    severity: string;
+    clientConfiguration: Record<string, unknown>;
   };
 
   let presets = $state<Preset[]>([
@@ -65,6 +67,12 @@
       confirmationReadings: 1,
       hysteresisMinutes: 15,
       enabled: true,
+      severity: "critical",
+      clientConfiguration: {
+        audio: { enabled: true, sound: "alarm-urgent", ascending: true, startVolume: 50, maxVolume: 100, ascendDurationSeconds: 30, repeatCount: 3 },
+        visual: { flashEnabled: true, flashColor: "#ff0000", persistentBanner: true, wakeScreen: true },
+        snooze: { defaultMinutes: 5, options: [5, 10, 15], maxCount: 3, smartSnooze: true, smartSnoozeExtendMinutes: 5 },
+      },
     },
     {
       key: "low",
@@ -79,6 +87,12 @@
       confirmationReadings: 2,
       hysteresisMinutes: 15,
       enabled: true,
+      severity: "normal",
+      clientConfiguration: {
+        audio: { enabled: true, sound: "alarm-low", ascending: true, startVolume: 30, maxVolume: 80, ascendDurationSeconds: 30, repeatCount: 2 },
+        visual: { flashEnabled: false, flashColor: "#ff0000", persistentBanner: true, wakeScreen: false },
+        snooze: { defaultMinutes: 15, options: [5, 15, 30], maxCount: 5, smartSnooze: true, smartSnoozeExtendMinutes: 10 },
+      },
     },
     {
       key: "high",
@@ -93,6 +107,12 @@
       confirmationReadings: 3,
       hysteresisMinutes: 30,
       enabled: false,
+      severity: "normal",
+      clientConfiguration: {
+        audio: { enabled: true, sound: "alarm-high", ascending: false, startVolume: 60, maxVolume: 60, ascendDurationSeconds: 0, repeatCount: 2 },
+        visual: { flashEnabled: false, flashColor: "#ff0000", persistentBanner: true, wakeScreen: false },
+        snooze: { defaultMinutes: 30, options: [15, 30, 60], maxCount: 5, smartSnooze: false, smartSnoozeExtendMinutes: 10 },
+      },
     },
     {
       key: "urgent_high",
@@ -107,6 +127,12 @@
       confirmationReadings: 2,
       hysteresisMinutes: 30,
       enabled: false,
+      severity: "critical",
+      clientConfiguration: {
+        audio: { enabled: true, sound: "alarm-urgent", ascending: true, startVolume: 50, maxVolume: 100, ascendDurationSeconds: 30, repeatCount: 3 },
+        visual: { flashEnabled: true, flashColor: "#ff0000", persistentBanner: true, wakeScreen: true },
+        snooze: { defaultMinutes: 15, options: [5, 15, 30], maxCount: 3, smartSnooze: false, smartSnoozeExtendMinutes: 10 },
+      },
     },
     {
       key: "fast_drop",
@@ -126,6 +152,12 @@
       confirmationReadings: 2,
       hysteresisMinutes: 15,
       enabled: false,
+      severity: "normal",
+      clientConfiguration: {
+        audio: { enabled: true, sound: "alert", ascending: true, startVolume: 40, maxVolume: 90, ascendDurationSeconds: 30, repeatCount: 2 },
+        visual: { flashEnabled: false, flashColor: "#ff0000", persistentBanner: true, wakeScreen: false },
+        snooze: { defaultMinutes: 15, options: [5, 15, 30], maxCount: 5, smartSnooze: true, smartSnoozeExtendMinutes: 10 },
+      },
     },
     {
       key: "sensor_lost",
@@ -140,6 +172,12 @@
       confirmationReadings: 1,
       hysteresisMinutes: 5,
       enabled: false,
+      severity: "normal",
+      clientConfiguration: {
+        audio: { enabled: true, sound: "chime", ascending: false, startVolume: 50, maxVolume: 50, ascendDurationSeconds: 0, repeatCount: 1 },
+        visual: { flashEnabled: false, flashColor: "#ff0000", persistentBanner: true, wakeScreen: false },
+        snooze: { defaultMinutes: 30, options: [15, 30, 60], maxCount: 5, smartSnooze: false, smartSnoozeExtendMinutes: 10 },
+      },
     },
   ]);
 
@@ -214,6 +252,8 @@
           confirmationReadings: preset.confirmationReadings,
           isEnabled: true,
           sortOrder: presets.indexOf(preset),
+          severity: preset.severity,
+          clientConfiguration: preset.clientConfiguration,
           schedules: [
             {
               name: "Default",
@@ -531,6 +571,9 @@
                 <PresetIcon class="h-4 w-4 text-primary shrink-0" />
                 <div class="flex-1 min-w-0">
                   <span class="text-sm font-medium">{preset.name}</span>
+                  {#if preset.severity === "critical"}
+                    <Badge variant="destructive" class="ml-2 text-xs">Critical</Badge>
+                  {/if}
                   <span class="text-xs text-muted-foreground ml-2">
                     {preset.threshold}
                     {preset.thresholdUnit}

@@ -342,6 +342,7 @@ msgstr "<0/> Back to Login"
 msgid "Last updated: February 21, 2026"
 msgstr "Last updated: February 21, 2026"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
@@ -349,6 +350,7 @@ msgstr "Last updated: February 21, 2026"
 msgid "Sun"
 msgstr "Sun"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
@@ -356,6 +358,7 @@ msgstr "Sun"
 msgid "Mon"
 msgstr "Mon"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
@@ -363,6 +366,7 @@ msgstr "Mon"
 msgid "Tue"
 msgstr "Tue"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
@@ -370,6 +374,7 @@ msgstr "Tue"
 msgid "Wed"
 msgstr "Wed"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
@@ -377,6 +382,7 @@ msgstr "Wed"
 msgid "Thu"
 msgstr "Thu"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
@@ -384,6 +390,7 @@ msgstr "Thu"
 msgid "Fri"
 msgstr "Fri"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
@@ -745,12 +752,15 @@ msgstr "Minor Diff"
 msgid "Major Diff"
 msgstr "Major Diff"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/reports/GlucoseScoreCard.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/compatibility/+page.svelte
 #: src/routes/compatibility/+page.svelte
 #: src/routes/compatibility/[id]/+page.svelte
 #: src/routes/reports/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
 msgid "Critical"
 msgstr "Critical"
 
@@ -1082,6 +1092,7 @@ msgstr "Remove attributions"
 msgid "Delete the attribution entries entirely."
 msgstr "Delete the attribution entries entirely."
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/dashboard/glucose-chart/dialogs/PointInspectionPicker.svelte
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentDisambiguationDialog.svelte
 #: src/lib/components/entries/EntryEditDialog.svelte
@@ -1200,6 +1211,8 @@ msgstr "New Food"
 msgid "ID: {0}"
 msgstr "ID: {0}"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
@@ -2090,6 +2103,7 @@ msgstr "You are not a member of any tenants."
 msgid "Current"
 msgstr "Current"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
 #: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
@@ -3116,6 +3130,7 @@ msgstr "Device Event"
 msgid "Error loading recent entries."
 msgstr "Error loading recent entries."
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/dashboard/RecentTreatmentsCard.svelte
 #: src/routes/tools/packing/list/+page.svelte
 #: src/routes/tools/packing/list/+page.svelte
@@ -3220,6 +3235,8 @@ msgstr "Attributed {0}g"
 msgid "Unspecified {0}g"
 msgstr "Unspecified {0}g"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/entries/BolusSection.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
@@ -4132,6 +4149,7 @@ msgstr "Blood Glucose Units"
 msgid "Select units"
 msgstr "Select units"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/profile/ProfileCreateDialog.svelte
 #: src/lib/components/profile/ProfileEditDialog.svelte
 #: src/routes/settings/appearance/+page.svelte
@@ -4170,6 +4188,7 @@ msgstr ""
 "Modify your therapy settings. Changes are not saved until you click\n"
 "Save."
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/profile/ProfileEditDialog.svelte
 msgid "General"
 msgstr "General"
@@ -4304,8 +4323,10 @@ msgstr "I Understand"
 msgid "<0/> Add Time Block"
 msgstr "<0/> Add Time Block"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/profile/ProfileEditDialog.svelte
 #: src/lib/components/trackers/TrackerStartDialog.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "Start Time"
 msgstr "Start Time"
 
@@ -5434,6 +5455,8 @@ msgstr "FallingFast"
 msgid "StaleData"
 msgstr "StaleData"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -5526,6 +5549,8 @@ msgstr "Threshold Settings"
 msgid "Minutes without data"
 msgstr "Minutes without data"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/settings/alerts/setup/+page.svelte
 msgid "Threshold"
@@ -5592,10 +5617,13 @@ msgstr "Hide"
 msgid "<0/> {0} Custom Sounds"
 msgstr "<0/> {0} Custom Sounds"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 msgid "Built-in Sounds"
 msgstr "Built-in Sounds"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/CustomSoundUpload.svelte
 msgid "Custom Sounds"
@@ -5611,6 +5639,7 @@ msgstr "Test Alarm"
 msgid "Preview sound and visual effects"
 msgstr "Preview sound and visual effects"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 msgid "Ascending Volume"
 msgstr "Ascending Volume"
@@ -5658,6 +5687,7 @@ msgstr "Vibrate device when alarm triggers"
 msgid "Vibration Pattern"
 msgstr "Vibration Pattern"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 msgid "Screen Flash"
 msgstr "Screen Flash"
@@ -5666,6 +5696,7 @@ msgstr "Screen Flash"
 msgid "Flash the screen to get attention"
 msgstr "Flash the screen to get attention"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 msgid "Flash Color"
 msgstr "Flash Color"
@@ -5678,6 +5709,7 @@ msgstr "Flash Interval"
 msgid "ms"
 msgstr "ms"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 msgid "Persistent Banner"
 msgstr "Persistent Banner"
@@ -5695,6 +5727,7 @@ msgstr "Needs Permission"
 msgid "Show notification banner until acknowledged"
 msgstr "Show notification banner until acknowledged"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 msgid "Wake Screen"
 msgstr "Wake Screen"
@@ -5735,7 +5768,9 @@ msgstr "Maximum Snooze"
 msgid "Quick Snooze Options"
 msgstr "Quick Snooze Options"
 
+#. placeholder {0}: opt
 #. placeholder {0}: minutes
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 msgid "{0}m <0/>"
 msgstr "{0}m <0/>"
@@ -5764,6 +5799,7 @@ msgstr "Escalate Volume"
 msgid "Get louder each time"
 msgstr "Get louder each time"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 msgid "Smart Snooze"
 msgstr "Smart Snooze"
@@ -5941,6 +5977,8 @@ msgstr ""
 msgid "Failed to load custom sounds"
 msgstr "Failed to load custom sounds"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/CustomSoundUpload.svelte
 msgid "Failed to upload sound"
 msgstr "Failed to upload sound"
@@ -5962,6 +6000,7 @@ msgstr "Upload your own alarm sounds (MP3, WAV, OGG, up to 5MB)"
 msgid "<0/> Upload Sound"
 msgstr "<0/> Upload Sound"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/settings/CustomSoundUpload.svelte
 msgid "Upload Custom Sound"
 msgstr "Upload Custom Sound"
@@ -6399,6 +6438,7 @@ msgstr "Event"
 msgid "After (hours)"
 msgstr "After (hours)"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/trackers/tracker-notification-editor.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Description (optional)"
@@ -10803,6 +10843,7 @@ msgid "<0/> Create"
 msgstr "<0/> Create"
 
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "<0/> Save"
 msgstr "<0/> Save"
 
@@ -10842,6 +10883,7 @@ msgstr "Permissions"
 msgid "Custom Permission"
 msgstr "Custom Permission"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/patient/+page.svelte
 #: src/routes/settings/patient/+page.svelte
@@ -11777,8 +11819,9 @@ msgstr "<0/> Start Deduplication"
 #~ msgid "Master switch for all glucose alarms"
 #~ msgstr "Master switch for all glucose alarms"
 
-#~ msgid "Sound"
-#~ msgstr "Sound"
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Sound"
+msgstr "Sound"
 
 #~ msgid "Global Volume"
 #~ msgstr "Global Volume"
@@ -11825,14 +11868,16 @@ msgstr "<0/> Start Deduplication"
 #~ msgid "Duplicate"
 #~ msgstr "Duplicate"
 
-#~ msgid "<0/> Quiet Hours"
-#~ msgstr "<0/> Quiet Hours"
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> Quiet Hours"
+msgstr "<0/> Quiet Hours"
 
 #~ msgid "Reduce notification noise during specified hours"
 #~ msgstr "Reduce notification noise during specified hours"
 
-#~ msgid "Enable quiet hours"
-#~ msgstr "Enable quiet hours"
+#: src/routes/settings/alerts/+page.svelte
+msgid "Enable quiet hours"
+msgstr "Enable quiet hours"
 
 #~ msgid "Start time"
 #~ msgstr "Start time"
@@ -11905,6 +11950,7 @@ msgstr "Emergency Contacts"
 #~ msgid "Critical only"
 #~ msgstr "Critical only"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/connectors/[connector]/+page.svelte
 msgid "Enabled"
 msgstr "Enabled"
@@ -14632,6 +14678,7 @@ msgstr "Composite Alert"
 
 #: src/lib/components/alerts/AlertBanner.svelte
 #: src/lib/components/alerts/AlertBanner.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/+page.svelte
 msgid "Alert"
 msgstr "Alert"
@@ -14657,10 +14704,14 @@ msgstr "Low Threshold"
 msgid "High Threshold"
 msgstr "High Threshold"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/+page.svelte
 msgid "Rate of Change"
 msgstr "Rate of Change"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/+page.svelte
 msgid "Signal Loss"
 msgstr "Signal Loss"
@@ -14683,10 +14734,14 @@ msgstr "Below {0} mg/dL"
 msgid "Above {0} mg/dL"
 msgstr "Above {0} mg/dL"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/+page.svelte
 msgid "Falling"
 msgstr "Falling"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/+page.svelte
 msgid "Rising"
 msgstr "Rising"
@@ -14802,14 +14857,19 @@ msgstr "Confirmations"
 msgid "{0} reading{1}"
 msgstr "{0} reading{1}"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/+page.svelte
 msgid "Sort Order"
 msgstr "Sort Order"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/+page.svelte
 msgid "Schedules"
 msgstr "Schedules"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/+page.svelte
 msgid "Default Schedule"
 msgstr "Default Schedule"
@@ -14819,7 +14879,9 @@ msgstr "Default Schedule"
 msgid "Days: {0}"
 msgstr "Days: {0}"
 
+#. placeholder {0}: stepIdx + 1
 #. placeholder {0}: idx + 1
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/+page.svelte
 msgid "Step {0}"
 msgstr "Step {0}"
@@ -14936,6 +14998,8 @@ msgstr "Alert when CGM signal is lost for an extended period"
 msgid "Browser Push Notification"
 msgstr "Browser Push Notification"
 
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/setup/+page.svelte
 #: src/routes/settings/alerts/setup/+page.svelte
 msgid "Webhook"
@@ -15123,3 +15187,281 @@ msgstr "Failed to save note"
 #: src/lib/components/entries/EntryEditDialog.svelte
 msgid "Failed to save device event"
 msgstr "Failed to save device event"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Edit Rule"
+msgstr "Edit Rule"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Create Rule"
+msgstr "Create Rule"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Default Alarm"
+msgstr "Default Alarm"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Urgent Alarm"
+msgstr "Urgent Alarm"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "High Alarm"
+msgstr "High Alarm"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Low Alarm"
+msgstr "Low Alarm"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Chime"
+msgstr "Chime"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Bell"
+msgstr "Bell"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Siren"
+msgstr "Siren"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Beep"
+msgstr "Beep"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Soft"
+msgstr "Soft"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "File size must be less than 500KB"
+msgstr "File size must be less than 500KB"
+
+#. placeholder {0}: schedules.length + 1
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Schedule {0}"
+msgstr "Schedule {0}"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Custom Sound"
+msgstr "Custom Sound"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Below"
+msgstr "Below"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Above"
+msgstr "Above"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Web Push"
+msgstr "Web Push"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Modify the alert rule configuration"
+msgstr "Modify the alert rule configuration"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Configure a new alert rule"
+msgstr "Configure a new alert rule"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Presentation"
+msgstr "Presentation"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Snooze"
+msgstr "Snooze"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Rule name"
+msgstr "Rule name"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Brief description"
+msgstr "Brief description"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Severity"
+msgstr "Severity"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/routes/settings/alerts/+page.svelte
+msgid "Critical alerts bypass quiet hours"
+msgstr "Critical alerts bypass quiet hours"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Condition Type"
+msgstr "Condition Type"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Composite -- editing not available"
+msgstr "Composite -- editing not available"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Direction"
+msgstr "Direction"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Value (mg/dL)"
+msgstr "Value (mg/dL)"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Rate (mg/dL/min)"
+msgstr "Rate (mg/dL/min)"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Timeout (minutes)"
+msgstr "Timeout (minutes)"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Hysteresis (minutes)"
+msgstr "Hysteresis (minutes)"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Confirmation Readings"
+msgstr "Confirmation Readings"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Audio"
+msgstr "Audio"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Audio Enabled"
+msgstr "Audio Enabled"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Preview sound"
+msgstr "Preview sound"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Choose file"
+msgstr "Choose file"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Max 500KB"
+msgstr "Max 500KB"
+
+#. placeholder {0}: clientConfig.audio.startVolume
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Start Volume: {0}%"
+msgstr "Start Volume: {0}%"
+
+#. placeholder {0}: clientConfig.audio.maxVolume
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Max Volume: {0}%"
+msgstr "Max Volume: {0}%"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Ascend Duration (s)"
+msgstr "Ascend Duration (s)"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Repeat Count"
+msgstr "Repeat Count"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Visual"
+msgstr "Visual"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Default Snooze Duration (minutes)"
+msgstr "Default Snooze Duration (minutes)"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Snooze Options"
+msgstr "Snooze Options"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Minutes"
+msgstr "Minutes"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Max Snooze Count"
+msgstr "Max Snooze Count"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Smart Snooze Extend (minutes)"
+msgstr "Smart Snooze Extend (minutes)"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Automatically extends snooze when glucose trend is favorable"
+msgstr "Automatically extends snooze when glucose trend is favorable"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Unnamed Schedule"
+msgstr "Unnamed Schedule"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Schedule name"
+msgstr "Schedule name"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/routes/settings/alerts/+page.svelte
+msgid "End Time"
+msgstr "End Time"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Days of Week"
+msgstr "Days of Week"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Every day"
+msgstr "Every day"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Escalation Steps"
+msgstr "Escalation Steps"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Delay (seconds)"
+msgstr "Delay (seconds)"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "First step fires immediately"
+msgstr "First step fires immediately"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Destination"
+msgstr "Destination"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Label (optional)"
+msgstr "Label (optional)"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "<0/> Add Channel"
+msgstr "<0/> Add Channel"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "<0/> Add Step"
+msgstr "<0/> Add Step"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "<0/> Remove Schedule"
+msgstr "<0/> Remove Schedule"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "<0/> Add Schedule"
+msgstr "<0/> Add Schedule"
+
+#: src/lib/components/alerts/RuleEditorSheet.svelte
+msgid "Update Rule"
+msgstr "Update Rule"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> Edit Rule"
+msgstr "<0/> Edit Rule"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Suppress non-critical alerts during specific hours"
+msgstr "Suppress non-critical alerts during specific hours"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Allow critical alerts during quiet hours"
+msgstr "Allow critical alerts during quiet hours"
