@@ -3,11 +3,10 @@
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { Scale, Pencil } from "lucide-svelte";
+  import { Scale, Pencil, Loader2 } from "lucide-svelte";
   import {
     CarbIntakeFoodInputMode,
     type TreatmentFood,
-    type CarbIntakeFoodRequest,
     type Food,
   } from "$lib/api";
   import {
@@ -50,7 +49,6 @@
   let editCarbs = $state<number>(0);
   let editOffset = $state<number | undefined>(0);
   let editNote = $state("");
-  let isSaving = $state(false);
 
   // Track which field was last edited to determine calculation direction
   let lastEditedField = $state<"portions" | "carbs">("portions");
@@ -60,6 +58,9 @@
   let foodToEdit = $state<Food | null>(null);
   let isLoadingFood = $state(false);
   let categories = $state<Record<string, Record<string, boolean>>>({});
+
+  // Form object for updating carb intake food
+  const editForm = updateCarbIntakeFood;
 
   // Initialize form when entry changes
   $effect(() => {
@@ -82,6 +83,23 @@
   // So actual unattributed = remainingCarbs - current entry's carbs
   const actualUnattributed = $derived(
     Math.max(0, Math.round((remainingCarbs - (entry?.carbs ?? 0)) * 10) / 10)
+  );
+
+  // Derived input mode value
+  const inputMode = $derived(
+    isOtherEntry
+      ? CarbIntakeFoodInputMode.Carbs
+      : lastEditedField === "portions"
+        ? CarbIntakeFoodInputMode.Portions
+        : CarbIntakeFoodInputMode.Carbs
+  );
+
+  // Derived: which value to submit for portions/carbs based on input mode and entry type
+  const submitPortions = $derived(
+    !isOtherEntry && lastEditedField === "portions" ? editPortions : undefined
+  );
+  const submitCarbs = $derived(
+    isOtherEntry || lastEditedField === "carbs" ? editCarbs : undefined
   );
 
   // Handle portions input change - recalculate carbs
@@ -164,53 +182,8 @@
     editOffset = 0;
     editNote = "";
     lastEditedField = "portions";
-    isSaving = false;
     open = false;
     onOpenChange(false);
-  }
-
-  async function handleSave() {
-    if (!treatmentId || !entry?.id) return;
-
-    isSaving = true;
-    try {
-      const request: CarbIntakeFoodRequest = {
-        foodId: entry.foodId ?? undefined,
-        timeOffsetMinutes: editOffset,
-        note: editNote.trim() || undefined,
-        inputMode:
-          lastEditedField === "portions"
-            ? CarbIntakeFoodInputMode.Portions
-            : CarbIntakeFoodInputMode.Carbs,
-      };
-
-      if (entry.foodId) {
-        if (lastEditedField === "portions") {
-          request.portions = editPortions;
-        } else {
-          request.carbs = editCarbs;
-        }
-      } else {
-        // "Other" entries only have carbs
-        request.carbs = editCarbs;
-        request.inputMode = CarbIntakeFoodInputMode.Carbs;
-      }
-
-      await updateCarbIntakeFood({
-        carbIntakeId: treatmentId!,
-        entryId: entry.id!,
-        request,
-      });
-
-      toast.success("Food entry updated");
-      onSave?.();
-      resetAndClose();
-    } catch (err) {
-      console.error("Failed to update food entry:", err);
-      toast.error("Failed to update food entry");
-    } finally {
-      isSaving = false;
-    }
   }
 </script>
 
@@ -220,7 +193,31 @@
       <Dialog.Title>Edit Food Entry</Dialog.Title>
     </Dialog.Header>
 
-    <div class="space-y-4">
+    <form
+      {...editForm.enhance(async ({ submit }) => {
+        await submit();
+        if (editForm.result) {
+          toast.success("Food entry updated");
+          onSave?.();
+          resetAndClose();
+        }
+      })}
+      class="space-y-4"
+    >
+      <!-- Hidden fields for IDs and computed values -->
+      <input type="hidden" name="carbIntakeId" value={treatmentId ?? ""} />
+      <input type="hidden" name="entryId" value={entry?.id ?? ""} />
+      <input type="hidden" name="foodId" value={entry?.foodId ?? ""} />
+      <input type="hidden" name="inputMode" value={inputMode} />
+      {#if submitPortions !== undefined}
+        <input type="hidden" name="portions" value={submitPortions} />
+      {/if}
+      {#if submitCarbs !== undefined}
+        <input type="hidden" name="carbs" value={submitCarbs} />
+      {/if}
+      <input type="hidden" name="timeOffsetMinutes" value={editOffset ?? 0} />
+      <input type="hidden" name="note" value={editNote.trim()} />
+
       {#if entry}
         <!-- Show carbs context -->
         {#if totalCarbs > 0}
@@ -327,16 +324,21 @@
           </div>
         </div>
       {/if}
-    </div>
 
-    <Dialog.Footer class="gap-2">
-      <Button type="button" variant="outline" onclick={resetAndClose}>
-        Cancel
-      </Button>
-      <Button type="button" onclick={handleSave} disabled={isSaving}>
-        {isSaving ? "Saving..." : "Save"}
-      </Button>
-    </Dialog.Footer>
+      <Dialog.Footer class="gap-2">
+        <Button type="button" variant="outline" onclick={resetAndClose}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={!!editForm.pending}>
+          {#if editForm.pending}
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+            Saving...
+          {:else}
+            Save
+          {/if}
+        </Button>
+      </Dialog.Footer>
+    </form>
   </Dialog.Content>
 </Dialog.Root>
 

@@ -193,6 +193,7 @@ msgstr ""
 #: src/lib/components/dashboard/glucose-chart/dialogs/TreatmentDisambiguationDialog.svelte
 #: src/lib/components/entries/EntryEditDialog.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/meal-matching/MealMatchReviewDialog.svelte
 #: src/lib/components/profile/ProfileCreateDialog.svelte
 #: src/lib/components/profile/ProfileDeleteDialog.svelte
@@ -214,6 +215,7 @@ msgstr ""
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/patient/+page.svelte
@@ -223,6 +225,9 @@ msgstr ""
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
+#: src/routes/settings/setup/insulins/+page.svelte
+#: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -239,10 +244,9 @@ msgstr ""
 #: src/lib/components/settings/notifications/webhooks/WebhookSettingsModal.svelte
 #: src/lib/components/setup/WizardShell.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
-#: src/lib/components/treatments/TreatmentFoodEntryEditDialog.svelte
-#: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
-#: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/settings/alarms/+page.svelte
+#: src/routes/settings/trackers/+page.svelte
+#: src/routes/settings/trackers/+page.svelte
 msgid "Saving..."
 msgstr ""
 
@@ -286,6 +290,7 @@ msgstr ""
 #: src/routes/settings/migration/+page.svelte
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
 #: src/routes/tenants/+page.svelte
 msgid "Error"
 msgstr ""
@@ -1576,6 +1581,7 @@ msgstr ""
 #: src/routes/compatibility/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "None"
 msgstr ""
 
@@ -1636,6 +1642,7 @@ msgid "Food updated successfully"
 msgstr ""
 
 #: src/lib/components/food/AddFoodDialog.svelte
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/routes/food/food-state.svelte.ts
 msgid "Failed to save food"
 msgstr ""
@@ -1681,10 +1688,12 @@ msgid "ID: {0}"
 msgstr ""
 
 #: src/lib/components/food/AddFoodDialog.svelte
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/food/FoodEditor.svelte
 #: src/routes/food/FoodFilters.svelte
 #: src/routes/food/FoodList.svelte
+#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/alarms/+page.svelte
@@ -1697,11 +1706,13 @@ msgid "Enter food name"
 msgstr ""
 
 #: src/lib/components/food/AddFoodDialog.svelte
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/routes/food/FoodEditor.svelte
 msgid "Key Nutritional Info"
 msgstr ""
 
 #: src/lib/components/entries/CarbIntakeSection.svelte
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/meal-matching/MealMatchReviewDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodEntryEditDialog.svelte
@@ -1712,16 +1723,19 @@ msgid "Carbs (g)"
 msgstr ""
 
 #: src/lib/components/food/AddFoodDialog.svelte
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/routes/food/FoodEditor.svelte
 msgid "Glycemic Index"
 msgstr ""
 
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/routes/food/FoodEditor.svelte
 #: src/routes/food/FoodList.svelte
 msgid "Portion"
 msgstr ""
 
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/food/FoodEditor.svelte
@@ -1732,15 +1746,18 @@ msgstr ""
 #: src/routes/food/FoodList.svelte
 #: src/routes/settings/patient/+page.svelte
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/insulins/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Category"
 msgstr ""
 
 #: src/lib/components/food/AddFoodDialog.svelte
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/routes/food/FoodEditor.svelte
 msgid "Additional Macros"
 msgstr ""
 
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/food/FoodEditor.svelte
@@ -1748,11 +1765,13 @@ msgid "Fat (g)"
 msgstr ""
 
 #: src/lib/components/food/AddFoodDialog.svelte
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/food/FoodEditor.svelte
 msgid "Protein (g)"
 msgstr ""
 
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/food/FoodEditor.svelte
@@ -1890,6 +1909,7 @@ msgstr ""
 #: src/lib/components/status-pills/COBPill.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
+#: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/food/QuickPickItem.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/services/+page.svelte
@@ -1935,7 +1955,7 @@ msgstr ""
 #: src/lib/components/treatments/TreatmentFoodEntryEditDialog.svelte
 #: src/routes/food/QuickPicksList.svelte
 #: src/routes/settings/admin/+page.svelte
-#: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Save"
@@ -1986,6 +2006,7 @@ msgstr ""
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Failed"
 msgstr ""
@@ -2904,6 +2925,7 @@ msgstr ""
 #: src/routes/settings/profile/+page.svelte
 #: src/routes/settings/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 msgid "Units"
 msgstr ""
 
@@ -2913,6 +2935,7 @@ msgstr ""
 #: src/routes/profile/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/profile/+page.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "Timezone"
 msgstr ""
@@ -2968,6 +2991,7 @@ msgstr ""
 #: src/routes/profile/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/profile/+page.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/tenants/+page.svelte
@@ -3713,10 +3737,8 @@ msgstr ""
 msgid "No recent entries"
 msgstr ""
 
-#: src/lib/components/food/AddFoodDialog.svelte
-#: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
-msgid "Please enter a food name"
-msgstr ""
+#~ msgid "Please enter a food name"
+#~ msgstr ""
 
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
@@ -3734,7 +3756,6 @@ msgstr ""
 #: src/lib/components/entries/EntryEditDialog.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/routes/settings/admin/+page.svelte
-#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Create"
 msgstr ""
@@ -3747,6 +3768,7 @@ msgstr ""
 msgid "Create a new food with nutritional information."
 msgstr ""
 
+#: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/food/AddFoodDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 msgid "Category & Subcategory"
@@ -3998,6 +4020,7 @@ msgid "Waiting for data..."
 msgstr ""
 
 #: src/lib/components/layout/UserMenu.svelte
+#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 msgid "Roles"
@@ -4915,6 +4938,7 @@ msgstr ""
 
 #: src/lib/components/profile/ProfileCreateDialog.svelte
 #: src/routes/settings/setup/profile/+page.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 msgid "Select units"
 msgstr ""
 
@@ -4963,6 +4987,7 @@ msgid "Targets"
 msgstr ""
 
 #: src/lib/components/profile/ProfileEditDialog.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "Profile Name"
 msgstr ""
@@ -5097,6 +5122,7 @@ msgstr ""
 
 #: src/lib/components/trackers/TrackerCompletionDialog.svelte
 #: src/lib/components/trackers/TrackerStartDialog.svelte
+#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 msgid "Notes (optional)"
@@ -5312,6 +5338,7 @@ msgstr ""
 
 #: src/lib/components/status-pills/LoopPill.svelte
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Loop"
 msgstr ""
 
@@ -6423,13 +6450,11 @@ msgstr ""
 msgid "Medium"
 msgstr ""
 
-#: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
-msgid "Failed to update food"
-msgstr ""
+#~ msgid "Failed to update food"
+#~ msgstr ""
 
-#: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
-msgid "Failed to create food"
-msgstr ""
+#~ msgid "Failed to create food"
+#~ msgstr ""
 
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 msgid "Please enter carbs amount"
@@ -6544,15 +6569,16 @@ msgstr ""
 msgid "Save as New"
 msgstr ""
 
-#: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
-msgid "Updating..."
-msgstr ""
+#~ msgid "Updating..."
+#~ msgstr ""
 
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 msgid "Update & Add"
 msgstr ""
 
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
+#: src/routes/settings/setup/devices/+page.svelte
+#: src/routes/settings/setup/insulins/+page.svelte
 msgid "Adding..."
 msgstr ""
 
@@ -6881,6 +6907,7 @@ msgstr ""
 msgid "Confirm your new password"
 msgstr ""
 
+#: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
 #: src/routes/auth/change-password/+page.svelte
 msgid "<0/> Updating..."
 msgstr ""
@@ -6906,9 +6933,8 @@ msgstr ""
 msgid "Food entry updated"
 msgstr ""
 
-#: src/lib/components/treatments/TreatmentFoodEntryEditDialog.svelte
-msgid "Failed to update food entry"
-msgstr ""
+#~ msgid "Failed to update food entry"
+#~ msgstr ""
 
 #: src/lib/components/treatments/TreatmentFoodEntryEditDialog.svelte
 msgid "Edit Food Entry"
@@ -7350,8 +7376,9 @@ msgstr ""
 #~ msgid "Generated Face String:"
 #~ msgstr ""
 
-#~ msgid "<0/> Save"
-#~ msgstr ""
+#: src/routes/settings/admin/+page.svelte
+msgid "<0/> Save"
+msgstr ""
 
 #: src/lib/components/clock-builder/DisplaySettings.svelte
 msgid "Display Settings"
@@ -9465,22 +9492,27 @@ msgid "Update subject details and role assignments."
 msgstr ""
 
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/admin/+page.svelte
 msgid "Description or notes about this subject"
 msgstr ""
 
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/admin/+page.svelte
 msgid "<0/> Create New Role"
 msgstr ""
 
+#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 msgid "No roles available"
 msgstr ""
 
 #: src/lib/components/clock-builder/TextStyleControls.svelte
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/admin/+page.svelte
 msgid "System"
 msgstr ""
 
+#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 msgid ""
 "For fine-grained access control, create a custom role with only the\n"
@@ -9488,9 +9520,11 @@ msgid ""
 msgstr ""
 
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/admin/+page.svelte
 msgid "Full Admin Access"
 msgstr ""
 
+#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 msgid ""
 "The selected role(s) grant complete control of this Nocturne\n"
@@ -10161,6 +10195,7 @@ msgstr ""
 
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Trio"
 msgstr ""
 
@@ -10534,9 +10569,6 @@ msgstr ""
 #: src/routes/settings/migration/+page.svelte
 #: src/routes/settings/migration/+page.svelte
 #: src/routes/settings/migration/+page.svelte
-#: src/routes/settings/migration/+page.svelte
-#: src/routes/settings/migration/+page.svelte
-#: src/routes/setup/+page.svelte
 #: src/routes/setup/+page.svelte
 msgid "Api"
 msgstr ""
@@ -10547,10 +10579,6 @@ msgstr ""
 #: src/routes/settings/migration/+page.svelte
 #: src/routes/settings/migration/+page.svelte
 #: src/routes/settings/migration/+page.svelte
-#: src/routes/settings/migration/+page.svelte
-#: src/routes/settings/migration/+page.svelte
-#: src/routes/settings/migration/+page.svelte
-#: src/routes/setup/+page.svelte
 #: src/routes/setup/+page.svelte
 msgid "MongoDb"
 msgstr ""
@@ -12972,6 +13000,7 @@ msgstr ""
 
 #: src/routes/download/+page.svelte
 #: src/routes/settings/connectors/[connector]/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
 msgid "<0/> Back to connectors"
 msgstr ""
 
@@ -13533,6 +13562,7 @@ msgid "Connector \"{0}\" not found"
 msgstr ""
 
 #: src/routes/settings/connectors/[connector]/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
 msgid "Failed to load connector configuration"
 msgstr ""
 
@@ -13541,6 +13571,8 @@ msgid "Configuration saved successfully"
 msgstr ""
 
 #: src/routes/settings/connectors/[connector]/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
 msgid "Failed to save configuration"
 msgstr ""
 
@@ -13549,6 +13581,8 @@ msgid "Credentials saved successfully"
 msgstr ""
 
 #: src/routes/settings/connectors/[connector]/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
 msgid "Failed to save credentials"
 msgstr ""
 
@@ -13639,6 +13673,10 @@ msgstr ""
 #: src/lib/components/entries/EntryEditDialog.svelte
 #: src/lib/components/settings/ConnectorConfigForm.svelte
 #: src/lib/components/settings/ConnectorConfigForm.svelte
+#: src/lib/components/treatments/TreatmentFoodEntryEditDialog.svelte
+#: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
+#: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
 msgid "<0/> Saving..."
 msgstr ""
 
@@ -15740,6 +15778,7 @@ msgstr ""
 msgid "Entry created"
 msgstr ""
 
+#: src/lib/components/entries/EntryEditDialog.svelte
 #: src/lib/components/entries/EntryEditDialog.svelte
 msgid "Failed to save entry"
 msgstr ""
@@ -18421,7 +18460,9 @@ msgid "Detected from your browser. Save to confirm."
 msgstr ""
 
 #. placeholder {0}: categoryTotal
+#. placeholder {0}: count
 #: src/lib/components/tools/packing/supply-category.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
 msgid "{0} items"
 msgstr ""
 
@@ -18882,38 +18923,47 @@ msgid "Gestational"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Insulin Pump"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Glucose Meter"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Insulin Pen"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Smart Pen"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "OpenAPS"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "AndroidAPS"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Control-IQ"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "CamAPS FX"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Omnipod 5"
 msgstr ""
 
@@ -18942,6 +18992,8 @@ msgid "Ultra Long Acting"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/insulins/+page.svelte
+#: src/routes/settings/setup/insulins/+page.svelte
 msgid "Premixed"
 msgstr ""
 
@@ -19004,6 +19056,7 @@ msgid "<0/> Save Changes"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "<0/> Add Device"
 msgstr ""
 
@@ -19045,6 +19098,7 @@ msgid "Insulins"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/insulins/+page.svelte
 msgid "<0/> Add Insulin"
 msgstr ""
 
@@ -19065,6 +19119,7 @@ msgid "Edit Device"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Add Device"
 msgstr ""
 
@@ -19077,18 +19132,22 @@ msgid "Add a new device to your patient record."
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Manufacturer"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Model"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "AID Algorithm"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/devices/+page.svelte
 msgid "Select algorithm"
 msgstr ""
 
@@ -19130,6 +19189,7 @@ msgid "Edit Insulin"
 msgstr ""
 
 #: src/routes/settings/patient/+page.svelte
+#: src/routes/settings/setup/insulins/+page.svelte
 msgid "Add Insulin"
 msgstr ""
 
@@ -19196,6 +19256,7 @@ msgstr ""
 
 #: src/routes/settings/setup/patient/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 msgid "Something went wrong. Please try again."
 msgstr ""
 
@@ -19218,25 +19279,31 @@ msgid ""
 msgstr ""
 
 #: src/routes/settings/setup/profile/+page.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 msgid "Basics"
 msgstr ""
 
+#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "America/New_York"
 msgstr ""
 
 #: src/routes/settings/setup/profile/+page.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 msgid "Duration of Insulin Action"
 msgstr ""
 
+#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "hours"
 msgstr ""
 
 #: src/routes/settings/setup/profile/+page.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 msgid "Carb Absorption Rate"
 msgstr ""
 
+#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "g/hr"
 msgstr ""
@@ -19278,4 +19345,207 @@ msgstr ""
 
 #: src/routes/settings/setup/patient/+page.svelte
 msgid "Tell us a bit about yourself and your diabetes. Only diabetes type is required."
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "Failed to load connectors"
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "An error occurred during setup"
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "An error occurred during sync"
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "Connectors - Setup - Nocturne"
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "Connect Data Sources"
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "Connect to your CGM or diabetes management platform to sync glucose and treatment data. You can always add more connectors later."
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "No connectors available"
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "There are no data source connectors available at this time."
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "No configuration required"
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "This connector can be enabled without additional configuration."
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "Save & Sync"
+msgstr ""
+
+#. placeholder {0}: selectedConnector?.name
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "Syncing {0}..."
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "This may take a moment depending on how much data is available."
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "<0/> Sync Successful"
+msgstr ""
+
+#. placeholder {0}: syncResult ? "Failed" : "Error"
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "<0/> Sync {0}"
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "You can continue setup and troubleshoot the connector later in Settings."
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "<0/> Add Another Connector"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "RapidActing"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Rapid-acting"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "ShortActing"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Short-acting"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "IntermediateActing"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Intermediate-acting"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "LongActing"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Long-acting"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "UltraLongActing"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Ultra long-acting"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Insulins - Setup - Nocturne"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Your Insulins"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Add the insulins you use. You can always update these later."
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Unknown Insulin"
+msgstr ""
+
+#: src/routes/settings/setup/devices/+page.svelte
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Unknown Category"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Add an Insulin"
+msgstr ""
+
+#: src/routes/settings/setup/devices/+page.svelte
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Select category"
+msgstr ""
+
+#: src/routes/settings/setup/insulins/+page.svelte
+msgid "Brand / Name"
+msgstr ""
+
+#: src/routes/settings/setup/devices/+page.svelte
+msgid "Uploader"
+msgstr ""
+
+#: src/routes/settings/setup/devices/+page.svelte
+msgid "Medtronic SmartGuard"
+msgstr ""
+
+#: src/routes/settings/setup/devices/+page.svelte
+msgid "Devices - Setup - Nocturne"
+msgstr ""
+
+#: src/routes/settings/setup/devices/+page.svelte
+msgid "Your Devices"
+msgstr ""
+
+#: src/routes/settings/setup/devices/+page.svelte
+msgid "Add the diabetes devices you use. You can always update these later."
+msgstr ""
+
+#: src/routes/settings/setup/devices/+page.svelte
+msgid "Unknown Device"
+msgstr ""
+
+#: src/routes/settings/setup/devices/+page.svelte
+msgid "Add a Device"
+msgstr ""
+
+#: src/routes/settings/setup/devices/+page.svelte
+msgid "Device Category"
+msgstr ""
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Failed to save therapy settings."
+msgstr ""
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Failed to save basal schedule."
+msgstr ""
+
+#: src/routes/settings/admin/+page.svelte
+msgid "<0/> Create"
+msgstr ""
+
+#: src/lib/components/entries/EntryEditDialog.svelte
+msgid "Failed to save bolus"
+msgstr ""
+
+#: src/lib/components/entries/EntryEditDialog.svelte
+msgid "Failed to save carb intake"
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "No result"
 msgstr ""

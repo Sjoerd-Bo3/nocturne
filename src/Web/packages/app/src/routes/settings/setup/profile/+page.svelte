@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
+  import { tick } from "svelte";
   import WizardShell from "$lib/components/setup/WizardShell.svelte";
   import ScheduleEditor from "$lib/components/setup/ScheduleEditor.svelte";
   import TargetRangeEditor from "$lib/components/setup/TargetRangeEditor.svelte";
@@ -25,9 +27,18 @@
 
   const summaryQuery = getProfileSummary(undefined);
 
+  // ── Form references ─────────────────────────────────────────────
+
+  const createSettingsForm = createTherapySettings;
+  const updateSettingsForm = updateTherapySettings;
+  const createBasalForm = createBasalSchedule;
+  const updateBasalForm = updateBasalSchedule;
+
+  // Basal form element ref for programmatic submission
+  let basalFormEl = $state<HTMLFormElement | null>(null);
+
   // ── Form state ────────────────────────────────────────────────────
 
-  let saving = $state(false);
   let saveError = $state<string | null>(null);
 
   // Basics
@@ -57,6 +68,13 @@
   let existingCarbRatioId = $state<string | undefined>();
   let existingSensitivityId = $state<string | undefined>();
   let existingTargetRangeId = $state<string | undefined>();
+
+  // ── Pending state ─────────────────────────────────────────────────
+
+  const saving = $derived(
+    !!(createSettingsForm.pending || updateSettingsForm.pending ||
+       createBasalForm.pending || updateBasalForm.pending),
+  );
 
   // ── Auto-complete detection ─────────────────────────────────────
 
@@ -126,115 +144,143 @@
   );
   const targetUnit = $derived(units === "mmol/L" ? "mmol/L" : "mg/dL");
 
-  // ── Save handler ────────────────────────────────────────────────
+  // ── Save remaining schedules (command()-based) ──────────────────
 
-  async function handleSave(): Promise<boolean> {
-    saving = true;
-    saveError = null;
-    try {
-      const timestamp = new Date().toISOString();
+  async function saveRemainingSchedules(): Promise<void> {
+    const timestamp = new Date().toISOString();
 
-      // 1. Therapy settings
-      const settingsPayload = {
-        profileName,
-        units,
-        timezone,
-        dia,
-        carbsHr,
-        timestamp,
-      };
-      if (existingSettingsId) {
-        await updateTherapySettings({
-          id: existingSettingsId,
-          request: settingsPayload,
-        });
-      } else {
-        await createTherapySettings(settingsPayload);
-      }
-
-      // 2. Basal schedule
-      const basalPayload = {
-        profileName,
-        entries: basalEntries.map((e) => ({ time: e.time, value: e.value })),
-        timestamp,
-      };
-      if (existingBasalId) {
-        await updateBasalSchedule({
-          id: existingBasalId,
-          request: basalPayload,
-        });
-      } else {
-        await createBasalSchedule(basalPayload);
-      }
-
-      // 3. Carb ratio schedule
-      const carbRatioPayload = {
-        profileName,
-        entries: carbRatioEntries.map((e) => ({
-          time: e.time,
-          value: e.value,
-        })),
-        timestamp,
-      };
-      if (existingCarbRatioId) {
-        await updateCarbRatioSchedule({
-          id: existingCarbRatioId,
-          request: carbRatioPayload,
-        });
-      } else {
-        await createCarbRatioSchedule(carbRatioPayload);
-      }
-
-      // 4. Sensitivity schedule
-      const sensitivityPayload = {
-        profileName,
-        entries: sensitivityEntries.map((e) => ({
-          time: e.time,
-          value: e.value,
-        })),
-        timestamp,
-      };
-      if (existingSensitivityId) {
-        await updateSensitivitySchedule({
-          id: existingSensitivityId,
-          request: sensitivityPayload,
-        });
-      } else {
-        await createSensitivitySchedule(sensitivityPayload);
-      }
-
-      // 5. Target range schedule
-      const targetRangePayload = {
-        profileName,
-        entries: targetEntries.map((e) => ({
-          time: e.time,
-          low: e.low,
-          high: e.high,
-        })),
-        timestamp,
-      };
-      if (existingTargetRangeId) {
-        await updateTargetRangeSchedule({
-          id: existingTargetRangeId,
-          request: targetRangePayload,
-        });
-      } else {
-        await createTargetRangeSchedule(targetRangePayload);
-      }
-
-      return true;
-    } catch {
-      saveError = "Something went wrong. Please try again.";
-      return false;
-    } finally {
-      saving = false;
+    // Carb ratio schedule (command)
+    const carbRatioPayload = {
+      profileName,
+      entries: carbRatioEntries.map((e) => ({
+        time: e.time,
+        value: e.value,
+      })),
+      timestamp,
+    };
+    if (existingCarbRatioId) {
+      await updateCarbRatioSchedule({
+        id: existingCarbRatioId,
+        request: carbRatioPayload,
+      });
+    } else {
+      await createCarbRatioSchedule(carbRatioPayload);
     }
+
+    // Sensitivity schedule (command)
+    const sensitivityPayload = {
+      profileName,
+      entries: sensitivityEntries.map((e) => ({
+        time: e.time,
+        value: e.value,
+      })),
+      timestamp,
+    };
+    if (existingSensitivityId) {
+      await updateSensitivitySchedule({
+        id: existingSensitivityId,
+        request: sensitivityPayload,
+      });
+    } else {
+      await createSensitivitySchedule(sensitivityPayload);
+    }
+
+    // Target range schedule (command)
+    const targetRangePayload = {
+      profileName,
+      entries: targetEntries.map((e) => ({
+        time: e.time,
+        low: e.low,
+        high: e.high,
+      })),
+      timestamp,
+    };
+    if (existingTargetRangeId) {
+      await updateTargetRangeSchedule({
+        id: existingTargetRangeId,
+        request: targetRangePayload,
+      });
+    } else {
+      await createTargetRangeSchedule(targetRangePayload);
+    }
+  }
+
+  // ── Basal form submission result tracking ───────────────────────
+
+  let basalSubmitResolve: ((success: boolean) => void) | null = null;
+
+  function submitBasalForm(): Promise<boolean> {
+    return new Promise((resolve) => {
+      basalSubmitResolve = resolve;
+      tick().then(() => basalFormEl?.requestSubmit());
+    });
+  }
+
+  // ── Shared enhance callback logic ──────────────────────────────
+
+  async function onSettingsSubmitted(success: boolean): Promise<void> {
+    if (!success) {
+      saveError = "Failed to save therapy settings.";
+      return;
+    }
+
+    // Submit basal schedule form
+    const basalOk = await submitBasalForm();
+    if (!basalOk) {
+      saveError = "Failed to save basal schedule.";
+      return;
+    }
+
+    // Save remaining schedules (command-based)
+    await saveRemainingSchedules();
+
+    goto("/settings/setup");
   }
 </script>
 
 <svelte:head>
   <title>Therapy Profile - Setup - Nocturne</title>
 </svelte:head>
+
+<!-- Hidden basal schedule form -->
+{#if existingBasalId}
+  <form
+    bind:this={basalFormEl}
+    class="hidden"
+    {...updateBasalForm.for(existingBasalId).enhance(async ({ submit }) => {
+      await submit();
+      const success = !!updateBasalForm.for(existingBasalId!).result;
+      basalSubmitResolve?.(success);
+      basalSubmitResolve = null;
+    })}
+  >
+    <input type="hidden" name="id" value={existingBasalId} />
+    <input type="hidden" name="request.profileName" value={profileName} />
+    <input type="hidden" name="request.timestamp" value={new Date().toISOString()} />
+    {#each basalEntries as entry, i}
+      <input type="hidden" name="request.entries[{i}].time" value={entry.time} />
+      <input type="hidden" name="n:request.entries[{i}].value" value={entry.value} />
+    {/each}
+  </form>
+{:else}
+  <form
+    bind:this={basalFormEl}
+    class="hidden"
+    {...createBasalForm.enhance(async ({ submit }) => {
+      await submit();
+      const success = !!createBasalForm.result;
+      basalSubmitResolve?.(success);
+      basalSubmitResolve = null;
+    })}
+  >
+    <input type="hidden" name="profileName" value={profileName} />
+    <input type="hidden" name="timestamp" value={new Date().toISOString()} />
+    {#each basalEntries as entry, i}
+      <input type="hidden" name="entries[{i}].time" value={entry.time} />
+      <input type="hidden" name="n:entries[{i}].value" value={entry.value} />
+    {/each}
+  </form>
+{/if}
 
 <WizardShell
   title="Therapy Profile"
@@ -246,7 +292,7 @@
   showSkip={true}
   saveDisabled={!profileName}
   {saving}
-  onSave={handleSave}
+  formId="profile-form"
 >
   {#if isExternallyManaged}
     <Card.Root>
@@ -260,80 +306,195 @@
       </Card.Content>
     </Card.Root>
   {:else}
-    <!-- Basics -->
-    <Card.Root>
-      <Card.Header>
-        <Card.Title>Basics</Card.Title>
-      </Card.Header>
-      <Card.Content>
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div class="space-y-2">
-            <Label for="profile-name">Profile Name</Label>
-            <Input
-              id="profile-name"
-              bind:value={profileName}
-              placeholder="Default"
-            />
-          </div>
+    <!-- Therapy settings form (main form connected to WizardShell) -->
+    {#if existingSettingsId}
+      <form
+        id="profile-form"
+        {...updateSettingsForm.for(existingSettingsId).enhance(async ({ submit }) => {
+          saveError = null;
+          try {
+            await submit();
+            await onSettingsSubmitted(!!updateSettingsForm.for(existingSettingsId!).result);
+          } catch {
+            saveError = "Something went wrong. Please try again.";
+          }
+        })}
+      >
+        <input type="hidden" name="id" value={existingSettingsId} />
+        <input type="hidden" name="request.timestamp" value={new Date().toISOString()} />
 
-          <div class="space-y-2">
-            <Label for="units">Units</Label>
-            <Select.Root type="single" bind:value={units}>
-              <Select.Trigger id="units">
-                {units || "Select units"}
-              </Select.Trigger>
-              <Select.Content>
-                <Select.Item value="mg/dL" label="mg/dL" />
-                <Select.Item value="mmol/L" label="mmol/L" />
-              </Select.Content>
-            </Select.Root>
-          </div>
+        <Card.Root>
+          <Card.Header>
+            <Card.Title>Basics</Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="space-y-2">
+                <Label for="profile-name">Profile Name</Label>
+                <Input
+                  id="profile-name"
+                  name="request.profileName"
+                  bind:value={profileName}
+                  placeholder="Default"
+                />
+              </div>
 
-          <div class="space-y-2">
-            <Label for="timezone">Timezone</Label>
-            <Input
-              id="timezone"
-              bind:value={timezone}
-              placeholder="America/New_York"
-            />
-          </div>
+              <div class="space-y-2">
+                <Label for="units">Units</Label>
+                <Select.Root type="single" name="request.units" bind:value={units}>
+                  <Select.Trigger id="units">
+                    {units || "Select units"}
+                  </Select.Trigger>
+                  <Select.Content>
+                    <Select.Item value="mg/dL" label="mg/dL" />
+                    <Select.Item value="mmol/L" label="mmol/L" />
+                  </Select.Content>
+                </Select.Root>
+              </div>
 
-          <div class="space-y-2">
-            <Label for="dia">Duration of Insulin Action</Label>
-            <div class="flex items-center gap-2">
-              <Input
-                id="dia"
-                type="number"
-                bind:value={dia}
-                step={0.5}
-                min={1}
-                class="flex-1"
-              />
-              <span class="text-sm text-muted-foreground whitespace-nowrap"
-                >hours</span
-              >
+              <div class="space-y-2">
+                <Label for="timezone">Timezone</Label>
+                <Input
+                  id="timezone"
+                  name="request.timezone"
+                  bind:value={timezone}
+                  placeholder="America/New_York"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="dia">Duration of Insulin Action</Label>
+                <div class="flex items-center gap-2">
+                  <Input
+                    id="dia"
+                    name="n:request.dia"
+                    type="number"
+                    bind:value={dia}
+                    step={0.5}
+                    min={1}
+                    class="flex-1"
+                  />
+                  <span class="text-sm text-muted-foreground whitespace-nowrap"
+                    >hours</span
+                  >
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <Label for="carbs-hr">Carb Absorption Rate</Label>
+                <div class="flex items-center gap-2">
+                  <Input
+                    id="carbs-hr"
+                    name="n:request.carbsHr"
+                    type="number"
+                    bind:value={carbsHr}
+                    step={1}
+                    min={1}
+                    class="flex-1"
+                  />
+                  <span class="text-sm text-muted-foreground whitespace-nowrap"
+                    >g/hr</span
+                  >
+                </div>
+              </div>
             </div>
-          </div>
+          </Card.Content>
+        </Card.Root>
+      </form>
+    {:else}
+      <form
+        id="profile-form"
+        {...createSettingsForm.enhance(async ({ submit }) => {
+          saveError = null;
+          try {
+            await submit();
+            await onSettingsSubmitted(!!createSettingsForm.result);
+          } catch {
+            saveError = "Something went wrong. Please try again.";
+          }
+        })}
+      >
+        <input type="hidden" name="timestamp" value={new Date().toISOString()} />
 
-          <div class="space-y-2">
-            <Label for="carbs-hr">Carb Absorption Rate</Label>
-            <div class="flex items-center gap-2">
-              <Input
-                id="carbs-hr"
-                type="number"
-                bind:value={carbsHr}
-                step={1}
-                min={1}
-                class="flex-1"
-              />
-              <span class="text-sm text-muted-foreground whitespace-nowrap"
-                >g/hr</span
-              >
+        <Card.Root>
+          <Card.Header>
+            <Card.Title>Basics</Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="space-y-2">
+                <Label for="profile-name">Profile Name</Label>
+                <Input
+                  id="profile-name"
+                  name="profileName"
+                  bind:value={profileName}
+                  placeholder="Default"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="units">Units</Label>
+                <Select.Root type="single" name="units" bind:value={units}>
+                  <Select.Trigger id="units">
+                    {units || "Select units"}
+                  </Select.Trigger>
+                  <Select.Content>
+                    <Select.Item value="mg/dL" label="mg/dL" />
+                    <Select.Item value="mmol/L" label="mmol/L" />
+                  </Select.Content>
+                </Select.Root>
+              </div>
+
+              <div class="space-y-2">
+                <Label for="timezone">Timezone</Label>
+                <Input
+                  id="timezone"
+                  name="timezone"
+                  bind:value={timezone}
+                  placeholder="America/New_York"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="dia">Duration of Insulin Action</Label>
+                <div class="flex items-center gap-2">
+                  <Input
+                    id="dia"
+                    name="n:dia"
+                    type="number"
+                    bind:value={dia}
+                    step={0.5}
+                    min={1}
+                    class="flex-1"
+                  />
+                  <span class="text-sm text-muted-foreground whitespace-nowrap"
+                    >hours</span
+                  >
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <Label for="carbs-hr">Carb Absorption Rate</Label>
+                <div class="flex items-center gap-2">
+                  <Input
+                    id="carbs-hr"
+                    name="n:carbsHr"
+                    type="number"
+                    bind:value={carbsHr}
+                    step={1}
+                    min={1}
+                    class="flex-1"
+                  />
+                  <span class="text-sm text-muted-foreground whitespace-nowrap"
+                    >g/hr</span
+                  >
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </Card.Content>
-    </Card.Root>
+          </Card.Content>
+        </Card.Root>
+      </form>
+    {/if}
 
     <!-- Basal Rates -->
     <Card.Root>

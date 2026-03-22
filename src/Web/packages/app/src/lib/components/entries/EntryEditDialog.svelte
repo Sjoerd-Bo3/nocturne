@@ -26,13 +26,13 @@
   import { getDataSourceDisplayName } from "$lib/utils/data-source-display";
   import { toast } from "svelte-sonner";
   import {
-    create as createBolus,
-    update as updateBolus,
+    create as createBolusForm,
+    update as updateBolusForm,
     remove as deleteBolus,
   } from "$api/generated/boluses.generated.remote";
   import {
-    createCarbIntake,
-    updateCarbIntake,
+    createCarbIntake as createCarbIntakeForm,
+    updateCarbIntake as updateCarbIntakeForm,
     deleteCarbIntake,
     addCarbIntakeFood,
   } from "$api/generated/nutritions.generated.remote";
@@ -79,9 +79,19 @@
   });
 
   let mills = $state<number>(Date.now());
-  let isSaving = $state(false);
   let isDeleting = $state(false);
   let carbsPendingFoods = $state<PendingFood[]>([]);
+
+  // Form element refs for programmatic submission
+  let bolusFormRef = $state<HTMLFormElement | null>(null);
+  let carbsFormRef = $state<HTMLFormElement | null>(null);
+
+  // Track form submission completion
+  let bolusFormDone = $state(false);
+  let carbsFormDone = $state(false);
+  let commandsDone = $state(false);
+  let saveError = $state<string | null>(null);
+  let isSaving = $state(false);
 
   let isEditing = $derived(entry != null);
   let sourceDisplayName = $derived(
@@ -102,6 +112,26 @@
     (Object.keys(ENTRY_CATEGORIES) as EntryCategoryId[]).filter(
       (k) => sections[k] == null,
     ),
+  );
+
+  // Determine which bolus form to use
+  const existingBolusRecord = $derived(findExistingRecord("bolus"));
+  const activeBolusForm = $derived(
+    existingBolusRecord?.data.id ? updateBolusForm : createBolusForm,
+  );
+
+  // Determine which carbs form to use
+  const existingCarbsRecord = $derived(findExistingRecord("carbs"));
+  const activeCarbsForm = $derived(
+    existingCarbsRecord?.data.id ? updateCarbIntakeForm : createCarbIntakeForm,
+  );
+
+  // Aggregate pending state
+  const formsPending = $derived(
+    !!createBolusForm.pending ||
+    !!updateBolusForm.pending ||
+    !!createCarbIntakeForm.pending ||
+    !!updateCarbIntakeForm.pending,
   );
 
   const sectionIcons: Record<EntryCategoryId, typeof Syringe> = {
@@ -204,56 +234,27 @@
 
   async function handleSave() {
     isSaving = true;
-    try {
-      const correlationId =
-        activeSectionCount > 1 ? crypto.randomUUID() : undefined;
+    saveError = null;
+    bolusFormDone = sections.bolus == null;
+    carbsFormDone = sections.carbs == null;
+    commandsDone = false;
 
+    try {
       const promises: Promise<unknown>[] = [];
 
-      if (sections.bolus != null) {
-        const data: Partial<Bolus> = {
-          ...sections.bolus,
-          mills,
-          correlationId,
-        };
-        const existing = findExistingRecord("bolus");
-        if (existing?.data.id) {
-          promises.push(
-            updateBolus({ id: existing.data.id, request: data as Bolus }),
-          );
-        } else {
-          promises.push(createBolus(data as Bolus));
-        }
+      // Submit bolus form if active
+      if (sections.bolus != null && bolusFormRef) {
+        bolusFormRef.requestSubmit();
       }
 
-      if (sections.carbs != null) {
-        const data: Partial<CarbIntake> = {
-          ...sections.carbs,
-          mills,
-          correlationId,
-        };
-        const existing = findExistingRecord("carbs");
-        if (existing?.data.id) {
-          promises.push(
-            updateCarbIntake({
-              id: existing.data.id,
-              request: data as CarbIntake,
-            }),
-          );
-        } else if (carbsPendingFoods.length > 0) {
-          // Create carb intake first, then add pending foods
-          promises.push(
-            createCarbIntake(data as CarbIntake).then(async (result) => {
-              if (!result?.id) return;
-              for (const pf of carbsPendingFoods) {
-                await addCarbIntakeFood({ id: result.id, request: pf.request });
-              }
-            }),
-          );
-        } else {
-          promises.push(createCarbIntake(data as CarbIntake));
-        }
+      // Submit carbs form if active
+      if (sections.carbs != null && carbsFormRef) {
+        carbsFormRef.requestSubmit();
       }
+
+      // Handle command()-based sections (observations)
+      const correlationId =
+        activeSectionCount > 1 ? crypto.randomUUID() : undefined;
 
       if (sections.bgCheck != null) {
         const data: Partial<BGCheck> = {
@@ -310,16 +311,36 @@
       }
 
       await Promise.all(promises);
-      toast.success(isEditing ? "Entry updated" : "Entry created");
-      open = false;
-      onClose();
+      commandsDone = true;
+
+      // Check if all done (forms may still be pending)
+      checkAllDone();
     } catch (err) {
       console.error("Failed to save entry:", err);
       toast.error("Failed to save entry");
-    } finally {
       isSaving = false;
     }
   }
+
+  function checkAllDone() {
+    if (bolusFormDone && carbsFormDone && commandsDone) {
+      if (!saveError) {
+        toast.success(isEditing ? "Entry updated" : "Entry created");
+        open = false;
+        onClose();
+      } else {
+        toast.error("Failed to save entry");
+      }
+      isSaving = false;
+    }
+  }
+
+  // Watch for form completion
+  $effect(() => {
+    if (isSaving && bolusFormDone && carbsFormDone && commandsDone) {
+      checkAllDone();
+    }
+  });
 
   async function handleDelete() {
     if (!entry?.data.id) return;
@@ -381,6 +402,98 @@
   }
 </script>
 
+<!-- Hidden bolus form -->
+{#if sections.bolus != null}
+  {@const correlationId = activeSectionCount > 1 ? crypto.randomUUID() : undefined}
+  <form
+    bind:this={bolusFormRef}
+    class="hidden"
+    {...activeBolusForm.enhance(async ({ submit }) => {
+      await submit();
+      if (activeBolusForm.result) {
+        bolusFormDone = true;
+      } else {
+        saveError = "Failed to save bolus";
+        bolusFormDone = true;
+      }
+    })}
+  >
+    {#if existingBolusRecord?.data.id}
+      <input type="hidden" name="id" value={existingBolusRecord.data.id} />
+    {/if}
+    <input type="hidden" name="mills" value={mills} />
+    {#if correlationId}
+      <input type="hidden" name="correlationId" value={correlationId} />
+    {/if}
+    <input type="hidden" name="insulin" value={sections.bolus?.insulin ?? 0} />
+    {#if sections.bolus?.programmed != null}
+      <input type="hidden" name="programmed" value={sections.bolus.programmed} />
+    {/if}
+    {#if sections.bolus?.delivered != null}
+      <input type="hidden" name="delivered" value={sections.bolus.delivered} />
+    {/if}
+    {#if sections.bolus?.bolusType}
+      <input type="hidden" name="bolusType" value={sections.bolus.bolusType} />
+    {/if}
+    <input type="hidden" name="automatic" value={sections.bolus?.automatic ?? false} />
+    {#if sections.bolus?.kind}
+      <input type="hidden" name="kind" value={sections.bolus.kind} />
+    {/if}
+    {#if sections.bolus?.duration != null}
+      <input type="hidden" name="duration" value={sections.bolus.duration} />
+    {/if}
+    {#if sections.bolus?.insulinType}
+      <input type="hidden" name="insulinType" value={sections.bolus.insulinType} />
+    {/if}
+    {#if sections.bolus?.unabsorbed != null}
+      <input type="hidden" name="unabsorbed" value={sections.bolus.unabsorbed} />
+    {/if}
+  </form>
+{/if}
+
+<!-- Hidden carbs form -->
+{#if sections.carbs != null}
+  {@const correlationId = activeSectionCount > 1 ? crypto.randomUUID() : undefined}
+  <form
+    bind:this={carbsFormRef}
+    class="hidden"
+    {...activeCarbsForm.enhance(async ({ submit }) => {
+      await submit();
+      const result = activeCarbsForm.result;
+      if (result) {
+        // If creating with pending foods, add them
+        if (!existingCarbsRecord?.data.id && carbsPendingFoods.length > 0) {
+          const newId = (result as any)?.id;
+          if (newId) {
+            for (const pf of carbsPendingFoods) {
+              await addCarbIntakeFood({ id: newId, request: pf.request });
+            }
+          }
+        }
+        carbsFormDone = true;
+      } else {
+        saveError = "Failed to save carb intake";
+        carbsFormDone = true;
+      }
+    })}
+  >
+    {#if existingCarbsRecord?.data.id}
+      <input type="hidden" name="id" value={existingCarbsRecord.data.id} />
+    {/if}
+    <input type="hidden" name="mills" value={mills} />
+    {#if correlationId}
+      <input type="hidden" name="correlationId" value={correlationId} />
+    {/if}
+    <input type="hidden" name="carbs" value={sections.carbs?.carbs ?? 0} />
+    {#if sections.carbs?.carbTime != null}
+      <input type="hidden" name="carbTime" value={sections.carbs.carbTime} />
+    {/if}
+    {#if sections.carbs?.absorptionTime != null}
+      <input type="hidden" name="absorptionTime" value={sections.carbs.absorptionTime} />
+    {/if}
+  </form>
+{/if}
+
 <Dialog.Root bind:open onOpenChange={(o) => !o && onClose()}>
   <Dialog.Content class="max-w-lg max-h-[85vh] overflow-y-auto">
     <Dialog.Header>
@@ -394,13 +507,7 @@
       </Dialog.Description>
     </Dialog.Header>
 
-    <form
-      onsubmit={(e) => {
-        e.preventDefault();
-        handleSave();
-      }}
-      class="space-y-4"
-    >
+    <div class="space-y-4">
       <!-- Shared Timestamp -->
       <div class="space-y-1.5">
         <Label for="entry-timestamp">Date & Time</Label>
@@ -513,8 +620,12 @@
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isSaving || isDeleting}>
-          {#if isSaving}
+        <Button
+          type="button"
+          onclick={handleSave}
+          disabled={isSaving || isDeleting || formsPending}
+        >
+          {#if isSaving || formsPending}
             <Loader2 class="mr-2 h-4 w-4 animate-spin" />
             Saving...
           {:else}
@@ -522,6 +633,6 @@
           {/if}
         </Button>
       </Dialog.Footer>
-    </form>
+    </div>
   </Dialog.Content>
 </Dialog.Root>

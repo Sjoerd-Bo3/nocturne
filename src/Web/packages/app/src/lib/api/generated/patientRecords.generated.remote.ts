@@ -24,7 +24,7 @@ export const getPatientRecord = query(async () => {
 });
 
 /** Update the patient record */
-export const updatePatientRecord = form(PatientRecordSchema, async (request) => {
+export const updatePatientRecord = command(PatientRecordSchema, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {

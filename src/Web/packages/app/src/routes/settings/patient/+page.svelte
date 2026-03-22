@@ -34,6 +34,13 @@
   const devices = patientRemote.getDevices();
   const insulins = patientRemote.getInsulins();
 
+  // ── Form instances ────────────────────────────────────────────────
+
+  const createDeviceForm = patientRemote.createDevice;
+  const updateDeviceForm = patientRemote.updateDevice;
+  const createInsulinForm = patientRemote.createInsulin;
+  const updateInsulinForm = patientRemote.updateInsulin;
+
   // ── Label maps ────────────────────────────────────────────────────
 
   const diabetesTypeLabels: Record<string, string> = {
@@ -132,7 +139,6 @@
 
   let deviceDialogOpen = $state(false);
   let deviceEditing = $state<PatientDevice | null>(null);
-  let deviceSaving = $state(false);
   let deviceDeleteId = $state<string | null>(null);
 
   let deviceCategory = $state<string>(DeviceCategory.InsulinPump);
@@ -176,38 +182,6 @@
     deviceDialogOpen = true;
   }
 
-  async function saveDevice() {
-    deviceSaving = true;
-    try {
-      const payload: PatientDevice = {
-        deviceCategory: deviceCategory as DeviceCategory,
-        manufacturer: deviceManufacturer || undefined,
-        model: deviceModel || undefined,
-        aidAlgorithm:
-          deviceCategory === DeviceCategory.InsulinPump && deviceAidAlgorithm
-            ? (deviceAidAlgorithm as AidAlgorithm)
-            : undefined,
-        serialNumber: deviceSerialNumber || undefined,
-        startDate: deviceStartDate ? new Date(deviceStartDate) : undefined,
-        endDate: deviceEndDate ? new Date(deviceEndDate) : undefined,
-        isCurrent: deviceIsCurrent,
-        notes: deviceNotes || undefined,
-      };
-
-      if (deviceEditing?.id) {
-        await patientRemote.updateDevice({
-          id: deviceEditing.id,
-          request: payload,
-        });
-      } else {
-        await patientRemote.createDevice(payload);
-      }
-      deviceDialogOpen = false;
-    } finally {
-      deviceSaving = false;
-    }
-  }
-
   async function deleteDevice() {
     if (!deviceDeleteId) return;
     await patientRemote.deleteDevice(deviceDeleteId);
@@ -218,7 +192,6 @@
 
   let insulinDialogOpen = $state(false);
   let insulinEditing = $state<PatientInsulin | null>(null);
-  let insulinSaving = $state(false);
   let insulinDeleteId = $state<string | null>(null);
 
   let insulinCategory = $state<string>(InsulinCategory.RapidActing);
@@ -253,32 +226,6 @@
     insulinDialogOpen = true;
   }
 
-  async function saveInsulin() {
-    insulinSaving = true;
-    try {
-      const payload: PatientInsulin = {
-        insulinCategory: insulinCategory as InsulinCategory,
-        name: insulinName || undefined,
-        startDate: insulinStartDate ? new Date(insulinStartDate) : undefined,
-        endDate: insulinEndDate ? new Date(insulinEndDate) : undefined,
-        isCurrent: insulinIsCurrent,
-        notes: insulinNotes || undefined,
-      };
-
-      if (insulinEditing?.id) {
-        await patientRemote.updateInsulin({
-          id: insulinEditing.id,
-          request: payload,
-        });
-      } else {
-        await patientRemote.createInsulin(payload);
-      }
-      insulinDialogOpen = false;
-    } finally {
-      insulinSaving = false;
-    }
-  }
-
   async function deleteInsulin() {
     if (!insulinDeleteId) return;
     await patientRemote.deleteInsulin(insulinDeleteId);
@@ -300,6 +247,14 @@
   const showAidAlgorithm = $derived(
     deviceCategory === DeviceCategory.InsulinPump,
   );
+
+  // ── Active form helpers ───────────────────────────────────────────
+
+  const activeDeviceForm = $derived(deviceEditing?.id ? updateDeviceForm : createDeviceForm);
+  const deviceSaving = $derived(!!createDeviceForm.pending || !!updateDeviceForm.pending);
+
+  const activeInsulinForm = $derived(insulinEditing?.id ? updateInsulinForm : createInsulinForm);
+  const insulinSaving = $derived(!!createInsulinForm.pending || !!updateInsulinForm.pending);
 </script>
 
 <svelte:head>
@@ -583,123 +538,141 @@
       </Dialog.Description>
     </Dialog.Header>
 
-    <div class="space-y-4 py-4">
-      <div class="space-y-2">
-        <Label for="device-category">Category</Label>
-        <Select.Root type="single" bind:value={deviceCategory}>
-          <Select.Trigger id="device-category">
-            {deviceCategoryLabels[deviceCategory] ?? deviceCategory}
-          </Select.Trigger>
-          <Select.Content>
-            {#each Object.entries(deviceCategoryLabels) as [value, label]}
-              <Select.Item {value} {label} />
-            {/each}
-          </Select.Content>
-        </Select.Root>
-      </div>
-
-      <div class="grid gap-4 sm:grid-cols-2">
+    <form
+      {...activeDeviceForm.enhance(async ({ submit }) => {
+        await submit();
+        if (activeDeviceForm.result) deviceDialogOpen = false;
+      })}
+    >
+      {#if deviceEditing?.id}
+        <input type="hidden" name="id" value={deviceEditing.id} />
+      {/if}
+      <div class="space-y-4 py-4">
         <div class="space-y-2">
-          <Label for="device-manufacturer">Manufacturer</Label>
-          <Input
-            id="device-manufacturer"
-            bind:value={deviceManufacturer}
-            placeholder="e.g. Medtronic, Dexcom"
-          />
-        </div>
-        <div class="space-y-2">
-          <Label for="device-model">Model</Label>
-          <Input
-            id="device-model"
-            bind:value={deviceModel}
-            placeholder="e.g. 780G, G7"
-          />
-        </div>
-      </div>
-
-      {#if showAidAlgorithm}
-        <div class="space-y-2">
-          <Label for="device-aid">AID Algorithm</Label>
-          <Select.Root type="single" bind:value={deviceAidAlgorithm}>
-            <Select.Trigger id="device-aid">
-              {deviceAidAlgorithm
-                ? aidAlgorithmLabels[deviceAidAlgorithm] ?? deviceAidAlgorithm
-                : "Select algorithm"}
+          <Label for="device-category">Category</Label>
+          <Select.Root type="single" name="deviceCategory" bind:value={deviceCategory}>
+            <Select.Trigger id="device-category">
+              {deviceCategoryLabels[deviceCategory] ?? deviceCategory}
             </Select.Trigger>
             <Select.Content>
-              {#each Object.entries(aidAlgorithmLabels) as [value, label]}
+              {#each Object.entries(deviceCategoryLabels) as [value, label]}
                 <Select.Item {value} {label} />
               {/each}
             </Select.Content>
           </Select.Root>
         </div>
-      {/if}
 
-      <div class="space-y-2">
-        <Label for="device-serial">Serial Number</Label>
-        <Input
-          id="device-serial"
-          bind:value={deviceSerialNumber}
-          placeholder="Optional"
-        />
-      </div>
-
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div class="space-y-2">
-          <Label for="device-start">Start Date</Label>
-          <Input
-            id="device-start"
-            type="date"
-            bind:value={deviceStartDate}
-          />
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="space-y-2">
+            <Label for="device-manufacturer">Manufacturer</Label>
+            <Input
+              name="manufacturer"
+              id="device-manufacturer"
+              bind:value={deviceManufacturer}
+              placeholder="e.g. Medtronic, Dexcom"
+            />
+          </div>
+          <div class="space-y-2">
+            <Label for="device-model">Model</Label>
+            <Input
+              name="model"
+              id="device-model"
+              bind:value={deviceModel}
+              placeholder="e.g. 780G, G7"
+            />
+          </div>
         </div>
-        <div class="space-y-2">
-          <Label for="device-end">End Date</Label>
-          <Input
-            id="device-end"
-            type="date"
-            bind:value={deviceEndDate}
-          />
-        </div>
-      </div>
 
-      <div class="flex items-center gap-2">
-        <input
-          id="device-current"
-          type="checkbox"
-          bind:checked={deviceIsCurrent}
-          class="h-4 w-4 rounded border-input"
-        />
-        <Label for="device-current">Currently in use</Label>
-      </div>
-
-      <div class="space-y-2">
-        <Label for="device-notes">Notes</Label>
-        <Textarea
-          id="device-notes"
-          bind:value={deviceNotes}
-          placeholder="Any additional notes about this device"
-          rows={2}
-        />
-      </div>
-    </div>
-
-    <Dialog.Footer>
-      <Button
-        variant="outline"
-        onclick={() => (deviceDialogOpen = false)}
-      >
-        Cancel
-      </Button>
-      <Button onclick={saveDevice} disabled={deviceSaving}>
-        {#if deviceSaving}
-          <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-        {:else}
-          <Save class="mr-2 h-4 w-4" />
+        {#if showAidAlgorithm}
+          <div class="space-y-2">
+            <Label for="device-aid">AID Algorithm</Label>
+            <Select.Root type="single" name="aidAlgorithm" bind:value={deviceAidAlgorithm}>
+              <Select.Trigger id="device-aid">
+                {deviceAidAlgorithm
+                  ? aidAlgorithmLabels[deviceAidAlgorithm] ?? deviceAidAlgorithm
+                  : "Select algorithm"}
+              </Select.Trigger>
+              <Select.Content>
+                {#each Object.entries(aidAlgorithmLabels) as [value, label]}
+                  <Select.Item {value} {label} />
+                {/each}
+              </Select.Content>
+            </Select.Root>
+          </div>
         {/if}
-        {deviceEditing ? "Update" : "Add"} Device
-      </Button>
-    </Dialog.Footer>
+
+        <div class="space-y-2">
+          <Label for="device-serial">Serial Number</Label>
+          <Input
+            name="serialNumber"
+            id="device-serial"
+            bind:value={deviceSerialNumber}
+            placeholder="Optional"
+          />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="space-y-2">
+            <Label for="device-start">Start Date</Label>
+            <Input
+              name="startDate"
+              id="device-start"
+              type="date"
+              bind:value={deviceStartDate}
+            />
+          </div>
+          <div class="space-y-2">
+            <Label for="device-end">End Date</Label>
+            <Input
+              name="endDate"
+              id="device-end"
+              type="date"
+              bind:value={deviceEndDate}
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input
+            id="device-current"
+            type="checkbox"
+            name="isCurrent"
+            bind:checked={deviceIsCurrent}
+            class="h-4 w-4 rounded border-input"
+          />
+          <Label for="device-current">Currently in use</Label>
+        </div>
+
+        <div class="space-y-2">
+          <Label for="device-notes">Notes</Label>
+          <Textarea
+            name="notes"
+            id="device-notes"
+            bind:value={deviceNotes}
+            placeholder="Any additional notes about this device"
+            rows={2}
+          />
+        </div>
+      </div>
+
+      <Dialog.Footer>
+        <Button
+          type="button"
+          variant="outline"
+          onclick={() => (deviceDialogOpen = false)}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={deviceSaving}>
+          {#if deviceSaving}
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+          {:else}
+            <Save class="mr-2 h-4 w-4" />
+          {/if}
+          {deviceEditing ? "Update" : "Add"} Device
+        </Button>
+      </Dialog.Footer>
+    </form>
   </Dialog.Content>
 </Dialog.Root>
 
@@ -744,86 +717,102 @@
       </Dialog.Description>
     </Dialog.Header>
 
-    <div class="space-y-4 py-4">
-      <div class="space-y-2">
-        <Label for="insulin-category">Category</Label>
-        <Select.Root type="single" bind:value={insulinCategory}>
-          <Select.Trigger id="insulin-category">
-            {insulinCategoryLabels[insulinCategory] ?? insulinCategory}
-          </Select.Trigger>
-          <Select.Content>
-            {#each Object.entries(insulinCategoryLabels) as [value, label]}
-              <Select.Item {value} {label} />
-            {/each}
-          </Select.Content>
-        </Select.Root>
-      </div>
-
-      <div class="space-y-2">
-        <Label for="insulin-name">Name / Brand</Label>
-        <Input
-          id="insulin-name"
-          bind:value={insulinName}
-          placeholder="e.g. Humalog, Tresiba, Fiasp"
-        />
-      </div>
-
-      <div class="grid gap-4 sm:grid-cols-2">
+    <form
+      {...activeInsulinForm.enhance(async ({ submit }) => {
+        await submit();
+        if (activeInsulinForm.result) insulinDialogOpen = false;
+      })}
+    >
+      {#if insulinEditing?.id}
+        <input type="hidden" name="id" value={insulinEditing.id} />
+      {/if}
+      <div class="space-y-4 py-4">
         <div class="space-y-2">
-          <Label for="insulin-start">Start Date</Label>
+          <Label for="insulin-category">Category</Label>
+          <Select.Root type="single" name="insulinCategory" bind:value={insulinCategory}>
+            <Select.Trigger id="insulin-category">
+              {insulinCategoryLabels[insulinCategory] ?? insulinCategory}
+            </Select.Trigger>
+            <Select.Content>
+              {#each Object.entries(insulinCategoryLabels) as [value, label]}
+                <Select.Item {value} {label} />
+              {/each}
+            </Select.Content>
+          </Select.Root>
+        </div>
+
+        <div class="space-y-2">
+          <Label for="insulin-name">Name / Brand</Label>
           <Input
-            id="insulin-start"
-            type="date"
-            bind:value={insulinStartDate}
+            name="name"
+            id="insulin-name"
+            bind:value={insulinName}
+            placeholder="e.g. Humalog, Tresiba, Fiasp"
           />
         </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="space-y-2">
+            <Label for="insulin-start">Start Date</Label>
+            <Input
+              name="startDate"
+              id="insulin-start"
+              type="date"
+              bind:value={insulinStartDate}
+            />
+          </div>
+          <div class="space-y-2">
+            <Label for="insulin-end">End Date</Label>
+            <Input
+              name="endDate"
+              id="insulin-end"
+              type="date"
+              bind:value={insulinEndDate}
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input
+            id="insulin-current"
+            type="checkbox"
+            name="isCurrent"
+            bind:checked={insulinIsCurrent}
+            class="h-4 w-4 rounded border-input"
+          />
+          <Label for="insulin-current">Currently in use</Label>
+        </div>
+
         <div class="space-y-2">
-          <Label for="insulin-end">End Date</Label>
-          <Input
-            id="insulin-end"
-            type="date"
-            bind:value={insulinEndDate}
+          <Label for="insulin-notes">Notes</Label>
+          <Textarea
+            name="notes"
+            id="insulin-notes"
+            bind:value={insulinNotes}
+            placeholder="Any additional notes about this insulin"
+            rows={2}
           />
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <input
-          id="insulin-current"
-          type="checkbox"
-          bind:checked={insulinIsCurrent}
-          class="h-4 w-4 rounded border-input"
-        />
-        <Label for="insulin-current">Currently in use</Label>
-      </div>
-
-      <div class="space-y-2">
-        <Label for="insulin-notes">Notes</Label>
-        <Textarea
-          id="insulin-notes"
-          bind:value={insulinNotes}
-          placeholder="Any additional notes about this insulin"
-          rows={2}
-        />
-      </div>
-    </div>
-
-    <Dialog.Footer>
-      <Button
-        variant="outline"
-        onclick={() => (insulinDialogOpen = false)}
-      >
-        Cancel
-      </Button>
-      <Button onclick={saveInsulin} disabled={insulinSaving}>
-        {#if insulinSaving}
-          <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-        {:else}
-          <Save class="mr-2 h-4 w-4" />
-        {/if}
-        {insulinEditing ? "Update" : "Add"} Insulin
-      </Button>
-    </Dialog.Footer>
+      <Dialog.Footer>
+        <Button
+          type="button"
+          variant="outline"
+          onclick={() => (insulinDialogOpen = false)}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={insulinSaving}>
+          {#if insulinSaving}
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+          {:else}
+            <Save class="mr-2 h-4 w-4" />
+          {/if}
+          {insulinEditing ? "Update" : "Add"} Insulin
+        </Button>
+      </Dialog.Footer>
+    </form>
   </Dialog.Content>
 </Dialog.Root>
 

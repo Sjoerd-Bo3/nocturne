@@ -56,8 +56,8 @@
         ...record.current,
         diabetesType: (diabetesType as DiabetesType) || undefined,
         preferredName: preferredName || undefined,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-        diagnosisDate: diagnosisDate ? new Date(diagnosisDate) : undefined,
+        dateOfBirth: dateOfBirth || undefined,
+        diagnosisDate: diagnosisDate || undefined,
       });
       return true;
     } catch {

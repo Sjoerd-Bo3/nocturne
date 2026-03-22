@@ -59,7 +59,6 @@
   // ── Form state ────────────────────────────────────────────────────
 
   let showForm = $state(false);
-  let adding = $state(false);
   let deviceCategory = $state("");
   let manufacturer = $state("");
   let model = $state("");
@@ -71,6 +70,8 @@
     deviceCategory !== "" && manufacturer.trim() !== "" && model.trim() !== "",
   );
 
+  const createForm = patientRemote.createDevice;
+
   // ── Handlers ──────────────────────────────────────────────────────
 
   function resetForm() {
@@ -79,27 +80,6 @@
     model = "";
     aidAlgorithm = "";
     showForm = false;
-  }
-
-  async function handleAdd() {
-    if (!canAdd) return;
-    adding = true;
-    try {
-      await patientRemote.createDevice({
-        deviceCategory: deviceCategory as DeviceCategory,
-        manufacturer: manufacturer.trim(),
-        model: model.trim(),
-        aidAlgorithm: showAidField && aidAlgorithm
-          ? (aidAlgorithm as AidAlgorithm)
-          : undefined,
-        isCurrent: true,
-        createdAt: new Date(),
-        modifiedAt: new Date(),
-      });
-      resetForm();
-    } finally {
-      adding = false;
-    }
   }
 
   async function handleDelete(id: string) {
@@ -175,69 +155,79 @@
       <Card.Header>
         <Card.Title class="text-sm">Add a Device</Card.Title>
       </Card.Header>
-      <Card.Content class="space-y-4">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div class="space-y-2">
-            <Label for="device-category">Device Category</Label>
-            <Select.Root type="single" bind:value={deviceCategory}>
-              <Select.Trigger id="device-category">
-                {deviceCategory
-                  ? (categoryLabels[deviceCategory] ?? deviceCategory)
-                  : "Select category"}
-              </Select.Trigger>
-              <Select.Content>
-                {#each Object.entries(categoryLabels) as [value, label]}
-                  <Select.Item {value} {label} />
-                {/each}
-              </Select.Content>
-            </Select.Root>
-          </div>
-
-          <div class="space-y-2">
-            <Label for="manufacturer">Manufacturer</Label>
-            <Input
-              id="manufacturer"
-              bind:value={manufacturer}
-              placeholder="e.g. Dexcom, Omnipod"
-            />
-          </div>
-
-          <div class="space-y-2">
-            <Label for="model">Model</Label>
-            <Input
-              id="model"
-              bind:value={model}
-              placeholder="e.g. G7, DASH"
-            />
-          </div>
-
-          {#if showAidField}
+      <form
+        {...createForm.enhance(async ({ submit }) => {
+          await submit();
+          if (createForm.result) resetForm();
+        })}
+      >
+        <Card.Content class="space-y-4">
+          <div class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-2">
-              <Label for="aid-algorithm">AID Algorithm</Label>
-              <Select.Root type="single" bind:value={aidAlgorithm}>
-                <Select.Trigger id="aid-algorithm">
-                  {aidAlgorithm
-                    ? (aidAlgorithmLabels[aidAlgorithm] ?? aidAlgorithm)
-                    : "Select algorithm"}
+              <Label for="device-category">Device Category</Label>
+              <Select.Root type="single" name="deviceCategory" bind:value={deviceCategory}>
+                <Select.Trigger id="device-category">
+                  {deviceCategory
+                    ? (categoryLabels[deviceCategory] ?? deviceCategory)
+                    : "Select category"}
                 </Select.Trigger>
                 <Select.Content>
-                  {#each Object.entries(aidAlgorithmLabels) as [value, label]}
+                  {#each Object.entries(categoryLabels) as [value, label]}
                     <Select.Item {value} {label} />
                   {/each}
                 </Select.Content>
               </Select.Root>
             </div>
-          {/if}
-        </div>
-      </Card.Content>
-      <Card.Footer class="flex justify-end gap-2">
-        <Button variant="outline" onclick={resetForm} disabled={adding}>
-          Cancel
-        </Button>
-        <Button onclick={handleAdd} disabled={!canAdd || adding}>
-          {adding ? "Adding..." : "Add Device"}
-        </Button>
-      </Card.Footer>
+
+            <div class="space-y-2">
+              <Label for="manufacturer">Manufacturer</Label>
+              <Input
+                name="manufacturer"
+                id="manufacturer"
+                bind:value={manufacturer}
+                placeholder="e.g. Dexcom, Omnipod"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <Label for="model">Model</Label>
+              <Input
+                name="model"
+                id="model"
+                bind:value={model}
+                placeholder="e.g. G7, DASH"
+              />
+            </div>
+
+            {#if showAidField}
+              <div class="space-y-2">
+                <Label for="aid-algorithm">AID Algorithm</Label>
+                <Select.Root type="single" name="aidAlgorithm" bind:value={aidAlgorithm}>
+                  <Select.Trigger id="aid-algorithm">
+                    {aidAlgorithm
+                      ? (aidAlgorithmLabels[aidAlgorithm] ?? aidAlgorithm)
+                      : "Select algorithm"}
+                  </Select.Trigger>
+                  <Select.Content>
+                    {#each Object.entries(aidAlgorithmLabels) as [value, label]}
+                      <Select.Item {value} {label} />
+                    {/each}
+                  </Select.Content>
+                </Select.Root>
+              </div>
+            {/if}
+          </div>
+          <input type="hidden" name="isCurrent" value="true" />
+        </Card.Content>
+        <Card.Footer class="flex justify-end gap-2">
+          <Button type="button" variant="outline" onclick={resetForm} disabled={!!createForm.pending}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={!canAdd || !!createForm.pending}>
+            {createForm.pending ? "Adding..." : "Add Device"}
+          </Button>
+        </Card.Footer>
+      </form>
     </Card.Root>
   {:else}
     <Button variant="outline" onclick={() => (showForm = true)}>

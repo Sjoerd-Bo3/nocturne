@@ -431,6 +431,10 @@ public static class ServiceRegistrationExtensions
 
         // Connector runtime
         services.AddBaseConnectorServices();
+        services.AddScoped<IGlucosePublisher, GlucosePublisher>();
+        services.AddScoped<ITreatmentPublisher, TreatmentPublisher>();
+        services.AddScoped<IDevicePublisher, DevicePublisher>();
+        services.AddScoped<IMetadataPublisher, MetadataPublisher>();
         services.AddScoped<IConnectorPublisher, InProcessConnectorPublisher>();
         services.AddConnectors(
             configuration,

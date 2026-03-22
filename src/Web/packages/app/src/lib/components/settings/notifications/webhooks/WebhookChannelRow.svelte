@@ -17,8 +17,13 @@
   let hasSecret = $state(false);
   let secret = $state("");
   let showModal = $state(false);
-  let saving = $state(false);
   let status = $state<string | null>(null);
+  let testing = $state(false);
+
+  // Form instance (form() returns the form object directly)
+  const saveForm = saveWebhookSettings;
+
+  const saving = $derived(saveForm.pending > 0 || testing);
 
   $effect(() => {
     if (!settingsQuery.current) return;
@@ -28,64 +33,23 @@
     secret = settingsQuery.current.secret ?? "";
   });
 
-  async function persistSettings(payload: { urls: string[]; secret: string }) {
-    saving = true;
-    status = null;
-    try {
-      const response = await saveWebhookSettings({
-        enabled,
-        urls: payload.urls,
-        secret: payload.secret ? payload.secret : null,
-      });
-      enabled = response?.enabled ?? enabled;
-      urls = [...(response?.urls ?? [])];
-      hasSecret = response?.hasSecret ?? hasSecret;
-      secret = response?.secret ?? secret;
-      status = "Webhook settings saved.";
-      showModal = false;
-    } catch (err) {
-      console.error("Failed to save webhook settings:", err);
-      status = "Failed to save webhook settings.";
-    } finally {
-      saving = false;
-    }
+  function applyResponse(response: any) {
+    if (!response) return;
+    enabled = response.enabled ?? enabled;
+    urls = [...(response.urls ?? [])];
+    hasSecret = response.hasSecret ?? hasSecret;
+    secret = response.secret ?? secret;
   }
 
-  async function testSettings(payload: { urls: string[]; secret: string }) {
-    saving = true;
-    status = null;
+  // Track the intended action when the form is submitted
+  let pendingAction = $state<"save" | "disable" | "test">("save");
 
-    try {
-      // Save first to generate the secret if needed
-      const saveResponse = await saveWebhookSettings({
-        enabled,
-        urls: payload.urls,
-        secret: payload.secret ? payload.secret : null,
-      });
-      enabled = saveResponse?.enabled ?? enabled;
-      urls = [...(saveResponse?.urls ?? [])];
-      hasSecret = saveResponse?.hasSecret ?? hasSecret;
-      secret = saveResponse?.secret ?? secret;
+  let formEl = $state<HTMLFormElement | null>(null);
 
-      const response = await testWebhookSettings({
-        urls: payload.urls,
-        secret: saveResponse?.secret ?? payload.secret ?? null,
-      });
-
-      if (response?.ok) {
-        status = "Test sent to all webhooks.";
-      } else if (response?.failedUrls?.length) {
-        status = `Failed: ${response.failedUrls.join(", ")}`;
-      } else {
-        status = "Test failed.";
-      }
-    } catch (err) {
-      console.error("Failed to test webhook settings:", err);
-      status = "Failed to test webhook settings.";
-    } finally {
-      saving = false;
-    }
-  }
+  // Hidden input values that get updated before form submission
+  let formEnabled = $state(true);
+  let formUrls = $state<string[]>([]);
+  let formSecret = $state("");
 
   async function handleToggle(nextValue: boolean) {
     enabled = nextValue;
@@ -95,21 +59,34 @@
       return;
     }
 
-    try {
-      saving = true;
-      const response = await saveWebhookSettings({
-        enabled: false,
-        urls,
-        secret: null,
-      });
-      enabled = response?.enabled ?? false;
-      urls = [...(response?.urls ?? urls)];
-      hasSecret = response?.hasSecret ?? hasSecret;
-    } catch (err) {
-      console.error("Failed to disable webhook settings:", err);
-    } finally {
-      saving = false;
-    }
+    // Disable: submit form with enabled=false
+    pendingAction = "disable";
+    formEnabled = false;
+    formUrls = urls;
+    formSecret = "";
+    queueMicrotask(() => {
+      formEl?.requestSubmit();
+    });
+  }
+
+  async function handleModalSave(payload: { urls: string[]; secret: string }) {
+    pendingAction = "save";
+    formEnabled = enabled;
+    formUrls = payload.urls;
+    formSecret = payload.secret;
+    queueMicrotask(() => {
+      formEl?.requestSubmit();
+    });
+  }
+
+  async function handleModalTest(payload: { urls: string[]; secret: string }) {
+    pendingAction = "test";
+    formEnabled = enabled;
+    formUrls = payload.urls;
+    formSecret = payload.secret;
+    queueMicrotask(() => {
+      formEl?.requestSubmit();
+    });
   }
 </script>
 
@@ -143,14 +120,67 @@
   <div class="text-xs text-muted-foreground">{status}</div>
 {/if}
 
+<!-- Single form for all save operations -->
+<form
+  bind:this={formEl}
+  class="hidden"
+  {...saveForm.enhance(async ({ submit }) => {
+    status = null;
+    await submit();
+    if (saveForm.result) {
+      applyResponse(saveForm.result);
+
+      if (pendingAction === "save") {
+        status = "Webhook settings saved.";
+        showModal = false;
+      } else if (pendingAction === "disable") {
+        // No status message needed for disable
+      } else if (pendingAction === "test") {
+        // After saving, run the test command
+        testing = true;
+        try {
+          const response = await testWebhookSettings({
+            urls: formUrls,
+            secret: (saveForm.result as any)?.secret ?? formSecret ?? null,
+          });
+          if (response?.ok) {
+            status = "Test sent to all webhooks.";
+          } else if (response?.failedUrls?.length) {
+            status = `Failed: ${response.failedUrls.join(", ")}`;
+          } else {
+            status = "Test failed.";
+          }
+        } catch (err) {
+          console.error("Failed to test webhook settings:", err);
+          status = "Failed to test webhook settings.";
+        } finally {
+          testing = false;
+        }
+      }
+    } else {
+      if (pendingAction === "disable") {
+        console.error("Failed to disable webhook settings");
+      } else {
+        status = "Failed to save webhook settings.";
+      }
+    }
+  })}
+>
+  <input type="checkbox" name="b:enabled" checked={formEnabled} class="hidden" />
+  {#each formUrls as url}
+    <input type="hidden" name="urls[]" value={url} />
+  {/each}
+  <input type="hidden" name="secret" value={formSecret || ""} />
+</form>
+
 <WebhookSettingsModal
   bind:open={showModal}
   bind:urls
   bind:secret
   {hasSecret}
   {saving}
-  onSave={persistSettings}
-  onTest={testSettings}
+  onSave={handleModalSave}
+  onTest={handleModalTest}
   onClose={() => {
     showModal = false;
   }}

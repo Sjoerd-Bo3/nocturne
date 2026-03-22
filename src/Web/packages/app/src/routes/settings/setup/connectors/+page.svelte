@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import {
     getConnectorConfiguration,
     getConnectorSchema,
@@ -62,8 +62,21 @@
   let configuration = $state<Record<string, unknown>>({});
   let secrets = $state<Record<string, string>>({});
   let connectorStatus = $state<ConnectorStatusInfo | null>(null);
-  let isSaving = $state(false);
   let configError = $state<string | null>(null);
+
+  // Form objects for form() exports
+  const saveConfigForm = saveConnectorConfiguration;
+  const saveSecretsForm = saveConnectorSecrets;
+
+  // Refs for programmatic form submission
+  let configFormEl = $state<HTMLFormElement | null>(null);
+  let secretsFormEl = $state<HTMLFormElement | null>(null);
+
+  // Pending data for form submission
+  let pendingConfigData = $state<Record<string, unknown> | null>(null);
+  let pendingSecretsData = $state<Record<string, string> | null>(null);
+
+  const isSaving = $derived(!!saveConfigForm.pending || !!saveSecretsForm.pending);
 
   // ── Sync state ──────────────────────────────────────────────────────
 
@@ -184,16 +197,33 @@
 
   // ── Save handlers ───────────────────────────────────────────────────
 
+  // Helper to submit a hidden form and wait for the result
+  function submitConfigForm(config: Record<string, unknown>): Promise<{ success?: boolean; error?: string }> {
+    return new Promise(async (resolve) => {
+      pendingConfigData = config;
+      configFormResolve = resolve;
+      await tick();
+      configFormEl?.requestSubmit();
+    });
+  }
+
+  function submitSecretsForm(newSecrets: Record<string, string>): Promise<{ success?: boolean; error?: string }> {
+    return new Promise(async (resolve) => {
+      pendingSecretsData = newSecrets;
+      secretsFormResolve = resolve;
+      await tick();
+      secretsFormEl?.requestSubmit();
+    });
+  }
+
+  // Resolve callbacks for form submissions
+  let configFormResolve: ((result: { success?: boolean; error?: string }) => void) | null = null;
+  let secretsFormResolve: ((result: { success?: boolean; error?: string }) => void) | null = null;
+
   async function handleSaveConfiguration(config: Record<string, unknown>) {
     if (!selectedConnector?.id) return;
 
-    isSaving = true;
-    const result = await saveConnectorConfiguration({
-      connectorName: selectedConnector.id,
-      configuration: config,
-    });
-    isSaving = false;
-
+    const result = await submitConfigForm(config);
     if (!result.success) {
       configError = result.error || "Failed to save configuration";
     }
@@ -202,13 +232,7 @@
   async function handleSaveSecrets(newSecrets: Record<string, string>) {
     if (!selectedConnector?.id) return;
 
-    isSaving = true;
-    const result = await saveConnectorSecrets({
-      connectorName: selectedConnector.id,
-      secrets: newSecrets,
-    });
-    isSaving = false;
-
+    const result = await submitSecretsForm(newSecrets);
     if (!result.success) {
       configError = result.error || "Failed to save credentials";
     }
@@ -219,19 +243,14 @@
   async function handleSaveAndSync() {
     if (!selectedConnector?.id) return;
 
-    isSaving = true;
     configError = null;
 
     try {
-      // Save configuration
-      const saveResult = await saveConnectorConfiguration({
-        connectorName: selectedConnector.id,
-        configuration,
-      });
+      // Save configuration via form
+      const saveResult = await submitConfigForm(configuration);
 
       if (!saveResult.success) {
         configError = saveResult.error || "Failed to save configuration";
-        isSaving = false;
         return;
       }
 
@@ -240,14 +259,10 @@
         Object.entries(secrets).filter(([, v]) => v && v.trim())
       );
       if (Object.keys(nonEmptySecrets).length > 0) {
-        const secretResult = await saveConnectorSecrets({
-          connectorName: selectedConnector.id,
-          secrets: nonEmptySecrets,
-        });
+        const secretResult = await submitSecretsForm(nonEmptySecrets);
         if (!secretResult.success) {
           configError =
             secretResult.error || "Failed to save credentials";
-          isSaving = false;
           return;
         }
       }
@@ -258,8 +273,6 @@
         isActive: true,
       });
 
-      isSaving = false;
-
       // Trigger sync
       viewState = "syncing";
       const result = await triggerConnectorSync({
@@ -269,7 +282,6 @@
       syncResult = result as SyncResult;
       viewState = "results";
     } catch (e) {
-      isSaving = false;
       configError =
         e instanceof Error ? e.message : "An error occurred during setup";
       viewState = "results";
@@ -550,3 +562,46 @@
     </div>
   {/if}
 </WizardShell>
+
+<!-- Hidden forms for form() remote functions -->
+<form
+  bind:this={configFormEl}
+  class="hidden"
+  {...saveConfigForm.enhance(async ({ submit }) => {
+    await submit();
+    const result = saveConfigForm.result as { success?: boolean; error?: string } | undefined;
+    const resolve = configFormResolve;
+    configFormResolve = null;
+    resolve?.(result ?? { success: false, error: "No result" });
+  })}
+>
+  <input type="hidden" name="connectorName" value={selectedConnector?.id ?? ""} />
+  {#each Object.entries(pendingConfigData ?? configuration) as [key, value]}
+    {#if typeof value === "number"}
+      <input type="hidden" name="n:configuration.{key}" value={String(value)} />
+    {:else if typeof value === "boolean"}
+      {#if value}
+        <input type="hidden" name="b:configuration.{key}" value="on" />
+      {/if}
+    {:else}
+      <input type="hidden" name="configuration.{key}" value={String(value ?? "")} />
+    {/if}
+  {/each}
+</form>
+
+<form
+  bind:this={secretsFormEl}
+  class="hidden"
+  {...saveSecretsForm.enhance(async ({ submit }) => {
+    await submit();
+    const result = saveSecretsForm.result as { success?: boolean; error?: string } | undefined;
+    const resolve = secretsFormResolve;
+    secretsFormResolve = null;
+    resolve?.(result ?? { success: false, error: "No result" });
+  })}
+>
+  <input type="hidden" name="connectorName" value={selectedConnector?.id ?? ""} />
+  {#each Object.entries(pendingSecretsData ?? secrets) as [key, value]}
+    <input type="hidden" name="secrets.{key}" value={value} />
+  {/each}
+</form>

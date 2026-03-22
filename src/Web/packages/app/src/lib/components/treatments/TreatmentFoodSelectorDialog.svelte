@@ -16,6 +16,7 @@
     ChevronDown,
     Scale,
     FileText,
+    Loader2,
   } from "lucide-svelte";
   import { cn } from "$lib/utils";
   import { tick } from "svelte";
@@ -102,6 +103,17 @@
   // Collapsible state for food details
   let nutritionDetailsOpen = $state(false);
 
+  // Track which submit action to take
+  let submitAction = $state<"create" | "update" | "saveAsNew">("create");
+
+  // Form objects
+  const createForm = createNewFood;
+  const updateForm = updateExistingFood;
+
+  // Active form based on submit action
+  const activeForm = $derived(submitAction === "update" ? updateForm : createForm);
+  const formSaving = $derived(!!createForm.pending || !!updateForm.pending);
+
   // Handle portions change - recalculate carbs
   function handlePortionsChange(value: number) {
     portions = value;
@@ -136,7 +148,6 @@
   // Loading states
   let isLoading = $state(false);
   let isSubmitting = $state(false);
-  let isSaving = $state(false);
 
   // Constants
   const foodUnits = ["g", "ml", "pcs", "oz"];
@@ -282,7 +293,7 @@
     lastEditedField = "portions";
     nutritionDetailsOpen = false;
     isSubmitting = false;
-    isSaving = false;
+    submitAction = "create";
   }
 
   function selectFood(food: Food) {
@@ -392,28 +403,8 @@
     }
   }
 
-  function buildFoodRecord(): Omit<Food, "_id"> & { _id?: string } {
-    return {
-      _id: selectedFood?._id,
-      type: "food",
-      name: foodName,
-      category: foodCategory,
-      subcategory: foodSubcategory,
-      portion: foodPortion,
-      unit: foodUnit,
-      carbs: foodCarbs,
-      fat: foodFat,
-      protein: foodProtein,
-      energy: foodEnergy,
-      gi: foodGi,
-    };
-  }
-
-  async function handleAddFood() {
-    if (!selectedFood?._id) return;
-
+  function buildFoodRequest(): CarbIntakeFoodRequest {
     const request: CarbIntakeFoodRequest = {
-      foodId: selectedFood._id,
       timeOffsetMinutes,
       note: note.trim() || undefined,
       inputMode:
@@ -428,91 +419,18 @@
       request.carbs = entryCarbs;
     }
 
+    return request;
+  }
+
+  function handleAddFood() {
+    if (!selectedFood?._id) return;
+
+    const request = buildFoodRequest();
+    request.foodId = selectedFood._id;
+
     isSubmitting = true;
     onSubmit(request, selectedFood?.name ?? "Food");
     isSubmitting = false;
-  }
-
-  async function handleUpdate() {
-    if (!selectedFood?._id) return;
-
-    isSaving = true;
-    try {
-      const foodRecord = buildFoodRecord();
-      await updateExistingFood(foodRecord as any);
-
-      // Update local state
-      const idx = allFoods.findIndex((f) => f._id === selectedFood?._id);
-      if (idx !== -1) {
-        allFoods[idx] = { ...allFoods[idx], ...foodRecord };
-      }
-
-      // Update originalFood to reflect saved state
-      originalFood = { ...selectedFood, ...foodRecord };
-
-      toast.success("Food updated successfully");
-
-      // Now add the food to treatment
-      await handleAddFood();
-    } catch (err) {
-      console.error("Failed to update food:", err);
-      toast.error("Failed to update food");
-    } finally {
-      isSaving = false;
-    }
-  }
-
-  async function handleSaveAsNew() {
-    if (!foodName.trim()) {
-      toast.error("Please enter a food name");
-      return;
-    }
-
-    isSaving = true;
-    try {
-      const foodRecord = buildFoodRecord();
-      delete foodRecord._id;
-
-      const result = await createNewFood(foodRecord as any);
-
-      if (result.success && result.record) {
-        // Add to allFoods
-        const newFood = result.record as Food;
-        allFoods = [...allFoods, newFood];
-
-        // Select the new food
-        selectedFood = newFood;
-        originalFood = { ...newFood };
-
-        toast.success("Food created successfully");
-
-        // Now add the food to treatment
-        const request: CarbIntakeFoodRequest = {
-          foodId: newFood._id!,
-          timeOffsetMinutes,
-          note: note.trim() || undefined,
-          inputMode:
-            lastEditedField === "portions"
-              ? CarbIntakeFoodInputMode.Portions
-              : CarbIntakeFoodInputMode.Carbs,
-        };
-
-        if (lastEditedField === "portions") {
-          request.portions = portions;
-        } else {
-          request.carbs = entryCarbs;
-        }
-
-        onSubmit(request, newFood.name ?? foodName.trim());
-      } else {
-        throw new Error("Failed to create food");
-      }
-    } catch (err) {
-      console.error("Failed to create food:", err);
-      toast.error("Failed to create food");
-    } finally {
-      isSaving = false;
-    }
   }
 
   // Handle logging without saving - submit with no foodId, just carbs and note
@@ -549,7 +467,7 @@
       (isCreatingNew && foodName.trim()) ||
       (isLoggingWithoutSaving && entryCarbs > 0)) &&
       !isSubmitting &&
-      !isSaving
+      !formSaving
   );
 </script>
 
@@ -726,12 +644,62 @@
         </div>
       {:else if showForm}
         <!-- Nutritional fields form -->
-        <div class="border-t pt-4 space-y-4">
+        <form
+          {...activeForm.enhance(async ({ submit }) => {
+            await submit();
+            const result = activeForm.result;
+            if (result) {
+              if (submitAction === "create" || submitAction === "saveAsNew") {
+                // createNewFood returns { success, record }
+                const createResult = result as { success?: boolean; record?: Food };
+                if (createResult.success && createResult.record) {
+                  const newFood = createResult.record;
+                  allFoods = [...allFoods, newFood];
+                  selectedFood = newFood;
+                  originalFood = { ...newFood };
+                  toast.success("Food created successfully");
+
+                  const request = buildFoodRequest();
+                  request.foodId = newFood._id!;
+                  onSubmit(request, newFood.name ?? foodName.trim());
+                }
+              } else if (submitAction === "update") {
+                // updateExistingFood returns { success, record }
+                const updateResult = result as { success?: boolean; record?: Food };
+                if (updateResult.success) {
+                  // Update local state
+                  const idx = allFoods.findIndex((f) => f._id === selectedFood?._id);
+                  if (idx !== -1) {
+                    allFoods[idx] = { ...allFoods[idx], ...updateResult.record };
+                  }
+                  originalFood = { ...selectedFood!, ...updateResult.record };
+                  toast.success("Food updated successfully");
+
+                  // Add the food to treatment
+                  const request = buildFoodRequest();
+                  request.foodId = selectedFood!._id!;
+                  onSubmit(request, selectedFood?.name ?? "Food");
+                }
+              }
+            }
+          })}
+          id="food-form"
+          class="border-t pt-4 space-y-4"
+        >
+          <!-- Hidden fields for food record -->
+          <input type="hidden" name="type" value="food" />
+          {#if submitAction === "update" && selectedFood?._id}
+            <input type="hidden" name="_id" value={selectedFood._id} />
+          {/if}
+          <input type="hidden" name="hideafteruse" value="false" />
+          <input type="hidden" name="hidden" value="false" />
+          <input type="hidden" name="position" value="0" />
+
           <!-- Name and Category row -->
           <div class="grid gap-4 md:grid-cols-3">
             <div class="space-y-2">
               <Label for="food-name">Name</Label>
-              <Input id="food-name" bind:value={foodName} />
+              <Input id="food-name" name="name" bind:value={foodName} />
             </div>
             <div class="space-y-2 col-span-2">
               <Label>Category & Subcategory</Label>
@@ -750,6 +718,9 @@
               />
             </div>
           </div>
+          <!-- Hidden inputs for category/subcategory since combobox doesn't render native inputs -->
+          <input type="hidden" name="category" value={foodCategory} />
+          <input type="hidden" name="subcategory" value={foodSubcategory} />
 
           <!-- Quick summary of selected food -->
           {#if selectedFood && !isCreatingNew}
@@ -809,12 +780,14 @@
                   <Label for="food-portion">Portion Size</Label>
                   <Input
                     id="food-portion"
+                    name="portion"
                     type="number"
                     bind:value={foodPortion}
                   />
                 </div>
                 <div class="space-y-2">
                   <Label for="food-unit">Unit</Label>
+                  <input type="hidden" name="unit" value={foodUnit} />
                   <Popover.Root bind:open={unitOpen}>
                     <Popover.Trigger bind:ref={unitTriggerRef}>
                       {#snippet child({ props })}
@@ -862,10 +835,11 @@
                 </div>
                 <div class="space-y-2">
                   <Label for="food-carbs">Carbs (g)</Label>
-                  <Input id="food-carbs" type="number" bind:value={foodCarbs} />
+                  <Input id="food-carbs" name="carbs" type="number" bind:value={foodCarbs} />
                 </div>
                 <div class="space-y-2">
                   <Label for="food-gi">GI</Label>
+                  <input type="hidden" name="gi" value={foodGi} />
                   <Popover.Root bind:open={giOpen}>
                     <Popover.Trigger bind:ref={giTriggerRef}>
                       {#snippet child({ props })}
@@ -918,12 +892,13 @@
               <div class="grid gap-4 md:grid-cols-3">
                 <div class="space-y-2">
                   <Label for="food-fat">Fat (g)</Label>
-                  <Input id="food-fat" type="number" bind:value={foodFat} />
+                  <Input id="food-fat" name="fat" type="number" bind:value={foodFat} />
                 </div>
                 <div class="space-y-2">
                   <Label for="food-protein">Protein (g)</Label>
                   <Input
                     id="food-protein"
+                    name="protein"
                     type="number"
                     bind:value={foodProtein}
                   />
@@ -932,6 +907,7 @@
                   <Label for="food-energy">Energy (kJ)</Label>
                   <Input
                     id="food-energy"
+                    name="energy"
                     type="number"
                     bind:value={foodEnergy}
                   />
@@ -939,7 +915,7 @@
               </div>
             </Collapsible.Content>
           </Collapsible.Root>
-        </div>
+        </form>
       {/if}
 
       <!-- Treatment request fields - shared between food selection and log without saving -->
@@ -1049,33 +1025,51 @@
           {isSubmitting ? "Logging..." : "Log Carbs"}
         </Button>
       {:else if isCreatingNew}
-        <!-- Creating new food -->
+        <!-- Creating new food - submit the create form -->
         <Button
-          type="button"
-          onclick={handleSaveAsNew}
-          disabled={!canSubmit || isSaving}
+          type="submit"
+          form="food-form"
+          disabled={!canSubmit || formSaving}
+          onclick={() => { submitAction = "create"; }}
         >
-          {isSaving ? "Saving..." : "Save & Add"}
+          {#if formSaving}
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+            Saving...
+          {:else}
+            Save & Add
+          {/if}
         </Button>
       {:else if selectedFood && hasEdits}
         <!-- Existing food with edits -->
         <Button
-          type="button"
+          type="submit"
+          form="food-form"
           variant="outline"
-          onclick={handleSaveAsNew}
-          disabled={!canSubmit || isSaving}
+          disabled={!canSubmit || formSaving}
+          onclick={() => { submitAction = "saveAsNew"; }}
         >
-          {isSaving ? "Saving..." : "Save as New"}
+          {#if formSaving}
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+            Saving...
+          {:else}
+            Save as New
+          {/if}
         </Button>
         <Button
-          type="button"
-          onclick={handleUpdate}
-          disabled={!canSubmit || isSaving}
+          type="submit"
+          form="food-form"
+          disabled={!canSubmit || formSaving}
+          onclick={() => { submitAction = "update"; }}
         >
-          {isSaving ? "Updating..." : "Update & Add"}
+          {#if formSaving}
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+            Updating...
+          {:else}
+            Update & Add
+          {/if}
         </Button>
       {:else if selectedFood}
-        <!-- Existing food without edits -->
+        <!-- Existing food without edits - no form needed -->
         <Button
           type="button"
           onclick={handleAddFood}

@@ -35,11 +35,12 @@
   // ── Form state ────────────────────────────────────────────────────
 
   let showForm = $state(false);
-  let adding = $state(false);
   let insulinCategory = $state("");
   let name = $state("");
 
   let canAdd = $derived(insulinCategory !== "" && name.trim() !== "");
+
+  const createForm = patientRemote.createInsulin;
 
   // ── Handlers ──────────────────────────────────────────────────────
 
@@ -47,23 +48,6 @@
     insulinCategory = "";
     name = "";
     showForm = false;
-  }
-
-  async function handleAdd() {
-    if (!canAdd) return;
-    adding = true;
-    try {
-      await patientRemote.createInsulin({
-        insulinCategory: insulinCategory,
-        name: name.trim(),
-        isCurrent: true,
-        createdAt: new Date(),
-        modifiedAt: new Date(),
-      });
-      resetForm();
-    } finally {
-      adding = false;
-    }
   }
 
   async function handleDelete(id: string) {
@@ -134,47 +118,56 @@
       <Card.Header>
         <Card.Title class="text-sm">Add an Insulin</Card.Title>
       </Card.Header>
-      <Card.Content class="space-y-4">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div class="space-y-2">
-            <Label for="insulin-category">Category</Label>
-            <Select.Root type="single" bind:value={insulinCategory}>
-              <Select.Trigger id="insulin-category">
-                {insulinCategory
-                  ? (categoryLabels[insulinCategory] ?? insulinCategory)
-                  : "Select category"}
-              </Select.Trigger>
-              <Select.Content>
-                {#each insulinCategories as cat}
-                  <Select.Item value={cat.value} label={cat.label}>
-                    <div>
-                      <div>{cat.label}</div>
-                      <div class="text-xs text-muted-foreground">{cat.description}</div>
-                    </div>
-                  </Select.Item>
-                {/each}
-              </Select.Content>
-            </Select.Root>
-          </div>
+      <form
+        {...createForm.enhance(async ({ submit }) => {
+          await submit();
+          if (createForm.result) resetForm();
+        })}
+      >
+        <Card.Content class="space-y-4">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-2">
+              <Label for="insulin-category">Category</Label>
+              <Select.Root type="single" name="insulinCategory" bind:value={insulinCategory}>
+                <Select.Trigger id="insulin-category">
+                  {insulinCategory
+                    ? (categoryLabels[insulinCategory] ?? insulinCategory)
+                    : "Select category"}
+                </Select.Trigger>
+                <Select.Content>
+                  {#each insulinCategories as cat}
+                    <Select.Item value={cat.value} label={cat.label}>
+                      <div>
+                        <div>{cat.label}</div>
+                        <div class="text-xs text-muted-foreground">{cat.description}</div>
+                      </div>
+                    </Select.Item>
+                  {/each}
+                </Select.Content>
+              </Select.Root>
+            </div>
 
-          <div class="space-y-2">
-            <Label for="insulin-name">Brand / Name</Label>
-            <Input
-              id="insulin-name"
-              bind:value={name}
-              placeholder="e.g. Humalog, Lantus"
-            />
+            <div class="space-y-2">
+              <Label for="insulin-name">Brand / Name</Label>
+              <Input
+                name="name"
+                id="insulin-name"
+                bind:value={name}
+                placeholder="e.g. Humalog, Lantus"
+              />
+            </div>
           </div>
-        </div>
-      </Card.Content>
-      <Card.Footer class="flex justify-end gap-2">
-        <Button variant="outline" onclick={resetForm} disabled={adding}>
-          Cancel
-        </Button>
-        <Button onclick={handleAdd} disabled={!canAdd || adding}>
-          {adding ? "Adding..." : "Add Insulin"}
-        </Button>
-      </Card.Footer>
+          <input type="hidden" name="isCurrent" value="true" />
+        </Card.Content>
+        <Card.Footer class="flex justify-end gap-2">
+          <Button type="button" variant="outline" onclick={resetForm} disabled={!!createForm.pending}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={!canAdd || !!createForm.pending}>
+            {createForm.pending ? "Adding..." : "Add Insulin"}
+          </Button>
+        </Card.Footer>
+      </form>
     </Card.Root>
   {:else}
     <Button variant="outline" onclick={() => (showForm = true)}>

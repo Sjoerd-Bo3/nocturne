@@ -19,7 +19,9 @@
     /** Whether a save is in progress. */
     saving?: boolean;
     /** Called when Save & Continue is clicked. Must return true to proceed. */
-    onSave: () => Promise<boolean>;
+    onSave?: () => Promise<boolean>;
+    /** HTML form id — when set, the Save button submits this form instead of calling onSave. */
+    formId?: string;
     children: import("svelte").Snippet;
   }
 
@@ -34,12 +36,14 @@
     saveDisabled = false,
     saving = false,
     onSave,
+    formId,
     children,
   }: Props = $props();
 
   const isLastStep = $derived(currentStep === totalSteps);
 
   async function handleSave() {
+    if (!onSave) return;
     const success = await onSave();
     if (success) {
       if (isLastStep) {
@@ -88,7 +92,12 @@
           <SkipForward class="h-4 w-4 ml-1" />
         </Button>
       {/if}
-      <Button onclick={handleSave} disabled={saveDisabled || saving}>
+      <Button
+        type={formId ? "submit" : "button"}
+        form={formId}
+        onclick={formId ? undefined : handleSave}
+        disabled={saveDisabled || saving}
+      >
         {#if saving}
           Saving...
         {:else if isLastStep}

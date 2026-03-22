@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { goto } from "$app/navigation";
   import {
     getConnectorConfiguration,
@@ -66,11 +66,25 @@
   let connectorCapabilities = $state<ConnectorCapabilities | null>(null);
 
   let isLoading = $state(true);
-  let isSaving = $state(false);
   let error = $state<string | null>(null);
   let saveMessage = $state<{ type: "success" | "error"; text: string } | null>(
     null
   );
+
+  // Form objects for form() exports
+  const saveConfigForm = saveConnectorConfiguration;
+  const saveSecretsForm = saveConnectorSecrets;
+
+  // Refs for programmatic form submission
+  let configFormEl = $state<HTMLFormElement | null>(null);
+  let secretsFormEl = $state<HTMLFormElement | null>(null);
+
+  // Pending configuration/secrets data to submit
+  let pendingConfigData = $state<Record<string, unknown> | null>(null);
+  let pendingSecretsData = $state<Record<string, string> | null>(null);
+
+  let isToggling = $state(false);
+  const isSaving = $derived(!!saveConfigForm.pending || !!saveSecretsForm.pending || isToggling);
 
   // Delete Configuration dialog state
   let showDeleteConfigDialog = $state(false);
@@ -174,71 +188,29 @@
   async function handleSaveConfiguration(config: Record<string, unknown>) {
     if (!connectorInfo?.id) return;
 
-    isSaving = true;
     saveMessage = null;
+    pendingConfigData = config;
 
-    const result = await saveConnectorConfiguration({
-      connectorName: connectorInfo.id,
-      configuration: config,
-    });
-
-    isSaving = false;
-
-    if (result.success) {
-      saveMessage = {
-        type: "success",
-        text: "Configuration saved successfully",
-      };
-      // Reload to get updated state
-      await loadData();
-    } else {
-      saveMessage = {
-        type: "error",
-        text: result.error || "Failed to save configuration",
-      };
-    }
-
-    // Clear message after a few seconds
-    setTimeout(() => {
-      saveMessage = null;
-    }, 5000);
+    // Allow state to propagate to hidden inputs, then submit
+    await tick();
+    configFormEl?.requestSubmit();
   }
 
   async function handleSaveSecrets(newSecrets: Record<string, string>) {
     if (!connectorInfo?.id) return;
 
-    isSaving = true;
     saveMessage = null;
+    pendingSecretsData = newSecrets;
 
-    const result = await saveConnectorSecrets({
-      connectorName: connectorInfo.id,
-      secrets: newSecrets,
-    });
-
-    isSaving = false;
-
-    if (result.success) {
-      saveMessage = { type: "success", text: "Credentials saved successfully" };
-      // Clear the secrets form
-      secrets = {};
-      // Reload to get updated state
-      await loadData();
-    } else {
-      saveMessage = {
-        type: "error",
-        text: result.error || "Failed to save credentials",
-      };
-    }
-
-    setTimeout(() => {
-      saveMessage = null;
-    }, 5000);
+    // Allow state to propagate to hidden inputs, then submit
+    await tick();
+    secretsFormEl?.requestSubmit();
   }
 
   async function handleToggleActive(isActive: boolean) {
     if (!connectorInfo?.id) return;
 
-    isSaving = true;
+    isToggling = true;
     saveMessage = null;
 
     const result = await setConnectorActive({
@@ -246,7 +218,7 @@
       isActive,
     });
 
-    isSaving = false;
+    isToggling = false;
 
     if (result.success) {
       saveMessage = {
@@ -582,6 +554,67 @@
     {/if}
   {/if}
 </div>
+
+<!-- Hidden forms for form() remote functions -->
+<form
+  bind:this={configFormEl}
+  class="hidden"
+  {...saveConfigForm.enhance(async ({ submit }) => {
+    await submit();
+    const result = saveConfigForm.result as { success?: boolean; error?: string; data?: unknown } | undefined;
+    if (result?.success) {
+      saveMessage = {
+        type: "success",
+        text: "Configuration saved successfully",
+      };
+      await loadData();
+    } else {
+      saveMessage = {
+        type: "error",
+        text: result?.error || "Failed to save configuration",
+      };
+    }
+    setTimeout(() => { saveMessage = null; }, 5000);
+  })}
+>
+  <input type="hidden" name="connectorName" value={connectorInfo?.id ?? ""} />
+  {#each Object.entries(pendingConfigData ?? configuration) as [key, value]}
+    {#if typeof value === "number"}
+      <input type="hidden" name="n:configuration.{key}" value={String(value)} />
+    {:else if typeof value === "boolean"}
+      {#if value}
+        <input type="hidden" name="b:configuration.{key}" value="on" />
+      {/if}
+    {:else}
+      <input type="hidden" name="configuration.{key}" value={String(value ?? "")} />
+    {/if}
+  {/each}
+</form>
+
+<form
+  bind:this={secretsFormEl}
+  class="hidden"
+  {...saveSecretsForm.enhance(async ({ submit }) => {
+    await submit();
+    const result = saveSecretsForm.result as { success?: boolean; error?: string } | undefined;
+    if (result?.success) {
+      saveMessage = { type: "success", text: "Credentials saved successfully" };
+      secrets = {};
+      await loadData();
+    } else {
+      saveMessage = {
+        type: "error",
+        text: result?.error || "Failed to save credentials",
+      };
+    }
+    setTimeout(() => { saveMessage = null; }, 5000);
+  })}
+>
+  <input type="hidden" name="connectorName" value={connectorInfo?.id ?? ""} />
+  {#each Object.entries(pendingSecretsData ?? secrets) as [key, value]}
+    <input type="hidden" name="secrets.{key}" value={value} />
+  {/each}
+</form>
 
 <!-- Delete Configuration Dialog -->
 <DangerZoneDialog

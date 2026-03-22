@@ -35,6 +35,7 @@
     type MigrationJobStatus,
     type PendingMigrationConfig,
     type MigrationSourceDto,
+    type TestMigrationConnectionResult,
     MigrationJobState,
     MigrationMode,
   } from "$api";
@@ -62,8 +63,11 @@
   let dateRangeStart = $state("");
   let dateRangeEnd = $state("");
 
+  // Form objects
+  const testConnectionForm = migrationRemote.testConnection;
+  const startMigrationForm = migrationRemote.startMigration;
+
   // Test connection state
-  let testingConnection = $state(false);
   let connectionTestResult = $state<{
     success: boolean;
     message: string;
@@ -72,7 +76,6 @@
   } | null>(null);
 
   // Migration state
-  let startingMigration = $state(false);
   let cancellingMigration = $state(false);
 
   // Load data
@@ -127,63 +130,8 @@
     loadData();
   });
 
-  // Test connection
-  async function handleTestConnection() {
-    testingConnection = true;
-    connectionTestResult = null;
-    try {
-      const result = await migrationRemote.testConnection({
-        mode: mode,
-        nightscoutUrl: mode === "Api" ? nightscoutUrl : undefined,
-        nightscoutApiSecret: mode === "Api" ? nightscoutApiSecret : undefined,
-        mongoConnectionString:
-          mode === "MongoDb" ? mongoConnectionString : undefined,
-        mongoDatabaseName: mode === "MongoDb" ? mongoDatabaseName : undefined,
-      });
-      connectionTestResult = {
-        success: result.isSuccess || false,
-        message: result.isSuccess
-          ? `Connected successfully! Found ${result.entryCount ?? 0} entries and ${result.treatmentCount ?? 0} treatments.`
-          : result.errorMessage || "Connection failed",
-        entryCount: result.entryCount ?? undefined,
-        treatmentCount: result.treatmentCount ?? undefined,
-      };
-    } catch (err) {
-      connectionTestResult = {
-        success: false,
-        message: err instanceof Error ? err.message : "Connection test failed",
-      };
-    } finally {
-      testingConnection = false;
-    }
-  }
-
-  // Start migration
-  async function handleStartMigration() {
-    startingMigration = true;
-    try {
-      const jobInfo = await migrationRemote.startMigration({
-        mode: mode,
-        nightscoutUrl: mode === "Api" ? nightscoutUrl : undefined,
-        nightscoutApiSecret: mode === "Api" ? nightscoutApiSecret : undefined,
-        mongoConnectionString:
-          mode === "MongoDb" ? mongoConnectionString : undefined,
-        mongoDatabaseName: mode === "MongoDb" ? mongoDatabaseName : undefined,
-        startDate: dateRangeStart ? new Date(dateRangeStart).toISOString() : undefined,
-        endDate: dateRangeEnd ? new Date(dateRangeEnd).toISOString() : undefined,
-        collections: ["entries", "treatments"],
-      });
-
-      if (jobInfo?.id) {
-        await pollMigrationStatus(jobInfo.id);
-        activeTab = "progress";
-      }
-    } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to start migration";
-    } finally {
-      startingMigration = false;
-    }
-  }
+  // Derived: mode as integer for form submission
+  const modeInt = $derived(mode === "MongoDb" ? MigrationMode.MongoDb : MigrationMode.Api);
 
   // Poll migration status
   async function pollMigrationStatus(jobId: string) {
@@ -473,34 +421,95 @@
 
             <!-- Actions -->
             <div class="flex gap-3">
-              <Button
-                variant="outline"
-                onclick={handleTestConnection}
-                disabled={!isFormValid ||
-                  testingConnection ||
-                  startingMigration}
+              <form
+                {...testConnectionForm.enhance(async ({ submit }) => {
+                  connectionTestResult = null;
+                  await submit();
+                  const result = testConnectionForm.result as TestMigrationConnectionResult | undefined;
+                  if (result) {
+                    connectionTestResult = {
+                      success: result.isSuccess || false,
+                      message: result.isSuccess
+                        ? `Connected successfully! Found ${result.entryCount ?? 0} entries and ${result.treatmentCount ?? 0} treatments.`
+                        : result.errorMessage || "Connection failed",
+                      entryCount: result.entryCount ?? undefined,
+                      treatmentCount: result.treatmentCount ?? undefined,
+                    };
+                  } else {
+                    connectionTestResult = {
+                      success: false,
+                      message: "Connection test failed",
+                    };
+                  }
+                })}
               >
-                {#if testingConnection}
-                  <Loader2 class="h-4 w-4 mr-2 animate-spin" />
+                <input type="hidden" name="n:mode" value={modeInt} />
+                {#if mode === "Api"}
+                  <input type="hidden" name="nightscoutUrl" value={nightscoutUrl} />
+                  <input type="hidden" name="nightscoutApiSecret" value={nightscoutApiSecret} />
                 {:else}
-                  <Server class="h-4 w-4 mr-2" />
+                  <input type="hidden" name="mongoConnectionString" value={mongoConnectionString} />
+                  <input type="hidden" name="mongoDatabaseName" value={mongoDatabaseName} />
                 {/if}
-                Test Connection
-              </Button>
-              <Button
-                onclick={handleStartMigration}
-                disabled={!isFormValid ||
-                  !connectionTestResult?.success ||
-                  startingMigration ||
-                  hasActiveMigration}
+                <Button
+                  type="submit"
+                  variant="outline"
+                  disabled={!isFormValid ||
+                    !!testConnectionForm.pending ||
+                    !!startMigrationForm.pending}
+                >
+                  {#if testConnectionForm.pending}
+                    <Loader2 class="h-4 w-4 mr-2 animate-spin" />
+                  {:else}
+                    <Server class="h-4 w-4 mr-2" />
+                  {/if}
+                  Test Connection
+                </Button>
+              </form>
+              <form
+                {...startMigrationForm.enhance(async ({ submit }) => {
+                  error = null;
+                  await submit();
+                  const jobInfo = startMigrationForm.result as MigrationJobInfo | undefined;
+                  if (jobInfo?.id) {
+                    await pollMigrationStatus(jobInfo.id);
+                    activeTab = "progress";
+                  } else {
+                    error = "Failed to start migration";
+                  }
+                })}
               >
-                {#if startingMigration}
-                  <Loader2 class="h-4 w-4 mr-2 animate-spin" />
+                <input type="hidden" name="n:mode" value={modeInt} />
+                {#if mode === "Api"}
+                  <input type="hidden" name="nightscoutUrl" value={nightscoutUrl} />
+                  <input type="hidden" name="nightscoutApiSecret" value={nightscoutApiSecret} />
                 {:else}
-                  <Play class="h-4 w-4 mr-2" />
+                  <input type="hidden" name="mongoConnectionString" value={mongoConnectionString} />
+                  <input type="hidden" name="mongoDatabaseName" value={mongoDatabaseName} />
                 {/if}
-                Start Migration
-              </Button>
+                {#if dateRangeStart}
+                  <input type="hidden" name="startDate" value={new Date(dateRangeStart).toISOString()} />
+                {/if}
+                {#if dateRangeEnd}
+                  <input type="hidden" name="endDate" value={new Date(dateRangeEnd).toISOString()} />
+                {/if}
+                <input type="hidden" name="collections[]" value="entries" />
+                <input type="hidden" name="collections[]" value="treatments" />
+                <Button
+                  type="submit"
+                  disabled={!isFormValid ||
+                    !connectionTestResult?.success ||
+                    !!startMigrationForm.pending ||
+                    !!hasActiveMigration}
+                >
+                  {#if startMigrationForm.pending}
+                    <Loader2 class="h-4 w-4 mr-2 animate-spin" />
+                  {:else}
+                    <Play class="h-4 w-4 mr-2" />
+                  {/if}
+                  Start Migration
+                </Button>
+              </form>
             </div>
           </CardContent>
         </Card>

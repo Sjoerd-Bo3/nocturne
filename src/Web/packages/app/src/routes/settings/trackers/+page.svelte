@@ -89,6 +89,10 @@
   let formPresetDefinitionId = $state<string | undefined>(undefined);
   let formPresetDefaultStartNotes = $state("");
 
+  // Form references for form()-based remote functions
+  const createForm = trackersRemote.createDefinition;
+  const updateForm = trackersRemote.updateDefinition;
+
   // Form state for definition
   let formName = $state("");
   let formDescription = $state("");
@@ -359,43 +363,6 @@
     formStartEventType = def.startEventType ?? undefined;
     formCompletionEventType = def.completionEventType ?? undefined;
     isDefinitionDialogOpen = true;
-  }
-
-  // Save definition
-  async function saveDefinition() {
-    try {
-      const notificationThresholds =
-        notificationsToApiFormat(formNotifications);
-
-      const data = {
-        name: formName,
-        description: formDescription || undefined,
-        category: formCategory,
-        icon: formIcon,
-        lifespanHours: formMode === TrackerMode.Duration ? formLifespanHours : undefined,
-        notificationThresholds: notificationThresholds,
-        isFavorite: formIsFavorite,
-        dashboardVisibility: formDashboardVisibility,
-        visibility: formVisibility,
-        mode: formMode,
-        startEventType: formStartEventType || undefined,
-        completionEventType: formCompletionEventType || undefined,
-      };
-
-      if (isNewDefinition) {
-        await trackersRemote.createDefinition(data);
-      } else if (editingDefinition) {
-        await trackersRemote.updateDefinition({
-          id: editingDefinition.id!,
-          request: data,
-        });
-      }
-      await loadData();
-      await tick();
-      isDefinitionDialogOpen = false;
-    } catch (err) {
-      console.error("Failed to save definition:", err);
-    }
   }
 
   // Delete definition
@@ -880,27 +847,20 @@
   {/if}
 </div>
 
-<!-- Definition Dialog -->
-<Dialog.Root bind:open={isDefinitionDialogOpen}>
-  <Dialog.Content class="max-w-2xl max-h-[90vh] overflow-y-auto">
-    <Dialog.Header>
-      <Dialog.Title>
-        {isNewDefinition ? "New Tracker Definition" : "Edit Definition"}
-      </Dialog.Title>
-    </Dialog.Header>
-    <div class="space-y-6 py-4">
+{#snippet definitionFormFields(prefix: string)}
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-2">
           <Label for="name">Name</Label>
           <Input
             id="name"
+            name="{prefix}name"
             bind:value={formName}
             placeholder="e.g., G7 Sensor"
           />
         </div>
         <div class="space-y-2">
           <Label for="category">Category</Label>
-          <Select.Root type="single" bind:value={formCategory}>
+          <Select.Root type="single" name="{prefix}category" bind:value={formCategory}>
             <Select.Trigger>{categoryLabels[formCategory]}</Select.Trigger>
             <Select.Content>
               <Select.Item value={TrackerCategory.Sensor} label="Sensor" />
@@ -929,6 +889,7 @@
         <Label for="description">Description (optional)</Label>
         <Input
           id="description"
+          name="{prefix}description"
           bind:value={formDescription}
           placeholder="Optional description"
         />
@@ -936,7 +897,7 @@
 
       <div class="space-y-2">
         <Label>Tracker Mode</Label>
-        <Select.Root type="single" bind:value={formMode}>
+        <Select.Root type="single" name="{prefix}mode" bind:value={formMode}>
           <Select.Trigger>
             {#if formMode === TrackerMode.Duration}
               Duration - runs for a time period
@@ -972,6 +933,7 @@
             bind:value={formLifespanHours}
             placeholder="e.g., 10x24 or 10d"
           />
+          <input type="hidden" name="n:{prefix}lifespanHours" value={formLifespanHours ?? ""} />
         </div>
       {/if}
 
@@ -981,9 +943,22 @@
         lifespanHours={formMode === TrackerMode.Duration ? formLifespanHours : undefined}
       />
 
+      <!-- Hidden inputs for notification thresholds -->
+      {#each notificationsToApiFormat(formNotifications) as threshold, i}
+        <input type="hidden" name="{prefix}notificationThresholds[{i}].urgency" value={threshold.urgency} />
+        <input type="hidden" name="n:{prefix}notificationThresholds[{i}].hours" value={threshold.hours} />
+        <input type="hidden" name="{prefix}notificationThresholds[{i}].description" value={threshold.description ?? ""} />
+        <input type="hidden" name="n:{prefix}notificationThresholds[{i}].displayOrder" value={threshold.displayOrder ?? i} />
+      {/each}
+
+      <input type="hidden" name="b:{prefix}isFavorite" value={formIsFavorite ? "on" : ""} />
+      <input type="hidden" name="{prefix}icon" value={formIcon} />
+      <input type="hidden" name="{prefix}startEventType" value={formStartEventType ?? ""} />
+      <input type="hidden" name="{prefix}completionEventType" value={formCompletionEventType ?? ""} />
+
       <div class="space-y-2">
         <Label for="dashboardVisibility">Dashboard Visibility</Label>
-        <Select.Root type="single" bind:value={formDashboardVisibility}>
+        <Select.Root type="single" name="{prefix}dashboardVisibility" bind:value={formDashboardVisibility}>
           <Select.Trigger>
             {#if formDashboardVisibility === DashboardVisibility.Off}
               Off - Don't show on dashboard
@@ -1036,7 +1011,7 @@
       <!-- Visibility (Public/Private) -->
       <div class="space-y-2">
         <Label for="visibility">Public Visibility</Label>
-        <Select.Root type="single" bind:value={formVisibility}>
+        <Select.Root type="single" name="{prefix}visibility" bind:value={formVisibility}>
           <Select.Trigger>
             {#if formVisibility === TrackerVisibility.Public}
               Public - Visible to everyone
@@ -1094,17 +1069,75 @@
           />
         </div>
       </div>
-    </div>
+{/snippet}
 
-    <Dialog.Footer>
-      <Button
-        variant="outline"
-        onclick={() => (isDefinitionDialogOpen = false)}
-      >
-        Cancel
-      </Button>
-      <Button onclick={saveDefinition} disabled={!formName}>Save</Button>
-    </Dialog.Footer>
+<!-- Definition Dialog -->
+<Dialog.Root bind:open={isDefinitionDialogOpen}>
+  <Dialog.Content class="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog.Header>
+      <Dialog.Title>
+        {isNewDefinition ? "New Tracker Definition" : "Edit Definition"}
+      </Dialog.Title>
+    </Dialog.Header>
+
+    {#if isNewDefinition}
+    <form
+      {...createForm.enhance(async ({ submit }) => {
+        await submit();
+        if (createForm.result) {
+          await loadData();
+          await tick();
+          isDefinitionDialogOpen = false;
+        }
+      })}
+    >
+      <div class="space-y-6 py-4">
+        {@render definitionFormFields("")}
+      </div>
+
+      <Dialog.Footer>
+        <Button
+          type="button"
+          variant="outline"
+          onclick={() => (isDefinitionDialogOpen = false)}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={!formName || !!createForm.pending}>
+          {createForm.pending ? "Saving..." : "Save"}
+        </Button>
+      </Dialog.Footer>
+    </form>
+    {:else}
+    <form
+      {...updateForm.for(editingDefinition?.id ?? "").enhance(async ({ submit }) => {
+        await submit();
+        if (updateForm.for(editingDefinition?.id ?? "").result) {
+          await loadData();
+          await tick();
+          isDefinitionDialogOpen = false;
+        }
+      })}
+    >
+      <input type="hidden" name="id" value={editingDefinition?.id ?? ""} />
+      <div class="space-y-6 py-4">
+        {@render definitionFormFields("request.")}
+      </div>
+
+      <Dialog.Footer>
+        <Button
+          type="button"
+          variant="outline"
+          onclick={() => (isDefinitionDialogOpen = false)}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={!formName || !!updateForm.for(editingDefinition?.id ?? "").pending}>
+          {updateForm.for(editingDefinition?.id ?? "").pending ? "Saving..." : "Save"}
+        </Button>
+      </Dialog.Footer>
+    </form>
+    {/if}
   </Dialog.Content>
 </Dialog.Root>
 
