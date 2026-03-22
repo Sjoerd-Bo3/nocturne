@@ -1,5 +1,5 @@
 import { Card, Fields, Field } from "chat";
-import type { GlucoseReading } from "../lib/nocturne-client.js";
+import type { SensorGlucoseReading } from "../types.js";
 import { formatGlucose, trendArrow } from "../lib/format.js";
 
 function timeAgo(dateMs: number): string {
@@ -11,12 +11,12 @@ function timeAgo(dateMs: number): string {
 }
 
 export function GlucoseCard(props: {
-  reading: GlucoseReading;
+  reading: SensorGlucoseReading;
   unit?: "mg/dL" | "mmol/L";
 }) {
   const { reading, unit = "mg/dL" } = props;
-  const value = formatGlucose(reading.sgv, unit);
-  const arrow = trendArrow(reading.direction);
+  const value = reading.sgv != null ? formatGlucose(reading.sgv, unit) : "N/A";
+  const arrow = reading.direction ? trendArrow(reading.direction) : "";
   const delta =
     reading.delta != null
       ? `${reading.delta > 0 ? "+" : ""}${formatGlucose(reading.delta, unit)}`
@@ -27,7 +27,7 @@ export function GlucoseCard(props: {
       <Fields>
         <Field label="BG" value={`${value} ${arrow}`} />
         <Field label="Delta" value={delta} />
-        <Field label="Updated" value={timeAgo(reading.date)} />
+        <Field label="Updated" value={reading.mills != null ? timeAgo(reading.mills) : "N/A"} />
       </Fields>
     </Card>
   );

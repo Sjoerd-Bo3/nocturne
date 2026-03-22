@@ -1,5 +1,5 @@
 import { Card, CardText, Fields, Field, Actions, Button } from "chat";
-import type { AlertPayload } from "../lib/nocturne-client.js";
+import type { AlertPayload } from "../types.js";
 import { formatGlucose, trendArrow } from "../lib/format.js";
 
 export function AlertCard(props: {

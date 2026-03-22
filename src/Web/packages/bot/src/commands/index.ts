@@ -1,11 +1,11 @@
 import type { Chat } from "chat";
-import { NocturneClient } from "../lib/nocturne-client.js";
+import type { BotApiClient } from "../types.js";
 import { registerGlucoseCommands } from "./glucose.js";
 import { registerAccountCommands } from "./account.js";
 import { registerAlertCommands } from "./alerts.js";
 
-export function registerAllCommands(bot: Chat, client: NocturneClient) {
-  registerGlucoseCommands(bot, client);
+export function registerAllCommands(bot: Chat, api: BotApiClient) {
+  registerGlucoseCommands(bot, api);
   registerAccountCommands(bot);
-  registerAlertCommands(bot, client);
+  registerAlertCommands(bot, api);
 }

@@ -1,16 +1,15 @@
 import type { Chat } from "chat";
-import { NocturneClient } from "../lib/nocturne-client.js";
+import type { BotApiClient } from "../types.js";
 import { GlucoseCard } from "../cards/glucose.js";
 import { createLogger } from "../lib/logger.js";
 
 const logger = createLogger();
 
-export function registerGlucoseCommands(bot: Chat, client: NocturneClient) {
+export function registerGlucoseCommands(bot: Chat, api: BotApiClient) {
   const handleBg = async (thread: any) => {
     try {
-      // TODO: resolve identity link to get user's OAuth token
-      const token = "";
-      const readings = await client.getCurrentGlucose(token);
+      const result = await api.sensorGlucose.getAll(1, 1);
+      const readings = result.items ?? [];
 
       if (!readings.length) {
         await thread.post("No recent glucose readings found.");
@@ -25,11 +24,6 @@ export function registerGlucoseCommands(bot: Chat, client: NocturneClient) {
     }
   };
 
-  bot.onSlashCommand("/bg", async (event) => {
-    await handleBg(event.thread);
-  });
-
-  bot.onSlashCommand("/glucose", async (event) => {
-    await handleBg(event.thread);
-  });
+  bot.onSlashCommand("/bg", async (event) => handleBg(event.thread));
+  bot.onSlashCommand("/glucose", async (event) => handleBg(event.thread));
 }
