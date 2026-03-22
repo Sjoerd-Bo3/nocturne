@@ -490,6 +490,138 @@ public class DataSourceService : IDataSourceService
                     },
                 },
             },
+            new()
+            {
+                Id = "xdrip4ios",
+                Name = "xDrip4iOS",
+                Platform = "ios",
+                Category = "cgm",
+                Description =
+                    "iOS CGM app supporting Dexcom, Libre, and other sensors with Nightscout upload.",
+                Icon = "xdrip4ios",
+                Url = "https://github.com/JohanDegraworksve/xdripswift",
+                SetupInstructions = new List<SetupStep>
+                {
+                    new()
+                    {
+                        Step = 1,
+                        Title = "Open xDrip4iOS Settings",
+                        Description = "Tap the Settings tab in the app.",
+                    },
+                    new()
+                    {
+                        Step = 2,
+                        Title = "Nightscout Upload",
+                        Description = "Navigate to Nightscout → Upload.",
+                    },
+                    new()
+                    {
+                        Step = 3,
+                        Title = "Configure URL",
+                        Description = "Enter your Nocturne URL.",
+                    },
+                    new()
+                    {
+                        Step = 4,
+                        Title = "API Secret",
+                        Description = "Enter your API secret.",
+                    },
+                    new()
+                    {
+                        Step = 5,
+                        Title = "Enable Upload",
+                        Description = "Toggle on 'Upload to Nightscout'.",
+                    },
+                },
+            },
+            new()
+            {
+                Id = "juggluco",
+                Name = "Juggluco",
+                Platform = "android",
+                Category = "cgm",
+                Description =
+                    "Android app for FreeStyle Libre sensors with Nightscout upload support.",
+                Icon = "juggluco",
+                Url = "https://juggluco.nl",
+                SetupInstructions = new List<SetupStep>
+                {
+                    new()
+                    {
+                        Step = 1,
+                        Title = "Open Juggluco Settings",
+                        Description = "Tap the hamburger menu and select Settings.",
+                    },
+                    new()
+                    {
+                        Step = 2,
+                        Title = "Nightscout Connection",
+                        Description = "Navigate to the Nightscout section.",
+                    },
+                    new()
+                    {
+                        Step = 3,
+                        Title = "Configure URL",
+                        Description = "Enter your Nocturne URL.",
+                    },
+                    new()
+                    {
+                        Step = 4,
+                        Title = "API Secret",
+                        Description = "Enter your API secret.",
+                    },
+                    new()
+                    {
+                        Step = 5,
+                        Title = "Enable Sync",
+                        Description = "Toggle on Nightscout synchronisation.",
+                    },
+                },
+            },
+            new()
+            {
+                Id = "glucotracker",
+                Name = "GlucoTracker",
+                Platform = "android",
+                Category = "cgm",
+                Description =
+                    "Android glucose tracking app with Nightscout upload capability.",
+                Icon = "glucotracker",
+                Url = "https://glucotracker.app",
+                SetupInstructions = new List<SetupStep>
+                {
+                    new()
+                    {
+                        Step = 1,
+                        Title = "Open GlucoTracker Settings",
+                        Description = "Go to Settings in the app.",
+                    },
+                    new()
+                    {
+                        Step = 2,
+                        Title = "Cloud Sync",
+                        Description = "Navigate to Cloud Sync → Nightscout.",
+                    },
+                    new()
+                    {
+                        Step = 3,
+                        Title = "Configure URL",
+                        Description = "Enter your Nocturne URL.",
+                    },
+                    new()
+                    {
+                        Step = 4,
+                        Title = "API Secret",
+                        Description = "Enter your API secret.",
+                    },
+                    new()
+                    {
+                        Step = 5,
+                        Title = "Enable Upload",
+                        Description = "Toggle on 'Upload to Nightscout'.",
+                    },
+                },
+            },
         };
     }
 
@@ -530,13 +662,37 @@ public class DataSourceService : IDataSourceService
         var lowerDevice = deviceId.ToLowerInvariant();
 
         // Detect source type and category
-        if (lowerDevice.Contains("xdrip") || lowerDevice.StartsWith("xdrip"))
+        if (lowerDevice.Contains("xdrip4ios") || lowerDevice.Contains("xdripswift"))
+        {
+            info.Name = "xDrip4iOS";
+            info.SourceType = "xdrip4ios";
+            info.Category = "cgm";
+            info.Icon = "xdrip4ios";
+            info.Description = ExtractDeviceDescription(deviceId, "xDrip4iOS on");
+        }
+        else if (lowerDevice.Contains("xdrip") || lowerDevice.StartsWith("xdrip"))
         {
             info.Name = "xDrip+";
             info.SourceType = "xdrip";
             info.Category = "cgm";
             info.Icon = "xdrip";
             info.Description = ExtractDeviceDescription(deviceId, "xDrip+ on");
+        }
+        else if (lowerDevice.Contains("juggluco"))
+        {
+            info.Name = "Juggluco";
+            info.SourceType = "juggluco";
+            info.Category = "cgm";
+            info.Icon = "juggluco";
+            info.Description = ExtractDeviceDescription(deviceId, "Juggluco on");
+        }
+        else if (lowerDevice.Contains("glucotracker"))
+        {
+            info.Name = "GlucoTracker";
+            info.SourceType = "glucotracker";
+            info.Category = "cgm";
+            info.Icon = "glucotracker";
+            info.Description = ExtractDeviceDescription(deviceId, "GlucoTracker on");
         }
         else if (lowerDevice.Contains("spike"))
         {

@@ -67,9 +67,9 @@
   title="Your Insulins"
   description="Add the insulins you use. You can always update these later."
   currentStep={3}
-  totalSteps={5}
+  totalSteps={6}
   prevHref="/settings/setup/devices"
-  nextHref="/settings/setup/connectors"
+  nextHref="/settings/setup/uploaders"
   showSkip={true}
   saveDisabled={false}
   onSave={handleSave}
@@ -157,7 +157,10 @@
               />
             </div>
           </div>
-          <input type="hidden" name="isCurrent" value="true" />
+          <input type="hidden" name="b:isCurrent" value="on" />
+          {#each createForm.fields.allIssues() as issue}
+            <p class="text-sm text-destructive">{issue.message}</p>
+          {/each}
         </Card.Content>
         <Card.Footer class="flex justify-end gap-2">
           <Button type="button" variant="outline" onclick={resetForm} disabled={!!createForm.pending}>

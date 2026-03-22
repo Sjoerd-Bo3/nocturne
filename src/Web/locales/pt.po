@@ -287,7 +287,6 @@ msgstr ""
 #: src/routes/food/food-state.svelte.ts
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
-#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/[connector]/+page.svelte
 #: src/routes/settings/migration/+page.svelte
 #: src/routes/settings/services/+page.svelte
@@ -299,6 +298,9 @@ msgstr ""
 
 #: src/lib/components/WebSocketStatus.svelte
 #: src/lib/components/dashboard/widgets/ConnectionStatusWidget.svelte
+#: src/routes/auth/bot/authorize/+page.svelte
+#: src/routes/settings/setup/uploaders/+page.svelte
+#: src/routes/settings/setup/uploaders/+page.svelte
 msgid "Connected"
 msgstr ""
 
@@ -1250,6 +1252,8 @@ msgstr ""
 #: src/routes/settings/patient/+page.svelte
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
+#: src/routes/settings/setup/uploaders/+page.svelte
 msgid "Unknown"
 msgstr ""
 
@@ -1499,6 +1503,7 @@ msgstr ""
 #: src/routes/meals/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
+#: src/routes/settings/setup/uploaders/+page.svelte
 msgid "All"
 msgstr ""
 
@@ -2942,7 +2947,6 @@ msgstr ""
 #: src/routes/settings/profile/+page.svelte
 #: src/routes/settings/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 msgid "Units"
 msgstr ""
 
@@ -2953,7 +2957,6 @@ msgstr ""
 #: src/routes/profile/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "Timezone"
 msgstr ""
@@ -3014,7 +3017,6 @@ msgstr ""
 #: src/routes/settings/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/tenants/+page.svelte
 msgid "Default"
 msgstr ""
@@ -3030,7 +3032,6 @@ msgstr ""
 #: src/lib/components/profile/ProfileEditDialog.svelte
 #: src/routes/profile/+page.svelte
 #: src/routes/settings/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "Basal Rates"
 msgstr ""
@@ -3075,7 +3076,6 @@ msgstr ""
 
 #: src/routes/profile/+page.svelte
 #: src/routes/settings/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "Target Range"
 msgstr ""
@@ -4958,7 +4958,6 @@ msgstr ""
 
 #: src/lib/components/profile/ProfileCreateDialog.svelte
 #: src/routes/settings/setup/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 msgid "Select units"
 msgstr ""
 
@@ -5008,7 +5007,6 @@ msgid "Targets"
 msgstr ""
 
 #: src/lib/components/profile/ProfileEditDialog.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "Profile Name"
 msgstr ""
@@ -10660,6 +10658,7 @@ msgstr ""
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/migration/+page.svelte
 #: src/routes/settings/services/+page.svelte
+#: src/routes/settings/setup/uploaders/+page.svelte
 #: src/routes/setup/+page.svelte
 msgid "API Secret"
 msgstr ""
@@ -10861,7 +10860,6 @@ msgstr ""
 
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
-#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
@@ -10941,11 +10939,13 @@ msgstr ""
 
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/services/+page.svelte
+#: src/routes/settings/setup/uploaders/+page.svelte
 msgid "CGM Apps"
 msgstr ""
 
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/services/+page.svelte
+#: src/routes/settings/setup/uploaders/+page.svelte
 msgid "AID Systems"
 msgstr ""
 
@@ -10989,7 +10989,6 @@ msgstr ""
 msgid "<0/> Syncing"
 msgstr ""
 
-#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
@@ -11057,6 +11056,7 @@ msgstr ""
 
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/services/+page.svelte
+#: src/routes/settings/setup/uploaders/+page.svelte
 msgid "Connection Details"
 msgstr ""
 
@@ -12025,7 +12025,6 @@ msgstr ""
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
-#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
 #: src/routes/settings/services/+page.svelte
@@ -12067,7 +12066,6 @@ msgstr ""
 #~ msgstr ""
 
 #: src/routes/settings/alerts/+page.svelte
-#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -13536,6 +13534,7 @@ msgstr ""
 
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/services/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
 msgid "Not Configured"
 msgstr ""
 
@@ -13755,8 +13754,6 @@ msgid "<0/> Credentials"
 msgstr ""
 
 #: src/lib/components/settings/ConnectorConfigForm.svelte
-#: src/routes/settings/connectors/+page.svelte
-#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -18525,9 +18522,7 @@ msgid "<0/> Generate Packing List"
 msgstr ""
 
 #. placeholder {0}: categoryTotal
-#. placeholder {0}: count
 #: src/lib/components/tools/packing/supply-category.svelte
-#: src/routes/settings/setup/connectors/+page.svelte
 msgid "{0} items"
 msgstr ""
 
@@ -19244,7 +19239,6 @@ msgstr ""
 
 #: src/routes/settings/setup/patient/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 msgid "Something went wrong. Please try again."
 msgstr ""
 
@@ -19267,42 +19261,34 @@ msgid ""
 msgstr ""
 
 #: src/routes/settings/setup/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 msgid "Basics"
 msgstr ""
 
-#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "America/New_York"
 msgstr ""
 
 #: src/routes/settings/setup/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 msgid "Duration of Insulin Action"
 msgstr ""
 
-#: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 msgid "hours"
 msgstr ""
 
 #: src/routes/settings/setup/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 msgid "Carb Absorption Rate"
 msgstr ""
 
 #: src/routes/settings/setup/profile/+page.svelte
-#: src/routes/settings/setup/profile/+page.svelte
 msgid "g/hr"
 msgstr ""
 
-#: src/routes/settings/setup/profile/+page.svelte
-msgid "Carb Ratios"
-msgstr ""
+#~ msgid "Carb Ratios"
+#~ msgstr ""
 
-#: src/routes/settings/setup/profile/+page.svelte
-msgid "Insulin Sensitivity"
-msgstr ""
+#~ msgid "Insulin Sensitivity"
+#~ msgstr ""
 
 #: src/lib/components/setup/ScheduleEditor.svelte
 #: src/lib/components/setup/TargetRangeEditor.svelte
@@ -19390,9 +19376,8 @@ msgstr ""
 msgid "This may take a moment depending on how much data is available."
 msgstr ""
 
-#: src/routes/settings/setup/connectors/+page.svelte
-msgid "<0/> Sync Successful"
-msgstr ""
+#~ msgid "<0/> Sync Successful"
+#~ msgstr ""
 
 #. placeholder {0}: syncResult ? "Failed" : "Error"
 #: src/routes/settings/setup/connectors/+page.svelte
@@ -19941,6 +19926,7 @@ msgstr ""
 
 #: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/alerts/+page.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 msgid "Schedules"
 msgstr ""
 
@@ -20304,4 +20290,153 @@ msgstr ""
 
 #: src/routes/settings/alerts/+page.svelte
 msgid "Allow critical alerts during quiet hours"
+msgstr ""
+
+#: src/routes/settings/setup/connectors/+page.svelte
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "Connector"
+msgstr ""
+
+#. placeholder {0}: selectedConnector?.name ?? "Connector"
+#: src/routes/settings/setup/connectors/+page.svelte
+msgid "<0/> {0} Synced Successfully"
+msgstr ""
+
+#: src/routes/settings/setup/+page.svelte
+msgid "Uploaders"
+msgstr ""
+
+#: src/routes/settings/setup/+page.svelte
+msgid "Configure a phone app to push data to Nocturne"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "General Uploaders"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Failed to load uploader apps"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Android"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Desktop"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Web"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Uploaders - Setup - Nocturne"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Configure Uploader App"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Set up a phone app to push glucose and treatment data to Nocturne. You can always add more uploaders later."
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "No uploader apps available"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "There are no uploader apps available at this time."
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "<0/> Back to uploaders"
+msgstr ""
+
+#. placeholder {0}: selectedApp?.name
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Copy these values into your {0} app settings."
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "API URL"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "xDrip-style URL (with embedded secret)"
+msgstr ""
+
+#. placeholder {0}: selectedApp.name
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "<0/> Download {0}"
+msgstr ""
+
+#. placeholder {0}: selectedApp?.name
+#. placeholder {1}: ds.entriesLast24h ?? 0
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "{0} is sending data. {1} entries in the last 24 hours."
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Waiting for data"
+msgstr ""
+
+#. placeholder {0}: selectedApp?.name
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Once you've configured {0}, it can take up to five minutes for the first glucose data to arrive. This page will update automatically."
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Failed to load setup instructions"
+msgstr ""
+
+#. placeholder {0}: selectedApp?.name
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "Could not load setup details for {0}. Please try again."
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "<0/> iOS"
+msgstr ""
+
+#: src/routes/settings/setup/uploaders/+page.svelte
+msgid "<0/> Android"
+msgstr ""
+
+#: src/routes/auth/bot/authorize/+page.svelte
+msgid "Your chat account is now linked to Nocturne. You can close this tab."
+msgstr ""
+
+#: src/routes/auth/bot/authorize/+page.svelte
+msgid "Connect Chat Account"
+msgstr ""
+
+#: src/routes/auth/bot/authorize/+page.svelte
+msgid "Allow the Nocturne bot to access your glucose data and send you alerts?"
+msgstr ""
+
+#: src/routes/auth/bot/authorize/+page.svelte
+msgid "Authorize"
+msgstr ""
+
+#: src/routes/auth/bot/authorize/+page.server.ts
+msgid "Not authenticated"
+msgstr ""
+
+#: src/routes/auth/bot/authorize/+page.server.ts
+msgid "Missing state parameter."
+msgstr ""
+
+#: src/routes/auth/bot/authorize/+page.server.ts
+msgid "Link expired or invalid. Please run /connect again in your chat app."
+msgstr ""
+
+#: src/routes/auth/bot/authorize/+page.server.ts
+msgid "Invalid platform identity format."
+msgstr ""
+
+#: src/routes/auth/bot/authorize/+page.server.ts
+msgid "Failed to link account. Please try again."
 msgstr ""

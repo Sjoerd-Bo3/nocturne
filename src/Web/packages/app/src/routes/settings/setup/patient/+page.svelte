@@ -77,7 +77,7 @@
   title="Patient Record"
   description="Tell us a bit about yourself and your diabetes. Only diabetes type is required."
   currentStep={1}
-  totalSteps={5}
+  totalSteps={6}
   nextHref="/settings/setup/devices"
   saveDisabled={!diabetesType}
   {saving}

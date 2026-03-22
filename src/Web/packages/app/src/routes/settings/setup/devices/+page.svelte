@@ -99,7 +99,7 @@
   title="Your Devices"
   description="Add the diabetes devices you use. You can always update these later."
   currentStep={2}
-  totalSteps={5}
+  totalSteps={6}
   prevHref="/settings/setup/patient"
   nextHref="/settings/setup/insulins"
   showSkip={true}
@@ -217,7 +217,10 @@
               </div>
             {/if}
           </div>
-          <input type="hidden" name="isCurrent" value="true" />
+          <input type="hidden" name="b:isCurrent" value="on" />
+          {#each createForm.fields.allIssues() as issue}
+            <p class="text-sm text-destructive">{issue.message}</p>
+          {/each}
         </Card.Content>
         <Card.Footer class="flex justify-end gap-2">
           <Button type="button" variant="outline" onclick={resetForm} disabled={!!createForm.pending}>

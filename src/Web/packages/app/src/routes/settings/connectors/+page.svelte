@@ -47,7 +47,6 @@
   import * as Tooltip from "$lib/components/ui/tooltip";
 
   import {
-    Plug,
     RefreshCw,
     CheckCircle,
     AlertCircle,
@@ -59,10 +58,8 @@
     Loader2,
     Copy,
     Check,
-    Activity,
     Wifi,
     WifiOff,
-    Settings,
     ChevronRight,
     Trash2,
     AlertTriangle,
@@ -79,6 +76,7 @@
   import TabletSmartphone from "lucide-svelte/icons/tablet-smartphone";
   import { getApiClient } from "$lib/api";
   import { toast } from "svelte-sonner";
+  import { getCategoryIcon, mapConnectorStatus } from "$lib/utils/connector-display";
 
   let servicesOverview = $state<ServicesOverview | null>(null);
   let isLoading = $state(true);
@@ -817,25 +815,6 @@
     return d.toLocaleDateString();
   }
 
-  function getCategoryIcon(category: string | undefined) {
-    switch (category) {
-      case "cgm":
-        return Activity;
-      case "pump":
-        return Database;
-      case "aid-system":
-        return Settings;
-      case "connector":
-        return Cloud;
-      case "uploader":
-        return Smartphone;
-      case "demo":
-        return Sparkles;
-      default:
-        return Plug;
-    }
-  }
-
   function getPlatformIcon(platform: string | undefined) {
     switch (platform) {
       case "ios":
@@ -859,18 +838,6 @@
     }
   }
 
-  function mapConnectorStatus(
-    connectorStatus: ConnectorStatusDto
-  ): DataSourceStatus {
-    if (connectorStatus.state === "Syncing") return "syncing";
-    if (connectorStatus.state === "BackingOff") return "backing-off";
-    if (connectorStatus.state === "Error" || !connectorStatus.isHealthy && connectorStatus.state !== "Configured")
-      return "error";
-    if (connectorStatus.state === "Configured") return "configured";
-    if (connectorStatus.state === "Disabled") return "disabled";
-    if (connectorStatus.state === "Offline") return "offline";
-    return "active";
-  }
 
   async function copyToClipboard(text: string, field: string) {
     await navigator.clipboard.writeText(text);

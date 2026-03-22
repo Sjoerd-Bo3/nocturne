@@ -35,10 +35,15 @@
     AlertCircle,
     CheckCircle,
     ChevronLeft,
+    ChevronRight,
     Loader2,
     Plus,
     Plug,
   } from "lucide-svelte";
+  import DataSourceRow from "$lib/components/settings/DataSourceRow.svelte";
+  import type { ConnectorStatusDto } from "$lib/api/generated/nocturne-api-client";
+  import { getConnectorStatuses } from "$api/services.remote";
+  import { getCategoryIcon, mapConnectorStatus } from "$lib/utils/connector-display";
 
   // ── View state ──────────────────────────────────────────────────────
 
@@ -50,6 +55,7 @@
 
   let availableConnectors = $state<AvailableConnector[]>([]);
   let connectorStatuses = $state<ConnectorStatusInfo[]>([]);
+  let connectorStatusDtos = $state<ConnectorStatusDto[]>([]);
   let configuredIds = $state<Set<string>>(new Set());
   let isLoading = $state(true);
   let loadError = $state<string | null>(null);
@@ -81,6 +87,7 @@
   // ── Sync state ──────────────────────────────────────────────────────
 
   let syncResult = $state<SyncResult | null>(null);
+  let syncedConnectorStatus = $state<ConnectorStatusDto | null>(null);
 
   // ── Derived ─────────────────────────────────────────────────────────
 
@@ -100,14 +107,16 @@
     loadError = null;
 
     try {
-      const [overview, statuses] = await Promise.all([
+      const [overview, statuses, statusDtos] = await Promise.all([
         getServicesOverview(),
         getAllConnectorStatus().catch(() => [] as ConnectorStatusInfo[]),
+        getConnectorStatuses().catch(() => [] as ConnectorStatusDto[]),
       ]);
 
       availableConnectors =
         overview?.availableConnectors?.filter((c) => c.available) ?? [];
       connectorStatuses = statuses ?? [];
+      connectorStatusDtos = statusDtos ?? [];
 
       // Build set of configured connector IDs
       const ids = new Set<string>();
@@ -127,6 +136,12 @@
 
   function isConfigured(connector: AvailableConnector): boolean {
     return configuredIds.has(connector.id?.toLowerCase() ?? "");
+  }
+
+  function getStatusDto(connector: AvailableConnector): ConnectorStatusDto | undefined {
+    return connectorStatusDtos.find(
+      (s) => s.id?.toLowerCase() === connector.id?.toLowerCase()
+    );
   }
 
   // ── Select and configure a connector ────────────────────────────────
@@ -280,6 +295,19 @@
         request: {},
       });
       syncResult = result as SyncResult;
+
+      // Fetch updated connector status for rich display
+      try {
+        const statuses = await getConnectorStatuses();
+        syncedConnectorStatus =
+          statuses?.find(
+            (s) =>
+              s.id?.toLowerCase() === selectedConnector!.id!.toLowerCase()
+          ) ?? null;
+      } catch {
+        syncedConnectorStatus = null;
+      }
+
       viewState = "results";
     } catch (e) {
       configError =
@@ -298,15 +326,7 @@
 
   // ── Navigation helpers ──────────────────────────────────────────────
 
-  function handleAddAnother() {
-    // Mark current connector as configured
-    if (selectedConnector?.id) {
-      configuredIds = new Set([
-        ...configuredIds,
-        selectedConnector.id.toLowerCase(),
-      ]);
-    }
-
+  async function handleAddAnother() {
     // Reset state and go back to selection
     selectedConnector = null;
     schema = null;
@@ -316,8 +336,12 @@
     secrets = {};
     connectorStatus = null;
     syncResult = null;
+    syncedConnectorStatus = null;
     configError = null;
     viewState = "selection";
+
+    // Refresh connector list to show updated statuses
+    await loadConnectorList();
   }
 
   function handleBackToSelection() {
@@ -325,8 +349,10 @@
     schema = null;
     configError = null;
     syncResult = null;
+    syncedConnectorStatus = null;
     viewState = "selection";
   }
+
 </script>
 
 <svelte:head>
@@ -336,9 +362,9 @@
 <WizardShell
   title="Connect Data Sources"
   description="Connect to your CGM or diabetes management platform to sync glucose and treatment data. You can always add more connectors later."
-  currentStep={4}
-  totalSteps={5}
-  prevHref="/settings/setup/insulins"
+  currentStep={5}
+  totalSteps={6}
+  prevHref="/settings/setup/uploaders"
   nextHref="/settings/setup/profile"
   showSkip={true}
   saveDisabled={false}
@@ -371,43 +397,54 @@
         </CardContent>
       </Card>
     {:else}
-      <div class="grid gap-3">
+      <div class="grid gap-3 sm:grid-cols-2">
         {#each availableConnectors as connector (connector.id)}
           {@const configured = isConfigured(connector)}
-          <button
-            type="button"
-            class="w-full text-left"
-            onclick={() => selectConnector(connector)}
-          >
-            <Card
-              class="transition-colors hover:bg-muted/50 cursor-pointer {configured
-                ? 'border-green-500/50'
-                : ''}"
+          {@const statusDto = getStatusDto(connector)}
+          {#if configured && statusDto}
+            <DataSourceRow
+              name={connector.name ?? connector.id ?? "Unknown"}
+              icon={getCategoryIcon(connector.category)}
+              status={mapConnectorStatus(statusDto)}
+              totalEntries={statusDto.totalEntries}
+              entriesLast24h={statusDto.entriesLast24Hours}
+              lastSeen={statusDto.lastEntryTime}
+              lastSyncAttempt={statusDto.lastSyncAttempt}
+              lastSuccessfulSync={statusDto.lastSuccessfulSync}
+              totalBreakdown={statusDto.totalItemsBreakdown ?? undefined}
+              last24hBreakdown={statusDto.itemsLast24HoursBreakdown ?? undefined}
+              onclick={() => selectConnector(connector)}
+            />
+          {:else}
+            {@const Icon = getCategoryIcon(connector.category)}
+            <button
+              type="button"
+              class="flex items-center gap-4 p-4 rounded-lg border bg-muted/30 hover:border-primary/50 hover:bg-accent/50 transition-colors text-left group"
+              onclick={() => selectConnector(connector)}
             >
-              <CardContent class="flex items-center gap-4 py-4">
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <p class="font-medium">{connector.name}</p>
-                    {#if connector.category}
-                      <Badge variant="outline" class="text-xs">
-                        {connector.category}
-                      </Badge>
-                    {/if}
-                    {#if configured}
-                      <CheckCircle
-                        class="h-4 w-4 text-green-500 flex-shrink-0"
-                      />
-                    {/if}
-                  </div>
-                  {#if connector.description}
-                    <p class="text-sm text-muted-foreground mt-0.5 truncate">
-                      {connector.description}
-                    </p>
-                  {/if}
+              <div
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+              >
+                <Icon class="h-5 w-5 text-primary" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-medium">{connector.name}</span>
+                  <Badge variant="outline" class="text-xs">
+                    Not Configured
+                  </Badge>
                 </div>
-              </CardContent>
-            </Card>
-          </button>
+                {#if connector.description}
+                  <p class="text-sm text-muted-foreground">
+                    {connector.description}
+                  </p>
+                {/if}
+              </div>
+              <ChevronRight
+                class="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
+              />
+            </button>
+          {/if}
         {/each}
       </div>
     {/if}
@@ -501,31 +538,32 @@
     <!-- ── Sync Results ─────────────────────────────────────────── -->
     <div class="space-y-4">
       {#if syncResult?.success}
-        <Card class="border-green-500/50">
-          <CardHeader>
-            <CardTitle class="flex items-center gap-2">
-              <CheckCircle class="h-5 w-5 text-green-500" />
-              Sync Successful
-            </CardTitle>
-            {#if syncResult.message}
-              <CardDescription>{syncResult.message}</CardDescription>
-            {/if}
-          </CardHeader>
-          {#if syncResult.itemsSynced && Object.keys(syncResult.itemsSynced).length > 0}
-            <CardContent>
-              <div class="space-y-1">
-                {#each Object.entries(syncResult.itemsSynced as Record<string, number>) as [type, count]}
-                  <div
-                    class="flex items-center justify-between text-sm"
-                  >
-                    <span class="text-muted-foreground">{type}</span>
-                    <span class="font-medium">{count} items</span>
-                  </div>
-                {/each}
-              </div>
-            </CardContent>
-          {/if}
-        </Card>
+        {#if syncedConnectorStatus}
+          <DataSourceRow
+            name={selectedConnector?.name ?? syncedConnectorStatus.name ?? "Connector"}
+            icon={getCategoryIcon(selectedConnector?.category)}
+            status={mapConnectorStatus(syncedConnectorStatus)}
+            totalEntries={syncedConnectorStatus.totalEntries}
+            entriesLast24h={syncedConnectorStatus.entriesLast24Hours}
+            lastSeen={syncedConnectorStatus.lastEntryTime}
+            lastSyncAttempt={syncedConnectorStatus.lastSyncAttempt}
+            lastSuccessfulSync={syncedConnectorStatus.lastSuccessfulSync}
+            totalBreakdown={syncedConnectorStatus.totalItemsBreakdown ?? undefined}
+            last24hBreakdown={syncedConnectorStatus.itemsLast24HoursBreakdown ?? undefined}
+          />
+        {:else}
+          <Card class="border-green-500/50">
+            <CardHeader>
+              <CardTitle class="flex items-center gap-2">
+                <CheckCircle class="h-5 w-5 text-green-500" />
+                {selectedConnector?.name ?? "Connector"} Synced Successfully
+              </CardTitle>
+              {#if syncResult.message}
+                <CardDescription>{syncResult.message}</CardDescription>
+              {/if}
+            </CardHeader>
+          </Card>
+        {/if}
       {:else}
         <Card class="border-destructive/50">
           <CardHeader>

@@ -152,11 +152,16 @@ export const saveConnectorConfiguration = form(
 				success: true,
 				data: result,
 			};
-		} catch (err) {
+		} catch (err: any) {
 			console.error('Error saving connector configuration:', err);
+			// NSwag throws the raw response body for 400s (not an Error instance)
+			const message =
+				(err?.errors && Array.isArray(err.errors) ? err.errors.join('; ') : null) ??
+				err?.message ??
+				(err instanceof Error ? err.message : 'Failed to save configuration');
 			return {
 				success: false,
-				error: err instanceof Error ? err.message : 'Failed to save configuration',
+				error: message,
 			};
 		}
 	}
@@ -178,11 +183,15 @@ export const saveConnectorSecrets = form(
 			await apiClient.configuration.saveSecrets(connectorName, secrets);
 			await getAllConnectorStatus().refresh();
 			return { success: true };
-		} catch (err) {
+		} catch (err: any) {
 			console.error('Error saving connector secrets:', err);
+			const message =
+				(err?.errors && Array.isArray(err.errors) ? err.errors.join('; ') : null) ??
+				err?.message ??
+				(err instanceof Error ? err.message : 'Failed to save secrets');
 			return {
 				success: false,
-				error: err instanceof Error ? err.message : 'Failed to save secrets',
+				error: message,
 			};
 		}
 	}

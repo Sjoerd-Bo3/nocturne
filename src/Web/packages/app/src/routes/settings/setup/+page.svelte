@@ -5,6 +5,7 @@
     HeartPulse,
     Smartphone,
     Syringe,
+    Upload,
     Plug,
     Activity,
     CheckCircle2,
@@ -20,7 +21,14 @@
   const devices = patientRemote.getDevices();
   const insulins = patientRemote.getInsulins();
   const servicesOverview = servicesRemote.getServicesOverview();
+  const activeDataSources = servicesRemote.getActiveDataSources();
   const profileSummary = profileRemote.getProfileSummary(undefined);
+
+  // Known uploader app source types for completion detection
+  const uploaderSourceTypes = new Set([
+    "xdrip", "xdrip4ios", "spike", "loop", "aaps", "openaps",
+    "trio", "iaps", "juggluco", "glucotracker", "nightscout-uploader",
+  ]);
 
   // ── Step definitions ──────────────────────────────────────────────
 
@@ -55,6 +63,13 @@
       required: true,
     },
     {
+      title: "Uploaders",
+      description: "Configure a phone app to push data to Nocturne",
+      icon: Upload,
+      href: "/settings/setup/uploaders",
+      required: false,
+    },
+    {
       title: "Connectors",
       description: "Connect external data sources",
       icon: Plug,
@@ -81,6 +96,11 @@
     const insulinsComplete =
       (insulins.current ?? []).some((i) => i.isCurrent) ?? false;
 
+    const uploadersComplete =
+      (activeDataSources.current ?? []).some(
+        (ds) => ds.sourceType && uploaderSourceTypes.has(ds.sourceType.toLowerCase()),
+      ) ?? false;
+
     const connectorsComplete =
       (servicesOverview.current?.availableConnectors ?? []).some(
         (c) => c.isConfigured,
@@ -93,6 +113,7 @@
       patientComplete,
       devicesComplete,
       insulinsComplete,
+      uploadersComplete,
       connectorsComplete,
       profileComplete,
     ];
