@@ -7,6 +7,7 @@ import { createPgState } from "@chat-adapter/state-postgres";
 import { loadConfig, type BotConfig } from "./lib/config.js";
 import { createLogger } from "./lib/logger.js";
 import { NocturneClient } from "./lib/nocturne-client.js";
+import { registerAllCommands } from "./commands/index.js";
 
 const logger = createLogger();
 
@@ -45,6 +46,29 @@ export function createBot() {
   });
 
   const client = new NocturneClient(config.apiUrl);
+
+  registerAllCommands(bot, client);
+
+  // @mention fallback — respond with current BG
+  bot.onNewMention(async (thread, message) => {
+    try {
+      // TODO: resolve user's token from identity link
+      const token = "";
+      const readings = await client.getCurrentGlucose(token);
+
+      if (!readings.length) {
+        await thread.post("No recent glucose readings found.");
+        return;
+      }
+
+      const { GlucoseCard } = await import("./cards/glucose.js");
+      const card = GlucoseCard({ reading: readings[0] });
+      await thread.post(card);
+    } catch (err) {
+      logger.error("Error handling mention:", err);
+      await thread.post("Failed to fetch glucose data.");
+    }
+  });
 
   return { bot, client, config };
 }
