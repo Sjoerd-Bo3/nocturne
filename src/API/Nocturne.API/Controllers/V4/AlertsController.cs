@@ -20,17 +20,20 @@ public class AlertsController : ControllerBase
 {
     private readonly IDbContextFactory<NocturneDbContext> _contextFactory;
     private readonly IAlertAcknowledgementService _acknowledgementService;
+    private readonly IAlertDeliveryService _deliveryService;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<AlertsController> _logger;
 
     public AlertsController(
         IDbContextFactory<NocturneDbContext> contextFactory,
         IAlertAcknowledgementService acknowledgementService,
+        IAlertDeliveryService deliveryService,
         ITenantAccessor tenantAccessor,
         ILogger<AlertsController> logger)
     {
         _contextFactory = contextFactory;
         _acknowledgementService = acknowledgementService;
+        _deliveryService = deliveryService;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
     }
@@ -266,6 +269,67 @@ public class AlertsController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Mark a delivery as successfully sent by the channel adapter.
+    /// </summary>
+    [HttpPost("deliveries/{deliveryId:guid}/delivered")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<ActionResult> MarkDelivered(
+        Guid deliveryId, [FromBody] MarkDeliveredRequest request, CancellationToken ct)
+    {
+        await _deliveryService.MarkDeliveredAsync(
+            deliveryId, request.PlatformMessageId, request.PlatformThreadId, ct);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Mark a delivery as failed by the channel adapter.
+    /// </summary>
+    [HttpPost("deliveries/{deliveryId:guid}/failed")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<ActionResult> MarkFailed(
+        Guid deliveryId, [FromBody] MarkFailedRequest request, CancellationToken ct)
+    {
+        await _deliveryService.MarkFailedAsync(deliveryId, request.Error, ct);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Get pending deliveries for the specified channel types.
+    /// Used by bot/adapter services to poll for work.
+    /// </summary>
+    [HttpGet("deliveries/pending")]
+    [RemoteQuery]
+    [ProducesResponseType(typeof(List<PendingDeliveryResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<PendingDeliveryResponse>>> GetPendingDeliveries(
+        [FromQuery] string[] channelType, CancellationToken ct)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(ct);
+
+        var query = db.AlertDeliveries
+            .AsNoTracking()
+            .Where(d => d.Status == "pending");
+
+        if (channelType.Length > 0)
+            query = query.Where(d => channelType.Contains(d.ChannelType));
+
+        var deliveries = await query
+            .OrderBy(d => d.CreatedAt)
+            .Select(d => new PendingDeliveryResponse
+            {
+                Id = d.Id,
+                AlertInstanceId = d.AlertInstanceId,
+                ChannelType = d.ChannelType,
+                Destination = d.Destination,
+                Payload = d.Payload,
+                CreatedAt = d.CreatedAt,
+                RetryCount = d.RetryCount,
+            })
+            .ToListAsync(ct);
+
+        return Ok(deliveries);
+    }
 }
 
 #region DTOs
@@ -338,6 +402,28 @@ public class UpdateQuietHoursRequest
 public class SnoozeRequest
 {
     public int Minutes { get; set; }
+}
+
+public class MarkDeliveredRequest
+{
+    public string? PlatformMessageId { get; set; }
+    public string? PlatformThreadId { get; set; }
+}
+
+public class MarkFailedRequest
+{
+    public string Error { get; set; } = string.Empty;
+}
+
+public class PendingDeliveryResponse
+{
+    public Guid Id { get; set; }
+    public Guid AlertInstanceId { get; set; }
+    public string ChannelType { get; set; } = string.Empty;
+    public string Destination { get; set; } = string.Empty;
+    public string Payload { get; set; } = "{}";
+    public DateTime CreatedAt { get; set; }
+    public int RetryCount { get; set; }
 }
 
 #endregion
