@@ -237,41 +237,6 @@ class Program
             scriptName: "build"
         );
 
-        // Add the Chat SDK bot (optional — only runs if Bot:Enabled is true)
-        var botEnabled = builder.Configuration.GetValue<bool>("Bot:Enabled", false);
-        IResourceBuilder<ExecutableResource>? bot = null;
-        if (botEnabled)
-        {
-            var botPackagePath = Path.Combine(solutionRoot, "src", "Web", "packages", "bot");
-            var botBuild = builder.AddPnpmApp(
-                "nocturne-bot-build",
-                botPackagePath,
-                scriptName: "build"
-            );
-
-            bot = builder
-                .AddNodeApp(ServiceNames.NocturneBot, Path.Combine(botPackagePath, "dist", "index.js"))
-                .WithWorkingDirectory(botPackagePath)
-                .WaitFor(api)
-                .WaitFor(botBuild)
-                .WithReference(api)
-                .WithEnvironment("API_URL", api.GetEndpoint("api"))
-                .WithEnvironment("NODE_ENV", builder.Environment.EnvironmentName)
-                .PublishAsDockerComposeService((_, _) => { });
-
-            // Pass database connection string for Chat SDK state adapter
-            if (managedDatabase != null)
-            {
-                bot.WithReference(managedDatabase);
-            }
-            else if (remoteDatabase != null)
-            {
-                bot.WithReference(remoteDatabase);
-            }
-
-            botBuild.WithParentRelationship(bot);
-        }
-
         // Add the SvelteKit web application (with integrated WebSocket bridge)
         var webPackagePath = Path.Combine(solutionRoot, "src", "Web", "packages", "app");
 
@@ -341,6 +306,9 @@ class Program
 #pragma warning restore ASPIRECERTIFICATES001
         apiSecret.WithParentRelationship(web);
         bridge.WithParentRelationship(web);
+
+        // API needs WEB_URL to POST chat bot alert dispatches to the SvelteKit app
+        api.WithEnvironment("WEB_URL", web.GetEndpoint("https"));
         // Add Scalar API Reference for unified API documentation
         // This provides a single documentation interface for all services in the Aspire dashboard
         var includeScalar = builder.Configuration.GetValue<bool>(
