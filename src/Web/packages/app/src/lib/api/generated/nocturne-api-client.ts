@@ -3691,6 +3691,206 @@ export class WellKnownClient {
     }
 }
 
+export class AlertCustomSoundsClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Upload a custom alert sound file.
+     * @param contentType (optional) 
+     * @param contentDisposition (optional) 
+     * @param headers (optional) 
+     * @param length (optional) 
+     * @param name (optional) 
+     * @param fileName (optional) 
+     */
+    uploadSound(contentType?: string | null | undefined, contentDisposition?: string | null | undefined, headers?: any[] | null | undefined, length?: number | undefined, name?: string | null | undefined, fileName?: string | null | undefined, signal?: AbortSignal): Promise<AlertCustomSoundResponse> {
+        let url_ = this.baseUrl + "/api/v4/alert-sounds";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = new FormData();
+        if (contentType !== null && contentType !== undefined)
+            content_.append("ContentType", contentType.toString());
+        if (contentDisposition !== null && contentDisposition !== undefined)
+            content_.append("ContentDisposition", contentDisposition.toString());
+        if (headers !== null && headers !== undefined)
+            headers.forEach(item_ => content_.append("Headers", item_.toString()));
+        if (length === null || length === undefined)
+            throw new globalThis.Error("The parameter 'length' cannot be null.");
+        else
+            content_.append("Length", length.toString());
+        if (name !== null && name !== undefined)
+            content_.append("Name", name.toString());
+        if (fileName !== null && fileName !== undefined)
+            content_.append("FileName", fileName.toString());
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUploadSound(_response);
+        });
+    }
+
+    protected processUploadSound(response: Response): Promise<AlertCustomSoundResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertCustomSoundResponse;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertCustomSoundResponse>(null as any);
+    }
+
+    /**
+     * List all custom sounds for the current tenant (metadata only, no audio data).
+     */
+    getSounds(signal?: AbortSignal): Promise<AlertCustomSoundResponse[]> {
+        let url_ = this.baseUrl + "/api/v4/alert-sounds";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetSounds(_response);
+        });
+    }
+
+    protected processGetSounds(response: Response): Promise<AlertCustomSoundResponse[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertCustomSoundResponse[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertCustomSoundResponse[]>(null as any);
+    }
+
+    /**
+     * Stream the raw audio bytes for a custom sound.
+     */
+    streamSound(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/alert-sounds/{id}/stream";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processStreamSound(_response);
+        });
+    }
+
+    protected processStreamSound(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Delete a custom sound.
+     */
+    deleteSound(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/alert-sounds/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteSound(_response);
+        });
+    }
+
+    protected processDeleteSound(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+}
+
 export class AlertInvitesClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -4308,6 +4508,146 @@ export class AlertsClient {
         if (status === 204) {
             return response.text().then((_responseText) => {
             return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Get the current quiet hours configuration for the tenant.
+     */
+    getQuietHours(signal?: AbortSignal): Promise<QuietHoursResponse> {
+        let url_ = this.baseUrl + "/api/v4/alerts/quiet-hours";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetQuietHours(_response);
+        });
+    }
+
+    protected processGetQuietHours(response: Response): Promise<QuietHoursResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as QuietHoursResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<QuietHoursResponse>(null as any);
+    }
+
+    /**
+     * Update quiet hours configuration for the tenant.
+     */
+    updateQuietHours(request: UpdateQuietHoursRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/alerts/quiet-hours";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateQuietHours(_response);
+        });
+    }
+
+    protected processUpdateQuietHours(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Snooze an alert instance for the specified duration.
+     */
+    snoozeInstance(instanceId: string, request: SnoozeRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/alerts/instances/{instanceId}/snooze";
+        if (instanceId === undefined || instanceId === null)
+            throw new globalThis.Error("The parameter 'instanceId' must be defined.");
+        url_ = url_.replace("{instanceId}", encodeURIComponent("" + instanceId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSnoozeInstance(_response);
+        });
+    }
+
+    protected processSnoozeInstance(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            result409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result409);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -25852,6 +26192,14 @@ export interface OAuthAuthorizationServerMetadata {
     serviceDocumentation?: string | undefined;
 }
 
+export interface AlertCustomSoundResponse {
+    id?: string;
+    name?: string;
+    mimeType?: string;
+    fileSize?: number;
+    createdAt?: Date;
+}
+
 export interface AlertInviteResponse {
     id?: string;
     token?: string;
@@ -25877,6 +26225,8 @@ export interface AlertRuleResponse {
     confirmationReadings?: number;
     isEnabled?: boolean;
     sortOrder?: number;
+    severity?: string;
+    clientConfiguration?: any;
     schedules?: AlertScheduleResponse[];
 }
 
@@ -25914,6 +26264,8 @@ export interface CreateAlertRuleRequest {
     confirmationReadings?: number;
     isEnabled?: boolean;
     sortOrder?: number;
+    severity?: string | undefined;
+    clientConfiguration?: any | undefined;
     schedules?: CreateAlertScheduleRequest[] | undefined;
 }
 
@@ -25948,6 +26300,8 @@ export interface UpdateAlertRuleRequest {
     confirmationReadings?: number;
     isEnabled?: boolean;
     sortOrder?: number;
+    severity?: string | undefined;
+    clientConfiguration?: any | undefined;
     schedules?: CreateAlertScheduleRequest[] | undefined;
 }
 
@@ -25993,6 +26347,24 @@ export interface HistoryExcursionResponse {
 
 export interface AcknowledgeRequest {
     acknowledgedBy?: string | undefined;
+}
+
+export interface QuietHoursResponse {
+    enabled?: boolean;
+    startTime?: string | undefined;
+    endTime?: string | undefined;
+    overrideCritical?: boolean;
+}
+
+export interface UpdateQuietHoursRequest {
+    enabled?: boolean;
+    startTime?: string | undefined;
+    endTime?: string | undefined;
+    overrideCritical?: boolean;
+}
+
+export interface SnoozeRequest {
+    minutes?: number;
 }
 
 export interface PaginatedResponseOfApsSnapshot {

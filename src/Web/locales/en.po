@@ -150,18 +150,12 @@ msgstr "Error Loading Data"
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/stores/alarm-state.svelte.ts
 #: src/lib/stores/alarm-state.svelte.ts
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "UrgentLow"
 msgstr "UrgentLow"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/stores/alarm-state.svelte.ts
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "UrgentHigh"
 msgstr "UrgentHigh"
 
@@ -182,9 +176,7 @@ msgstr "UrgentHigh"
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 msgid "Low"
 msgstr "Low"
@@ -204,10 +196,7 @@ msgstr "Low"
 #: src/routes/reports/executive-summary/+page.svelte
 #: src/routes/reports/glucose-distribution/+page.svelte
 #: src/routes/reports/year-overview/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 msgid "High"
 msgstr "High"
@@ -286,7 +275,6 @@ msgid "Failed to sync missed data"
 msgstr "Failed to sync missed data"
 
 #: src/lib/stores/settings-store.svelte.ts
-#: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/data-quality/+page.svelte
 #: src/routes/settings/features/+page.svelte
@@ -302,11 +290,10 @@ msgid "Validation error"
 msgstr "Validation error"
 
 #: src/lib/stores/settings-store.svelte.ts
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "Failed to save alarm configuration"
 msgstr "Failed to save alarm configuration"
 
+#: src/lib/components/alerts/AlertBanner.svelte
 #: src/lib/components/settings/DataSourceRow.svelte
 #: src/lib/components/settings/DataSourceRow.svelte
 #: src/lib/stores/settings-store.svelte.ts
@@ -358,42 +345,49 @@ msgstr "Last updated: February 21, 2026"
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "Sun"
 msgstr "Sun"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "Mon"
 msgstr "Mon"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "Tue"
 msgstr "Tue"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "Wed"
 msgstr "Wed"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "Thu"
 msgstr "Thu"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "Fri"
 msgstr "Fri"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/calendar/+page.svelte
 #: src/routes/reports/week-to-week/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "Sat"
 msgstr "Sat"
 
@@ -757,8 +751,6 @@ msgstr "Major Diff"
 #: src/routes/compatibility/+page.svelte
 #: src/routes/compatibility/[id]/+page.svelte
 #: src/routes/reports/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "Critical"
 msgstr "Critical"
 
@@ -821,6 +813,7 @@ msgstr "Auto-detecting..."
 msgid "Strategy"
 msgstr "Strategy"
 
+#: src/lib/components/alerts/AlertBanner.svelte
 #: src/lib/components/dashboard/BGStatisticsCards.svelte
 #: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
 #: src/lib/components/dashboard/widgets/LastUpdatedWidget.svelte
@@ -833,6 +826,7 @@ msgstr "Strategy"
 #: src/routes/reports/battery/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/treatments/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/appearance/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -1115,6 +1109,8 @@ msgstr "Delete the attribution entries entirely."
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/patient/+page.svelte
@@ -1213,7 +1209,6 @@ msgstr "ID: {0}"
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Name"
 msgstr "Name"
@@ -1533,7 +1528,6 @@ msgid "Untitled"
 msgstr "Untitled"
 
 #: src/routes/clock/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "Edit"
 msgstr "Edit"
 
@@ -1555,6 +1549,7 @@ msgstr "Are you sure you want to delete \"{0}\"? This action cannot be undone."
 #: src/routes/clock/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
 #: src/routes/reports/data-quality/compression-lows/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "<0/> Delete"
 msgstr "<0/> Delete"
 
@@ -2098,6 +2093,8 @@ msgstr "Current"
 #: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
 #: src/lib/components/dashboard/glucose-chart/dialogs/DeliveryInspectionDialog.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
 #: src/routes/settings/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
 #: src/routes/settings/setup/profile/+page.svelte
@@ -2595,8 +2592,6 @@ msgid "Password reset successful! Please sign in with your new password."
 msgstr "Password reset successful! Please sign in with your new password."
 
 #: src/lib/components/auth/LoginForm.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "Email"
 msgstr "Email"
 
@@ -3157,6 +3152,7 @@ msgstr "Glucose"
 #: src/lib/components/entries/BGCheckSection.svelte
 #: src/routes/reports/day-in-review/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "Type"
 msgstr "Type"
 
@@ -3410,7 +3406,6 @@ msgid "Add notes..."
 msgstr "Add notes..."
 
 #: src/lib/components/entries/EntryEditDialog.svelte
-#: src/lib/components/entries/EntryEditDialog.svelte
 msgid "Failed to save entry"
 msgstr "Failed to save entry"
 
@@ -3497,7 +3492,6 @@ msgstr "Add Food"
 #: src/lib/components/settings/notifications/webhooks/WebhookSettingsModal.svelte
 #: src/lib/components/setup/WizardShell.svelte
 #: src/lib/components/treatments/TreatmentEditDialog.svelte
-#: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Saving..."
@@ -3869,10 +3863,8 @@ msgstr "Therapy"
 msgid "Features"
 msgstr "Features"
 
-#: src/lib/components/layout/AppSidebar.svelte
-#: src/routes/settings/alarms/+page.svelte
-msgid "Alarms"
-msgstr "Alarms"
+#~ msgid "Alarms"
+#~ msgstr "Alarms"
 
 #: src/lib/components/layout/AppSidebar.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -5426,17 +5418,11 @@ msgstr "ForecastLow"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "RisingFast"
 msgstr "RisingFast"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "FallingFast"
 msgstr "FallingFast"
 
@@ -5445,7 +5431,6 @@ msgstr "FallingFast"
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/alarm-preview/AlarmActiveView.svelte
 #: src/lib/components/settings/alarm-preview/AlarmActiveView.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "StaleData"
 msgstr "StaleData"
 
@@ -5476,7 +5461,6 @@ msgid "Edit Alarm"
 msgstr "Edit Alarm"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "New Alarm"
 msgstr "New Alarm"
 
@@ -5543,6 +5527,7 @@ msgid "Minutes without data"
 msgstr "Minutes without data"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
 msgid "Threshold"
 msgstr "Threshold"
 
@@ -5558,7 +5543,6 @@ msgstr "Lead Time"
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "minutes"
 msgstr "minutes"
 
@@ -5657,14 +5641,12 @@ msgstr "Volume"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/BrowserCapabilities.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "Vibration"
 msgstr "Vibration"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "Not on this device"
 msgstr "Not on this device"
 
@@ -5783,7 +5765,6 @@ msgid "Get louder each time"
 msgstr "Get louder each time"
 
 #: src/lib/components/settings/AlarmProfileDialog.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "Smart Snooze"
 msgstr "Smart Snooze"
 
@@ -6030,7 +6011,6 @@ msgstr "Click \"Upload Sound\" to add your own"
 #: src/lib/components/settings/CustomSoundUpload.svelte
 #: src/lib/components/treatments/TreatmentsDataTable.svelte
 #: src/routes/reports/treatments/+page.svelte
-#: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/patient/+page.svelte
 #: src/routes/settings/patient/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -6370,6 +6350,7 @@ msgstr "<0/> Complete Tracker"
 #: src/lib/components/trackers/tracker-notification-editor.svelte
 #: src/lib/components/ui/duration-input/duration-input.svelte
 #: src/lib/components/ui/duration-input/duration-input.svelte
+#: src/routes/settings/alerts/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 msgid "Duration"
 msgstr "Duration"
@@ -11194,6 +11175,7 @@ msgstr "Stale"
 msgid "BackingOff"
 msgstr "BackingOff"
 
+#: src/routes/settings/alerts/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -11774,206 +11756,155 @@ msgstr "Cancel Job"
 msgid "<0/> Start Deduplication"
 msgstr "<0/> Start Deduplication"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Alarms - Settings - Nocturne"
-msgstr "Alarms - Settings - Nocturne"
+#~ msgid "Alarms - Settings - Nocturne"
+#~ msgstr "Alarms - Settings - Nocturne"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Configure glucose alarms, alerts, and notification preferences"
-msgstr "Configure glucose alarms, alerts, and notification preferences"
+#~ msgid "Configure glucose alarms, alerts, and notification preferences"
+#~ msgstr "Configure glucose alarms, alerts, and notification preferences"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Saved!"
-msgstr "Saved!"
+#~ msgid "Saved!"
+#~ msgstr "Saved!"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> Global Settings"
-msgstr "<0/> Global Settings"
+#~ msgid "<0/> Global Settings"
+#~ msgstr "<0/> Global Settings"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Master controls for all notifications"
-msgstr "Master controls for all notifications"
+#~ msgid "Master controls for all notifications"
+#~ msgstr "Master controls for all notifications"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "All Alarms"
-msgstr "All Alarms"
+#~ msgid "All Alarms"
+#~ msgstr "All Alarms"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Master switch for all glucose alarms"
-msgstr "Master switch for all glucose alarms"
+#~ msgid "Master switch for all glucose alarms"
+#~ msgstr "Master switch for all glucose alarms"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Sound"
-msgstr "Sound"
+#~ msgid "Sound"
+#~ msgstr "Sound"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Global Volume"
-msgstr "Global Volume"
+#~ msgid "Global Volume"
+#~ msgstr "Global Volume"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> Device Capabilities"
-msgstr "<0/> Device Capabilities"
+#~ msgid "<0/> Device Capabilities"
+#~ msgstr "<0/> Device Capabilities"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Check what alarm features your browser supports"
-msgstr "Check what alarm features your browser supports"
+#~ msgid "Check what alarm features your browser supports"
+#~ msgstr "Check what alarm features your browser supports"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> Alarm Profiles"
-msgstr "<0/> Alarm Profiles"
+#~ msgid "<0/> Alarm Profiles"
+#~ msgstr "<0/> Alarm Profiles"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Customizable alarms with advanced xDrip+-style features"
-msgstr "Customizable alarms with advanced xDrip+-style features"
+#~ msgid "Customizable alarms with advanced xDrip+-style features"
+#~ msgstr "Customizable alarms with advanced xDrip+-style features"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> New Alarm"
-msgstr "<0/> New Alarm"
+#~ msgid "<0/> New Alarm"
+#~ msgstr "<0/> New Alarm"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "No alarms configured"
-msgstr "No alarms configured"
+#~ msgid "No alarms configured"
+#~ msgstr "No alarms configured"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Create your first alarm to get started"
-msgstr "Create your first alarm to get started"
+#~ msgid "Create your first alarm to get started"
+#~ msgstr "Create your first alarm to get started"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> Create Alarm"
-msgstr "<0/> Create Alarm"
+#~ msgid "<0/> Create Alarm"
+#~ msgstr "<0/> Create Alarm"
 
-#. placeholder {0}: profile.persistenceMinutes
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> {0}m delay"
-msgstr "<0/> {0}m delay"
+#~ msgid "<0/> {0}m delay"
+#~ msgstr "<0/> {0}m delay"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> Ascending"
-msgstr "<0/> Ascending"
+#~ msgid "<0/> Ascending"
+#~ msgstr "<0/> Ascending"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> Scheduled"
-msgstr "<0/> Scheduled"
+#~ msgid "<0/> Scheduled"
+#~ msgstr "<0/> Scheduled"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Stop preview"
-msgstr "Stop preview"
+#~ msgid "Stop preview"
+#~ msgstr "Stop preview"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Preview alarm"
-msgstr "Preview alarm"
+#~ msgid "Preview alarm"
+#~ msgstr "Preview alarm"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Duplicate"
-msgstr "Duplicate"
+#~ msgid "Duplicate"
+#~ msgstr "Duplicate"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> Quiet Hours"
-msgstr "<0/> Quiet Hours"
+#~ msgid "<0/> Quiet Hours"
+#~ msgstr "<0/> Quiet Hours"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Reduce notification noise during specified hours"
-msgstr "Reduce notification noise during specified hours"
+#~ msgid "Reduce notification noise during specified hours"
+#~ msgstr "Reduce notification noise during specified hours"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Enable quiet hours"
-msgstr "Enable quiet hours"
+#~ msgid "Enable quiet hours"
+#~ msgstr "Enable quiet hours"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Start time"
-msgstr "Start time"
+#~ msgid "Start time"
+#~ msgstr "Start time"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "End time"
-msgstr "End time"
+#~ msgid "End time"
+#~ msgstr "End time"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Allow Critical Alarms"
-msgstr "Allow Critical Alarms"
+#~ msgid "Allow Critical Alarms"
+#~ msgstr "Allow Critical Alarms"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Critical priority alarms will still sound"
-msgstr "Critical priority alarms will still sound"
+#~ msgid "Critical priority alarms will still sound"
+#~ msgstr "Critical priority alarms will still sound"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Reduce Volume Instead"
-msgstr "Reduce Volume Instead"
+#~ msgid "Reduce Volume Instead"
+#~ msgstr "Reduce Volume Instead"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Play alarms at reduced volume rather than silencing"
-msgstr "Play alarms at reduced volume rather than silencing"
+#~ msgid "Play alarms at reduced volume rather than silencing"
+#~ msgstr "Play alarms at reduced volume rather than silencing"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Quiet Hours Volume"
-msgstr "Quiet Hours Volume"
+#~ msgid "Quiet Hours Volume"
+#~ msgstr "Quiet Hours Volume"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> Notification Channels"
-msgstr "<0/> Notification Channels"
+#~ msgid "<0/> Notification Channels"
+#~ msgstr "<0/> Notification Channels"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Choose how you receive notifications"
-msgstr "Choose how you receive notifications"
+#~ msgid "Choose how you receive notifications"
+#~ msgstr "Choose how you receive notifications"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Push Notifications"
-msgstr "Push Notifications"
+#~ msgid "Push Notifications"
+#~ msgstr "Push Notifications"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Alerts on this device"
-msgstr "Alerts on this device"
+#~ msgid "Alerts on this device"
+#~ msgstr "Alerts on this device"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Daily summaries and urgent alerts"
-msgstr "Daily summaries and urgent alerts"
+#~ msgid "Daily summaries and urgent alerts"
+#~ msgstr "Daily summaries and urgent alerts"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "SMS"
-msgstr "SMS"
+#~ msgid "SMS"
+#~ msgstr "SMS"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Text messages for urgent alerts"
-msgstr "Text messages for urgent alerts"
+#~ msgid "Text messages for urgent alerts"
+#~ msgstr "Text messages for urgent alerts"
 
 #: src/lib/components/settings/alarm-preview/AlarmActiveView.svelte
 #: src/lib/components/settings/alarm-preview/EmergencyOverlay.svelte
-#: src/routes/settings/alarms/+page.svelte
 msgid "Emergency Contacts"
 msgstr "Emergency Contacts"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "People to notify during urgent glucose events"
-msgstr "People to notify during urgent glucose events"
+#~ msgid "People to notify during urgent glucose events"
+#~ msgstr "People to notify during urgent glucose events"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "<0/> Add Contact"
-msgstr "<0/> Add Contact"
+#~ msgid "<0/> Add Contact"
+#~ msgstr "<0/> Add Contact"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "No emergency contacts"
-msgstr "No emergency contacts"
+#~ msgid "No emergency contacts"
+#~ msgstr "No emergency contacts"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Add contacts to notify during urgent events"
-msgstr "Add contacts to notify during urgent events"
+#~ msgid "Add contacts to notify during urgent events"
+#~ msgstr "Add contacts to notify during urgent events"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Contact name"
-msgstr "Contact name"
+#~ msgid "Contact name"
+#~ msgstr "Contact name"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Phone"
-msgstr "Phone"
+#~ msgid "Phone"
+#~ msgstr "Phone"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Delay before notification"
-msgstr "Delay before notification"
+#~ msgid "Delay before notification"
+#~ msgstr "Delay before notification"
 
-#: src/routes/settings/alarms/+page.svelte
-msgid "Critical only"
-msgstr "Critical only"
+#~ msgid "Critical only"
+#~ msgstr "Critical only"
 
-#: src/routes/settings/alarms/+page.svelte
 #: src/routes/settings/connectors/[connector]/+page.svelte
 msgid "Enabled"
 msgstr "Enabled"
@@ -13601,6 +13532,7 @@ msgid "More pages"
 msgstr "More pages"
 
 #: src/lib/components/ui/pagination/pagination-next-button.svelte
+#: src/routes/settings/alerts/+page.svelte
 msgid "Next"
 msgstr "Next"
 
@@ -13609,6 +13541,8 @@ msgid "Go to next page"
 msgstr "Go to next page"
 
 #: src/lib/components/ui/pagination/pagination-prev-button.svelte
+#: src/routes/settings/alerts/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
 msgid "Previous"
 msgstr "Previous"
 
@@ -14675,3 +14609,517 @@ msgstr "Secret will be generated on save"
 #: src/lib/components/settings/notifications/webhooks/WebhookSecurity.svelte
 msgid "The API signs each webhook with HMAC-SHA256 using this secret."
 msgstr "The API signs each webhook with HMAC-SHA256 using this secret."
+
+#: src/lib/components/alerts/AlertBanner.svelte
+msgid "Low Glucose"
+msgstr "Low Glucose"
+
+#: src/lib/components/alerts/AlertBanner.svelte
+msgid "High Glucose"
+msgstr "High Glucose"
+
+#: src/lib/components/alerts/AlertBanner.svelte
+msgid "Rapid Change"
+msgstr "Rapid Change"
+
+#: src/lib/components/alerts/AlertBanner.svelte
+msgid "Signal Lost"
+msgstr "Signal Lost"
+
+#: src/lib/components/alerts/AlertBanner.svelte
+msgid "Composite Alert"
+msgstr "Composite Alert"
+
+#: src/lib/components/alerts/AlertBanner.svelte
+#: src/lib/components/alerts/AlertBanner.svelte
+#: src/routes/settings/alerts/+page.svelte
+msgid "Alert"
+msgstr "Alert"
+
+#: src/lib/components/alerts/AlertBanner.svelte
+msgid "<0/> Acknowledge"
+msgstr "<0/> Acknowledge"
+
+#: src/lib/components/layout/AppSidebar.svelte
+#: src/routes/settings/alerts/+page.svelte
+msgid "Alerts"
+msgstr "Alerts"
+
+#: src/routes/settings/alarms/+page.svelte
+msgid "Redirecting to Alerts..."
+msgstr "Redirecting to Alerts..."
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Low Threshold"
+msgstr "Low Threshold"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "High Threshold"
+msgstr "High Threshold"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Rate of Change"
+msgstr "Rate of Change"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Signal Loss"
+msgstr "Signal Loss"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Composite"
+msgstr "Composite"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "No condition configured"
+msgstr "No condition configured"
+
+#. placeholder {0}: params.threshold ?? "?"
+#: src/routes/settings/alerts/+page.svelte
+msgid "Below {0} mg/dL"
+msgstr "Below {0} mg/dL"
+
+#. placeholder {0}: params.threshold ?? "?"
+#: src/routes/settings/alerts/+page.svelte
+msgid "Above {0} mg/dL"
+msgstr "Above {0} mg/dL"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Falling"
+msgstr "Falling"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Rising"
+msgstr "Rising"
+
+#. placeholder {0}: params.minutes ?? "?"
+#: src/routes/settings/alerts/+page.svelte
+msgid "No data for {0} minutes"
+msgstr "No data for {0} minutes"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Multiple conditions combined"
+msgstr "Multiple conditions combined"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Custom condition"
+msgstr "Custom condition"
+
+#: src/routes/settings/alerts/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
+msgid "Failed to load alert settings"
+msgstr "Failed to load alert settings"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Alerts - Settings - Nocturne"
+msgstr "Alerts - Settings - Nocturne"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Configure alert rules, schedules, and escalation chains"
+msgstr "Configure alert rules, schedules, and escalation chains"
+
+#: src/routes/settings/alerts/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> Setup Wizard"
+msgstr "<0/> Setup Wizard"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> Add Rule"
+msgstr "<0/> Add Rule"
+
+#. placeholder {0}: activeAlerts.length
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> Active Alerts ({0})"
+msgstr "<0/> Active Alerts ({0})"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> Acknowledge All"
+msgstr "<0/> Acknowledge All"
+
+#. placeholder {0}: getConditionLabel(alert.conditionType)
+#. placeholder {1}: formatDate(alert.startedAt)
+#: src/routes/settings/alerts/+page.svelte
+msgid "{0} — Started {1}"
+msgstr "{0} — Started {1}"
+
+#: src/routes/settings/alerts/+page.svelte
+#: src/routes/settings/alerts/+page.svelte
+msgid "Acknowledged"
+msgstr "Acknowledged"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> Alert Rules"
+msgstr "<0/> Alert Rules"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Rules define when alerts trigger and how they escalate"
+msgstr "Rules define when alerts trigger and how they escalate"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "No alert rules configured"
+msgstr "No alert rules configured"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Use the setup wizard to create your first alert rules"
+msgstr "Use the setup wizard to create your first alert rules"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Unnamed Rule"
+msgstr "Unnamed Rule"
+
+#. placeholder {0}: rule.schedules.length
+#. placeholder {1}: rule.schedules.length !== 1 ? "s" : ""
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> {0} schedule{1}"
+msgstr "<0/> {0} schedule{1}"
+
+#. placeholder {0}: stepCount
+#. placeholder {1}: stepCount !== 1 ? "s" : ""
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> {0} escalation step{1}"
+msgstr "<0/> {0} escalation step{1}"
+
+#. placeholder {0}: rule.confirmationReadings
+#: src/routes/settings/alerts/+page.svelte
+msgid "{0} confirmations"
+msgstr "{0} confirmations"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Hysteresis"
+msgstr "Hysteresis"
+
+#. placeholder {0}: rule.hysteresisMinutes ?? 0
+#: src/routes/settings/alerts/+page.svelte
+msgid "{0} minutes"
+msgstr "{0} minutes"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Confirmations"
+msgstr "Confirmations"
+
+#. placeholder {0}: rule.confirmationReadings ?? 1
+#. placeholder {1}: (rule.confirmationReadings ?? 1) !== 1 ? "s" : ""
+#: src/routes/settings/alerts/+page.svelte
+msgid "{0} reading{1}"
+msgstr "{0} reading{1}"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Sort Order"
+msgstr "Sort Order"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Schedules"
+msgstr "Schedules"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Default Schedule"
+msgstr "Default Schedule"
+
+#. placeholder {0}: schedule.daysOfWeek.map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d] ?? d).join(", ")
+#: src/routes/settings/alerts/+page.svelte
+msgid "Days: {0}"
+msgstr "Days: {0}"
+
+#. placeholder {0}: idx + 1
+#: src/routes/settings/alerts/+page.svelte
+msgid "Step {0}"
+msgstr "Step {0}"
+
+#. placeholder {0}: Math.round(step.delaySeconds / 60)
+#: src/routes/settings/alerts/+page.svelte
+msgid "after {0}m"
+msgstr "after {0}m"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "immediately"
+msgstr "immediately"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "via"
+msgstr "via"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> Delete Rule"
+msgstr "<0/> Delete Rule"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Delete Alert Rule"
+msgstr "Delete Alert Rule"
+
+#. placeholder {0}: rule.name
+#: src/routes/settings/alerts/+page.svelte
+msgid ""
+"Are you sure you want to delete \"{0}\"? This\n"
+"will also remove all associated schedules and\n"
+"escalation steps. This action cannot be undone."
+msgstr ""
+"Are you sure you want to delete \"{0}\"? This\n"
+"will also remove all associated schedules and\n"
+"escalation steps. This action cannot be undone."
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "<0/> Alert History"
+msgstr "<0/> Alert History"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Past alert excursions and their resolution"
+msgstr "Past alert excursions and their resolution"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "No alert history"
+msgstr "No alert history"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Resolved alerts will appear here"
+msgstr "Resolved alerts will appear here"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Rule"
+msgstr "Rule"
+
+#: src/routes/settings/alerts/+page.svelte
+msgid "Started"
+msgstr "Started"
+
+#. placeholder {0}: item.acknowledgedBy
+#: src/routes/settings/alerts/+page.svelte
+msgid "by {0}"
+msgstr "by {0}"
+
+#. placeholder {0}: history.page ?? 1
+#. placeholder {1}: history.totalPages ?? 1
+#. placeholder {2}: history.totalCount ?? 0
+#: src/routes/settings/alerts/+page.svelte
+msgid "Page {0} of {1} ({2} total)"
+msgstr "Page {0} of {1} ({2} total)"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Urgent Low"
+msgstr "Urgent Low"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Critical low glucose alert for immediate attention"
+msgstr "Critical low glucose alert for immediate attention"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Low glucose warning before it becomes urgent"
+msgstr "Low glucose warning before it becomes urgent"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "High glucose alert for sustained elevated readings"
+msgstr "High glucose alert for sustained elevated readings"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Urgent High"
+msgstr "Urgent High"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Critical high glucose alert requiring prompt action"
+msgstr "Critical high glucose alert requiring prompt action"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Fast Drop"
+msgstr "Fast Drop"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Rapid glucose decline combined with low threshold"
+msgstr "Rapid glucose decline combined with low threshold"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Sensor Lost"
+msgstr "Sensor Lost"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Alert when CGM signal is lost for an extended period"
+msgstr "Alert when CGM signal is lost for an extended period"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Browser Push Notification"
+msgstr "Browser Push Notification"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Webhook"
+msgstr "Webhook"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Failed to create alert rules"
+msgstr "Failed to create alert rules"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Alert Setup - Settings - Nocturne"
+msgstr "Alert Setup - Settings - Nocturne"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "<0/> Back to Alerts"
+msgstr "<0/> Back to Alerts"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Alert Setup Wizard"
+msgstr "Alert Setup Wizard"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Configure your glucose alert rules in a few simple steps"
+msgstr "Configure your glucose alert rules in a few simple steps"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Choose Presets"
+msgstr "Choose Presets"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Delivery Channels"
+msgstr "Delivery Channels"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Review & Save"
+msgstr "Review & Save"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Choose Alert Presets"
+msgstr "Choose Alert Presets"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid ""
+"Select the alerts you want to enable. You can customize thresholds for\n"
+"each one."
+msgstr ""
+"Select the alerts you want to enable. You can customize thresholds for\n"
+"each one."
+
+#. placeholder {0}: preset.confirmationReadings
+#. placeholder {1}: preset.confirmationReadings !== 1 ? "s" : ""
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "{0} confirmation{1}"
+msgstr "{0} confirmation{1}"
+
+#. placeholder {0}: preset.hysteresisMinutes
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "{0}m hysteresis"
+msgstr "{0}m hysteresis"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Choose how you want to receive alert notifications."
+msgstr "Choose how you want to receive alert notifications."
+
+#: src/routes/settings/alerts/setup/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Browser Push Notifications"
+msgstr "Browser Push Notifications"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Receive alerts directly in your browser"
+msgstr "Receive alerts directly in your browser"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Send alert data to a custom URL"
+msgstr "Send alert data to a custom URL"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Webhook URL"
+msgstr "Webhook URL"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Coming Soon"
+msgstr "Coming Soon"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Discord"
+msgstr "Discord"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Send alerts to a Discord channel"
+msgstr "Send alerts to a Discord channel"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Telegram"
+msgstr "Telegram"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Send alerts to a Telegram chat"
+msgstr "Send alerts to a Telegram chat"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Review your alert configuration before saving."
+msgstr "Review your alert configuration before saving."
+
+#. placeholder {0}: selectedPresets.length
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Selected Alert Rules ({0})"
+msgstr "Selected Alert Rules ({0})"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid ""
+"No presets selected. Go back to step 1 to select at least one\n"
+"alert."
+msgstr ""
+"No presets selected. Go back to step 1 to select at least one\n"
+"alert."
+
+#. placeholder {0}: preset.confirmationReadings
+#. placeholder {1}: preset.hysteresisMinutes
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "{0} conf. / {1}m hyst."
+msgstr "{0} conf. / {1}m hyst."
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid ""
+"No delivery channels configured. Alerts will still be visible in\n"
+"the dashboard, but no push notifications will be sent."
+msgstr ""
+"No delivery channels configured. Alerts will still be visible in\n"
+"the dashboard, but no push notifications will be sent."
+
+#. placeholder {0}: webhookUrl
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Webhook: {0}"
+msgstr "Webhook: {0}"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Medical Disclaimer"
+msgstr "Medical Disclaimer"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid ""
+"Nocturne alerts are not a substitute for professional medical\n"
+"advice, diagnosis, or treatment. Always consult your healthcare\n"
+"provider for medical decisions. Alert delivery depends on network\n"
+"connectivity, device availability, and third-party service\n"
+"reliability. Do not rely solely on these alerts for critical\n"
+"medical decisions."
+msgstr ""
+"Nocturne alerts are not a substitute for professional medical\n"
+"advice, diagnosis, or treatment. Always consult your healthcare\n"
+"provider for medical decisions. Alert delivery depends on network\n"
+"connectivity, device availability, and third-party service\n"
+"reliability. Do not rely solely on these alerts for critical\n"
+"medical decisions."
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "Next <0/>"
+msgstr "Next <0/>"
+
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "<0/> Creating Rules..."
+msgstr "<0/> Creating Rules..."
+
+#. placeholder {0}: selectedPresets.length
+#. placeholder {1}: selectedPresets.length !== 1 ? "s" : ""
+#: src/routes/settings/alerts/setup/+page.svelte
+msgid "<0/> Create {0} Rule{1}"
+msgstr "<0/> Create {0} Rule{1}"
+
+#: src/lib/components/entries/EntryEditDialog.svelte
+msgid "Failed to save BG check"
+msgstr "Failed to save BG check"
+
+#: src/lib/components/entries/EntryEditDialog.svelte
+msgid "Failed to save note"
+msgstr "Failed to save note"
+
+#: src/lib/components/entries/EntryEditDialog.svelte
+msgid "Failed to save device event"
+msgstr "Failed to save device event"

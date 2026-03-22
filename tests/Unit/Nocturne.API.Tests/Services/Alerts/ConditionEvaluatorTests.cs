@@ -299,7 +299,11 @@ public class CompositeEvaluatorTests
         };
 
         _registry = new ConditionEvaluatorRegistry(evaluators);
-        _sut = new CompositeEvaluator(_registry);
+        var serviceProvider = new Mock<IServiceProvider>();
+        serviceProvider
+            .Setup(sp => sp.GetService(typeof(ConditionEvaluatorRegistry)))
+            .Returns(_registry);
+        _sut = new CompositeEvaluator(serviceProvider.Object);
     }
 
     [Fact]
@@ -419,11 +423,15 @@ public class CompositeEvaluatorTests
             new SignalLossEvaluator(timeProvider)
         };
         var registry = new ConditionEvaluatorRegistry(evaluators);
-        var compositeEval = new CompositeEvaluator(registry);
+        var sp = new Mock<IServiceProvider>();
+        sp.Setup(s => s.GetService(typeof(ConditionEvaluatorRegistry))).Returns(registry);
+        var compositeEval = new CompositeEvaluator(sp.Object);
         // Re-create registry with composite included
         evaluators.Add(compositeEval);
         var fullRegistry = new ConditionEvaluatorRegistry(evaluators);
-        var sut = new CompositeEvaluator(fullRegistry);
+        var spFull = new Mock<IServiceProvider>();
+        spFull.Setup(s => s.GetService(typeof(ConditionEvaluatorRegistry))).Returns(fullRegistry);
+        var sut = new CompositeEvaluator(spFull.Object);
 
         // Outer OR: (inner AND fails) OR (threshold succeeds)
         var inner = new CompositeCondition("and", new List<ConditionNode>

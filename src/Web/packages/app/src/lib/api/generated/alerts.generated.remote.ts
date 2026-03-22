@@ -5,8 +5,8 @@
 import { getRequestEvent, query, command } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { AcknowledgeRequestSchema } from '$lib/api/generated/schemas';
-import { type AcknowledgeRequest } from '$api';
+import { AcknowledgeRequestSchema, UpdateQuietHoursRequestSchema, SnoozeRequestSchema } from '$lib/api/generated/schemas';
+import { type AcknowledgeRequest, type UpdateQuietHoursRequest, type SnoozeRequest } from '$api';
 
 /** List active (unresolved) excursions for the current tenant. */
 export const getActiveAlerts = query(async () => {
@@ -54,5 +54,58 @@ export const acknowledge = command(AcknowledgeRequestSchema, async (request) => 
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in alerts.acknowledge:', err);
     throw error(500, 'Failed to acknowledge');
+  }
+});
+
+/** Get the current quiet hours configuration for the tenant. */
+export const getQuietHours = query(async () => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    return await apiClient.alerts.getQuietHours();
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in alerts.getQuietHours:', err);
+    throw error(500, 'Failed to get quiet hours');
+  }
+});
+
+/** Update quiet hours configuration for the tenant. */
+export const updateQuietHours = command(UpdateQuietHoursRequestSchema, async (request) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    await apiClient.alerts.updateQuietHours(request as UpdateQuietHoursRequest);
+    await Promise.all([
+      getQuietHours(undefined).refresh()
+    ]);
+    return { success: true };
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in alerts.updateQuietHours:', err);
+    throw error(500, 'Failed to update quiet hours');
+  }
+});
+
+/** Snooze an alert instance for the specified duration. */
+export const snoozeInstance = command(z.object({ instanceId: z.string(), request: SnoozeRequestSchema }), async ({ instanceId, request }) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    await apiClient.alerts.snoozeInstance(instanceId, request as SnoozeRequest);
+    await Promise.all([
+      getActiveAlerts(undefined).refresh()
+    ]);
+    return { success: true };
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in alerts.snoozeInstance:', err);
+    throw error(500, 'Failed to snooze instance');
   }
 });

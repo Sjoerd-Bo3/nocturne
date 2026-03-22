@@ -2844,6 +2844,172 @@
         "x-client-property": "oidcDiscovery"
       }
     },
+    "/api/v4/alert-sounds": {
+      "post": {
+        "tags": [
+          "V4 Alert Sounds"
+        ],
+        "summary": "Upload a custom alert sound file.",
+        "operationId": "AlertCustomSounds_UploadSound",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "ContentType": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "ContentDisposition": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "Headers": {
+                    "type": "array",
+                    "nullable": true,
+                    "items": {}
+                  },
+                  "Length": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "Name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "FileName": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertCustomSoundResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      },
+      "get": {
+        "tags": [
+          "V4 Alert Sounds"
+        ],
+        "summary": "List all custom sounds for the current tenant (metadata only, no audio data).",
+        "operationId": "AlertCustomSounds_GetSounds",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertCustomSoundResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/alert-sounds/{id}/stream": {
+      "get": {
+        "tags": [
+          "V4 Alert Sounds"
+        ],
+        "summary": "Stream the raw audio bytes for a custom sound.",
+        "operationId": "AlertCustomSounds_StreamSound",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v4/alert-sounds/{id}": {
+      "delete": {
+        "tags": [
+          "V4 Alert Sounds"
+        ],
+        "summary": "Delete a custom sound.",
+        "operationId": "AlertCustomSounds_DeleteSound",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetSounds"
+        ]
+      }
+    },
     "/api/v4/alert-invites": {
       "post": {
         "tags": [
@@ -3393,6 +3559,138 @@
         "responses": {
           "204": {
             "description": ""
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetActiveAlerts"
+        ]
+      }
+    },
+    "/api/v4/alerts/quiet-hours": {
+      "get": {
+        "tags": [
+          "V4 Alerts"
+        ],
+        "summary": "Get the current quiet hours configuration for the tenant.",
+        "operationId": "Alerts_GetQuietHours",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuietHoursResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "put": {
+        "tags": [
+          "V4 Alerts"
+        ],
+        "summary": "Update quiet hours configuration for the tenant.",
+        "operationId": "Alerts_UpdateQuietHours",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQuietHoursRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetQuietHours"
+        ]
+      }
+    },
+    "/api/v4/alerts/instances/{instanceId}/snooze": {
+      "post": {
+        "tags": [
+          "V4 Alerts"
+        ],
+        "summary": "Snooze an alert instance for the specified duration.",
+        "operationId": "Alerts_SnoozeInstance",
+        "parameters": [
+          {
+            "name": "instanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnoozeRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "x-remote-type": "command",
@@ -27388,6 +27686,30 @@
           }
         }
       },
+      "AlertCustomSoundResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "fileSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "AlertInviteResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -27467,6 +27789,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "severity": {
+            "type": "string"
+          },
+          "clientConfiguration": {},
           "schedules": {
             "type": "array",
             "items": {
@@ -27592,6 +27918,13 @@
             "type": "integer",
             "format": "int32"
           },
+          "severity": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientConfiguration": {
+            "nullable": true
+          },
           "schedules": {
             "type": "array",
             "nullable": true,
@@ -27709,6 +28042,13 @@
           "sortOrder": {
             "type": "integer",
             "format": "int32"
+          },
+          "severity": {
+            "type": "string",
+            "nullable": true
+          },
+          "clientConfiguration": {
+            "nullable": true
           },
           "schedules": {
             "type": "array",
@@ -27865,6 +28205,56 @@
           "acknowledgedBy": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "QuietHoursResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "overrideCritical": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateQuietHoursRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "startTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "endTime": {
+            "type": "string",
+            "nullable": true
+          },
+          "overrideCritical": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SnoozeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "minutes": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

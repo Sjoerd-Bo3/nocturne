@@ -8,9 +8,9 @@
   import { Input } from "$lib/components/ui/input";
   import { Checkbox } from "$lib/components/ui/checkbox";
   import { Check } from "lucide-svelte";
-  import { CompletionReason, TrackerCategory, DeviceEventType } from "$api";
+  import { CompletionReason, TrackerCategory } from "$api";
   import * as trackersRemote from "$api/generated/trackers.generated.remote";
-  import { create as createDeviceEvent } from "$api/generated/deviceEvents.generated.remote";
+  import { create as createDeviceEventForm } from "$api/generated/deviceEvents.generated.remote";
 
   interface TrackerCompletionDialogProps {
     open: boolean;
@@ -45,6 +45,12 @@
   let completedAt = $state("");
   let startAnother = $state(false);
   let isSubmitting = $state(false);
+
+  // Hidden form for device event creation
+  let deviceEventFormRef = $state<HTMLFormElement | null>(null);
+  let deviceEventMills = $state(0);
+  let deviceEventEventType = $state<string>("");
+  let deviceEventNotes = $state<string>("");
 
   // Get default completion reason based on tracker category
   function getDefaultReasonForCategory(
@@ -178,14 +184,12 @@
       }
 
       // Create device event if configured
-      if (completionEventType) {
-        const mills = completedAt ? new Date(completedAt).getTime() : Date.now();
-        await createDeviceEvent({
-          eventType: completionEventType as DeviceEventType,
-          mills,
-          notes: completionNotes || undefined,
-          app: "Nocturne Tracker",
-        });
+      if (completionEventType && deviceEventFormRef) {
+        deviceEventMills = completedAt ? new Date(completedAt).getTime() : Date.now();
+        deviceEventEventType = completionEventType;
+        deviceEventNotes = completionNotes || "";
+        await tick();
+        deviceEventFormRef.requestSubmit();
       }
 
       open = false;
@@ -203,6 +207,22 @@
     onClose();
   }
 </script>
+
+<!-- Hidden device event form -->
+<form
+  bind:this={deviceEventFormRef}
+  class="hidden"
+  {...createDeviceEventForm.enhance(async ({ submit }) => {
+    await submit();
+  })}
+>
+  <input type="hidden" name="n:mills" value={deviceEventMills} />
+  <input type="hidden" name="eventType" value={deviceEventEventType} />
+  {#if deviceEventNotes}
+    <input type="hidden" name="notes" value={deviceEventNotes} />
+  {/if}
+  <input type="hidden" name="app" value="Nocturne Tracker" />
+</form>
 
 <Dialog.Root bind:open>
   <Dialog.Content>

@@ -8,6 +8,7 @@ import {
   AlertInvitesClient,
   AlertRulesClient,
   AlertsClient,
+  AlertCustomSoundsClient,
   AlexaClient,
   AnalyticsClient,
   ApsSnapshotClient,
@@ -95,6 +96,7 @@ export class ApiClient {
   public readonly alertInvites: AlertInvitesClient;
   public readonly alertRules: AlertRulesClient;
   public readonly alerts: AlertsClient;
+  public readonly alertSounds: AlertCustomSoundsClient;
   public readonly alexa: AlexaClient;
   public readonly analytics: AnalyticsClient;
   public readonly aPSSnapshots: ApsSnapshotClient;
@@ -182,6 +184,7 @@ export class ApiClient {
     this.alertInvites = new AlertInvitesClient(apiBaseUrl, http);
     this.alertRules = new AlertRulesClient(apiBaseUrl, http);
     this.alerts = new AlertsClient(apiBaseUrl, http);
+    this.alertSounds = new AlertCustomSoundsClient(apiBaseUrl, http);
     this.alexa = new AlexaClient(apiBaseUrl, http);
     this.analytics = new AnalyticsClient(apiBaseUrl, http);
     this.aPSSnapshots = new ApsSnapshotClient(apiBaseUrl, http);
