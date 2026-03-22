@@ -402,6 +402,7 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<Nocturne.API.Services.Alerts.Providers.WebPushProvider>();
         services.AddScoped<Nocturne.API.Services.Alerts.Providers.WebhookProvider>();
         services.AddScoped<Nocturne.API.Services.Alerts.Providers.ChatBotProvider>();
+        services.AddHttpClient("ChatBot");
 
         // Chat identity
         services.AddScoped<Nocturne.API.Services.Chat.ChatIdentityService>();

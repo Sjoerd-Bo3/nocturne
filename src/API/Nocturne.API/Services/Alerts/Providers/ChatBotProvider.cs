@@ -1,19 +1,13 @@
+using System.Net.Http.Json;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services.Alerts.Providers;
 
-/// <summary>
-/// Delivers alert payloads to chat platform channels (Discord, Slack, Telegram, WhatsApp)
-/// by broadcasting a SignalR event that the connected chat bot picks up and forwards
-/// to the appropriate platform.
-/// </summary>
 internal sealed class ChatBotProvider(
-    ISignalRBroadcastService broadcastService,
+    IHttpClientFactory httpClientFactory,
+    IConfiguration configuration,
     ILogger<ChatBotProvider> logger)
 {
-    /// <summary>
-    /// Channel types handled by the chat bot provider.
-    /// </summary>
     public static readonly HashSet<string> SupportedChannelTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "discord_dm",
@@ -27,25 +21,37 @@ internal sealed class ChatBotProvider(
 
     public async Task SendAsync(Guid deliveryId, string channelType, string destination, AlertPayload payload, CancellationToken ct)
     {
+        var webUrl = configuration["WEB_URL"];
+        if (string.IsNullOrEmpty(webUrl))
+        {
+            logger.LogWarning("WEB_URL not configured, cannot dispatch to chat bot");
+            return;
+        }
+
         try
         {
-            await broadcastService.BroadcastAlertEventAsync("alert_dispatch", new
+            var client = httpClientFactory.CreateClient("ChatBot");
+            var dispatchUrl = $"{webUrl.TrimEnd('/')}/api/bot/dispatch";
+
+            var response = await client.PostAsJsonAsync(dispatchUrl, new
             {
                 DeliveryId = deliveryId,
                 ChannelType = channelType,
                 Destination = destination,
                 Payload = payload,
-            });
+            }, ct);
+
+            response.EnsureSuccessStatusCode();
 
             logger.LogDebug(
-                "Chat bot alert dispatched for delivery {DeliveryId} via {ChannelType} for instance {InstanceId}",
-                deliveryId, channelType, payload.InstanceId);
+                "Chat bot alert dispatched for delivery {DeliveryId} via {ChannelType}",
+                deliveryId, channelType);
         }
         catch (Exception ex)
         {
             logger.LogError(ex,
-                "Failed to dispatch chat bot alert for delivery {DeliveryId} via {ChannelType} for instance {InstanceId}",
-                deliveryId, channelType, payload.InstanceId);
+                "Failed to dispatch chat bot alert for delivery {DeliveryId} via {ChannelType}",
+                deliveryId, channelType);
             throw;
         }
     }
