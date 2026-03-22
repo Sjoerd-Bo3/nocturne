@@ -18,6 +18,7 @@
   import * as alarmState from "$lib/stores/alarm-state.svelte";
   import AlarmActiveView from "$lib/components/settings/alarm-preview/AlarmActiveView.svelte";
   import EmergencyOverlay from "$lib/components/settings/alarm-preview/EmergencyOverlay.svelte";
+  import AlertBanner from "$lib/components/alerts/AlertBanner.svelte";
 
   const activeAlarm = $derived(alarmState.getActiveAlarm());
   const alarmIsFlashing = $derived(alarmState.getIsFlashing());
@@ -227,6 +228,7 @@
     <AppSidebar user={data.user} tenantCount={data.tenantCount} />
     <MobileHeader />
     <Sidebar.Inset>
+      <AlertBanner />
       <main class="flex-1 overflow-auto">
         <svelte:boundary>
           {@render children()}

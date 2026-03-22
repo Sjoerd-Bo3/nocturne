@@ -219,7 +219,7 @@
           href: "/settings/data-quality",
           icon: ShieldCheck,
         },
-        { title: "Alarms", href: "/settings/alarms", icon: Bell },
+        { title: "Alerts", href: "/settings/alerts", icon: Bell },
         {
           title: "Notifications & Trackers",
           href: "/settings/trackers",
