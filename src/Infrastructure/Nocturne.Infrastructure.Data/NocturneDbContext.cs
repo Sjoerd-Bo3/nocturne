@@ -399,6 +399,11 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<AlertInviteEntity> AlertInvites { get; set; }
 
+    /// <summary>
+    /// Gets or sets the AlertCustomSounds table for user-uploaded alert sounds
+    /// </summary>
+    public DbSet<AlertCustomSoundEntity> AlertCustomSounds { get; set; }
+
 
     /// <summary>
     /// Configure the database model and relationships
@@ -2199,6 +2204,8 @@ public class NocturneDbContext : DbContext
             entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
             entity.Property(e => e.ConditionParams).HasColumnType("jsonb").HasDefaultValue("{}");
             entity.Property(e => e.ConfirmationReadings).HasDefaultValue(1);
+            entity.Property(e => e.Severity).HasDefaultValue("normal");
+            entity.Property(e => e.ClientConfiguration).HasColumnType("jsonb").HasDefaultValue("{}");
             entity.Property(e => e.IsEnabled).HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
@@ -2328,6 +2335,14 @@ public class NocturneDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.EscalationStepId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AlertCustomSoundEntity
+        modelBuilder.Entity<AlertCustomSoundEntity>(entity =>
+        {
+            entity.ToTable("alert_custom_sounds");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
     }

@@ -44,6 +44,12 @@ public class AlertInstanceEntity : ITenantScoped
     [Column("next_escalation_at")]
     public DateTime? NextEscalationAt { get; set; }
 
+    [Column("snoozed_until")]
+    public DateTime? SnoozedUntil { get; set; }
+
+    [Column("snooze_count")]
+    public int SnoozeCount { get; set; }
+
     // Navigation
     public AlertExcursionEntity? AlertExcursion { get; set; }
     public AlertScheduleEntity? AlertSchedule { get; set; }

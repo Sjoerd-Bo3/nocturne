@@ -49,6 +49,20 @@ public class AlertRuleEntity : ITenantScoped
     [Column("confirmation_readings")]
     public int ConfirmationReadings { get; set; } = 1;
 
+    /// <summary>
+    /// Alert severity. "normal" or "critical". Critical alerts bypass quiet hours.
+    /// </summary>
+    [Column("severity")]
+    [MaxLength(16)]
+    public string Severity { get; set; } = "normal";
+
+    /// <summary>
+    /// Client-side presentation config (audio, visual, snooze). Stored as JSONB.
+    /// The server stores this but does not make decisions based on it.
+    /// </summary>
+    [Column("client_configuration", TypeName = "jsonb")]
+    public string ClientConfiguration { get; set; } = "{}";
+
     [Column("is_enabled")]
     public bool IsEnabled { get; set; } = true;
 

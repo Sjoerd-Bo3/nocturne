@@ -69,6 +69,24 @@ public class TenantEntity
     [MaxLength(128)]
     public string? SubjectName { get; set; }
 
+    /// <summary>
+    /// Quiet hours start time. Null means quiet hours disabled.
+    /// </summary>
+    [Column("quiet_hours_start")]
+    public TimeOnly? QuietHoursStart { get; set; }
+
+    /// <summary>
+    /// Quiet hours end time.
+    /// </summary>
+    [Column("quiet_hours_end")]
+    public TimeOnly? QuietHoursEnd { get; set; }
+
+    /// <summary>
+    /// Whether critical-severity alerts bypass quiet hours.
+    /// </summary>
+    [Column("quiet_hours_override_critical")]
+    public bool QuietHoursOverrideCritical { get; set; } = true;
+
     [Column("sys_created_at")]
     public DateTime SysCreatedAt { get; set; } = DateTime.UtcNow;
 
