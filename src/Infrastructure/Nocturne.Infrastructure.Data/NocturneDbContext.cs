@@ -404,6 +404,11 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<AlertCustomSoundEntity> AlertCustomSounds { get; set; }
 
+    /// <summary>
+    /// Gets or sets the ChatIdentityLinks table for platform identity mappings
+    /// </summary>
+    public DbSet<ChatIdentityLinkEntity> ChatIdentityLinks { get; set; }
+
 
     /// <summary>
     /// Configure the database model and relationships
