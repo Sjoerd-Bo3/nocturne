@@ -12,6 +12,7 @@ public static class ServiceNames
     public const string WebSocketBridge = "websocket-bridge";
     public const string CompatibilityProxy = "compatibility-proxy";
     public const string DemoService = "demo-service";
+    public const string NocturneBot = "nocturne-bot";
 
     // Data Services
     public const string MongoDb = "nightscout-mongodb";
@@ -43,6 +44,7 @@ public static class ServiceNames
         public const string Api = "nocturne-api";
         public const string Web = "nocturne-web";
         public const string WebSocketBridge = "nocturne-websocket-bridge";
+        public const string Bot = "nocturne-bot";
     }
 
     // Kubernetes Service Names
@@ -52,6 +54,7 @@ public static class ServiceNames
         public const string Api = "nocturne-api-service";
         public const string Web = "nocturne-web-service";
         public const string WebSocketBridge = "nocturne-websocket-bridge-service";
+        public const string Bot = "nocturne-bot-service";
     }
 
     /// <summary>
