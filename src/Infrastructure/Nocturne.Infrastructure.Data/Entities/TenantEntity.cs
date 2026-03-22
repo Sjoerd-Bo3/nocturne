@@ -46,6 +46,29 @@ public class TenantEntity
     [Column("is_default")]
     public bool IsDefault { get; set; }
 
+    /// <summary>
+    /// Timestamp of the most recent glucose reading for this tenant.
+    /// Updated on every glucose ingest. Used by signal loss detection.
+    /// </summary>
+    [Column("last_reading_at")]
+    public DateTime? LastReadingAt { get; set; }
+
+    /// <summary>
+    /// IANA timezone for this tenant (e.g. "America/New_York").
+    /// Used for schedule evaluation and display.
+    /// </summary>
+    [Column("timezone")]
+    [MaxLength(64)]
+    public string Timezone { get; set; } = "UTC";
+
+    /// <summary>
+    /// Preferred name for the person being monitored (e.g. "Alex").
+    /// Used in alert payloads. Falls back to DisplayName if null.
+    /// </summary>
+    [Column("subject_name")]
+    [MaxLength(128)]
+    public string? SubjectName { get; set; }
+
     [Column("sys_created_at")]
     public DateTime SysCreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -1,8 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
+using Nocturne.Infrastructure.Data;
 
 namespace Nocturne.API.Services.ConnectorPublishing;
 
@@ -10,15 +13,21 @@ internal sealed class GlucosePublisher : IGlucosePublisher
 {
     private readonly IEntryService _entryService;
     private readonly ISensorGlucoseRepository _sensorGlucoseRepository;
+    private readonly IDbContextFactory<NocturneDbContext> _contextFactory;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<GlucosePublisher> _logger;
 
     public GlucosePublisher(
         IEntryService entryService,
         ISensorGlucoseRepository sensorGlucoseRepository,
+        IDbContextFactory<NocturneDbContext> contextFactory,
+        ITenantAccessor tenantAccessor,
         ILogger<GlucosePublisher> logger)
     {
         _entryService = entryService ?? throw new ArgumentNullException(nameof(entryService));
         _sensorGlucoseRepository = sensorGlucoseRepository ?? throw new ArgumentNullException(nameof(sensorGlucoseRepository));
+        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+        _tenantAccessor = tenantAccessor ?? throw new ArgumentNullException(nameof(tenantAccessor));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -30,6 +39,7 @@ internal sealed class GlucosePublisher : IGlucosePublisher
         try
         {
             await _entryService.CreateEntriesAsync(entries, cancellationToken);
+            await UpdateLastReadingAtAsync(cancellationToken);
             return true;
         }
         catch (OperationCanceledException) { throw; }
@@ -51,6 +61,7 @@ internal sealed class GlucosePublisher : IGlucosePublisher
             if (recordList.Count == 0) return true;
 
             await _sensorGlucoseRepository.BulkCreateAsync(recordList, cancellationToken);
+            await UpdateLastReadingAtAsync(cancellationToken);
 
             _logger.LogDebug("Published {Count} SensorGlucose records for {Source}", recordList.Count, source);
             return true;
@@ -86,5 +97,26 @@ internal sealed class GlucosePublisher : IGlucosePublisher
         CancellationToken cancellationToken = default)
     {
         return await _sensorGlucoseRepository.GetLatestTimestampAsync(source, cancellationToken);
+    }
+
+    /// <summary>
+    /// Updates the tenant's LastReadingAt timestamp after successful glucose publish.
+    /// Uses raw SQL to avoid loading the full tenant entity.
+    /// </summary>
+    private async Task UpdateLastReadingAtAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var tenantId = _tenantAccessor.TenantId;
+            if (tenantId == Guid.Empty) return;
+
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            await context.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE tenants SET last_reading_at = {DateTime.UtcNow} WHERE id = {tenantId}", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to update tenant LastReadingAt timestamp");
+        }
     }
 }
