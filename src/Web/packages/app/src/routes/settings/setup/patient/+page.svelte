@@ -24,8 +24,9 @@
 <WizardShell
   title="Patient Record"
   description="Tell us a bit about yourself and your diabetes. Only diabetes type is required."
-  currentStep={1}
-  totalSteps={6}
+  currentStep={2}
+  totalSteps={7}
+  prevHref="/settings/setup/passkey"
   nextHref="/settings/setup/devices"
   {saveDisabled}
   {saving}

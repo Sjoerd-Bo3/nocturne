@@ -320,8 +320,8 @@
 <WizardShell
   title="Therapy Profile"
   description="Configure your therapy profile with basal rates, carb ratios, sensitivity factors, and target ranges."
-  currentStep={6}
-  totalSteps={6}
+  currentStep={7}
+  totalSteps={7}
   prevHref="/settings/setup/connectors"
   nextHref="/settings"
   showSkip={true}

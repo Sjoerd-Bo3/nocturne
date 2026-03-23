@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as Card from "$lib/components/ui/card";
-  import { KeyRound } from "lucide-svelte";
+  import { Fingerprint } from "lucide-svelte";
   import { getAuthState } from "../auth.remote";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
@@ -19,12 +19,6 @@
       goto(returnUrl, { replaceState: true });
     }
   });
-
-  // Check if user just registered or reset password
-  const justRegistered = $derived(
-    page.url.searchParams.get("registered") === "true"
-  );
-  const passwordReset = $derived(page.url.searchParams.get("reset") === "true");
 </script>
 
 <svelte:head>
@@ -37,7 +31,7 @@
       <div
         class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10"
       >
-        <KeyRound class="h-6 w-6 text-primary" />
+        <Fingerprint class="h-6 w-6 text-primary" />
       </div>
       <Card.Title class="text-2xl font-bold">
         Welcome to Nocturne
@@ -48,7 +42,7 @@
     </Card.Header>
 
     <Card.Content>
-      <LoginForm {returnUrl} {justRegistered} {passwordReset} />
+      <LoginForm {returnUrl} />
     </Card.Content>
 
     <Card.Footer class="flex flex-col space-y-2">

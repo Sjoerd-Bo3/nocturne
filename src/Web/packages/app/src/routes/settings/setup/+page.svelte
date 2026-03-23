@@ -2,6 +2,7 @@
   import * as Card from "$lib/components/ui/card";
   import { Badge } from "$lib/components/ui/badge";
   import {
+    Fingerprint,
     HeartPulse,
     Smartphone,
     Syringe,
@@ -41,6 +42,13 @@
   };
 
   const steps: SetupStep[] = [
+    {
+      title: "Passkey",
+      description: "Set up passwordless authentication with a passkey",
+      icon: Fingerprint,
+      href: "/settings/setup/passkey",
+      required: true,
+    },
     {
       title: "Patient Record",
       description: "Set your diabetes type and clinical information",
@@ -88,6 +96,10 @@
   // ── Completion inference ──────────────────────────────────────────
 
   const completionStatus = $derived.by(() => {
+    // Passkey: considered complete if the user is authenticated
+    // (they must have a passkey or OIDC session to reach this page)
+    const passkeyComplete = true;
+
     const patientComplete = !!patientRecord.current?.diabetesType;
 
     const devicesComplete =
@@ -110,6 +122,7 @@
       (profileSummary.current?.basalSchedules ?? []).length > 0;
 
     return [
+      passkeyComplete,
       patientComplete,
       devicesComplete,
       insulinsComplete,
@@ -129,7 +142,7 @@
   <div>
     <h1 class="text-2xl font-bold tracking-tight">Setup</h1>
     <p class="text-muted-foreground">
-      {requiredComplete} of 4 required steps complete
+      {requiredComplete} of 5 required steps complete
     </p>
   </div>
 

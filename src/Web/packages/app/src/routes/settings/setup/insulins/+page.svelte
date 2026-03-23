@@ -14,8 +14,8 @@
 <WizardShell
   title="Your Insulins"
   description="Add the insulins you use. You can always update these later."
-  currentStep={3}
-  totalSteps={6}
+  currentStep={4}
+  totalSteps={7}
   prevHref="/settings/setup/devices"
   nextHref="/settings/setup/uploaders"
   showSkip={true}
