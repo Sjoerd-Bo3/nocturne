@@ -161,6 +161,8 @@ public class PatientRecordController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var created = await _insulinRepo.CreateAsync(model, cancellationToken);
+        if (created.IsPrimary)
+            await _insulinRepo.SetPrimaryAsync(created.Id, cancellationToken);
         return CreatedAtAction(nameof(GetInsulins), created);
     }
 
@@ -176,6 +178,8 @@ public class PatientRecordController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var updated = await _insulinRepo.UpdateAsync(id, model, cancellationToken);
+        if (updated.IsPrimary)
+            await _insulinRepo.SetPrimaryAsync(updated.Id, cancellationToken);
         return Ok(updated);
     }
 

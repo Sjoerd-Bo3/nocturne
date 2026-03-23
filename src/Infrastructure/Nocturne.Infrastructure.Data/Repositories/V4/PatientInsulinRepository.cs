@@ -73,4 +73,55 @@ public class PatientInsulinRepository : IPatientInsulinRepository
         _context.PatientInsulins.Remove(entity);
         await _context.SaveChangesAsync(ct);
     }
+
+    public async Task<PatientInsulin?> GetPrimaryBolusInsulinAsync(CancellationToken ct = default)
+    {
+        var entity = await _context.PatientInsulins
+            .AsNoTracking()
+            .Where(e => e.IsCurrent && e.IsPrimary && (e.Role == "Bolus" || e.Role == "Both"))
+            .FirstOrDefaultAsync(ct);
+
+        return entity is null ? null : PatientInsulinMapper.ToDomainModel(entity);
+    }
+
+    public async Task<PatientInsulin?> GetPrimaryBasalInsulinAsync(CancellationToken ct = default)
+    {
+        var entity = await _context.PatientInsulins
+            .AsNoTracking()
+            .Where(e => e.IsCurrent && e.IsPrimary && (e.Role == "Basal" || e.Role == "Both"))
+            .FirstOrDefaultAsync(ct);
+
+        return entity is null ? null : PatientInsulinMapper.ToDomainModel(entity);
+    }
+
+    public async Task SetPrimaryAsync(Guid insulinId, CancellationToken ct = default)
+    {
+        var target = await _context.PatientInsulins.FindAsync([insulinId], ct)
+            ?? throw new KeyNotFoundException($"PatientInsulin {insulinId} not found");
+
+        // Determine which roles need to have their primary cleared
+        var rolesToClear = target.Role switch
+        {
+            "Bolus" => new[] { "Bolus", "Both" },
+            "Basal" => new[] { "Basal", "Both" },
+            "Both" => new[] { "Bolus", "Basal", "Both" },
+            _ => new[] { target.Role }
+        };
+
+        // Clear IsPrimary on all other insulins that share the same role scope
+        var conflicting = await _context.PatientInsulins
+            .Where(e => e.Id != insulinId && e.IsPrimary && rolesToClear.Contains(e.Role))
+            .ToListAsync(ct);
+
+        foreach (var entity in conflicting)
+        {
+            entity.IsPrimary = false;
+            entity.SysUpdatedAt = DateTime.UtcNow;
+        }
+
+        target.IsPrimary = true;
+        target.SysUpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+    }
 }

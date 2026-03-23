@@ -10,4 +10,7 @@ public interface IPatientInsulinRepository
     Task<PatientInsulin> CreateAsync(PatientInsulin model, CancellationToken ct = default);
     Task<PatientInsulin> UpdateAsync(Guid id, PatientInsulin model, CancellationToken ct = default);
     Task DeleteAsync(Guid id, CancellationToken ct = default);
+    Task<PatientInsulin?> GetPrimaryBolusInsulinAsync(CancellationToken ct = default);
+    Task<PatientInsulin?> GetPrimaryBasalInsulinAsync(CancellationToken ct = default);
+    Task SetPrimaryAsync(Guid insulinId, CancellationToken ct = default);
 }
