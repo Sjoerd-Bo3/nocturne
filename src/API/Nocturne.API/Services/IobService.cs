@@ -284,12 +284,17 @@ public class IobService : IIobService
         }
 
         var currentTime = time ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var dia = profile?.GetDIA(currentTime, specProfile) ?? DEFAULT_DIA;
+
+        // Per-treatment insulin context takes priority over profile DIA/peak
+        var dia = treatment.InsulinContext?.Dia
+            ?? profile?.GetDIA(currentTime, specProfile)
+            ?? DEFAULT_DIA;
+        var peak = treatment.InsulinContext?.Peak
+            ?? PEAK_MINUTES;
         var sens = profile?.GetSensitivity(currentTime, specProfile) ?? 50.0;
 
         // Exact legacy algorithm constants
         var scaleFactor = SCALE_FACTOR_BASE / dia;
-        var peak = PEAK_MINUTES;
 
         var bolusTime = treatment.Mills;
         var minAgo = (scaleFactor * (currentTime - bolusTime)) / 1000.0 / 60.0;
@@ -312,7 +317,7 @@ public class IobService : IIobService
         // After peak (75-180 minutes): curved decline
         if (minAgo < MAX_IOB_MINUTES)
         {
-            var x2 = (minAgo - 75.0) / 5.0;
+            var x2 = (minAgo - peak) / 5.0;
             var iobContrib =
                 treatment.Insulin.Value * (0.001323 * x2 * x2 - 0.054233 * x2 + 0.55556);
             var activityContrib =

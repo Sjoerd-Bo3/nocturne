@@ -487,6 +487,133 @@ public class IobServiceTests
 
     #endregion
 
+    #region Per-Treatment Insulin Context Tests
+
+    [Fact]
+    public void CalcTreatment_WithInsulinContext_ShouldUseContextDia()
+    {
+        // Arrange: treatment with InsulinContext { Dia = 5.0, Peak = 90 }
+        // With a 5-hour DIA, insulin should still be active at 3 hours
+        var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var treatment = new Treatment
+        {
+            Mills = time - 1,
+            Insulin = 1.0,
+            InsulinContext = new TreatmentInsulinContext
+            {
+                PatientInsulinId = Guid.NewGuid(),
+                InsulinName = "Fiasp",
+                Dia = 5.0,
+                Peak = 90,
+                Curve = "rapid-acting",
+                Concentration = 100,
+            },
+        };
+
+        // Act: calculate IOB at 3 hours after treatment
+        var result = _iobService.CalcTreatment(treatment, _testProfile, time + 3 * 60 * 60 * 1000);
+
+        // Assert: IOB is NOT zero (5.0hr DIA means insulin still active at 3hrs)
+        // With default 3hr DIA this would be zero, proving the context DIA is used
+        Assert.True(result.IobContrib > 0, "IOB should still be active at 3hrs with 5hr DIA");
+    }
+
+    [Fact]
+    public void CalcTreatment_WithoutInsulinContext_ShouldUseProfileDia()
+    {
+        // Arrange: treatment with null InsulinContext — should use profile DIA (3.0)
+        var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var treatment = new Treatment
+        {
+            Mills = time - 1,
+            Insulin = 1.0,
+            InsulinContext = null,
+        };
+
+        // Act: calculate IOB at 3 hours (at DIA boundary for default 3hr profile)
+        var result = _iobService.CalcTreatment(treatment, _testProfile, time + 3 * 60 * 60 * 1000);
+
+        // Assert: uses profile DIA of 3.0 — insulin fully decayed at 3 hours
+        Assert.Equal(0.0, result.IobContrib, 3);
+    }
+
+    [Fact]
+    public void CalcTreatment_WithInsulinContext_ShouldUseContextPeak()
+    {
+        // Arrange: treatment with a later peak (120 min vs default 75 min)
+        var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var treatmentWithContext = new Treatment
+        {
+            Mills = time - 1,
+            Insulin = 1.0,
+            InsulinContext = new TreatmentInsulinContext
+            {
+                PatientInsulinId = Guid.NewGuid(),
+                InsulinName = "Regular",
+                Dia = 3.0, // Same DIA as profile to isolate peak effect
+                Peak = 120,
+                Curve = "rapid-acting",
+                Concentration = 100,
+            },
+        };
+        var treatmentWithoutContext = new Treatment
+        {
+            Mills = time - 1,
+            Insulin = 1.0,
+            InsulinContext = null,
+        };
+
+        // Act: calculate at 80 minutes (after default 75-min peak but before 120-min peak)
+        var atTime = time + 80 * 60 * 1000;
+        var resultWithContext = _iobService.CalcTreatment(treatmentWithContext, _testProfile, atTime);
+        var resultWithoutContext = _iobService.CalcTreatment(treatmentWithoutContext, _testProfile, atTime);
+
+        // Assert: different peak produces different IOB curves at the same time point
+        Assert.NotEqual(
+            Math.Round(resultWithContext.IobContrib, 5),
+            Math.Round(resultWithoutContext.IobContrib, 5)
+        );
+    }
+
+    [Fact]
+    public void FromTreatments_MixedContextAndNoContext_ShouldUseRespectiveDia()
+    {
+        // Arrange: two treatments — one with 5hr context DIA, one with default profile DIA
+        var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var treatments = new List<Treatment>
+        {
+            new()
+            {
+                Mills = time - 1,
+                Insulin = 1.0,
+                InsulinContext = new TreatmentInsulinContext
+                {
+                    PatientInsulinId = Guid.NewGuid(),
+                    InsulinName = "Fiasp",
+                    Dia = 5.0,
+                    Peak = 90,
+                    Curve = "rapid-acting",
+                    Concentration = 100,
+                },
+            },
+            new()
+            {
+                Mills = time - 1,
+                Insulin = 1.0,
+                InsulinContext = null, // Uses profile DIA = 3.0
+            },
+        };
+
+        // Act: at 3 hours, the profile-DIA treatment is fully decayed but the 5hr one isn't
+        var result = _iobService.FromTreatments(treatments, _testProfile, time + 3 * 60 * 60 * 1000);
+
+        // Assert: IOB > 0 (from the 5hr DIA treatment) but < 1.0 (one treatment fully decayed)
+        Assert.True(result.Iob > 0, "Should have IOB from the 5hr DIA treatment");
+        Assert.True(result.Iob < 1.0, "Should be less than full dose since one treatment is fully decayed");
+    }
+
+    #endregion
+
     #region Exact Legacy Test Cases
 
     [Fact]
