@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Nocturne.Core.Models.Attributes;
 using Nocturne.Core.Models.Serializers;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Models;
 
@@ -781,4 +782,13 @@ public class Treatment : ProcessableDocumentBase
     [JsonPropertyName("sources")]
     [NocturneOnly]
     public string[]? Sources { get; set; }
+
+    /// <summary>
+    /// Gets or sets the snapshot of insulin pharmacokinetic properties at treatment delivery time.
+    /// Captures DIA, peak, curve, and concentration so IOB calculations use the correct values
+    /// regardless of future changes to the patient's insulin configuration.
+    /// </summary>
+    [NocturneOnly]
+    [JsonPropertyName("insulinContext")]
+    public TreatmentInsulinContext? InsulinContext { get; set; }
 }
