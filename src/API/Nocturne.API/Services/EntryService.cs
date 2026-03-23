@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
@@ -8,6 +7,7 @@ using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Cache.Constants;
 using Nocturne.Infrastructure.Cache.Keys;
 using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Models.Entries;
 
 namespace Nocturne.API.Services;
 
@@ -83,14 +83,14 @@ public class EntryService : IEntryService
         var actualSkip = skip ?? 0;
 
         // Build query with demo mode filter at database level
-        var findQuery = BuildDemoModeFilterQuery(find);
+        var findQuery = EntryDomainLogic.BuildDemoModeFilterQuery(_demoModeService.IsEnabled, find);
 
         // Parse time range from find query for V4 projection
-        var (fromMills, toMills) = ParseTimeRangeFromFind(find);
+        var (fromMills, toMills) = EntryDomainLogic.ParseTimeRangeFromFind(find);
 
         // Cache recent entries for common queries (skip = 0 and common counts)
         // Include demo mode in cache key to avoid mixing demo/non-demo data
-        if (actualSkip == 0 && IsCommonEntryCount(actualCount))
+        if (actualSkip == 0 && EntryDomainLogic.IsCommonEntryCount(actualCount))
         {
             var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
             var cacheKey =
@@ -134,7 +134,7 @@ public class EntryService : IEntryService
                 cancellationToken
             );
 
-            return MergeAndDeduplicateEntries(legacyEntries, projectedEntries, actualCount, actualSkip);
+            return EntryDomainLogic.MergeAndDeduplicate(legacyEntries, projectedEntries, actualCount, actualSkip);
         }
 
         // Non-cached path for non-standard queries — fetch from skip=0 so the merge can
@@ -156,7 +156,7 @@ public class EntryService : IEntryService
             cancellationToken
         );
 
-        return MergeAndDeduplicateEntries(allLegacyEntries, allProjectedEntries, actualCount, actualSkip);
+        return EntryDomainLogic.MergeAndDeduplicate(allLegacyEntries, allProjectedEntries, actualCount, actualSkip);
     }
 
     /// <inheritdoc />
@@ -168,14 +168,14 @@ public class EntryService : IEntryService
     )
     {
         // Build query with demo mode filter at database level
-        var findQuery = BuildDemoModeFilterQuery(null);
+        var findQuery = EntryDomainLogic.BuildDemoModeFilterQuery(_demoModeService.IsEnabled, null);
 
         // Only project SGV entries – SensorGlucose maps to type "sgv"
-        var shouldProject = string.IsNullOrEmpty(type) || type == "sgv";
+        var shouldProject = EntryDomainLogic.ShouldProject(type);
 
         // Cache recent entries for common queries (skip = 0 and common counts)
         // Include demo mode in cache key to avoid mixing demo/non-demo data
-        if (skip == 0 && IsCommonEntryCount(count))
+        if (skip == 0 && EntryDomainLogic.IsCommonEntryCount(count))
         {
             var demoSuffix = _demoModeService.IsEnabled ? ":demo" : "";
             var cacheKey =
@@ -220,7 +220,7 @@ public class EntryService : IEntryService
                 cancellationToken
             );
 
-            return MergeAndDeduplicateEntries(legacyEntries, projectedEntries, count, skip);
+            return EntryDomainLogic.MergeAndDeduplicate(legacyEntries, projectedEntries, count, skip);
         }
 
         // Non-cached path for non-standard queries — fetch from skip=0 so the merge can
@@ -245,185 +245,7 @@ public class EntryService : IEntryService
             cancellationToken
         );
 
-        return MergeAndDeduplicateEntries(allLegacyEntries, allProjectedEntries, count, skip);
-    }
-
-    /// <summary>
-    /// Determines if the entry count is common enough to cache
-    /// </summary>
-    /// <param name="count">The count to check</param>
-    /// <returns>True if the count is common (10, 50, 100), false otherwise</returns>
-    private static bool IsCommonEntryCount(int count)
-    {
-        return count is 10 or 50 or 100;
-    }
-
-    /// <summary>
-    /// Parse a time range from a MongoDB-style find query JSON string.
-    /// Walks the document looking for numeric $gte / $lte values on any field.
-    /// Returns (null, null) if the query is absent or contains no time constraints.
-    /// </summary>
-    private static (long? from, long? to) ParseTimeRangeFromFind(string? find)
-    {
-        if (string.IsNullOrEmpty(find))
-            return (null, null);
-
-        long? from = null;
-        long? to = null;
-
-        try
-        {
-            using var doc = JsonDocument.Parse(find);
-            foreach (var field in doc.RootElement.EnumerateObject())
-            {
-                if (field.Value.ValueKind != JsonValueKind.Object)
-                    continue;
-
-                foreach (var op in field.Value.EnumerateObject())
-                {
-                    if (op.Value.ValueKind != JsonValueKind.Number)
-                        continue;
-
-                    if (op.Name == "$gte" && op.Value.TryGetInt64(out var gte))
-                        from = gte;
-                    else if (op.Name == "$lte" && op.Value.TryGetInt64(out var lte))
-                        to = lte;
-                }
-            }
-        }
-        catch (JsonException)
-        {
-            // Malformed query — projection will run without time bounds, which is safe.
-        }
-
-        return (from, to);
-    }
-
-    /// <summary>
-    /// Merges legacy entries with V4-projected entries.
-    /// Deduplication rule: if a legacy entry has an Id that matches a V4 record's LegacyId
-    /// the V4 projection is discarded (the legacy entry is canonical).
-    /// Since <see cref="V4ToLegacyProjectionService"/> only returns records with LegacyId == null,
-    /// any Id from a V4-only record will not collide with legacy Ids.  This method therefore
-    /// deduplicates by Mills to avoid timestamp duplicates from concurrent writes.
-    /// </summary>
-    private static IEnumerable<Entry> MergeAndDeduplicateEntries(
-        IEnumerable<Entry> legacyEntries,
-        IEnumerable<Entry> projectedEntries,
-        int count,
-        int skip
-    )
-    {
-        // Build set of legacy entry IDs so we can skip V4 records that already have a legacy row.
-        var legacyList = legacyEntries.ToList();
-        var legacyIds = legacyList.Select(e => e.Id).Where(id => id != null).ToHashSet();
-
-        // Build set of Mills from legacy entries for coarse dedup on timestamp.
-        var legacyMillsSet = legacyList.Select(e => e.Mills).ToHashSet();
-
-        var filteredProjected = projectedEntries
-            .Where(p => !legacyIds.Contains(p.Id) && !legacyMillsSet.Contains(p.Mills));
-
-        return legacyList
-            .Concat(filteredProjected)
-            .OrderByDescending(e => e.Mills)
-            .Skip(skip)
-            .Take(count)
-            .ToList();
-    }
-
-    /// <summary>
-    /// Builds a find query that filters by demo mode.
-    /// This ensures filtering happens at the database level for efficiency.
-    /// </summary>
-    /// <param name="existingQuery">Optional existing query to merge with</param>
-    /// <returns>A JSON find query string with data_source filter</returns>
-    private string BuildDemoModeFilterQuery(string? existingQuery = null)
-    {
-        // When demo mode is enabled, filter for data_source = "demo-service"
-        // When demo mode is disabled, filter for data_source != "demo-service" (null or other sources)
-        string demoFilter;
-        if (_demoModeService.IsEnabled)
-        {
-            demoFilter = $"\"data_source\":\"{Core.Constants.DataSources.DemoService}\"";
-        }
-        else
-        {
-            // Use $ne operator to exclude demo service data
-            demoFilter =
-                $"\"data_source\":{{\"$ne\":\"{Core.Constants.DataSources.DemoService}\"}}";
-        }
-
-        if (string.IsNullOrWhiteSpace(existingQuery) || existingQuery == "{}")
-        {
-            return "{" + demoFilter + "}";
-        }
-
-        // Merge with existing query - insert demo filter into existing JSON object
-        var trimmed = existingQuery.Trim();
-        if (trimmed.StartsWith("{") && trimmed.EndsWith("}"))
-        {
-            var inner = trimmed.Substring(1, trimmed.Length - 2).Trim();
-            if (string.IsNullOrEmpty(inner))
-            {
-                return "{" + demoFilter + "}";
-            }
-            return "{" + demoFilter + "," + inner + "}";
-        }
-
-        // If query doesn't look like JSON, just return demo filter
-        return "{" + demoFilter + "}";
-    }
-
-    /// <summary>
-    /// Filters entries based on demo mode status (legacy client-side filtering).
-    /// This is kept for backward compatibility but database-level filtering is preferred.
-    /// </summary>
-    private IEnumerable<Entry> FilterEntriesByDemoMode(IEnumerable<Entry> entries)
-    {
-        var entriesList = entries.ToList();
-        var demoEntries = entriesList
-            .Where(e => e.DataSource == Core.Constants.DataSources.DemoService)
-            .ToList();
-        var nonDemoEntries = entriesList
-            .Where(e => e.DataSource != Core.Constants.DataSources.DemoService)
-            .ToList();
-
-        _logger.LogDebug(
-            "FilterEntriesByDemoMode: DemoModeEnabled={DemoMode}, TotalEntries={Total}, DemoEntries={Demo}, NonDemoEntries={NonDemo}",
-            _demoModeService.IsEnabled,
-            entriesList.Count,
-            demoEntries.Count,
-            nonDemoEntries.Count
-        );
-
-        if (_demoModeService.IsEnabled)
-        {
-            // In demo mode, ONLY return demo entries - never fall back to real data
-            if (demoEntries.Count > 0)
-            {
-                _logger.LogDebug("Demo mode ON: Returning {Count} demo entries", demoEntries.Count);
-                return demoEntries;
-            }
-            else
-            {
-                // No demo entries available - return empty to avoid exposing real data
-                _logger.LogWarning(
-                    "Demo mode is enabled but no demo entries found. Returning empty results. "
-                        + "Ensure the Demo Service is running and generating data."
-                );
-                return Enumerable.Empty<Entry>();
-            }
-        }
-        else
-        {
-            // Not in demo mode, only show non-demo entries
-            _logger.LogDebug(
-                "Demo mode OFF: Returning {Count} non-demo entries",
-                nonDemoEntries.Count
-            );
-            return nonDemoEntries;
-        }
+        return EntryDomainLogic.MergeAndDeduplicate(allLegacyEntries, allProjectedEntries, count, skip);
     }
 
     /// <inheritdoc />
@@ -551,7 +373,7 @@ public class EntryService : IEntryService
 
         // Fetch from legacy entries table and V4 projection sequentially.
         // They share a scoped DbContext which is not thread-safe for concurrent access.
-        var findQuery = BuildDemoModeFilterQuery(null);
+        var findQuery = EntryDomainLogic.BuildDemoModeFilterQuery(_demoModeService.IsEnabled, null);
         var legacyEntry = (await _entries.GetEntriesWithAdvancedFilterAsync(
             type: "sgv",
             count: 1,
@@ -562,23 +384,7 @@ public class EntryService : IEntryService
         var projectedEntry = await _projectionService.GetLatestProjectedEntryAsync(cancellationToken);
 
         // Return whichever has the higher Mills timestamp.
-        Entry? entry;
-        if (legacyEntry == null && projectedEntry == null)
-        {
-            entry = null;
-        }
-        else if (legacyEntry == null)
-        {
-            entry = projectedEntry;
-        }
-        else if (projectedEntry == null)
-        {
-            entry = legacyEntry;
-        }
-        else
-        {
-            entry = projectedEntry.Mills > legacyEntry.Mills ? projectedEntry : legacyEntry;
-        }
+        var entry = EntryDomainLogic.SelectMostRecent(legacyEntry, projectedEntry);
 
         if (entry != null)
         {
@@ -598,7 +404,7 @@ public class EntryService : IEntryService
     )
     {
         // Add demo mode filter to the existing query
-        var findQuery = BuildDemoModeFilterQuery(find);
+        var findQuery = EntryDomainLogic.BuildDemoModeFilterQuery(_demoModeService.IsEnabled, find);
         var entries = await _entries.GetEntriesWithAdvancedFilterAsync(
             null,
             count,
@@ -623,7 +429,7 @@ public class EntryService : IEntryService
     )
     {
         // Add demo mode filter to the existing query
-        var demoFilteredQuery = BuildDemoModeFilterQuery(findQuery);
+        var demoFilteredQuery = EntryDomainLogic.BuildDemoModeFilterQuery(_demoModeService.IsEnabled, findQuery);
         var entries = await _entries.GetEntriesWithAdvancedFilterAsync(
             type,
             count,
