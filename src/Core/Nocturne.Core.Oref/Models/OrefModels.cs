@@ -51,6 +51,10 @@ public class OrefProfile
     [JsonPropertyName("curve")]
     public string? Curve { get; set; }
 
+    /// <summary>Insulin peak time (minutes)</summary>
+    [JsonPropertyName("peak")]
+    public int? Peak { get; set; }
+
     /// <summary>Carb absorption rate</summary>
     [JsonPropertyName("carbAbsorptionRate")]
     public double? CarbAbsorptionRate { get; set; }
