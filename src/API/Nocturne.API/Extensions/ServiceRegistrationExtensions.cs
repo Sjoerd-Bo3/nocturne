@@ -11,11 +11,13 @@ using Nocturne.Core.Contracts.Alerts;
 using Nocturne.API.Services.Auth;
 using Nocturne.API.Services.BackgroundServices;
 using Nocturne.API.Services.ConnectorPublishing;
+using Nocturne.API.Services.Effects;
 using Nocturne.API.Services.V4;
 using Nocturne.API.Multitenancy;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Entries;
 using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
@@ -174,6 +176,11 @@ public static class ServiceRegistrationExtensions
         // V4 projection (must be registered before EntryService/TreatmentService)
         services.AddScoped<IV4ToLegacyProjectionService, V4ToLegacyProjectionService>();
 
+        // Collection effect descriptors (resolved by WriteSideEffectsService)
+        services.AddSingleton<ICollectionEffectDescriptor, ProfileEffectDescriptor>();
+        services.AddSingleton<ICollectionEffectDescriptor, DeviceStatusEffectDescriptor>();
+        services.AddSingleton<ICollectionEffectDescriptor, FoodEffectDescriptor>();
+
         // Core domain services
         services.AddScoped<ITreatmentService, TreatmentService>();
         services.AddScoped<ITreatmentStore, Nocturne.API.Services.Treatments.DualPathTreatmentStore>();
@@ -181,6 +188,9 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<ITreatmentEventSink, Nocturne.API.Services.Treatments.SignalRTreatmentEventSink>();
         services.AddScoped<IWriteSideEffects, WriteSideEffectsService>();
         services.AddScoped<IEntryService, EntryService>();
+        services.AddScoped<IEntryStore, Nocturne.API.Services.Entries.DualPathEntryStore>();
+        services.AddScoped<IEntryCache, Nocturne.API.Services.Entries.EntryCacheAdapter>();
+        services.AddScoped<IEntryEventSink, Nocturne.API.Services.Entries.SignalREntryEventSink>();
         services.AddScoped<IStateSpanService, StateSpanService>();
         services.AddScoped<IDeviceStatusService, DeviceStatusService>();
         services.AddScoped<IBatteryService, BatteryService>();

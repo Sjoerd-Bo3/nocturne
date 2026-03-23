@@ -2,10 +2,12 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Cache.Abstractions;
+using Nocturne.Tests.Shared.Mocks;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services;
@@ -30,6 +32,8 @@ public class WriteSideEffectsServiceTests
             _mockCache.Object,
             _mockBroadcast.Object,
             _mockPipeline.Object,
+            MockTenantAccessor.Create().Object,
+            Enumerable.Empty<ICollectionEffectDescriptor>(),
             _mockLogger.Object
         );
     }
