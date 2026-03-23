@@ -24,6 +24,28 @@ public interface IJwtService
     );
 
     /// <summary>
+    /// Generate an access token JWT for a subject with OAuth scopes.
+    /// Used by the OAuth token endpoint to issue scoped access tokens.
+    /// </summary>
+    /// <param name="subject">Subject to generate token for</param>
+    /// <param name="permissions">Resolved permissions to include</param>
+    /// <param name="roles">Role names to include</param>
+    /// <param name="scopes">OAuth scopes to include in the token</param>
+    /// <param name="clientId">OAuth client ID that requested this token</param>
+    /// <param name="limitTo24Hours">When true, data requests should only return data from the last 24 hours</param>
+    /// <param name="lifetime">Optional custom lifetime (defaults to configuration)</param>
+    /// <returns>JWT access token string</returns>
+    string GenerateAccessToken(
+        SubjectInfo subject,
+        IEnumerable<string> permissions,
+        IEnumerable<string> roles,
+        IEnumerable<string> scopes,
+        string? clientId = null,
+        bool limitTo24Hours = false,
+        TimeSpan? lifetime = null
+    );
+
+    /// <summary>
     /// Validate an access token JWT
     /// </summary>
     /// <param name="token">JWT token string</param>
@@ -159,6 +181,22 @@ public class JwtClaims
     /// Permissions
     /// </summary>
     public List<string> Permissions { get; set; } = new();
+
+    /// <summary>
+    /// OAuth scopes (space-delimited in JWT, parsed to list)
+    /// </summary>
+    public List<string> Scopes { get; set; } = new();
+
+    /// <summary>
+    /// OAuth client ID that requested this token
+    /// </summary>
+    public string? ClientId { get; set; }
+
+    /// <summary>
+    /// When true, data requests using this token should only return data from the
+    /// last 24 hours (rolling window from current request time).
+    /// </summary>
+    public bool LimitTo24Hours { get; set; }
 
     /// <summary>
     /// JWT ID (jti claim)

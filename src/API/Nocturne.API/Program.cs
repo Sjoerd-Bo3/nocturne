@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Nocturne.API.Configuration;
@@ -170,6 +171,7 @@ builder.Services.AddAlertingAndMonitoring(builder.Configuration);
 builder.Services.AddConnectorInfrastructure(builder.Configuration);
 builder.Services.AddMigrationServices();
 
+
 // Configure JWT authentication
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName);
 var secretKey = jwtOptions["SecretKey"] ?? "DefaultSecretKeyForNocturneWhichShouldBeChanged";
@@ -228,9 +230,18 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 // Add Nightscout authentication middleware
 app.UseMiddleware<AuthenticationMiddleware>();
 
+// Add follower access middleware (handles X-Acting-As header for data sharing)
+app.UseMiddleware<FollowerAccessMiddleware>();
+
+// Add site security middleware (enforces authentication when site lockdown is enabled)
+app.UseMiddleware<SiteSecurityMiddleware>();
+
 // Add authentication and authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Add rate limiting
+app.UseRateLimiter();
 
 // Map native API controllers
 app.MapControllers();

@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Nocturne.API.Configuration;
 using Nocturne.API.Middleware.Handlers;
 using Nocturne.API.Services;
@@ -131,6 +132,15 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<IOidcProviderService, OidcProviderService>();
         services.AddScoped<IOidcAuthService, OidcAuthService>();
 
+        // OAuth services
+        services.AddScoped<IOAuthClientService, OAuthClientService>();
+        services.AddScoped<IOAuthGrantService, OAuthGrantService>();
+        services.AddScoped<IOAuthTokenService, OAuthTokenService>();
+        services.AddScoped<IOAuthDeviceCodeService, OAuthDeviceCodeService>();
+        services.AddScoped<IFollowerInviteService, FollowerInviteService>();
+        services.AddSingleton<IOAuthTokenRevocationCache, OAuthTokenRevocationCache>();
+        services.AddHostedService<OAuthCodeCleanupService>();
+
         // Local identity provider
         services.AddScoped<ILocalIdentityService, LocalIdentityService>();
         services.AddScoped<IEmailService, EmailService>();
@@ -160,6 +170,65 @@ public static class ServiceRegistrationExtensions
                 client.Timeout = TimeSpan.FromSeconds(30);
             }
         );
+
+        // Rate limiting for OAuth endpoints
+        services.AddRateLimiter(options =>
+        {
+            options.AddPolicy(
+                "oauth-token",
+                context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 30,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0,
+                        }
+                    )
+            );
+
+            options.AddPolicy(
+                "oauth-device",
+                context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0,
+                        }
+                    )
+            );
+
+            options.AddPolicy(
+                "oauth-device-approve",
+                context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 20,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0,
+                        }
+                    )
+            );
+
+            options.OnRejected = async (context, ct) =>
+            {
+                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                await context.HttpContext.Response.WriteAsJsonAsync(
+                    new
+                    {
+                        error = "rate_limit_exceeded",
+                        error_description = "Too many requests. Please try again later.",
+                    },
+                    ct
+                );
+            };
+        });
 
         return services;
     }

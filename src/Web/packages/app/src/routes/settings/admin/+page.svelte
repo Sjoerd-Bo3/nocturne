@@ -31,23 +31,27 @@
     Cpu,
     Globe,
     TriangleAlert,
+    Smartphone,
+    Monitor,
   } from "lucide-svelte";
   import * as Alert from "$lib/components/ui/alert";
   import * as authorizationRemote from "$api/generated/authorizations.generated.remote";
   import * as adminRemote from "$api/generated/localauths.generated.remote";
+  import * as grantsRemote from "$api/oauth.remote";
   import { getRealtimeStore } from "$lib/stores/realtime-store.svelte";
-  import type { Subject, Role, PasswordResetRequestDto } from "$api";
+  import type { Subject, Role, PasswordResetRequestDto, OAuthGrantDto } from "$api";
 
   // Get the realtime store for reactive admin events
   const realtimeStore = getRealtimeStore();
 
   // State
-  let activeTab = $state("accounts");
+  let activeTab = $state("users");
   let loading = $state(true);
   let error = $state<string | null>(null);
 
   let subjects = $state<Subject[]>([]);
   let roles = $state<Role[]>([]);
+  let grants = $state<OAuthGrantDto[]>([]);
 
   // Subject dialog state
   let isSubjectDialogOpen = $state(false);
@@ -118,20 +122,34 @@
     loading = true;
     error = null;
     try {
-      const [subs, rols, resetSummary] = await Promise.all([
+      const [subs, rols, resetSummary, grantsList] = await Promise.all([
         authorizationRemote.getAllSubjects(),
         authorizationRemote.getAllRoles(),
         adminRemote.getPendingPasswordResets(),
+        loadAllGrants(),
       ]);
       subjects = subs || [];
       roles = rols || [];
       pendingResets = resetSummary?.requests ?? [];
       pendingResetCount = resetSummary?.totalCount ?? 0;
+      grants = grantsList;
     } catch (err) {
       console.error("Failed to load admin data:", err);
       error = "Failed to load admin data";
     } finally {
       loading = false;
+    }
+  }
+
+  // Load grants across all users (admin view)
+  async function loadAllGrants(): Promise<OAuthGrantDto[]> {
+    try {
+      // For now, we can only get grants for the current user
+      // In a full implementation, we'd need an admin endpoint to get all grants
+      return [];
+    } catch (err) {
+      console.error("Failed to load grants:", err);
+      return [];
     }
   }
 
@@ -324,6 +342,20 @@
   }
 
   // ============================================================================
+  // Grant handlers
+  // ============================================================================
+
+  async function revokeGrant(grantId: string) {
+    if (!confirm("Revoke device access? This will log out the device and require re-authorization.")) return;
+    try {
+      await grantsRemote.revokeGrant({ grantId });
+      await loadData();
+    } catch (err) {
+      console.error("Failed to revoke grant:", err);
+    }
+  }
+
+  // ============================================================================
   // Token handlers
   // ============================================================================
 
@@ -474,7 +506,7 @@
       <div>
         <h1 class="text-3xl font-bold tracking-tight">Administration</h1>
         <p class="text-muted-foreground">
-          Manage subjects, roles, and access tokens
+          Manage users, connected devices, and access control
         </p>
       </div>
     </div>
@@ -494,24 +526,20 @@
     </Card>
   {:else}
     <Tabs.Root bind:value={activeTab} class="space-y-6">
-      <Tabs.List class="grid w-full grid-cols-4">
-        <Tabs.Trigger value="accounts" class="gap-2">
+      <Tabs.List class="grid w-full grid-cols-3">
+        <Tabs.Trigger value="users" class="gap-2">
           <Users class="h-4 w-4" />
-          Accounts
+          Users
           {#if subjectCount > 0}
             <Badge variant="secondary" class="ml-1">{subjectCount}</Badge>
           {/if}
         </Tabs.Trigger>
-        <Tabs.Trigger value="roles" class="gap-2">
-          <Key class="h-4 w-4" />
-          Roles
-          {#if roleCount > 0}
-            <Badge variant="secondary" class="ml-1">{roleCount}</Badge>
+        <Tabs.Trigger value="devices" class="gap-2">
+          <Smartphone class="h-4 w-4" />
+          Connected Devices
+          {#if grants.length > 0}
+            <Badge variant="secondary" class="ml-1">{grants.length}</Badge>
           {/if}
-        </Tabs.Trigger>
-        <Tabs.Trigger value="tokens" class="gap-2">
-          <KeyRound class="h-4 w-4" />
-          Tokens
         </Tabs.Trigger>
         <Tabs.Trigger value="password-resets" class="gap-2">
           <Lock class="h-4 w-4" />
@@ -524,27 +552,27 @@
         </Tabs.Trigger>
       </Tabs.List>
 
-      <!-- Accounts Tab -->
-      <Tabs.Content value="accounts">
+      <!-- Users Tab -->
+      <Tabs.Content value="users">
         <Card>
           <CardHeader class="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Subjects</CardTitle>
+              <CardTitle>Users</CardTitle>
               <CardDescription>
-                Users, devices, and services that can access the system
+                User accounts and their roles. For device access, use OAuth device authorization flow.
               </CardDescription>
             </div>
             <Button onclick={openNewSubject}>
               <Plus class="h-4 w-4 mr-2" />
-              New Subject
+              New User
             </Button>
           </CardHeader>
           <CardContent>
             {#if subjects.length === 0}
               <div class="text-center py-8 text-muted-foreground">
                 <Users class="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No subjects found</p>
-                <p class="text-sm">Create your first subject to get started</p>
+                <p>No users found</p>
+                <p class="text-sm">Create your first user account to get started</p>
               </div>
             {:else}
               <div class="space-y-3">
@@ -577,20 +605,25 @@
                               <Globe class="h-3 w-3 mr-1" />
                               Unauthenticated Access
                             </Badge>
-                          {:else if subject.accessToken}
-                            <Badge variant="outline" class="text-xs">
-                              Has Token
+                          {/if}
+                          {#if subject.roles && subject.roles.includes("admin")}
+                            <Badge variant="default" class="text-xs">
+                              Admin
                             </Badge>
                           {/if}
                         </div>
                         {#if isPublicSubject}
                           <div class="text-sm text-muted-foreground">
-                            Shows what users without login can see
+                            Defines what unauthenticated users can access
+                          </div>
+                        {:else if subject.email}
+                          <div class="text-sm text-muted-foreground">
+                            {subject.email}
                           </div>
                         {/if}
                         <div class="text-sm text-muted-foreground">
                           {#if subject.roles && subject.roles.length > 0}
-                            Roles: {subject.roles.join(", ")}
+                            Roles: {subject.roles.filter(r => r !== "admin").join(", ") || "Admin"}
                           {:else}
                             No roles assigned
                           {/if}
@@ -601,16 +634,6 @@
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
-                      {#if subject.accessToken}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onclick={() => openTokenDialog(subject.id!)}
-                        >
-                          <KeyRound class="h-4 w-4 mr-1" />
-                          View Token
-                        </Button>
-                      {/if}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -636,162 +659,126 @@
         </Card>
       </Tabs.Content>
 
-      <!-- Roles Tab -->
-      <Tabs.Content value="roles">
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Roles</CardTitle>
-              <CardDescription>
-                Define permission sets that can be assigned to subjects
-              </CardDescription>
-            </div>
-            <Button onclick={() => openNewRole(false)}>
-              <Plus class="h-4 w-4 mr-2" />
-              New Role
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {#if roles.length === 0}
-              <div class="text-center py-8 text-muted-foreground">
-                <Key class="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No roles found</p>
-                <p class="text-sm">Create your first role to get started</p>
-              </div>
-            {:else}
-              <div class="space-y-3">
-                {#each roles as role}
-                  <div
-                    class="flex items-center justify-between p-4 rounded-lg border"
-                  >
-                    <div class="flex items-center gap-3">
-                      <div class="p-2 rounded-lg bg-muted">
-                        <Key class="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div class="font-medium flex items-center gap-2">
-                          {role.name}
-                          {#if role.autoGenerated}
-                            <Badge variant="secondary" class="text-xs">
-                              <Lock class="h-3 w-3 mr-1" />
-                              System
-                            </Badge>
-                          {/if}
-                        </div>
-                        <div class="text-sm text-muted-foreground">
-                          {#if role.permissions && role.permissions.length > 0}
-                            {role.permissions.length} permission{role
-                              .permissions.length === 1
-                              ? ""
-                              : "s"}
-                          {:else}
-                            No permissions
-                          {/if}
-                        </div>
-                        {#if role.permissions && role.permissions.length > 0 && role.permissions.length <= 5}
-                          <div class="flex flex-wrap gap-1 mt-1">
-                            {#each role.permissions as perm}
-                              <Badge variant="outline" class="text-xs">
-                                {perm}
-                              </Badge>
-                            {/each}
-                          </div>
-                        {:else if role.permissions && role.permissions.length > 5}
-                          <div class="flex flex-wrap gap-1 mt-1">
-                            {#each role.permissions.slice(0, 3) as perm}
-                              <Badge variant="outline" class="text-xs">
-                                {perm}
-                              </Badge>
-                            {/each}
-                            <Badge variant="outline" class="text-xs">
-                              +{role.permissions.length - 3} more
-                            </Badge>
-                          </div>
-                        {/if}
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onclick={() => openEditRole(role)}
-                        disabled={role.autoGenerated}
-                      >
-                        <Pencil class="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onclick={() => deleteRoleHandler(role.id!)}
-                        disabled={role.autoGenerated}
-                      >
-                        <Trash2 class="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </CardContent>
-        </Card>
-      </Tabs.Content>
-
-      <!-- Tokens Tab -->
-      <Tabs.Content value="tokens">
+      <!-- Connected Devices Tab -->
+      <Tabs.Content value="devices">
         <Card>
           <CardHeader>
-            <CardTitle>API Tokens</CardTitle>
+            <CardTitle>Connected Devices</CardTitle>
             <CardDescription>
-              Generate and manage access tokens for API access. Tokens are tied
-              to subjects and inherit their permissions.
+              Devices and applications connected via OAuth. Users authorize devices using the device flow at /oauth/device.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div class="space-y-4">
-              <div
-                class="p-4 rounded-lg border-2 border-dashed border-muted-foreground/25"
-              >
-                <div class="text-center">
-                  <KeyRound
-                    class="h-8 w-8 mx-auto mb-2 text-muted-foreground"
-                  />
-                  <p class="text-sm text-muted-foreground mb-3">
-                    To generate an API token, create a new subject with the
-                    appropriate roles.
-                  </p>
-                  <Button variant="outline" onclick={openNewSubject}>
-                    <Plus class="h-4 w-4 mr-2" />
-                    Create Subject with Token
-                  </Button>
-                </div>
-              </div>
+              <!-- Info box about OAuth device flow -->
+              <Alert.Root>
+                <Smartphone class="h-4 w-4" />
+                <Alert.Title>Modern OAuth Device Authorization</Alert.Title>
+                <Alert.Description>
+                  <div class="space-y-2">
+                    <p>
+                      Devices connect using the OAuth Device Authorization Flow. Users visit <strong>/oauth/device</strong> to authorize devices with a simple code.
+                    </p>
+                    <p class="text-xs">
+                      This replaces manual API token generation. Devices get scoped access tokens that can be refreshed and revoked.
+                    </p>
+                  </div>
+                </Alert.Description>
+              </Alert.Root>
 
-              {#if subjects.filter((s) => s.accessToken).length > 0}
-                <div class="space-y-3 mt-6">
-                  <h3 class="text-sm font-medium text-muted-foreground">
-                    Subjects with Tokens
-                  </h3>
-                  {#each subjects.filter((s) => s.accessToken) as subject}
+              {#if grants.length === 0}
+                <div class="text-center py-8 text-muted-foreground">
+                  <Smartphone class="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No connected devices</p>
+                  <p class="text-sm">Devices will appear here after users authorize them</p>
+                </div>
+              {:else}
+                <div class="space-y-3">
+                  {#each grants as grant}
                     <div
-                      class="flex items-center justify-between p-3 rounded-lg border"
+                      class="flex items-center justify-between p-4 rounded-lg border"
                     >
-                      <div>
-                        <div class="font-medium">{subject.name}</div>
-                        <div class="text-sm text-muted-foreground">
-                          Roles: {subject.roles?.join(", ") || "None"}
+                      <div class="flex items-center gap-3">
+                        <div class="p-2 rounded-lg bg-muted">
+                          {#if grant.isKnownClient}
+                            <Monitor class="h-5 w-5" />
+                          {:else}
+                            <Smartphone class="h-5 w-5" />
+                          {/if}
+                        </div>
+                        <div>
+                          <div class="font-medium flex items-center gap-2">
+                            {grant.clientDisplayName || grant.clientId || "Unknown Device"}
+                            {#if grant.isKnownClient}
+                              <Badge variant="secondary" class="text-xs">
+                                Verified
+                              </Badge>
+                            {/if}
+                          </div>
+                          <div class="text-sm text-muted-foreground">
+                            {#if grant.followerName}
+                              Follower: {grant.followerName}
+                            {:else}
+                              User: {grant.clientId}
+                            {/if}
+                          </div>
+                          <div class="text-sm text-muted-foreground">
+                            Scopes: {grant.scopes.join(", ")}
+                          </div>
+                          <div class="text-xs text-muted-foreground mt-1">
+                            Created: {formatDate(grant.createdAt)}
+                            {#if grant.lastUsedAt}
+                              • Last used: {formatDate(grant.lastUsedAt)}
+                            {/if}
+                          </div>
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onclick={() => openTokenDialog(subject.id!)}
-                      >
-                        <Copy class="h-4 w-4 mr-1" />
-                        Copy Token
-                      </Button>
+                      <div class="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onclick={() => revokeGrant(grant.id)}
+                        >
+                          <Trash2 class="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   {/each}
                 </div>
+              {/if}
+
+              <!-- Legacy token section (collapsed) -->
+              {#if subjects.filter((s) => s.accessToken).length > 0}
+                <details class="mt-6">
+                  <summary class="cursor-pointer text-sm font-medium text-muted-foreground mb-2">
+                    Legacy API Tokens ({subjects.filter((s) => s.accessToken).length})
+                  </summary>
+                  <div class="space-y-3 mt-3 pl-4 border-l-2">
+                    <p class="text-xs text-muted-foreground mb-3">
+                      These are legacy static tokens. Modern integrations should use OAuth device flow instead.
+                    </p>
+                    {#each subjects.filter((s) => s.accessToken) as subject}
+                      <div
+                        class="flex items-center justify-between p-3 rounded-lg border"
+                      >
+                        <div>
+                          <div class="font-medium">{subject.name}</div>
+                          <div class="text-sm text-muted-foreground">
+                            Roles: {subject.roles?.join(", ") || "None"}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onclick={() => openTokenDialog(subject.id!)}
+                        >
+                          <Copy class="h-4 w-4 mr-1" />
+                          View Token
+                        </Button>
+                      </div>
+                    {/each}
+                  </div>
+                </details>
               {/if}
             </div>
           </CardContent>
@@ -865,17 +852,17 @@
   {/if}
 </div>
 
-<!-- Subject Dialog -->
+<!-- User Dialog -->
 <Dialog.Root bind:open={isSubjectDialogOpen}>
   <Dialog.Content class="max-w-lg">
     <Dialog.Header>
       <Dialog.Title>
-        {isNewSubject ? "New Subject" : "Edit Subject"}
+        {isNewSubject ? "New User" : "Edit User"}
       </Dialog.Title>
       <Dialog.Description>
         {isNewSubject
-          ? "Create a new subject that can access the system."
-          : "Update subject details and role assignments."}
+          ? "Create a new user account."
+          : "Update user details and role assignments."}
       </Dialog.Description>
     </Dialog.Header>
 
@@ -1008,6 +995,7 @@
             placeholder="e.g., My Loop App"
           />
         </div>
+
 
         <div class="space-y-2">
           <Label for="subject-notes">Notes (optional)</Label>
@@ -1235,18 +1223,26 @@
   </Dialog.Content>
 </Dialog.Root>
 
-<!-- Token Dialog -->
+<!-- Legacy Token Dialog -->
 <Dialog.Root bind:open={isTokenDialogOpen}>
   <Dialog.Content class="max-w-lg">
     <Dialog.Header>
-      <Dialog.Title>Access Token</Dialog.Title>
+      <Dialog.Title>Legacy API Token</Dialog.Title>
       <Dialog.Description>
-        Use this token to authenticate API requests.
+        This is a legacy static token. New integrations should use OAuth device flow instead.
       </Dialog.Description>
     </Dialog.Header>
 
     <div class="space-y-4 py-4">
       {#if generatedToken}
+        <Alert.Root variant="destructive">
+          <AlertTriangle class="h-4 w-4" />
+          <Alert.Title>Legacy Authentication Method</Alert.Title>
+          <Alert.Description>
+            Static tokens cannot be refreshed or scoped. Consider migrating to OAuth device authorization for better security.
+          </Alert.Description>
+        </Alert.Root>
+
         <div class="p-4 rounded-lg bg-muted font-mono text-sm break-all">
           {generatedToken}
         </div>
@@ -1262,17 +1258,13 @@
           </Button>
         </div>
         <p class="text-sm text-muted-foreground">
-          <strong>Important:</strong>
-          Store this token securely. Use it in the
-          <code class="px-1 py-0.5 rounded bg-muted">Authorization</code>
-          header or as an
-          <code class="px-1 py-0.5 rounded bg-muted">api-secret</code>
-          query parameter.
+          Use in the <code class="px-1 py-0.5 rounded bg-muted">Authorization</code>
+          header or as an <code class="px-1 py-0.5 rounded bg-muted">api-secret</code> query parameter.
         </p>
       {:else}
         <div class="text-center py-8 text-muted-foreground">
           <KeyRound class="h-8 w-8 mx-auto mb-2" />
-          <p>No access token available for this subject.</p>
+          <p>No access token available for this user.</p>
         </div>
       {/if}
     </div>

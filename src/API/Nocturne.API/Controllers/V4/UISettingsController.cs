@@ -574,6 +574,7 @@ public class UISettingsController : ControllerBase
             Features = GenerateDefaultFeatureSettings(),
             Notifications = GenerateDefaultNotificationSettings(),
             Services = GenerateDefaultServicesSettings(),
+            Security = new SecuritySettings(),
         };
     }
 
@@ -588,6 +589,7 @@ public class UISettingsController : ControllerBase
             Features = GenerateDefaultFeatureSettings(),
             Notifications = GenerateDefaultNotificationSettings(),
             Services = new ServicesSettings { AvailableServices = GenerateAvailableServices() },
+            Security = new SecuritySettings(),
         };
     }
 
