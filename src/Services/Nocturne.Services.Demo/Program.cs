@@ -4,7 +4,9 @@ using Microsoft.Extensions.Options;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Infrastructure.Data.Extensions;
+using Nocturne.Infrastructure.Data.Repositories.V4;
 using Nocturne.Services.Demo.Configuration;
 using Nocturne.Services.Demo.Services;
 
@@ -69,6 +71,9 @@ public class Program
             var config = sp.GetRequiredService<IOptions<DemoModeConfiguration>>().Value;
             return new DemoSettingsGenerator(config);
         });
+
+        // Register V4 repositories needed for demo data
+        builder.Services.AddScoped<IPatientInsulinRepository, PatientInsulinRepository>();
 
         // Register demo data entry/treatment services
         builder.Services.AddScoped<IDemoEntryService, DemoEntryService>();
