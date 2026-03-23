@@ -6,6 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services;
@@ -18,6 +19,7 @@ public class ProfileService : IProfileService
 {
     private readonly IMemoryCache _cache;
     private readonly ITenantAccessor _tenantAccessor;
+    private readonly IPatientInsulinRepository? _insulinRepository;
     private readonly ILogger<ProfileService>? _logger;
     private const int CacheTtlMs = 5000; // 5 seconds cache TTL like legacy
 
@@ -30,10 +32,22 @@ public class ProfileService : IProfileService
     private List<Treatment> _comboBolusTreatments = new();
     private Treatment? _prevBasalTreatment;
 
-    public ProfileService(IMemoryCache cache, ITenantAccessor tenantAccessor, ILogger<ProfileService>? logger = null)
+    /// <summary>
+    /// Cached DIA from the patient's primary bolus insulin, loaded eagerly in LoadData.
+    /// Null means no primary bolus insulin is configured.
+    /// </summary>
+    private double? _primaryBolusInsulinDia;
+    private bool _primaryBolusInsulinDiaLoaded;
+
+    public ProfileService(
+        IMemoryCache cache,
+        ITenantAccessor tenantAccessor,
+        IPatientInsulinRepository? insulinRepository = null,
+        ILogger<ProfileService>? logger = null)
     {
         _cache = cache;
         _tenantAccessor = tenantAccessor;
+        _insulinRepository = insulinRepository;
         _logger = logger;
     }
 
@@ -43,6 +57,8 @@ public class ProfileService : IProfileService
         // Individual cache entries will expire based on TTL
         _profileData = null;
         _prevBasalTreatment = null;
+        _primaryBolusInsulinDia = null;
+        _primaryBolusInsulinDiaLoaded = false;
         _profileTreatments.Clear();
         _tempBasalTreatments.Clear();
         _comboBolusTreatments.Clear();
@@ -67,6 +83,9 @@ public class ProfileService : IProfileService
                 record.Mills = DateTimeOffset.Parse(record.StartDate).ToUnixTimeMilliseconds();
             }
         }
+
+        // Eagerly load the primary bolus insulin DIA so GetDIA can remain synchronous
+        LoadPrimaryBolusInsulinDia();
     }
 
     public bool HasData() => _profileData?.Any() == true;
@@ -251,8 +270,25 @@ public class ProfileService : IProfileService
     }
 
     // Specific profile value methods
-    public double GetDIA(long time, string? specProfile = null) =>
-        GetValueByTime(time, "dia", specProfile);
+    public double GetDIA(long time, string? specProfile = null)
+    {
+        // If the current profile is externally managed (e.g. Loop, Glooko),
+        // always use the profile's own DIA value
+        var currentProfile = ProfileFromTime(time);
+        if (currentProfile?.IsExternallyManaged == true)
+        {
+            return GetValueByTime(time, "dia", specProfile);
+        }
+
+        // If a primary bolus insulin is configured, use its DIA
+        if (_primaryBolusInsulinDia.HasValue)
+        {
+            return _primaryBolusInsulinDia.Value;
+        }
+
+        // Fall back to profile DIA (existing behavior)
+        return GetValueByTime(time, "dia", specProfile);
+    }
 
     public double GetSensitivity(long time, string? specProfile = null) =>
         GetValueByTime(time, "sens", specProfile);
@@ -458,6 +494,25 @@ public class ProfileService : IProfileService
     }
 
     // Private helper methods
+    private void LoadPrimaryBolusInsulinDia()
+    {
+        if (_primaryBolusInsulinDiaLoaded || _insulinRepository == null)
+            return;
+
+        try
+        {
+            var insulin = _insulinRepository.GetPrimaryBolusInsulinAsync().GetAwaiter().GetResult();
+            _primaryBolusInsulinDia = insulin?.Dia;
+            _primaryBolusInsulinDiaLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to load primary bolus insulin DIA, falling back to profile DIA");
+            _primaryBolusInsulinDia = null;
+            _primaryBolusInsulinDiaLoaded = true;
+        }
+    }
+
     private List<Profile> ConvertToProfileStore(List<Profile> dataArray)
     {
         var convertedProfiles = new List<Profile>();

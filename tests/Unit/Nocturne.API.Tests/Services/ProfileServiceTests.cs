@@ -3,7 +3,9 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 using Nocturne.Tests.Shared.Mocks;
 using Xunit;
 
@@ -405,6 +407,76 @@ public class ProfileServiceTests
                 Absolute = 0.5,
             },
         };
+    }
+
+    [Fact]
+    public void GetDIA_WithActiveBolusInsulin_ShouldReturnInsulinDia()
+    {
+        // Arrange: mock IPatientInsulinRepository to return a primary bolus insulin with DIA 3.5
+        var insulinRepo = new Mock<IPatientInsulinRepository>();
+        insulinRepo.Setup(r => r.GetPrimaryBolusInsulinAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PatientInsulin { Dia = 3.5, IsPrimary = true });
+
+        var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = new ProfileService(cache, MockTenantAccessor.Create().Object, insulinRepo.Object);
+
+        var profiles = CreateTestProfiles(); // profile DIA is 4.0
+        service.LoadData(profiles);
+
+        var testTime = DateTimeOffset.Parse("2024-01-01T10:00:00Z").ToUnixTimeMilliseconds();
+
+        // Act
+        var dia = service.GetDIA(testTime);
+
+        // Assert: returns 3.5 from insulin, not 4.0 from profile
+        Assert.Equal(3.5, dia);
+    }
+
+    [Fact]
+    public void GetDIA_WithNoActiveInsulin_ShouldFallBackToProfileDia()
+    {
+        // Arrange: mock IPatientInsulinRepository to return null
+        var insulinRepo = new Mock<IPatientInsulinRepository>();
+        insulinRepo.Setup(r => r.GetPrimaryBolusInsulinAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PatientInsulin?)null);
+
+        var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = new ProfileService(cache, MockTenantAccessor.Create().Object, insulinRepo.Object);
+
+        var profiles = CreateTestProfiles(); // profile DIA is 4.0
+        service.LoadData(profiles);
+
+        var testTime = DateTimeOffset.Parse("2024-01-01T10:00:00Z").ToUnixTimeMilliseconds();
+
+        // Act
+        var dia = service.GetDIA(testTime);
+
+        // Assert: returns profile DIA (existing behavior preserved)
+        Assert.Equal(4.0, dia);
+    }
+
+    [Fact]
+    public void GetDIA_WithExternallyManagedProfile_ShouldUseProfileDia()
+    {
+        // Arrange: profile has IsExternallyManaged = true, active insulin exists with DIA 3.5
+        var insulinRepo = new Mock<IPatientInsulinRepository>();
+        insulinRepo.Setup(r => r.GetPrimaryBolusInsulinAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PatientInsulin { Dia = 3.5, IsPrimary = true });
+
+        var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = new ProfileService(cache, MockTenantAccessor.Create().Object, insulinRepo.Object);
+
+        var profiles = CreateTestProfiles(); // profile DIA is 4.0
+        profiles[0].IsExternallyManaged = true;
+        service.LoadData(profiles);
+
+        var testTime = DateTimeOffset.Parse("2024-01-01T10:00:00Z").ToUnixTimeMilliseconds();
+
+        // Act
+        var dia = service.GetDIA(testTime);
+
+        // Assert: returns profile DIA (4.0), NOT the insulin's DIA (3.5)
+        Assert.Equal(4.0, dia);
     }
 
     [Parity("basalprofileplugin.test.js")]
