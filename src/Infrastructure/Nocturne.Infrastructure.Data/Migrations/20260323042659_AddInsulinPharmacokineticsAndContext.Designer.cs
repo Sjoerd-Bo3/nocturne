@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Nocturne.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(NocturneDbContext))]
-    [Migration("20260323042151_AddInsulinPharmacokinetics")]
-    partial class AddInsulinPharmacokinetics
+    [Migration("20260323042659_AddInsulinPharmacokineticsAndContext")]
+    partial class AddInsulinPharmacokineticsAndContext
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -5,7 +5,7 @@
 namespace Nocturne.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddInsulinPharmacokinetics : Migration
+    public partial class AddInsulinPharmacokineticsAndContext : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
