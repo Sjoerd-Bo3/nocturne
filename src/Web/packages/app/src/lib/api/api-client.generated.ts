@@ -41,6 +41,7 @@ import {
   FoodClient,
   FoodsClient,
   HeartRateClient,
+  InsulinCatalogClient,
   IobClient,
   LastModifiedClient,
   LocalAuthClient,
@@ -53,6 +54,7 @@ import {
   NoteClient,
   NotificationsClient,
   NutritionClient,
+  OAuthClient,
   OidcClient,
   WellKnownClient,
   PatientRecordClient,
@@ -131,6 +133,7 @@ export class ApiClient {
   public readonly food: FoodClient;
   public readonly foodsV4: FoodsClient;
   public readonly heartRate: HeartRateClient;
+  public readonly insulins: InsulinCatalogClient;
   public readonly iob: IobClient;
   public readonly lastModified: LastModifiedClient;
   public readonly localAuth: LocalAuthClient;
@@ -143,6 +146,7 @@ export class ApiClient {
   public readonly notes: NoteClient;
   public readonly notifications: NotificationsClient;
   public readonly nutrition: NutritionClient;
+  public readonly oAuth: OAuthClient;
   public readonly oidc: OidcClient;
   public readonly oidcDiscovery: WellKnownClient;
   public readonly patientRecord: PatientRecordClient;
@@ -221,6 +225,7 @@ export class ApiClient {
     this.food = new FoodClient(apiBaseUrl, http);
     this.foodsV4 = new FoodsClient(apiBaseUrl, http);
     this.heartRate = new HeartRateClient(apiBaseUrl, http);
+    this.insulins = new InsulinCatalogClient(apiBaseUrl, http);
     this.iob = new IobClient(apiBaseUrl, http);
     this.lastModified = new LastModifiedClient(apiBaseUrl, http);
     this.localAuth = new LocalAuthClient(apiBaseUrl, http);
@@ -233,6 +238,7 @@ export class ApiClient {
     this.notes = new NoteClient(apiBaseUrl, http);
     this.notifications = new NotificationsClient(apiBaseUrl, http);
     this.nutrition = new NutritionClient(apiBaseUrl, http);
+    this.oAuth = new OAuthClient(apiBaseUrl, http);
     this.oidc = new OidcClient(apiBaseUrl, http);
     this.oidcDiscovery = new WellKnownClient(apiBaseUrl, http);
     this.patientRecord = new PatientRecordClient(apiBaseUrl, http);

@@ -1913,7 +1913,8 @@
               }
             }
           }
-        }
+        },
+        "x-remote-type": "query"
       }
     },
     "/api/oauth/grants/{grantId}": {
@@ -1949,7 +1950,11 @@
               }
             }
           }
-        }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetGrants"
+        ]
       },
       "patch": {
         "tags": [
@@ -2002,7 +2007,11 @@
               }
             }
           }
-        }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetGrants"
+        ]
       }
     },
     "/api/oauth/grants/follower": {
@@ -2045,7 +2054,11 @@
               }
             }
           }
-        }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetGrants"
+        ]
       }
     },
     "/api/oauth/follower-targets": {
@@ -2066,7 +2079,8 @@
               }
             }
           }
-        }
+        },
+        "x-remote-type": "query"
       }
     },
     "/api/oauth/invites": {
@@ -2109,7 +2123,11 @@
               }
             }
           }
-        }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "ListInvites"
+        ]
       },
       "get": {
         "tags": [
@@ -2128,7 +2146,8 @@
               }
             }
           }
-        }
+        },
+        "x-remote-type": "query"
       }
     },
     "/api/oauth/invites/{inviteId}": {
@@ -2164,7 +2183,11 @@
               }
             }
           }
-        }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "ListInvites"
+        ]
       }
     },
     "/api/oauth/invites/{token}/info": {

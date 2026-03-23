@@ -37,7 +37,7 @@
   import * as Alert from "$lib/components/ui/alert";
   import * as authorizationRemote from "$api/generated/authorizations.generated.remote";
   import * as adminRemote from "$api/generated/localauths.generated.remote";
-  import * as grantsRemote from "$api/oauth.remote";
+  import * as grantsRemote from "$api/generated/oauths.generated.remote";
   import { getRealtimeStore } from "$lib/stores/realtime-store.svelte";
   import type { Subject, Role, PasswordResetRequestDto, OAuthGrantDto } from "$api";
 
@@ -348,7 +348,7 @@
   async function revokeGrant(grantId: string) {
     if (!confirm("Revoke device access? This will log out the device and require re-authorization.")) return;
     try {
-      await grantsRemote.revokeGrant({ grantId });
+      await grantsRemote.deleteGrant(grantId);
       await loadData();
     } catch (err) {
       console.error("Failed to revoke grant:", err);

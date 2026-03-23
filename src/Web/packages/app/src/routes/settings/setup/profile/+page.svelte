@@ -323,7 +323,7 @@
   currentStep={6}
   totalSteps={6}
   prevHref="/settings/setup/connectors"
-  nextHref="/settings/setup"
+  nextHref="/settings"
   showSkip={true}
   saveDisabled={!profileName}
   {saving}

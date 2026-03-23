@@ -5,10 +5,11 @@ export * from './authorizations.generated.remote';
 // './connectorStatus.generated.remote' - all exports collide, import directly
 export * from './localauths.generated.remote';
 export * from './metadatas.generated.remote';
+export { getGrants, updateGrant, deleteGrant, createFollowerGrant, getFollowerTargets, listInvites } from './oauths.generated.remote';
 export * from './oidcs.generated.remote';
 export * from './statistics.generated.remote';
 export * from './alertSounds.generated.remote';
-export * from './alertInvites.generated.remote';
+export { validateInvite, redeemInvite } from './alertInvites.generated.remote';
 export * from './alertRules.generated.remote';
 export * from './alerts.generated.remote';
 // './apsSnapshots.generated.remote' - all exports collide, import directly

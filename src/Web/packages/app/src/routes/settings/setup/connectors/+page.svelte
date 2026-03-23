@@ -1,27 +1,27 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { Button } from "$lib/components/ui/button";
   import ConnectorSetup from "$lib/components/connectors/ConnectorSetup.svelte";
+  import WizardShell from "$lib/components/setup/WizardShell.svelte";
 </script>
 
 <svelte:head>
   <title>Connect Data Sources - Setup - Nocturne</title>
 </svelte:head>
 
-<div class="container mx-auto p-6 max-w-3xl">
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold tracking-tight">Connect Data Sources</h1>
-    <p class="text-muted-foreground">
-      Set up a server-side connector to start pulling data into Nocturne
-    </p>
-  </div>
-
-  <ConnectorSetup
-    onComplete={() => goto("/settings/setup/profile")}
-    onCancel={() => goto("/settings")}
-  >
+<WizardShell
+  title="Connect Data Sources"
+  description="Set up a server-side connector to start pulling data into Nocturne. You can always add more connectors later."
+  currentStep={5}
+  totalSteps={6}
+  prevHref="/settings/setup/uploaders"
+  nextHref="/settings/setup/profile"
+  showSkip={true}
+  saveDisabled={false}
+  onSave={async () => true}
+>
+  <ConnectorSetup>
     {#snippet resultActions({ reset })}
       <Button variant="outline" onclick={reset}>Add Another</Button>
     {/snippet}
   </ConnectorSetup>
-</div>
+</WizardShell>

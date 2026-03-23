@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
@@ -642,6 +643,7 @@ public class OAuthController : ControllerBase
     /// List all active grants for the authenticated user.
     /// </summary>
     [HttpGet("grants")]
+    [RemoteQuery]
     [ProducesResponseType(typeof(OAuthGrantListResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<OAuthGrantListResponse>> GetGrants()
     {
@@ -674,6 +676,7 @@ public class OAuthController : ControllerBase
     /// Revoke (delete) a specific grant owned by the authenticated user.
     /// </summary>
     [HttpDelete("grants/{grantId}")]
+    [RemoteCommand(Invalidates = ["GetGrants"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteGrant(Guid grantId)
@@ -716,6 +719,7 @@ public class OAuthController : ControllerBase
     /// Create a follower grant (share data with another user by email).
     /// </summary>
     [HttpPost("grants/follower")]
+    [RemoteCommand(Invalidates = ["GetGrants"])]
     [Consumes("application/json")]
     [ProducesResponseType(typeof(OAuthGrantDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(OAuthError), StatusCodes.Status400BadRequest)]
@@ -877,6 +881,7 @@ public class OAuthController : ControllerBase
     /// Update a grant's label and/or scopes.
     /// </summary>
     [HttpPatch("grants/{grantId}")]
+    [RemoteCommand(Invalidates = ["GetGrants"])]
     [Consumes("application/json")]
     [ProducesResponseType(typeof(OAuthGrantDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -939,6 +944,7 @@ public class OAuthController : ControllerBase
     /// Used by the frontend to populate the "Viewing data for:" selector.
     /// </summary>
     [HttpGet("follower-targets")]
+    [RemoteQuery]
     [ProducesResponseType(typeof(FollowerTargetListResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<FollowerTargetListResponse>> GetFollowerTargets()
     {
@@ -990,6 +996,7 @@ public class OAuthController : ControllerBase
     /// The link can be shared with someone who doesn't have an account yet.
     /// </summary>
     [HttpPost("invites")]
+    [RemoteCommand(Invalidates = ["ListInvites"])]
     [Consumes("application/json")]
     [ProducesResponseType(typeof(CreateInviteResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(OAuthError), StatusCodes.Status400BadRequest)]
@@ -1060,6 +1067,7 @@ public class OAuthController : ControllerBase
     /// List invites created by the authenticated user.
     /// </summary>
     [HttpGet("invites")]
+    [RemoteQuery]
     [ProducesResponseType(typeof(InviteListResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<InviteListResponse>> ListInvites()
     {
@@ -1114,6 +1122,7 @@ public class OAuthController : ControllerBase
     /// Revoke an invite so it can no longer be used.
     /// </summary>
     [HttpDelete("invites/{inviteId}")]
+    [RemoteCommand(Invalidates = ["ListInvites"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeInvite(Guid inviteId)

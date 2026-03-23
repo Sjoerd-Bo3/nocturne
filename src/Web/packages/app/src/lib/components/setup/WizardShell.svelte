@@ -46,20 +46,12 @@
     if (!onSave) return;
     const success = await onSave();
     if (success) {
-      if (isLastStep) {
-        goto("/settings/setup");
-      } else {
-        goto(nextHref);
-      }
+      goto(nextHref);
     }
   }
 
   function handleSkip() {
-    if (isLastStep) {
-      goto("/settings/setup");
-    } else {
-      goto(nextHref);
-    }
+    goto(nextHref);
   }
 </script>
 

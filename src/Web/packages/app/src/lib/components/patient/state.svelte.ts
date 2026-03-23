@@ -39,19 +39,19 @@ export function createClinicalState() {
     saving = true;
     saveError = null;
     try {
+      const current = record.current;
       await patientRemote.updatePatientRecord({
-        ...record.current,
+        id: current?.id,
+        avatarUrl: current?.avatarUrl,
+        createdAt: current?.createdAt instanceof Date ? current.createdAt.toISOString() : current?.createdAt,
+        modifiedAt: current?.modifiedAt instanceof Date ? current.modifiedAt.toISOString() : current?.modifiedAt,
         diabetesType: (diabetesType as DiabetesType) || undefined,
         diabetesTypeOther:
           diabetesType === DiabetesType.Other
             ? diabetesTypeOther
             : undefined,
-        diagnosisDate: diagnosisDate
-          ? new Date(diagnosisDate)
-          : undefined,
-        dateOfBirth: dateOfBirth
-          ? new Date(dateOfBirth)
-          : undefined,
+        diagnosisDate: diagnosisDate || undefined,
+        dateOfBirth: dateOfBirth || undefined,
         preferredName: preferredName || undefined,
         pronouns: pronouns || undefined,
       });
