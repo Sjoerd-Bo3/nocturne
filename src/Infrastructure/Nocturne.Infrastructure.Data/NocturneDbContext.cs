@@ -144,6 +144,11 @@ public class NocturneDbContext : DbContext
     public DbSet<PasswordResetRequestEntity> PasswordResetRequests { get; set; }
 
     /// <summary>
+    /// Gets or sets the PasskeyCredentials table for WebAuthn/passkey credentials
+    /// </summary>
+    public DbSet<PasskeyCredentialEntity> PasskeyCredentials { get; set; }
+
+    /// <summary>
     /// Gets or sets the DataSourceMetadata table for user preferences about data sources
     /// </summary>
     public DbSet<DataSourceMetadataEntity> DataSourceMetadata { get; set; }
