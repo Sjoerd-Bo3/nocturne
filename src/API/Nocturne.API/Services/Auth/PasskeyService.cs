@@ -1,0 +1,318 @@
+using System.Text.Json;
+using Fido2NetLib;
+using Fido2NetLib.Objects;
+using Fido2NetLib.Serialization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
+using Nocturne.Core.Contracts;
+using Nocturne.Infrastructure.Data;
+using Nocturne.Infrastructure.Data.Entities;
+
+namespace Nocturne.API.Services.Auth;
+
+/// <summary>
+/// Implements WebAuthn/FIDO2 passkey registration and authentication ceremonies.
+/// Challenge state is persisted in encrypted cookies between options and completion calls.
+/// </summary>
+public class PasskeyService : IPasskeyService
+{
+    private const int MaxCredentialsPerSubject = 20;
+    private static readonly TimeSpan ChallengeExpiry = TimeSpan.FromMinutes(5);
+
+    private readonly NocturneDbContext _dbContext;
+    private readonly Fido2 _fido2;
+    private readonly IDataProtector _protector;
+    private readonly ILogger<PasskeyService> _logger;
+
+    public PasskeyService(
+        NocturneDbContext dbContext,
+        Fido2 fido2,
+        IDataProtectionProvider dataProtectionProvider,
+        ILogger<PasskeyService> logger)
+    {
+        _dbContext = dbContext;
+        _fido2 = fido2;
+        _protector = dataProtectionProvider.CreateProtector("Nocturne.Passkey.Challenge");
+        _logger = logger;
+    }
+
+    public async Task<PasskeyRegistrationOptions> GenerateRegistrationOptionsAsync(
+        Guid subjectId, string username, Guid tenantId)
+    {
+        var existingCredentials = await _dbContext.PasskeyCredentials
+            .Where(c => c.SubjectId == subjectId && c.TenantId == tenantId)
+            .Select(c => new PublicKeyCredentialDescriptor(c.CredentialId))
+            .ToListAsync();
+
+        var user = new Fido2User
+        {
+            Id = subjectId.ToByteArray(),
+            Name = username,
+            DisplayName = username,
+        };
+
+        var options = _fido2.RequestNewCredential(new RequestNewCredentialParams
+        {
+            User = user,
+            ExcludeCredentials = existingCredentials,
+            AuthenticatorSelection = new AuthenticatorSelection
+            {
+                ResidentKey = ResidentKeyRequirement.Preferred,
+                UserVerification = UserVerificationRequirement.Preferred,
+            },
+            AttestationPreference = AttestationConveyancePreference.None,
+        });
+
+        var optionsJson = JsonSerializer.Serialize(options, FidoModelSerializerContext.Default.CredentialCreateOptions);
+        var challengeCookie = EncryptChallengeCookie(optionsJson, subjectId);
+
+        return new PasskeyRegistrationOptions(optionsJson, challengeCookie);
+    }
+
+    public async Task<PasskeyCredentialResult> CompleteRegistrationAsync(
+        string attestationResponseJson, string challengeCookie, Guid tenantId)
+    {
+        var cookie = DecryptChallengeCookie(challengeCookie);
+
+        var originalOptions = JsonSerializer.Deserialize(
+            cookie.OptionsJson,
+            FidoModelSerializerContext.Default.CredentialCreateOptions)
+            ?? throw new InvalidOperationException("Failed to deserialize registration options from challenge cookie.");
+
+        var attestationResponse = JsonSerializer.Deserialize<AuthenticatorAttestationRawResponse>(attestationResponseJson)
+            ?? throw new InvalidOperationException("Failed to deserialize attestation response.");
+
+        var credential = await _fido2.MakeNewCredentialAsync(new MakeNewCredentialParams
+        {
+            AttestationResponse = attestationResponse,
+            OriginalOptions = originalOptions,
+            IsCredentialIdUniqueToUserCallback = async (args, _) =>
+            {
+                var exists = await _dbContext.PasskeyCredentials
+                    .AnyAsync(c => c.TenantId == tenantId && c.CredentialId == args.CredentialId);
+                return !exists;
+            },
+        });
+
+        var subjectId = cookie.SubjectId
+            ?? throw new InvalidOperationException("Challenge cookie missing subject ID for registration.");
+
+        // Enforce 20 credential cap
+        var existingCount = await _dbContext.PasskeyCredentials
+            .CountAsync(c => c.SubjectId == subjectId && c.TenantId == tenantId);
+
+        if (existingCount >= MaxCredentialsPerSubject)
+        {
+            throw new InvalidOperationException(
+                $"Maximum of {MaxCredentialsPerSubject} passkey credentials per user has been reached.");
+        }
+
+        var entity = new PasskeyCredentialEntity
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = tenantId,
+            SubjectId = subjectId,
+            CredentialId = credential.Id,
+            PublicKey = credential.PublicKey,
+            SignCount = credential.SignCount,
+            Transports = credential.Transports?.Select(t => t.ToString()).ToList() ?? [],
+            // AaGuid is not directly exposed by Fido2NetLib v4 RegisteredPublicKeyCredential
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        _dbContext.PasskeyCredentials.Add(entity);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Passkey credential {CredentialId} registered for subject {SubjectId} in tenant {TenantId}",
+            entity.Id, subjectId, tenantId);
+
+        return new PasskeyCredentialResult(entity.Id, subjectId);
+    }
+
+    public Task<PasskeyAssertionOptions> GenerateDiscoverableAssertionOptionsAsync(Guid tenantId)
+    {
+        var options = _fido2.GetAssertionOptions(new GetAssertionOptionsParams
+        {
+            AllowedCredentials = [],
+            UserVerification = UserVerificationRequirement.Preferred,
+        });
+
+        var optionsJson = JsonSerializer.Serialize(options, FidoModelSerializerContext.Default.AssertionOptions);
+        var challengeCookie = EncryptChallengeCookie(optionsJson, subjectId: null);
+
+        return Task.FromResult(new PasskeyAssertionOptions(optionsJson, challengeCookie));
+    }
+
+    public async Task<PasskeyAssertionOptions> GenerateAssertionOptionsAsync(string username, Guid tenantId)
+    {
+        // Look up subject by username through tenant membership
+        var subject = await _dbContext.TenantMembers
+            .Where(tm => tm.TenantId == tenantId)
+            .Select(tm => tm.Subject!)
+            .Where(s => s.Username == username && s.IsActive)
+            .FirstOrDefaultAsync()
+            ?? throw new InvalidOperationException($"No active subject found with username '{username}' in this tenant.");
+
+        var credentials = await _dbContext.PasskeyCredentials
+            .Where(c => c.SubjectId == subject.Id && c.TenantId == tenantId)
+            .Select(c => new PublicKeyCredentialDescriptor(c.CredentialId))
+            .ToListAsync();
+
+        var options = _fido2.GetAssertionOptions(new GetAssertionOptionsParams
+        {
+            AllowedCredentials = credentials,
+            UserVerification = UserVerificationRequirement.Preferred,
+        });
+
+        var optionsJson = JsonSerializer.Serialize(options, FidoModelSerializerContext.Default.AssertionOptions);
+        var challengeCookie = EncryptChallengeCookie(optionsJson, subject.Id);
+
+        return new PasskeyAssertionOptions(optionsJson, challengeCookie);
+    }
+
+    public async Task<PasskeyAssertionResult> CompleteAssertionAsync(
+        string assertionResponseJson, string challengeCookie, Guid tenantId)
+    {
+        var cookie = DecryptChallengeCookie(challengeCookie);
+
+        var originalOptions = JsonSerializer.Deserialize(
+            cookie.OptionsJson,
+            FidoModelSerializerContext.Default.AssertionOptions)
+            ?? throw new InvalidOperationException("Failed to deserialize assertion options from challenge cookie.");
+
+        var assertionResponse = JsonSerializer.Deserialize<AuthenticatorAssertionRawResponse>(assertionResponseJson)
+            ?? throw new InvalidOperationException("Failed to deserialize assertion response.");
+
+        // Find the credential in the database by raw credential ID bytes
+        var rawId = assertionResponse.RawId;
+        var storedCredential = await _dbContext.PasskeyCredentials
+            .Include(c => c.Subject)
+            .FirstOrDefaultAsync(c => c.TenantId == tenantId && c.CredentialId == rawId)
+            ?? throw new InvalidOperationException("Credential not found for this tenant.");
+
+        var result = await _fido2.MakeAssertionAsync(new MakeAssertionParams
+        {
+            AssertionResponse = assertionResponse,
+            OriginalOptions = originalOptions,
+            StoredPublicKey = storedCredential.PublicKey,
+            StoredSignatureCounter = storedCredential.SignCount,
+            IsUserHandleOwnerOfCredentialIdCallback = async (args, _) =>
+            {
+                var credential = await _dbContext.PasskeyCredentials
+                    .FirstOrDefaultAsync(c => c.TenantId == tenantId && c.CredentialId == args.CredentialId);
+
+                return credential is not null && credential.SubjectId.ToByteArray().SequenceEqual(args.UserHandle);
+            },
+        });
+
+        // Update sign count and last used
+        storedCredential.SignCount = result.SignCount;
+        storedCredential.LastUsedAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync();
+
+        var subject = storedCredential.Subject
+            ?? throw new InvalidOperationException("Subject navigation not loaded.");
+
+        _logger.LogInformation(
+            "Passkey assertion completed for subject {SubjectId} in tenant {TenantId}",
+            subject.Id, tenantId);
+
+        return new PasskeyAssertionResult(subject.Id, subject.Username ?? subject.Name, subject.Name);
+    }
+
+    public async Task<List<PasskeyCredentialInfo>> GetCredentialsAsync(Guid subjectId, Guid tenantId)
+    {
+        return await _dbContext.PasskeyCredentials
+            .Where(c => c.SubjectId == subjectId && c.TenantId == tenantId)
+            .OrderByDescending(c => c.CreatedAt)
+            .Select(c => new PasskeyCredentialInfo(c.Id, c.Label, c.CreatedAt, c.LastUsedAt, c.AaGuid))
+            .ToListAsync();
+    }
+
+    public async Task RemoveCredentialAsync(Guid credentialId, Guid subjectId, Guid tenantId)
+    {
+        var credential = await _dbContext.PasskeyCredentials
+            .FirstOrDefaultAsync(c => c.Id == credentialId && c.SubjectId == subjectId && c.TenantId == tenantId)
+            ?? throw new InvalidOperationException("Credential not found.");
+
+        // Check if this is the last passkey
+        var credentialCount = await _dbContext.PasskeyCredentials
+            .CountAsync(c => c.SubjectId == subjectId && c.TenantId == tenantId);
+
+        if (credentialCount <= 1)
+        {
+            // Block removal if no OIDC link exists
+            var hasOidc = await HasOidcLinkAsync(subjectId);
+            if (!hasOidc)
+            {
+                throw new InvalidOperationException(
+                    "Cannot remove the last passkey credential when no OIDC identity is linked. "
+                    + "Link an external identity provider before removing this credential.");
+            }
+        }
+
+        _dbContext.PasskeyCredentials.Remove(credential);
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Passkey credential {CredentialId} removed for subject {SubjectId} in tenant {TenantId}",
+            credentialId, subjectId, tenantId);
+    }
+
+    public async Task<int> GetCredentialCountAsync(Guid subjectId, Guid tenantId)
+    {
+        return await _dbContext.PasskeyCredentials
+            .CountAsync(c => c.SubjectId == subjectId && c.TenantId == tenantId);
+    }
+
+    public async Task<bool> HasOidcLinkAsync(Guid subjectId)
+    {
+        return await _dbContext.Subjects
+            .AnyAsync(s => s.Id == subjectId && s.OidcSubjectId != null);
+    }
+
+    private string EncryptChallengeCookie(string optionsJson, Guid? subjectId)
+    {
+        var payload = new ChallengeCookiePayload
+        {
+            OptionsJson = optionsJson,
+            SubjectId = subjectId,
+            ExpiresAt = DateTime.UtcNow.Add(ChallengeExpiry),
+        };
+
+        var json = JsonSerializer.Serialize(payload);
+        return _protector.Protect(json);
+    }
+
+    private ChallengeCookiePayload DecryptChallengeCookie(string challengeCookie)
+    {
+        string json;
+        try
+        {
+            json = _protector.Unprotect(challengeCookie);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to decrypt challenge cookie");
+            throw new InvalidOperationException("Invalid or tampered challenge cookie.", ex);
+        }
+
+        var payload = JsonSerializer.Deserialize<ChallengeCookiePayload>(json)
+            ?? throw new InvalidOperationException("Failed to deserialize challenge cookie payload.");
+
+        if (payload.ExpiresAt < DateTime.UtcNow)
+        {
+            throw new InvalidOperationException("Challenge cookie has expired. Please restart the authentication flow.");
+        }
+
+        return payload;
+    }
+
+    private sealed class ChallengeCookiePayload
+    {
+        public string OptionsJson { get; set; } = string.Empty;
+        public Guid? SubjectId { get; set; }
+        public DateTime ExpiresAt { get; set; }
+    }
+}
