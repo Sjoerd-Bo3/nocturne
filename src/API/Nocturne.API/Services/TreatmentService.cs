@@ -1,7 +1,9 @@
 using System.Text.Json;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Treatments;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.API.Services;
 
@@ -10,17 +12,34 @@ public class TreatmentService : ITreatmentService
     private readonly ITreatmentStore _store;
     private readonly ITreatmentCache _cache;
     private readonly ITreatmentEventSink _events;
+    private readonly IPatientInsulinRepository _insulinRepo;
     private readonly ILogger<TreatmentService> _logger;
+
+    private static readonly HashSet<string> BolusEventTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Snack Bolus",
+        "Meal Bolus",
+        "Correction Bolus",
+        "Combo Bolus"
+    };
+
+    private static readonly HashSet<string> BasalEventTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Temp Basal",
+        "Temp Basal Start"
+    };
 
     public TreatmentService(
         ITreatmentStore store,
         ITreatmentCache cache,
         ITreatmentEventSink events,
+        IPatientInsulinRepository insulinRepo,
         ILogger<TreatmentService> logger)
     {
         _store = store;
         _cache = cache;
         _events = events;
+        _insulinRepo = insulinRepo;
         _logger = logger;
     }
 
@@ -79,7 +98,11 @@ public class TreatmentService : ITreatmentService
     public async Task<IEnumerable<Treatment>> CreateTreatmentsAsync(
         IEnumerable<Treatment> treatments, CancellationToken cancellationToken = default)
     {
-        var created = await _store.CreateAsync(treatments.ToList(), cancellationToken);
+        var treatmentList = treatments.ToList();
+
+        await PopulateInsulinContextAsync(treatmentList, cancellationToken);
+
+        var created = await _store.CreateAsync(treatmentList, cancellationToken);
 
         await _cache.InvalidateAsync(cancellationToken);
         await _events.OnCreatedAsync(created, cancellationToken);
@@ -134,5 +157,48 @@ public class TreatmentService : ITreatmentService
         if (count > 0)
             await _cache.InvalidateAsync(cancellationToken);
         return count;
+    }
+
+    private async Task PopulateInsulinContextAsync(
+        List<Treatment> treatments, CancellationToken cancellationToken)
+    {
+        // Determine which lookups we need so we only hit the repo once per type
+        var needsBolus = treatments.Any(t =>
+            t.InsulinContext is null && t.EventType is not null && BolusEventTypes.Contains(t.EventType));
+        var needsBasal = treatments.Any(t =>
+            t.InsulinContext is null && t.EventType is not null && BasalEventTypes.Contains(t.EventType));
+
+        PatientInsulin? bolusInsulin = null;
+        PatientInsulin? basalInsulin = null;
+
+        if (needsBolus)
+            bolusInsulin = await _insulinRepo.GetPrimaryBolusInsulinAsync(cancellationToken);
+        if (needsBasal)
+            basalInsulin = await _insulinRepo.GetPrimaryBasalInsulinAsync(cancellationToken);
+
+        foreach (var treatment in treatments)
+        {
+            if (treatment.InsulinContext is not null || treatment.EventType is null)
+                continue;
+
+            PatientInsulin? insulin = null;
+            if (BolusEventTypes.Contains(treatment.EventType))
+                insulin = bolusInsulin;
+            else if (BasalEventTypes.Contains(treatment.EventType))
+                insulin = basalInsulin;
+
+            if (insulin is not null)
+            {
+                treatment.InsulinContext = new TreatmentInsulinContext
+                {
+                    PatientInsulinId = insulin.Id,
+                    InsulinName = insulin.Name,
+                    Dia = insulin.Dia,
+                    Peak = insulin.Peak,
+                    Curve = insulin.Curve,
+                    Concentration = insulin.Concentration
+                };
+            }
+        }
     }
 }

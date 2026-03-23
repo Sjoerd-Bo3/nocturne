@@ -5,7 +5,9 @@ using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Treatments;
+using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services;
@@ -16,6 +18,7 @@ public class TreatmentServiceTests
     private readonly Mock<ITreatmentStore> _mockStore;
     private readonly Mock<ITreatmentCache> _mockCache;
     private readonly Mock<ITreatmentEventSink> _mockEvents;
+    private readonly Mock<IPatientInsulinRepository> _mockInsulinRepo;
     private readonly Mock<ILogger<TreatmentService>> _mockLogger;
     private readonly TreatmentService _treatmentService;
 
@@ -24,8 +27,11 @@ public class TreatmentServiceTests
         _mockStore = new Mock<ITreatmentStore>();
         _mockCache = new Mock<ITreatmentCache>();
         _mockEvents = new Mock<ITreatmentEventSink>();
+        _mockInsulinRepo = new Mock<IPatientInsulinRepository>();
         _mockLogger = new Mock<ILogger<TreatmentService>>();
-        _treatmentService = new TreatmentService(_mockStore.Object, _mockCache.Object, _mockEvents.Object, _mockLogger.Object);
+        _treatmentService = new TreatmentService(
+            _mockStore.Object, _mockCache.Object, _mockEvents.Object,
+            _mockInsulinRepo.Object, _mockLogger.Object);
     }
 
     [Fact]
@@ -109,4 +115,142 @@ public class TreatmentServiceTests
         result.Should().Be(0);
         _mockCache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    #region Insulin Context Auto-Population
+
+    [Fact]
+    public async Task CreateTreatment_BolusTreatment_ShouldPopulateInsulinContext()
+    {
+        // Arrange
+        var insulinId = Guid.NewGuid();
+        var bolusInsulin = new PatientInsulin
+        {
+            Id = insulinId,
+            Name = "Fiasp",
+            Dia = 3.5,
+            Peak = 55,
+            Curve = "ultra-rapid",
+            Concentration = 100,
+            Role = InsulinRole.Bolus,
+            IsPrimary = true,
+            IsCurrent = true
+        };
+
+        _mockInsulinRepo.Setup(x => x.GetPrimaryBolusInsulinAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(bolusInsulin);
+
+        var treatment = new Treatment { EventType = "Meal Bolus", Insulin = 5.0 };
+
+        _mockStore.Setup(x => x.CreateAsync(It.IsAny<IReadOnlyList<Treatment>>(), It.IsAny<CancellationToken>()))
+            .Returns<IReadOnlyList<Treatment>, CancellationToken>((t, _) => Task.FromResult(t));
+
+        // Act
+        var result = (await _treatmentService.CreateTreatmentsAsync(new[] { treatment }, CancellationToken.None)).ToList();
+
+        // Assert
+        result.Should().ContainSingle();
+        var created = result.First();
+        created.InsulinContext.Should().NotBeNull();
+        created.InsulinContext!.PatientInsulinId.Should().Be(insulinId);
+        created.InsulinContext.InsulinName.Should().Be("Fiasp");
+        created.InsulinContext.Dia.Should().Be(3.5);
+        created.InsulinContext.Peak.Should().Be(55);
+        created.InsulinContext.Curve.Should().Be("ultra-rapid");
+        created.InsulinContext.Concentration.Should().Be(100);
+    }
+
+    [Fact]
+    public async Task CreateTreatment_NonInsulinTreatment_ShouldNotPopulateContext()
+    {
+        // Arrange
+        var treatment = new Treatment { EventType = "Note", Notes = "Feeling good" };
+
+        _mockStore.Setup(x => x.CreateAsync(It.IsAny<IReadOnlyList<Treatment>>(), It.IsAny<CancellationToken>()))
+            .Returns<IReadOnlyList<Treatment>, CancellationToken>((t, _) => Task.FromResult(t));
+
+        // Act
+        var result = (await _treatmentService.CreateTreatmentsAsync(new[] { treatment }, CancellationToken.None)).ToList();
+
+        // Assert
+        result.Should().ContainSingle();
+        result.First().InsulinContext.Should().BeNull();
+        _mockInsulinRepo.Verify(x => x.GetPrimaryBolusInsulinAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _mockInsulinRepo.Verify(x => x.GetPrimaryBasalInsulinAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateTreatment_WithExplicitContext_ShouldNotOverride()
+    {
+        // Arrange
+        var existingContext = new TreatmentInsulinContext
+        {
+            PatientInsulinId = Guid.NewGuid(),
+            InsulinName = "Humalog",
+            Dia = 4.0,
+            Peak = 75,
+            Curve = "rapid-acting",
+            Concentration = 100
+        };
+
+        var treatment = new Treatment
+        {
+            EventType = "Meal Bolus",
+            Insulin = 5.0,
+            InsulinContext = existingContext
+        };
+
+        _mockStore.Setup(x => x.CreateAsync(It.IsAny<IReadOnlyList<Treatment>>(), It.IsAny<CancellationToken>()))
+            .Returns<IReadOnlyList<Treatment>, CancellationToken>((t, _) => Task.FromResult(t));
+
+        // Act
+        var result = (await _treatmentService.CreateTreatmentsAsync(new[] { treatment }, CancellationToken.None)).ToList();
+
+        // Assert
+        result.Should().ContainSingle();
+        result.First().InsulinContext.Should().BeSameAs(existingContext);
+        _mockInsulinRepo.Verify(x => x.GetPrimaryBolusInsulinAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateTreatment_TempBasal_ShouldPopulateFromBasalInsulin()
+    {
+        // Arrange
+        var insulinId = Guid.NewGuid();
+        var basalInsulin = new PatientInsulin
+        {
+            Id = insulinId,
+            Name = "Tresiba",
+            Dia = 24.0,
+            Peak = 600,
+            Curve = "ultra-long",
+            Concentration = 100,
+            Role = InsulinRole.Basal,
+            IsPrimary = true,
+            IsCurrent = true
+        };
+
+        _mockInsulinRepo.Setup(x => x.GetPrimaryBasalInsulinAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(basalInsulin);
+
+        var treatment = new Treatment { EventType = "Temp Basal", Rate = 0.8, Duration = 30 };
+
+        _mockStore.Setup(x => x.CreateAsync(It.IsAny<IReadOnlyList<Treatment>>(), It.IsAny<CancellationToken>()))
+            .Returns<IReadOnlyList<Treatment>, CancellationToken>((t, _) => Task.FromResult(t));
+
+        // Act
+        var result = (await _treatmentService.CreateTreatmentsAsync(new[] { treatment }, CancellationToken.None)).ToList();
+
+        // Assert
+        result.Should().ContainSingle();
+        var created = result.First();
+        created.InsulinContext.Should().NotBeNull();
+        created.InsulinContext!.PatientInsulinId.Should().Be(insulinId);
+        created.InsulinContext.InsulinName.Should().Be("Tresiba");
+        created.InsulinContext.Dia.Should().Be(24.0);
+        created.InsulinContext.Peak.Should().Be(600);
+        created.InsulinContext.Curve.Should().Be("ultra-long");
+        created.InsulinContext.Concentration.Should().Be(100);
+    }
+
+    #endregion
 }
