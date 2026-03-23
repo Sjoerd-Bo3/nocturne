@@ -9,7 +9,6 @@
   } from "$lib/components/ui/card";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
-  import * as Table from "$lib/components/ui/table";
   import {
     User,
     Activity,
@@ -23,35 +22,8 @@
   } from "lucide-svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { bgLabel } from "$lib/utils/formatting";
-  import { glucoseUnits } from "$lib/stores/appearance-store.svelte";
   import { getProfileSummary } from "$api/generated/profiles.generated.remote";
-
-  const MGDL_TO_MMOL = 18.01559;
-
-  function convertValue(
-    value: number | undefined,
-    fromUnits: string | undefined,
-    toUnits: string
-  ): number | undefined {
-    if (value === undefined || value === null) return undefined;
-
-    const from = fromUnits === "mmol" ? "mmol" : "mg/dl";
-    const to = toUnits === "mmol" ? "mmol" : "mg/dl";
-
-    if (from === to) {
-      return from === "mmol" ? Math.round(value * 10) / 10 : Math.round(value);
-    }
-
-    if (from === "mg/dl" && to === "mmol") {
-      return Math.round((value / MGDL_TO_MMOL) * 10) / 10;
-    }
-
-    if (from === "mmol" && to === "mg/dl") {
-      return Math.round(value * MGDL_TO_MMOL);
-    }
-
-    return value;
-  }
+  import ScheduleView from "$lib/components/schedule/ScheduleView.svelte";
 
   type Summary = Awaited<ReturnType<typeof getProfileSummary>>;
 
@@ -352,104 +324,50 @@
 
         <!-- Schedule Cards Grid -->
         <div class="grid gap-4 md:grid-cols-2">
-          <!-- Basal Rates -->
           {#if basal?.entries && basal.entries.length > 0}
-            {@render ScheduleEntryCard({
-              title: "Basal Rates",
-              description: "Background insulin delivery rates",
-              unit: "U/hr",
-              icon: Activity,
-              entries: basal.entries,
-              colorClass: "text-blue-600",
-            })}
+            <ScheduleView
+              title="Basal Rates"
+              description="Background insulin delivery rates"
+              unit="U/hr"
+              icon={Activity}
+              iconClass="text-blue-600"
+              entries={basal.entries}
+            />
           {/if}
 
-          <!-- Carb Ratios -->
           {#if carbRatio?.entries && carbRatio.entries.length > 0}
-            {@render ScheduleEntryCard({
-              title: "Carb Ratios (I:C)",
-              description: "Grams of carbs per unit of insulin",
-              unit: "g/U",
-              icon: Droplet,
-              entries: carbRatio.entries,
-              colorClass: "text-green-600",
-            })}
+            <ScheduleView
+              title="Carb Ratios (I:C)"
+              description="Grams of carbs per unit of insulin"
+              unit="g/U"
+              icon={Droplet}
+              iconClass="text-green-600"
+              entries={carbRatio.entries}
+            />
           {/if}
 
-          <!-- Insulin Sensitivity -->
           {#if sensitivity?.entries && sensitivity.entries.length > 0}
-            {@render ScheduleEntryCard({
-              title: "Insulin Sensitivity (ISF)",
-              description: "BG drop per unit of insulin",
-              unit: `${bgLabel()}/U`,
-              icon: TrendingUp,
-              entries: sensitivity.entries.map((e: any) => ({
-                ...e,
-                value: convertValue(
-                  e.value,
-                  therapy.units,
-                  glucoseUnits.current
-                ),
-              })),
-              colorClass: "text-purple-600",
-            })}
+            <ScheduleView
+              title="Insulin Sensitivity (ISF)"
+              description="BG drop per unit of insulin"
+              unit="{bgLabel()}/U"
+              icon={TrendingUp}
+              iconClass="text-purple-600"
+              entries={sensitivity.entries}
+              sourceUnits={therapy.units}
+            />
           {/if}
 
-          <!-- Target Range -->
           {#if targetRange?.entries && targetRange.entries.length > 0}
-            <Card>
-              <CardHeader class="pb-3">
-                <div class="flex items-center gap-3">
-                  <div
-                    class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10"
-                  >
-                    <Target class="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <CardTitle class="text-base">
-                      Target Range
-                    </CardTitle>
-                    <CardDescription class="text-xs">
-                      Desired blood glucose range
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table.Root>
-                  <Table.Header>
-                    <Table.Row>
-                      <Table.Head>Time</Table.Head>
-                      <Table.Head class="text-right">Low ({bgLabel()})</Table.Head>
-                      <Table.Head class="text-right">High ({bgLabel()})</Table.Head>
-                    </Table.Row>
-                  </Table.Header>
-                  <Table.Body>
-                    {#each targetRange.entries as entry}
-                      <Table.Row>
-                        <Table.Cell class="font-mono text-sm">
-                          {entry.time ?? "-"}
-                        </Table.Cell>
-                        <Table.Cell class="text-right font-mono">
-                          {convertValue(
-                            entry.low,
-                            therapy.units,
-                            glucoseUnits.current
-                          ) ?? "-"}
-                        </Table.Cell>
-                        <Table.Cell class="text-right font-mono">
-                          {convertValue(
-                            entry.high,
-                            therapy.units,
-                            glucoseUnits.current
-                          ) ?? "-"}
-                        </Table.Cell>
-                      </Table.Row>
-                    {/each}
-                  </Table.Body>
-                </Table.Root>
-              </CardContent>
-            </Card>
+            <ScheduleView
+              title="Target Range"
+              description="Desired blood glucose range"
+              unit={bgLabel()}
+              icon={Target}
+              iconClass="text-amber-600"
+              entries={targetRange.entries}
+              sourceUnits={therapy.units}
+            />
           {/if}
         </div>
 
@@ -513,57 +431,3 @@
   </div>
 {/await}
 
-<!-- Schedule Entry Card Snippet -->
-{#snippet ScheduleEntryCard({
-  title,
-  description,
-  unit,
-  icon: IconComponent,
-  entries,
-  colorClass,
-}: {
-  title: string;
-  description: string;
-  unit: string;
-  icon: typeof Activity;
-  entries: Array<{ time?: string; value?: number }>;
-  colorClass: string;
-})}
-  <Card>
-    <CardHeader class="pb-3">
-      <div class="flex items-center gap-3">
-        <div
-          class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"
-        >
-          <IconComponent class="h-5 w-5 {colorClass}" />
-        </div>
-        <div>
-          <CardTitle class="text-base">{title}</CardTitle>
-          <CardDescription class="text-xs">{description}</CardDescription>
-        </div>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <Table.Root>
-        <Table.Header>
-          <Table.Row>
-            <Table.Head>Time</Table.Head>
-            <Table.Head class="text-right">{unit}</Table.Head>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {#each entries as entry}
-            <Table.Row>
-              <Table.Cell class="font-mono text-sm">
-                {entry.time ?? "-"}
-              </Table.Cell>
-              <Table.Cell class="text-right font-mono">
-                {entry.value ?? "-"}
-              </Table.Cell>
-            </Table.Row>
-          {/each}
-        </Table.Body>
-      </Table.Root>
-    </CardContent>
-  </Card>
-{/snippet}
