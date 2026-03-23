@@ -61,6 +61,51 @@ public class PatientInsulinEntity : ITenantScoped
     public string? Notes { get; set; }
 
     /// <summary>
+    /// Reference to a specific insulin formulation definition
+    /// </summary>
+    [Column("formulation_id")]
+    [MaxLength(64)]
+    public string? FormulationId { get; set; }
+
+    /// <summary>
+    /// Duration of insulin action in hours
+    /// </summary>
+    [Column("dia")]
+    public double Dia { get; set; } = 4.0;
+
+    /// <summary>
+    /// Peak activity time in minutes
+    /// </summary>
+    [Column("peak")]
+    public int Peak { get; set; } = 75;
+
+    /// <summary>
+    /// Insulin activity curve type (e.g. "rapid-acting", "ultra-rapid")
+    /// </summary>
+    [Column("curve")]
+    [MaxLength(32)]
+    public string Curve { get; set; } = "rapid-acting";
+
+    /// <summary>
+    /// Insulin concentration in units/mL (e.g. 100 for U-100)
+    /// </summary>
+    [Column("concentration")]
+    public int Concentration { get; set; } = 100;
+
+    /// <summary>
+    /// Role of the insulin: Bolus, Basal, or Both
+    /// </summary>
+    [Column("role")]
+    [MaxLength(16)]
+    public string Role { get; set; } = "Both";
+
+    /// <summary>
+    /// Whether this is the primary insulin for its role
+    /// </summary>
+    [Column("is_primary")]
+    public bool IsPrimary { get; set; }
+
+    /// <summary>
     /// System tracking: when record was inserted
     /// </summary>
     [Column("sys_created_at")]

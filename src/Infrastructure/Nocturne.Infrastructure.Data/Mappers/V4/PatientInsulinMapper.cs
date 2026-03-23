@@ -22,6 +22,13 @@ public static class PatientInsulinMapper
             EndDate = model.EndDate,
             IsCurrent = model.IsCurrent,
             Notes = model.Notes,
+            FormulationId = model.FormulationId,
+            Dia = model.Dia,
+            Peak = model.Peak,
+            Curve = model.Curve,
+            Concentration = model.Concentration,
+            Role = model.Role.ToString(),
+            IsPrimary = model.IsPrimary,
             SysCreatedAt = DateTime.UtcNow,
             SysUpdatedAt = DateTime.UtcNow,
         };
@@ -43,6 +50,15 @@ public static class PatientInsulinMapper
             EndDate = entity.EndDate,
             IsCurrent = entity.IsCurrent,
             Notes = entity.Notes,
+            FormulationId = entity.FormulationId,
+            Dia = entity.Dia,
+            Peak = entity.Peak,
+            Curve = entity.Curve,
+            Concentration = entity.Concentration,
+            Role = Enum.TryParse<InsulinRole>(entity.Role, ignoreCase: true, out var role)
+                ? role
+                : InsulinRole.Both,
+            IsPrimary = entity.IsPrimary,
             CreatedAt = entity.SysCreatedAt,
             ModifiedAt = entity.SysUpdatedAt,
         };
@@ -59,6 +75,13 @@ public static class PatientInsulinMapper
         entity.EndDate = model.EndDate;
         entity.IsCurrent = model.IsCurrent;
         entity.Notes = model.Notes;
+        entity.FormulationId = model.FormulationId;
+        entity.Dia = model.Dia;
+        entity.Peak = model.Peak;
+        entity.Curve = model.Curve;
+        entity.Concentration = model.Concentration;
+        entity.Role = model.Role.ToString();
+        entity.IsPrimary = model.IsPrimary;
         entity.SysUpdatedAt = DateTime.UtcNow;
     }
 }
