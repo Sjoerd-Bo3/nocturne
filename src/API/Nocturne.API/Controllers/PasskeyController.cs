@@ -296,6 +296,127 @@ public class PasskeyController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// List all passkey credentials for the authenticated user
+    /// </summary>
+    [HttpGet("credentials")]
+    [ProducesResponseType(typeof(PasskeyCredentialListResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<PasskeyCredentialListResponse>> ListCredentials()
+    {
+        var auth = HttpContext.GetAuthContext();
+        if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
+        {
+            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+        }
+
+        var tenantId = _tenantAccessor.TenantId;
+        var credentials = await _passkeyService.GetCredentialsAsync(auth.SubjectId.Value, tenantId);
+        var hasOidc = await _passkeyService.HasOidcLinkAsync(auth.SubjectId.Value);
+
+        return Ok(new PasskeyCredentialListResponse
+        {
+            Credentials = credentials.Select(c => new PasskeyCredentialDto
+            {
+                Id = c.Id,
+                Label = c.Label,
+                CreatedAt = c.CreatedAt,
+                LastUsedAt = c.LastUsedAt,
+            }).ToList(),
+            HasOidcLink = hasOidc,
+        });
+    }
+
+    /// <summary>
+    /// Remove a passkey credential. Cannot remove the last credential if user has no OIDC link.
+    /// </summary>
+    [HttpDelete("credentials/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveCredential(Guid id)
+    {
+        var auth = HttpContext.GetAuthContext();
+        if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
+        {
+            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+        }
+
+        var tenantId = _tenantAccessor.TenantId;
+
+        // Check removal protection: cannot remove last passkey if no OIDC link
+        var credentialCount = await _passkeyService.GetCredentialCountAsync(auth.SubjectId.Value, tenantId);
+        var hasOidc = await _passkeyService.HasOidcLinkAsync(auth.SubjectId.Value);
+
+        if (credentialCount <= 1 && !hasOidc)
+        {
+            return BadRequest(new ErrorResponse
+            {
+                Error = "removal_blocked",
+                Message = "Cannot remove your last passkey without an alternative sign-in method",
+            });
+        }
+
+        try
+        {
+            await _passkeyService.RemoveCredentialAsync(id, auth.SubjectId.Value, tenantId);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to remove passkey credential {CredentialId}", id);
+            return NotFound(new ErrorResponse { Error = "not_found", Message = "Credential not found" });
+        }
+    }
+
+    /// <summary>
+    /// Regenerate recovery codes for the authenticated user. Invalidates all existing codes.
+    /// </summary>
+    [HttpPost("recovery/regenerate")]
+    [ProducesResponseType(typeof(RecoveryRegenerateResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<RecoveryRegenerateResponse>> RegenerateRecoveryCodes()
+    {
+        var auth = HttpContext.GetAuthContext();
+        if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
+        {
+            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+        }
+
+        var codes = await _recoveryCodeService.GenerateCodesAsync(auth.SubjectId.Value);
+
+        return Ok(new RecoveryRegenerateResponse
+        {
+            Codes = codes,
+        });
+    }
+
+    /// <summary>
+    /// Get the count of remaining recovery codes for the authenticated user
+    /// </summary>
+    [HttpGet("recovery/status")]
+    [ProducesResponseType(typeof(RecoveryStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<RecoveryStatusResponse>> GetRecoveryStatus()
+    {
+        var auth = HttpContext.GetAuthContext();
+        if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
+        {
+            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+        }
+
+        var remaining = await _recoveryCodeService.GetRemainingCountAsync(auth.SubjectId.Value);
+        var hasCodes = await _recoveryCodeService.HasCodesAsync(auth.SubjectId.Value);
+
+        return Ok(new RecoveryStatusResponse
+        {
+            RemainingCodes = remaining,
+            HasCodes = hasCodes,
+            TotalCodes = 8,
+        });
+    }
+
     #region Private Helpers
 
     private void SetChallengeCookie(string challengeData)
@@ -433,6 +554,44 @@ public class RecoveryVerifyResponse
 {
     public bool Success { get; set; }
     public int RemainingCodes { get; set; }
+}
+
+/// <summary>
+/// Response containing the list of passkey credentials
+/// </summary>
+public class PasskeyCredentialListResponse
+{
+    public List<PasskeyCredentialDto> Credentials { get; set; } = new();
+    public bool HasOidcLink { get; set; }
+}
+
+/// <summary>
+/// A passkey credential summary (never includes the public key)
+/// </summary>
+public class PasskeyCredentialDto
+{
+    public Guid Id { get; set; }
+    public string? Label { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? LastUsedAt { get; set; }
+}
+
+/// <summary>
+/// Response containing regenerated recovery codes
+/// </summary>
+public class RecoveryRegenerateResponse
+{
+    public List<string> Codes { get; set; } = new();
+}
+
+/// <summary>
+/// Response containing recovery code status
+/// </summary>
+public class RecoveryStatusResponse
+{
+    public int RemainingCodes { get; set; }
+    public bool HasCodes { get; set; }
+    public int TotalCodes { get; set; }
 }
 
 #endregion

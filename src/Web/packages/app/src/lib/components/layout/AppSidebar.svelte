@@ -55,6 +55,8 @@
     ListChecks,
     Shield,
     Eye,
+    Fingerprint,
+    KeyRound,
   } from "lucide-svelte";
   import type { AuthUser } from "$lib/stores/auth-store.svelte";
 
@@ -292,7 +294,9 @@
           icon: Timer,
         },
         { title: "Connectors & Apps", href: "/settings/connectors", icon: Plug },
-        { title: "Followers & Sharing", href: "/settings/security", icon: Shield },
+        { title: "Followers & Sharing", href: "/settings/sharing", icon: Shield },
+        { title: "Security", href: "/settings/security", icon: Fingerprint },
+        { title: "API Access", href: "/settings/api-access", icon: KeyRound },
         {
           title: "Support & Community",
           href: "/settings/support",

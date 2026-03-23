@@ -1,260 +1,236 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Badge } from "$lib/components/ui/badge";
-  import { Checkbox } from "$lib/components/ui/checkbox";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Separator } from "$lib/components/ui/separator";
   import {
-    Users,
-    Trash2,
+    Fingerprint,
     Plus,
+    Trash2,
+    Clock,
+    ShieldAlert,
+    RefreshCw,
+    Copy,
     Check,
     AlertTriangle,
-    Clock,
-    Link,
-    Copy,
     Loader2,
+    Info,
+    Server,
   } from "lucide-svelte";
   import { formatDate } from "$lib/utils/formatting";
-  import {
-    getGrants,
-    listInvites,
-    deleteGrant,
-    createFollowerGrant,
-    createInvite,
-    revokeInvite,
-  } from "$lib/api/generated/oauths.generated.remote";
+  import { registerPasskey } from "$lib/auth/passkey-client";
+  import { page } from "$app/state";
 
-  /** Human-readable descriptions for each OAuth scope. */
-  const scopeDescriptions: Record<string, string> = {
-    "entries.read": "View glucose readings",
-    "entries.readwrite": "View and record glucose readings",
-    "treatments.read": "View treatments",
-    "treatments.readwrite": "View and record treatments",
-    "devicestatus.read": "View device status",
-    "devicestatus.readwrite": "View and update device status",
-    "profile.read": "View profile settings",
-    "profile.readwrite": "View and update profile settings",
-    "notifications.read": "View notifications",
-    "notifications.readwrite": "Manage notifications",
-    "reports.read": "View reports and analytics",
-    "identity.read": "View basic account info",
-    "sharing.readwrite": "Manage sharing settings",
-    "health.read": "View all health data (read-only)",
-    "*": "Full access including delete",
-  };
+  // ============================================================================
+  // Types
+  // ============================================================================
 
-  /** Available scopes for follower grants. */
-  const followerScopes = [
-    "entries.read",
-    "treatments.read",
-    "devicestatus.read",
-    "profile.read",
-    "notifications.read",
-    "reports.read",
-  ] as const;
+  interface PasskeyCredential {
+    id: string;
+    label: string | null;
+    createdAt: string;
+    lastUsedAt: string | null;
+  }
 
-  // Remote queries
-  const grantsQuery = $derived(getGrants());
-  const invitesQuery = $derived(listInvites());
+  interface CredentialListResponse {
+    credentials: PasskeyCredential[];
+    hasOidcLink: boolean;
+  }
 
-  // Derived data from queries
-  const grants = $derived(grantsQuery.current?.grants ?? []);
-  const invites = $derived(invitesQuery.current?.invites ?? []);
-  const activeInvites = $derived(invites.filter((i) => i.isValid));
-  const followerGrants = $derived(
-    grants.filter((g) => g.grantType === "follower")
-  );
+  interface RecoveryStatus {
+    remainingCodes: number;
+    hasCodes: boolean;
+    totalCodes: number;
+  }
 
-  // UI state
-  let showAddFollower = $state(false);
-  let showCreateInvite = $state(false);
-  let followerEmail = $state("");
-  let followerLabel = $state("");
-  let followerDisplayName = $state("");
-  let createNewAccount = $state(false);
-  let temporaryPassword = $state("");
-  let inviteLabel = $state("");
-  let selectedScopes = $state<Record<string, boolean>>({
-    "entries.read": true,
-    "treatments.read": false,
-    "devicestatus.read": false,
-    "profile.read": false,
-    "notifications.read": false,
-    "reports.read": false,
-  });
-  let inviteScopes = $state<Record<string, boolean>>({
-    "entries.read": true,
-    "treatments.read": false,
-    "devicestatus.read": false,
-    "profile.read": false,
-    "notifications.read": false,
-    "reports.read": false,
-  });
-  let allowMultipleUses = $state(false);
-  let createdInviteUrl = $state<string | null>(null);
-  let copiedInvite = $state(false);
+  // ============================================================================
+  // State
+  // ============================================================================
 
-  // Loading/error states
-  let isRevoking = $state<string | null>(null);
-  let isAddingFollower = $state(false);
-  let isCreatingInvite = $state(false);
-  let isRevokingInvite = $state<string | null>(null);
+  let credentials = $state<PasskeyCredential[]>([]);
+  let hasOidcLink = $state(false);
+  let recoveryStatus = $state<RecoveryStatus | null>(null);
+  let isLoading = $state(true);
   let errorMessage = $state<string | null>(null);
   let successMessage = $state<string | null>(null);
 
-  const selectedScopeList = $derived(
-    Object.entries(selectedScopes)
-      .filter(([, v]) => v)
-      .map(([k]) => k)
-  );
+  // Passkey add flow
+  let isRegistering = $state(false);
+  let showLabelDialog = $state(false);
+  let newPasskeyLabel = $state("");
 
-  const inviteScopeList = $derived(
-    Object.entries(inviteScopes)
-      .filter(([, v]) => v)
-      .map(([k]) => k)
-  );
+  // Passkey remove flow
+  let isRemoving = $state<string | null>(null);
+  let showRemoveDialog = $state(false);
+  let removeTarget = $state<PasskeyCredential | null>(null);
 
-  /** Reset the add-follower form to its defaults. */
-  function resetFollowerForm() {
-    followerEmail = "";
-    followerLabel = "";
-    followerDisplayName = "";
-    createNewAccount = false;
-    temporaryPassword = "";
-    selectedScopes = {
-      "entries.read": true,
-      "treatments.read": false,
-      "devicestatus.read": false,
-      "profile.read": false,
-      "notifications.read": false,
-      "reports.read": false,
-    };
-    showAddFollower = false;
-    errorMessage = null;
-  }
+  // Recovery codes
+  let showRegenerateDialog = $state(false);
+  let isRegenerating = $state(false);
+  let showNewCodesDialog = $state(false);
+  let newRecoveryCodes = $state<string[]>([]);
+  let copiedCodes = $state(false);
 
-  /** Reset the create-invite form to its defaults. */
-  function resetInviteForm() {
-    inviteLabel = "";
-    inviteScopes = {
-      "entries.read": true,
-      "treatments.read": false,
-      "devicestatus.read": false,
-      "profile.read": false,
-      "notifications.read": false,
-      "reports.read": false,
-    };
-    allowMultipleUses = false;
-    showCreateInvite = false;
-    createdInviteUrl = null;
-    errorMessage = null;
-  }
+  const user = $derived(page.data?.user);
+  const canRemovePasskey = $derived(credentials.length > 1 || hasOidcLink);
+  const maxPasskeys = 20;
 
-  /** Copy invite URL to clipboard */
-  async function copyInviteUrl() {
-    if (createdInviteUrl) {
-      await navigator.clipboard.writeText(createdInviteUrl);
-      copiedInvite = true;
-      setTimeout(() => (copiedInvite = false), 2000);
+  // ============================================================================
+  // Data fetching
+  // ============================================================================
+
+  async function loadCredentials() {
+    try {
+      const response = await fetch("/api/auth/passkey/credentials");
+      if (!response.ok) throw new Error("Failed to load credentials");
+      const data: CredentialListResponse = await response.json();
+      credentials = data.credentials;
+      hasOidcLink = data.hasOidcLink;
+    } catch (err) {
+      errorMessage = "Failed to load passkey credentials.";
     }
   }
 
-  /** Clear messages after a delay */
+  async function loadRecoveryStatus() {
+    try {
+      const response = await fetch("/api/auth/passkey/recovery/status");
+      if (!response.ok) throw new Error("Failed to load recovery status");
+      recoveryStatus = await response.json();
+    } catch (err) {
+      // Recovery status may not be available for all users
+      recoveryStatus = null;
+    }
+  }
+
+  onMount(async () => {
+    await Promise.all([loadCredentials(), loadRecoveryStatus()]);
+    isLoading = false;
+  });
+
+  // ============================================================================
+  // Passkey registration
+  // ============================================================================
+
+  async function handleAddPasskey() {
+    if (!user?.subjectId || !user?.name) return;
+    isRegistering = true;
+    errorMessage = null;
+
+    try {
+      const result = await registerPasskey(user.subjectId, user.name);
+      if (result.success) {
+        newPasskeyLabel = "";
+        showLabelDialog = true;
+        await loadCredentials();
+      } else {
+        errorMessage = result.error ?? "Passkey registration failed.";
+      }
+    } catch (err) {
+      errorMessage = "Failed to register passkey.";
+    } finally {
+      isRegistering = false;
+    }
+  }
+
+  function handleLabelDialogClose() {
+    showLabelDialog = false;
+    newPasskeyLabel = "";
+    successMessage = "Passkey added successfully.";
+    clearMessages();
+  }
+
+  // ============================================================================
+  // Passkey removal
+  // ============================================================================
+
+  function confirmRemovePasskey(credential: PasskeyCredential) {
+    removeTarget = credential;
+    showRemoveDialog = true;
+  }
+
+  async function handleRemovePasskey() {
+    if (!removeTarget) return;
+    isRemoving = removeTarget.id;
+    errorMessage = null;
+    showRemoveDialog = false;
+
+    try {
+      const response = await fetch(
+        `/api/auth/passkey/credentials/${removeTarget.id}`,
+        { method: "DELETE" },
+      );
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(
+          body?.message ?? "Failed to remove passkey.",
+        );
+      }
+      successMessage = "Passkey removed.";
+      clearMessages();
+      await loadCredentials();
+    } catch (err) {
+      errorMessage =
+        err instanceof Error ? err.message : "Failed to remove passkey.";
+    } finally {
+      isRemoving = null;
+      removeTarget = null;
+    }
+  }
+
+  // ============================================================================
+  // Recovery codes
+  // ============================================================================
+
+  async function handleRegenerateCodes() {
+    isRegenerating = true;
+    errorMessage = null;
+    showRegenerateDialog = false;
+
+    try {
+      const response = await fetch("/api/auth/passkey/recovery/regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to regenerate codes");
+      const data: { codes: string[] } = await response.json();
+      newRecoveryCodes = data.codes;
+      showNewCodesDialog = true;
+      await loadRecoveryStatus();
+    } catch (err) {
+      errorMessage = "Failed to regenerate recovery codes.";
+    } finally {
+      isRegenerating = false;
+    }
+  }
+
+  async function copyRecoveryCodes() {
+    const text = newRecoveryCodes.join("\n");
+    await navigator.clipboard.writeText(text);
+    copiedCodes = true;
+    setTimeout(() => (copiedCodes = false), 2000);
+  }
+
   function clearMessages() {
     setTimeout(() => {
       successMessage = null;
       errorMessage = null;
     }, 3000);
   }
-
-  /** Handle revoking a grant */
-  async function handleRevokeGrant(grantId: string) {
-    isRevoking = grantId;
-    errorMessage = null;
-    try {
-      await deleteGrant(grantId);
-      successMessage = "Grant revoked successfully.";
-      clearMessages();
-    } catch (err) {
-      errorMessage = "Failed to revoke grant. Please try again.";
-      clearMessages();
-    } finally {
-      isRevoking = null;
-    }
-  }
-
-  /** Handle adding a follower */
-  async function handleAddFollower() {
-    isAddingFollower = true;
-    errorMessage = null;
-    try {
-      await createFollowerGrant({
-        followerEmail,
-        scopes: selectedScopeList,
-        label: followerLabel || undefined,
-        temporaryPassword: createNewAccount ? temporaryPassword : undefined,
-        followerDisplayName: createNewAccount ? followerDisplayName : undefined,
-      });
-      successMessage = "Follower added successfully.";
-      resetFollowerForm();
-      clearMessages();
-    } catch (err) {
-      errorMessage = "Failed to add follower. Please try again.";
-    } finally {
-      isAddingFollower = false;
-    }
-  }
-
-  /** Handle creating an invite */
-  async function handleCreateInvite() {
-    isCreatingInvite = true;
-    errorMessage = null;
-    try {
-      const result = await createInvite({
-        scopes: inviteScopeList,
-        label: inviteLabel || undefined,
-        expiresInDays: 7,
-        maxUses: allowMultipleUses ? undefined : 1,
-      });
-      if (result.inviteUrl) {
-        createdInviteUrl = result.inviteUrl;
-      }
-    } catch (err) {
-      errorMessage = "Failed to create invite. Please try again.";
-    } finally {
-      isCreatingInvite = false;
-    }
-  }
-
-  /** Handle revoking an invite */
-  async function handleRevokeInvite(inviteId: string) {
-    isRevokingInvite = inviteId;
-    errorMessage = null;
-    try {
-      await revokeInvite(inviteId);
-      successMessage = "Invite revoked successfully.";
-      clearMessages();
-    } catch (err) {
-      errorMessage = "Failed to revoke invite. Please try again.";
-      clearMessages();
-    } finally {
-      isRevokingInvite = null;
-    }
-  }
 </script>
 
 <svelte:head>
-  <title>Followers & Sharing - Settings - Nocturne</title>
+  <title>Security - Settings - Nocturne</title>
 </svelte:head>
 
-<div class="w-full py-6 space-y-6">
+<div class="container mx-auto max-w-4xl p-6 space-y-6">
   <div class="space-y-1">
-    <h1 class="text-2xl font-bold tracking-tight">Followers & Sharing</h1>
+    <h1 class="text-2xl font-bold tracking-tight">Security</h1>
     <p class="text-muted-foreground">
-      Share your data with caregivers and family members
+      Manage your passkeys and account recovery options
     </p>
   </div>
 
@@ -280,225 +256,89 @@
     </div>
   {/if}
 
-  <div class="space-y-4">
-    <div class="flex items-center justify-between gap-4">
-      <p class="text-sm text-muted-foreground">
-        Share your data with caregivers and family members
-      </p>
-      <div class="flex gap-2">
-        {#if !showCreateInvite && !showAddFollower}
+  {#if isLoading}
+    <Card.Root>
+      <Card.Content class="flex items-center justify-center py-12">
+        <Loader2 class="h-6 w-6 animate-spin text-muted-foreground" />
+      </Card.Content>
+    </Card.Root>
+  {:else}
+    <!-- Section 1: Registered Passkeys -->
+    <Card.Root>
+      <Card.Header>
+        <div class="flex items-center justify-between">
+          <div>
+            <Card.Title class="flex items-center gap-2">
+              <Fingerprint class="h-5 w-5" />
+              Passkeys
+            </Card.Title>
+            <Card.Description>
+              Passkeys provide secure, phishing-resistant authentication using
+              your device's biometrics or security key.
+            </Card.Description>
+          </div>
           <Button
             variant="outline"
             size="sm"
-            onclick={() => (showCreateInvite = true)}
+            disabled={isRegistering || credentials.length >= maxPasskeys}
+            onclick={handleAddPasskey}
           >
-            <Link class="mr-1.5 h-3.5 w-3.5" />
-            Create Invite Link
+            {#if isRegistering}
+              <Loader2 class="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            {:else}
+              <Plus class="mr-1.5 h-3.5 w-3.5" />
+            {/if}
+            Add passkey
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onclick={() => (showAddFollower = true)}
-          >
-            <Plus class="mr-1.5 h-3.5 w-3.5" />
-            Add by Email
-          </Button>
-        {/if}
-      </div>
-    </div>
-
-    <!-- Create Invite Link Card -->
-    {#if showCreateInvite}
-      <Card.Root>
-        <Card.Header>
-          <Card.Title class="text-lg">Create Invite Link</Card.Title>
-          <Card.Description>
-            Generate a shareable link. Anyone with this link can accept the
-            invite after signing in.
-          </Card.Description>
-        </Card.Header>
-        <Card.Content>
-          {#if createdInviteUrl}
-            <!-- Show the created invite URL -->
-            <div class="space-y-4">
-              <div
-                class="flex items-start gap-3 rounded-md border border-green-200 bg-green-50 p-3 dark:border-green-900/50 dark:bg-green-900/20"
-              >
-                <Check
-                  class="mt-0.5 h-4 w-4 shrink-0 text-green-600 dark:text-green-400"
-                />
-                <p class="text-sm text-green-800 dark:text-green-200">
-                  Invite link created! Share it with your friend or family
-                  member.
-                </p>
-              </div>
-
-              <div class="flex gap-2">
-                <Input
-                  type="text"
-                  value={createdInviteUrl}
-                  readonly
-                  class="font-mono text-sm"
-                />
-                <Button variant="outline" size="icon" onclick={copyInviteUrl}>
-                  {#if copiedInvite}
-                    <Check class="h-4 w-4 text-green-600" />
-                  {:else}
-                    <Copy class="h-4 w-4" />
-                  {/if}
-                </Button>
-              </div>
-
-              <Button
-                variant="outline"
-                class="w-full"
-                onclick={() => resetInviteForm()}
-              >
-                Done
-              </Button>
+        </div>
+      </Card.Header>
+      <Card.Content class="space-y-3">
+        {#if credentials.length === 0}
+          <div class="flex flex-col items-center justify-center py-8 text-center">
+            <div
+              class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted"
+            >
+              <Fingerprint class="h-6 w-6 text-muted-foreground" />
             </div>
-          {:else}
-            <!-- Show the create invite form -->
-            <div class="space-y-4">
-              <div class="space-y-2">
-                <Label for="invite-label">Label (optional)</Label>
-                <Input
-                  id="invite-label"
-                  type="text"
-                  placeholder="e.g. Mom, Endocrinologist"
-                  bind:value={inviteLabel}
-                />
-              </div>
-
-              <div class="space-y-3">
-                <Label>Data to share</Label>
-                <div class="grid gap-3 sm:grid-cols-2">
-                  {#each followerScopes as scope}
-                    <div class="flex items-center gap-2">
-                      <Checkbox
-                        id="invite-scope-{scope}"
-                        checked={inviteScopes[scope]}
-                        onCheckedChange={(checked) => {
-                          inviteScopes[scope] = checked === true;
-                        }}
-                      />
-                      <label
-                        for="invite-scope-{scope}"
-                        class="text-sm text-foreground cursor-pointer select-none"
-                      >
-                        {scopeDescriptions[scope] ?? scope}
-                      </label>
-                    </div>
-                  {/each}
-                </div>
-              </div>
-
-              <div
-                class="flex items-start gap-2 rounded-md border p-3 bg-muted/30"
-              >
-                <Checkbox
-                  id="allow-multiple-uses"
-                  checked={allowMultipleUses}
-                  onCheckedChange={(checked) => {
-                    allowMultipleUses = checked === true;
-                  }}
-                />
-                <div class="flex-1">
-                  <label
-                    for="allow-multiple-uses"
-                    class="text-sm font-medium cursor-pointer select-none"
-                  >
-                    Allow multiple uses
-                  </label>
-                  <p class="text-xs text-muted-foreground mt-0.5">
-                    By default, invite links can only be used once. Enable this
-                    to allow unlimited uses.
-                  </p>
-                </div>
-              </div>
-
-              <div class="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  class="flex-1"
-                  onclick={() => resetInviteForm()}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  class="flex-1"
-                  disabled={inviteScopeList.length === 0 || isCreatingInvite}
-                  onclick={handleCreateInvite}
-                >
-                  {#if isCreatingInvite}
-                    <Loader2 class="mr-1.5 h-4 w-4 animate-spin" />
-                  {/if}
-                  Create Link
-                </Button>
-              </div>
-            </div>
-          {/if}
-        </Card.Content>
-      </Card.Root>
-    {/if}
-
-    <!-- Pending Invites -->
-    {#if activeInvites.length > 0 && !showCreateInvite && !showAddFollower}
-      <Card.Root>
-        <Card.Header class="pb-3">
-          <Card.Title class="text-base flex items-center gap-2">
-            <Link class="h-4 w-4" />
-            Pending Invites
-          </Card.Title>
-        </Card.Header>
-        <Card.Content class="space-y-3">
-          {#each activeInvites as invite (invite.id)}
+            <p class="text-sm text-muted-foreground max-w-sm">
+              No passkeys registered. Add a passkey to enable passwordless
+              sign-in.
+            </p>
+          </div>
+        {:else}
+          {#each credentials as credential (credential.id)}
             <div
               class="flex items-center justify-between gap-4 rounded-md border p-3"
             >
               <div class="space-y-1 flex-1 min-w-0">
                 <p class="text-sm font-medium">
-                  {invite.label ?? "Invite Link"}
+                  {credential.label ?? "Unnamed passkey"}
                 </p>
-                <p class="text-xs text-muted-foreground">
-                  Expires {formatDate(invite.expiresAt)}
-                  {#if invite.maxUses}
-                    &middot; {invite.useCount}/{invite.maxUses} uses
-                  {:else}
-                    &middot; {invite.useCount}
-                    {invite.useCount === 1 ? "use" : "uses"}
+                <div
+                  class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"
+                >
+                  <span class="flex items-center gap-1">
+                    <Clock class="h-3 w-3" />
+                    Created {formatDate(credential.createdAt)}
+                  </span>
+                  {#if credential.lastUsedAt}
+                    <span class="flex items-center gap-1">
+                      <Clock class="h-3 w-3" />
+                      Last used {formatDate(credential.lastUsedAt)}
+                    </span>
                   {/if}
-                </p>
-                {#if invite.usedBy && invite.usedBy.length > 0}
-                  <div class="mt-2 pt-2 border-t space-y-1">
-                    <p
-                      class="text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                    >
-                      Used by
-                    </p>
-                    {#each invite.usedBy as usage}
-                      <p class="text-xs text-foreground">
-                        <Check class="inline h-3 w-3 mr-1 text-primary" />
-                        {usage.followerName ?? usage.followerEmail ?? "Unknown"}
-                        <span class="text-muted-foreground ml-1">
-                          on {formatDate(usage.usedAt)}
-                        </span>
-                      </p>
-                    {/each}
-                  </div>
-                {/if}
+                </div>
               </div>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 class="text-destructive hover:text-destructive shrink-0"
-                disabled={isRevokingInvite === invite.id}
-                onclick={() => handleRevokeInvite(invite.id!)}
+                disabled={!canRemovePasskey ||
+                  isRemoving === credential.id}
+                onclick={() => confirmRemovePasskey(credential)}
               >
-                {#if isRevokingInvite === invite.id}
+                {#if isRemoving === credential.id}
                   <Loader2 class="h-3.5 w-3.5 animate-spin" />
                 {:else}
                   <Trash2 class="h-3.5 w-3.5" />
@@ -506,237 +346,228 @@
               </Button>
             </div>
           {/each}
-        </Card.Content>
-      </Card.Root>
-    {/if}
+        {/if}
 
-    {#if showAddFollower}
-      <Card.Root>
-        <Card.Header>
-          <Card.Title class="text-lg">Add a Follower</Card.Title>
-          <Card.Description>
-            Grant someone read access to your data by entering their email and
-            selecting which data to share.
-          </Card.Description>
-        </Card.Header>
-        <Card.Content>
-          <div class="space-y-4">
-            <div class="space-y-2">
-              <Label for="follower-email">Email address</Label>
-              <Input
-                id="follower-email"
-                type="email"
-                placeholder="caregiver@example.com"
-                bind:value={followerEmail}
-              />
-            </div>
-
-            <div class="space-y-2">
-              <Label for="follower-label">Label (optional)</Label>
-              <Input
-                id="follower-label"
-                type="text"
-                placeholder="e.g. Mom, Endocrinologist"
-                bind:value={followerLabel}
-              />
-            </div>
-
-            <div class="space-y-3 rounded-md border p-4">
-              <div class="flex items-center gap-2">
-                <Checkbox
-                  id="create-new-account"
-                  checked={createNewAccount}
-                  onCheckedChange={(checked) => {
-                    createNewAccount = checked === true;
-                    if (!checked) {
-                      temporaryPassword = "";
-                      followerDisplayName = "";
-                    }
-                  }}
-                />
-                <label
-                  for="create-new-account"
-                  class="text-sm font-medium cursor-pointer select-none"
-                >
-                  Create new account with temporary password
-                </label>
-              </div>
-
-              {#if createNewAccount}
-                <div class="space-y-3 pl-6">
-                  <div class="space-y-2">
-                    <Label for="follower-display-name">
-                      Display name (optional)
-                    </Label>
-                    <Input
-                      id="follower-display-name"
-                      type="text"
-                      placeholder="e.g. Mom"
-                      bind:value={followerDisplayName}
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="temporary-password">Temporary password</Label>
-                    <Input
-                      id="temporary-password"
-                      type="password"
-                      placeholder="Enter a temporary password"
-                      bind:value={temporaryPassword}
-                    />
-                    <p class="text-xs text-muted-foreground">
-                      The follower will be required to change this password on
-                      first login.
-                    </p>
-                  </div>
-                </div>
-              {/if}
-            </div>
-
-            <div class="space-y-3">
-              <Label>Data to share</Label>
-              <div class="grid gap-3 sm:grid-cols-2">
-                {#each followerScopes as scope}
-                  <div class="flex items-center gap-2">
-                    <Checkbox
-                      id="scope-{scope}"
-                      checked={selectedScopes[scope]}
-                      onCheckedChange={(checked) => {
-                        selectedScopes[scope] = checked === true;
-                      }}
-                    />
-                    <label
-                      for="scope-{scope}"
-                      class="text-sm text-foreground cursor-pointer select-none"
-                    >
-                      {scopeDescriptions[scope] ?? scope}
-                    </label>
-                  </div>
-                {/each}
-              </div>
-            </div>
-
-            <div class="flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                class="flex-1"
-                onclick={() => resetFollowerForm()}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                class="flex-1"
-                disabled={selectedScopeList.length === 0 ||
-                  !followerEmail ||
-                  isAddingFollower ||
-                  (createNewAccount && !temporaryPassword)}
-                onclick={handleAddFollower}
-              >
-                {#if isAddingFollower}
-                  <Loader2 class="mr-1.5 h-4 w-4 animate-spin" />
-                {/if}
-                Add Follower
-              </Button>
-            </div>
-          </div>
-        </Card.Content>
-      </Card.Root>
-    {/if}
-
-    {#if followerGrants.length === 0 && !showAddFollower}
-      <Card.Root>
-        <Card.Content
-          class="flex flex-col items-center justify-center py-12 text-center"
-        >
-          <div
-            class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted"
-          >
-            <Users class="h-6 w-6 text-muted-foreground" />
-          </div>
-          <p class="text-sm text-muted-foreground max-w-sm">
-            No followers. Share your data with caregivers by adding a follower.
+        {#if credentials.length >= maxPasskeys}
+          <p class="text-xs text-muted-foreground">
+            Maximum of {maxPasskeys} passkeys reached.
           </p>
-        </Card.Content>
-      </Card.Root>
-    {:else}
-      {#each followerGrants as grant (grant.id)}
-        <Card.Root>
-          <Card.Header>
-            <div class="flex items-start justify-between gap-4">
-              <div class="space-y-1 flex-1 min-w-0">
-                <Card.Title class="flex items-center gap-2 flex-wrap">
-                  <span class="truncate">
-                    {grant.followerName ?? grant.followerEmail ?? "Unknown"}
-                  </span>
-                </Card.Title>
-                <Card.Description>
-                  {#if grant.followerEmail}
-                    {grant.followerEmail}
-                  {/if}
-                  {#if grant.label}
-                    {#if grant.followerEmail}
-                      <span class="mx-1">&middot;</span>
-                    {/if}
-                    {grant.label}
-                  {/if}
-                </Card.Description>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                class="text-destructive border-destructive/30 hover:bg-destructive/10 shrink-0"
-                disabled={isRevoking === grant.id}
-                onclick={() => handleRevokeGrant(grant.id!)}
-              >
-                {#if isRevoking === grant.id}
-                  <Loader2 class="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                {:else}
-                  <Trash2 class="mr-1.5 h-3.5 w-3.5" />
-                {/if}
-                Revoke
-              </Button>
-            </div>
-          </Card.Header>
-          <Card.Content class="space-y-4">
-            <div>
-              <p
-                class="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider"
-              >
-                Shared Data
+        {/if}
+
+        {#if !canRemovePasskey && credentials.length > 0}
+          <p class="text-xs text-muted-foreground">
+            You cannot remove your only passkey without an alternative sign-in
+            method linked to your account.
+          </p>
+        {/if}
+      </Card.Content>
+    </Card.Root>
+
+    <!-- Section 2: Recovery Codes -->
+    <Card.Root>
+      <Card.Header>
+        <Card.Title class="flex items-center gap-2">
+          <ShieldAlert class="h-5 w-5" />
+          Recovery Codes
+        </Card.Title>
+        <Card.Description>
+          Recovery codes allow you to access your account if you lose all your
+          passkeys. Store them in a safe place.
+        </Card.Description>
+      </Card.Header>
+      <Card.Content class="space-y-4">
+        {#if recoveryStatus}
+          <div class="flex items-center justify-between">
+            <div class="space-y-1">
+              <p class="text-sm font-medium">
+                {recoveryStatus.remainingCodes} of {recoveryStatus.totalCodes} recovery
+                codes remaining
               </p>
-              <ul class="space-y-1.5">
-                {#each grant.scopes ?? [] as scope}
-                  <li class="flex items-start gap-2 text-sm">
-                    <Check class="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                    <span class="text-muted-foreground">
-                      {scopeDescriptions[scope] ?? scope}
-                    </span>
-                  </li>
-                {/each}
-              </ul>
+              <p class="text-xs text-muted-foreground">
+                Each code can only be used once.
+              </p>
             </div>
-
-            <Separator />
-
-            <div
-              class="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground"
+            <Badge
+              variant={recoveryStatus.remainingCodes > 2
+                ? "secondary"
+                : "destructive"}
             >
-              <span class="flex items-center gap-1.5">
-                <Clock class="h-3 w-3" />
-                Created {formatDate(grant.createdAt)}
-              </span>
-              {#if grant.lastUsedAt}
-                <span class="flex items-center gap-1.5">
-                  <Clock class="h-3 w-3" />
-                  Last used {formatDate(grant.lastUsedAt)}
-                </span>
-              {/if}
-            </div>
-          </Card.Content>
-        </Card.Root>
-      {/each}
-    {/if}
-  </div>
+              {recoveryStatus.remainingCodes} remaining
+            </Badge>
+          </div>
+        {:else}
+          <p class="text-sm text-muted-foreground">
+            No recovery codes have been generated yet.
+          </p>
+        {/if}
+
+        <Separator />
+
+        <Button
+          variant="outline"
+          disabled={isRegenerating}
+          onclick={() => (showRegenerateDialog = true)}
+        >
+          {#if isRegenerating}
+            <Loader2 class="mr-1.5 h-4 w-4 animate-spin" />
+          {:else}
+            <RefreshCw class="mr-1.5 h-4 w-4" />
+          {/if}
+          Regenerate recovery codes
+        </Button>
+      </Card.Content>
+    </Card.Root>
+
+    <!-- Section 3: Recovery Mode Info -->
+    <Card.Root class="border-muted">
+      <Card.Header>
+        <Card.Title class="flex items-center gap-2 text-muted-foreground">
+          <Server class="h-5 w-5" />
+          Server-Side Account Recovery
+        </Card.Title>
+      </Card.Header>
+      <Card.Content>
+        <div
+          class="flex items-start gap-3 rounded-md border border-border bg-muted/30 p-4"
+        >
+          <Info class="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+          <div class="space-y-2">
+            <p class="text-sm text-muted-foreground">
+              If you lose all your passkeys and recovery codes, you can recover
+              your account by setting the
+              <code
+                class="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground"
+              >
+                NOCTURNE_RECOVERY_MODE
+              </code>
+              environment variable on your server.
+            </p>
+            <p class="text-sm text-muted-foreground">
+              This enables a temporary recovery flow that allows you to register
+              a new passkey. It requires physical access to the server
+              environment.
+            </p>
+          </div>
+        </div>
+      </Card.Content>
+    </Card.Root>
+  {/if}
 </div>
+
+<!-- Label Dialog (after passkey registration) -->
+<Dialog.Root bind:open={showLabelDialog}>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Name your passkey</Dialog.Title>
+      <Dialog.Description>
+        Give this passkey a name to help you identify it later (e.g. "MacBook
+        Touch ID", "YubiKey 5").
+      </Dialog.Description>
+    </Dialog.Header>
+    <div class="space-y-4 py-4">
+      <div class="space-y-2">
+        <Label for="passkey-label">Label (optional)</Label>
+        <Input
+          id="passkey-label"
+          type="text"
+          placeholder="e.g. MacBook Touch ID"
+          bind:value={newPasskeyLabel}
+        />
+      </div>
+    </div>
+    <Dialog.Footer>
+      <Button variant="outline" onclick={handleLabelDialogClose}>
+        Skip
+      </Button>
+      <Button onclick={handleLabelDialogClose}>
+        Save
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
+
+<!-- Remove Confirmation Dialog -->
+<Dialog.Root bind:open={showRemoveDialog}>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Remove passkey</Dialog.Title>
+      <Dialog.Description>
+        Are you sure you want to remove "{removeTarget?.label ??
+          "Unnamed passkey"}"? You will no longer be able to sign in with this
+        passkey.
+      </Dialog.Description>
+    </Dialog.Header>
+    <Dialog.Footer>
+      <Button variant="outline" onclick={() => (showRemoveDialog = false)}>
+        Cancel
+      </Button>
+      <Button variant="destructive" onclick={handleRemovePasskey}>
+        Remove
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
+
+<!-- Regenerate Confirmation Dialog -->
+<Dialog.Root bind:open={showRegenerateDialog}>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Regenerate recovery codes</Dialog.Title>
+      <Dialog.Description>
+        This will invalidate all existing recovery codes and generate new ones.
+        Make sure to save the new codes in a safe place.
+      </Dialog.Description>
+    </Dialog.Header>
+    <Dialog.Footer>
+      <Button
+        variant="outline"
+        onclick={() => (showRegenerateDialog = false)}
+      >
+        Cancel
+      </Button>
+      <Button variant="destructive" onclick={handleRegenerateCodes}>
+        Regenerate
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
+
+<!-- New Recovery Codes Dialog -->
+<Dialog.Root bind:open={showNewCodesDialog}>
+  <Dialog.Content class="max-w-md">
+    <Dialog.Header>
+      <Dialog.Title>New recovery codes</Dialog.Title>
+      <Dialog.Description>
+        Save these codes in a safe place. Each code can only be used once. This
+        is the only time they will be shown.
+      </Dialog.Description>
+    </Dialog.Header>
+    <div class="space-y-4 py-4">
+      <div class="grid grid-cols-2 gap-2 rounded-md border bg-muted/30 p-4">
+        {#each newRecoveryCodes as code}
+          <p class="font-mono text-sm text-center">{code}</p>
+        {/each}
+      </div>
+      <Button variant="outline" class="w-full" onclick={copyRecoveryCodes}>
+        {#if copiedCodes}
+          <Check class="mr-1.5 h-4 w-4 text-green-600" />
+          Copied
+        {:else}
+          <Copy class="mr-1.5 h-4 w-4" />
+          Copy all codes
+        {/if}
+      </Button>
+    </div>
+    <Dialog.Footer>
+      <Button
+        onclick={() => {
+          showNewCodesDialog = false;
+          newRecoveryCodes = [];
+          copiedCodes = false;
+        }}
+      >
+        Done
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
