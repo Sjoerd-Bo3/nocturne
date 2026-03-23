@@ -18,11 +18,10 @@ public class OAuthGrantEntity
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Foreign key to the OAuth client
+    /// Foreign key to the OAuth client (null for direct grants which have no OAuth client)
     /// </summary>
-    [Required]
     [Column("client_id")]
-    public Guid ClientEntityId { get; set; }
+    public Guid? ClientEntityId { get; set; }
 
     /// <summary>
     /// Foreign key to the subject (user) who approved this grant
@@ -105,6 +104,13 @@ public class OAuthGrantEntity
     public bool LimitTo24Hours { get; set; }
 
     /// <summary>
+    /// SHA-256 hash of opaque direct grant token for secure lookup
+    /// </summary>
+    [MaxLength(128)]
+    [Column("token_hash")]
+    public string? TokenHash { get; set; }
+
+    /// <summary>
     /// Whether this grant has been revoked
     /// </summary>
     [NotMapped]
@@ -146,4 +152,5 @@ public static class OAuthGrantTypes
 {
     public const string App = OAuthScopes.GrantTypeApp;
     public const string Follower = OAuthScopes.GrantTypeFollower;
+    public const string Direct = OAuthScopes.GrantTypeDirect;
 }

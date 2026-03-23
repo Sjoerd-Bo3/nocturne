@@ -25,6 +25,13 @@ public class SubjectEntity
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// Login identifier for non-discoverable WebAuthn flows
+    /// </summary>
+    [MaxLength(50)]
+    [Column("username")]
+    public string? Username { get; set; }
+
+    /// <summary>
     /// SHA256 hash of legacy access token for secure lookup
     /// </summary>
     [MaxLength(64)]
@@ -120,4 +127,9 @@ public class SubjectEntity
     /// Refresh tokens issued to this subject
     /// </summary>
     public ICollection<RefreshTokenEntity> RefreshTokens { get; set; } = new List<RefreshTokenEntity>();
+
+    /// <summary>
+    /// Passkey credentials registered by this subject
+    /// </summary>
+    public ICollection<PasskeyCredentialEntity> PasskeyCredentials { get; set; } = new List<PasskeyCredentialEntity>();
 }

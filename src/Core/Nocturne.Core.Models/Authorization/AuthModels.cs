@@ -242,5 +242,10 @@ public enum AuthType
     /// <summary>
     /// OAuth 2.0 access token (JWT with scope claims)
     /// </summary>
-    OAuthAccessToken
+    OAuthAccessToken,
+
+    /// <summary>
+    /// Direct grant token (opaque API token with no OAuth client)
+    /// </summary>
+    DirectGrant
 }

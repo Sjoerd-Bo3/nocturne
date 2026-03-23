@@ -122,7 +122,7 @@ public interface IOAuthGrantService
 public class OAuthGrantInfo
 {
     public Guid Id { get; set; }
-    public Guid ClientEntityId { get; set; }
+    public Guid? ClientEntityId { get; set; }
     public string ClientId { get; set; } = string.Empty;
     public string? ClientDisplayName { get; set; }
     public bool IsKnownClient { get; set; }

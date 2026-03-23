@@ -2334,7 +2334,8 @@ public class NocturneDbContext : DbContext
                 .HasOne(e => e.Client)
                 .WithMany(c => c.Grants)
                 .HasForeignKey(e => e.ClientEntityId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
 
             entity
                 .HasOne(e => e.Subject)
@@ -2603,6 +2604,20 @@ public class NocturneDbContext : DbContext
             entity.ToTable("alert_custom_sounds");
             entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        // PasskeyCredentialEntity
+        modelBuilder.Entity<PasskeyCredentialEntity>(entity =>
+        {
+            entity.HasIndex(e => new { e.TenantId, e.CredentialId }).IsUnique();
+            entity.HasOne(e => e.Subject).WithMany(s => s.PasskeyCredentials).HasForeignKey(e => e.SubjectId);
+        });
+
+        // RecoveryCodeEntity
+        modelBuilder.Entity<RecoveryCodeEntity>(entity =>
+        {
+            entity.HasIndex(e => e.SubjectId);
+            entity.HasOne(e => e.Subject).WithMany().HasForeignKey(e => e.SubjectId);
         });
 
     }
