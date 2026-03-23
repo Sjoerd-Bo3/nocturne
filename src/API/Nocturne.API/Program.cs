@@ -224,6 +224,9 @@ app.UseCors();
 // Add JSON extension middleware to handle .json suffixes for legacy compatibility
 app.UseMiddleware<JsonExtensionMiddleware>();
 
+// Block most API traffic when recovery mode is active (orphaned subjects detected)
+app.UseMiddleware<RecoveryModeMiddleware>();
+
 // Resolve tenant from subdomain (must run before authentication)
 app.UseMiddleware<TenantResolutionMiddleware>();
 

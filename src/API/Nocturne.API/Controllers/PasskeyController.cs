@@ -7,6 +7,7 @@ using Nocturne.API.Models;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Configuration;
+using Nocturne.API.Services.Auth;
 using Nocturne.Infrastructure.Data;
 using SameSiteMode = Nocturne.Core.Models.Configuration.SameSiteMode;
 
@@ -415,6 +416,19 @@ public class PasskeyController : ControllerBase
             HasCodes = hasCodes,
             TotalCodes = 8,
         });
+    }
+
+    /// <summary>
+    /// Returns whether the instance is currently in recovery mode.
+    /// Recovery mode activates when active subjects exist that have no
+    /// passkey credential and no OIDC binding (orphaned after upgrade).
+    /// </summary>
+    [HttpGet("recovery-mode-status")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult GetRecoveryModeStatus([FromServices] RecoveryModeState state)
+    {
+        return Ok(new { recoveryMode = state.IsEnabled });
     }
 
     #region Private Helpers
