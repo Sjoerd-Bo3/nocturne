@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Fido2NetLib;
 using Nocturne.API.Configuration;
 using Nocturne.API.Middleware.Handlers;
 using Nocturne.API.Services;
@@ -147,6 +148,16 @@ public static class ServiceRegistrationExtensions
         services.AddHostedService<UserSeedService>();
         services.AddHostedService<AuthorizationSeedService>();
 
+        // Passkey (WebAuthn/FIDO2) services
+        services.AddScoped<IPasskeyService, PasskeyService>();
+        services.AddScoped<IRecoveryCodeService, RecoveryCodeService>();
+        services.AddFido2(options =>
+        {
+            options.ServerDomain = configuration["Passkey:RpId"] ?? "localhost";
+            options.ServerName = "Nocturne";
+            options.Origins = new HashSet<string> { configuration["Passkey:Origin"] ?? "https://localhost:1613" };
+        });
+
         // Multitenancy
         services.Configure<MultitenancyConfiguration>(
             configuration.GetSection(MultitenancyConfiguration.SectionName)
@@ -158,6 +169,7 @@ public static class ServiceRegistrationExtensions
         // Auth handlers (executed in priority order, lowest first)
         services.AddSingleton<IAuthHandler, SessionCookieHandler>(); // Priority 50
         services.AddSingleton<IAuthHandler, OidcTokenHandler>(); // Priority 100
+        services.AddSingleton<IAuthHandler, DirectGrantTokenHandler>(); // Priority 150
         services.AddSingleton<IAuthHandler, LegacyJwtHandler>(); // Priority 200
         services.AddSingleton<IAuthHandler, AccessTokenHandler>(); // Priority 300
         services.AddSingleton<IAuthHandler, ApiSecretHandler>(); // Priority 400
