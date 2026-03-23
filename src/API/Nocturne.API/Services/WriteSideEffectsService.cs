@@ -1,4 +1,5 @@
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Infrastructure.Cache.Abstractions;
 
@@ -9,19 +10,48 @@ public class WriteSideEffectsService : IWriteSideEffects
     private readonly ICacheService _cache;
     private readonly ISignalRBroadcastService _broadcast;
     private readonly IDecompositionPipeline _pipeline;
+    private readonly ITenantAccessor _tenantAccessor;
+    private readonly IReadOnlyDictionary<string, ICollectionEffectDescriptor> _descriptors;
     private readonly ILogger<WriteSideEffectsService> _logger;
 
     public WriteSideEffectsService(
         ICacheService cache,
         ISignalRBroadcastService broadcast,
         IDecompositionPipeline pipeline,
+        ITenantAccessor tenantAccessor,
+        IEnumerable<ICollectionEffectDescriptor> descriptors,
         ILogger<WriteSideEffectsService> logger
     )
     {
         _cache = cache;
         _broadcast = broadcast;
         _pipeline = pipeline;
+        _tenantAccessor = tenantAccessor;
+        _descriptors = descriptors.ToDictionary(
+            d => d.CollectionName,
+            StringComparer.OrdinalIgnoreCase
+        );
         _logger = logger;
+    }
+
+    private WriteEffectOptions ResolveOptions(
+        string collectionName,
+        WriteEffectOptions? explicitOptions
+    )
+    {
+        if (explicitOptions is not null)
+            return explicitOptions;
+        if (!_descriptors.TryGetValue(collectionName, out var descriptor))
+            return new WriteEffectOptions();
+
+        var tenantId = _tenantAccessor.Context?.TenantId.ToString() ?? "";
+        return new WriteEffectOptions
+        {
+            CacheKeysToRemove = descriptor.GetCacheKeysToRemove(tenantId),
+            CachePatternsToClear = descriptor.GetCachePatternsToClear(tenantId),
+            DecomposeToV4 = descriptor.DecomposeToV4,
+            BroadcastDataUpdate = descriptor.BroadcastDataUpdateOnCreate,
+        };
     }
 
     public async Task OnCreatedAsync<T>(
@@ -31,7 +61,7 @@ public class WriteSideEffectsService : IWriteSideEffects
         CancellationToken cancellationToken = default
     ) where T : class
     {
-        options ??= new WriteEffectOptions();
+        options = ResolveOptions(collectionName, options);
 
         await InvalidateCacheAsync(options, cancellationToken);
 
@@ -52,7 +82,11 @@ public class WriteSideEffectsService : IWriteSideEffects
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Broadcast failed during create for {Collection}", collectionName);
+            _logger.LogError(
+                ex,
+                "Broadcast failed during create for {Collection}",
+                collectionName
+            );
         }
 
         if (options.DecomposeToV4)
@@ -68,7 +102,7 @@ public class WriteSideEffectsService : IWriteSideEffects
         CancellationToken cancellationToken = default
     ) where T : class
     {
-        options ??= new WriteEffectOptions();
+        options = ResolveOptions(collectionName, options);
 
         await InvalidateCacheAsync(options, cancellationToken);
 
@@ -81,7 +115,11 @@ public class WriteSideEffectsService : IWriteSideEffects
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Broadcast failed during update for {Collection}", collectionName);
+            _logger.LogError(
+                ex,
+                "Broadcast failed during update for {Collection}",
+                collectionName
+            );
         }
 
         if (options.DecomposeToV4)
@@ -111,11 +149,12 @@ public class WriteSideEffectsService : IWriteSideEffects
         CancellationToken cancellationToken = default
     ) where T : class
     {
-        options ??= new WriteEffectOptions();
+        options = ResolveOptions(collectionName, options);
 
         await InvalidateCacheAsync(options, cancellationToken);
 
-        if (deletedRecord is null) return;
+        if (deletedRecord is null)
+            return;
 
         try
         {
@@ -126,7 +165,11 @@ public class WriteSideEffectsService : IWriteSideEffects
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Broadcast failed during delete for {Collection}", collectionName);
+            _logger.LogError(
+                ex,
+                "Broadcast failed during delete for {Collection}",
+                collectionName
+            );
         }
     }
 
@@ -137,9 +180,10 @@ public class WriteSideEffectsService : IWriteSideEffects
         CancellationToken cancellationToken = default
     )
     {
-        if (deletedCount <= 0) return;
+        if (deletedCount <= 0)
+            return;
 
-        options ??= new WriteEffectOptions();
+        options = ResolveOptions(collectionName, options);
 
         await InvalidateCacheAsync(options, cancellationToken);
 
@@ -152,7 +196,11 @@ public class WriteSideEffectsService : IWriteSideEffects
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Broadcast failed during bulk delete for {Collection}", collectionName);
+            _logger.LogError(
+                ex,
+                "Broadcast failed during bulk delete for {Collection}",
+                collectionName
+            );
         }
     }
 

@@ -36,12 +36,6 @@ public class DeviceStatusService : IDeviceStatusService
         _logger = logger;
     }
 
-    private WriteEffectOptions BuildWriteOptions() => new()
-    {
-        CacheKeysToRemove = [$"devicestatus:current:{TenantCacheId}"],
-        DecomposeToV4 = true,
-    };
-
     /// <inheritdoc />
     public async Task<IEnumerable<DeviceStatus>> GetDeviceStatusAsync(
         string? find = null,
@@ -120,7 +114,11 @@ public class DeviceStatusService : IDeviceStatusService
             cancellationToken
         );
 
-        await _sideEffects.OnCreatedAsync(CollectionName, createdDeviceStatus.ToList(), BuildWriteOptions(), cancellationToken);
+        await _sideEffects.OnCreatedAsync(
+            CollectionName,
+            createdDeviceStatus.ToList(),
+            cancellationToken: cancellationToken
+        );
 
         return createdDeviceStatus;
     }
@@ -140,7 +138,11 @@ public class DeviceStatusService : IDeviceStatusService
 
         if (updatedDeviceStatus != null)
         {
-            await _sideEffects.OnUpdatedAsync(CollectionName, updatedDeviceStatus, BuildWriteOptions(), cancellationToken);
+            await _sideEffects.OnUpdatedAsync(
+                CollectionName,
+                updatedDeviceStatus,
+                cancellationToken: cancellationToken
+            );
         }
 
         return updatedDeviceStatus;
@@ -152,7 +154,11 @@ public class DeviceStatusService : IDeviceStatusService
         CancellationToken cancellationToken = default
     )
     {
-        await _sideEffects.BeforeDeleteAsync<DeviceStatus>(id, BuildWriteOptions(), cancellationToken);
+        await _sideEffects.BeforeDeleteAsync<DeviceStatus>(
+            id,
+            new WriteEffectOptions { DecomposeToV4 = true },
+            cancellationToken
+        );
 
         // Get the device status before deleting for broadcasting
         var deviceStatusToDelete = await _deviceStatuses.GetDeviceStatusByIdAsync(
@@ -164,7 +170,11 @@ public class DeviceStatusService : IDeviceStatusService
 
         if (deleted)
         {
-            await _sideEffects.OnDeletedAsync(CollectionName, deviceStatusToDelete, BuildWriteOptions(), cancellationToken);
+            await _sideEffects.OnDeletedAsync(
+                CollectionName,
+                deviceStatusToDelete,
+                cancellationToken: cancellationToken
+            );
         }
 
         return deleted;
@@ -181,7 +191,11 @@ public class DeviceStatusService : IDeviceStatusService
             cancellationToken
         );
 
-        await _sideEffects.OnBulkDeletedAsync(CollectionName, deletedCount, BuildWriteOptions(), cancellationToken);
+        await _sideEffects.OnBulkDeletedAsync(
+            CollectionName,
+            deletedCount,
+            cancellationToken: cancellationToken
+        );
 
         return deletedCount;
     }

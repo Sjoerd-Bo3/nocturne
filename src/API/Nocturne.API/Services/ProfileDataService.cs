@@ -42,12 +42,6 @@ public class ProfileDataService : IProfileDataService
         _logger = logger;
     }
 
-    private WriteEffectOptions BuildWriteOptions() => new()
-    {
-        CacheKeysToRemove = [CacheKeyBuilder.BuildCurrentProfileKey(TenantCacheId)],
-        CachePatternsToClear = [CacheKeyBuilder.BuildProfileTimestampPattern(TenantCacheId)],
-    };
-
     /// <inheritdoc />
     public async Task<IEnumerable<Profile>> GetProfilesAsync(
         string? find = null,
@@ -153,7 +147,11 @@ public class ProfileDataService : IProfileDataService
             cancellationToken
         );
 
-        await _sideEffects.OnCreatedAsync(CollectionName, createdProfiles.ToList(), BuildWriteOptions(), cancellationToken);
+        await _sideEffects.OnCreatedAsync(
+            CollectionName,
+            createdProfiles.ToList(),
+            cancellationToken: cancellationToken
+        );
 
         return createdProfiles;
     }
@@ -173,7 +171,11 @@ public class ProfileDataService : IProfileDataService
 
         if (updatedProfile != null)
         {
-            await _sideEffects.OnUpdatedAsync(CollectionName, updatedProfile, BuildWriteOptions(), cancellationToken);
+            await _sideEffects.OnUpdatedAsync(
+                CollectionName,
+                updatedProfile,
+                cancellationToken: cancellationToken
+            );
         }
 
         return updatedProfile;
@@ -192,7 +194,11 @@ public class ProfileDataService : IProfileDataService
 
         if (deleted)
         {
-            await _sideEffects.OnDeletedAsync(CollectionName, profileToDelete, BuildWriteOptions(), cancellationToken);
+            await _sideEffects.OnDeletedAsync(
+                CollectionName,
+                profileToDelete,
+                cancellationToken: cancellationToken
+            );
         }
 
         return deleted;
