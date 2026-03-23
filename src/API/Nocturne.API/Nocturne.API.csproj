@@ -21,6 +21,7 @@
   <ItemGroup>
     <PackageReference Include="Alexa.NET" />
     <PackageReference Include="dotAPNS" />
+    <PackageReference Include="Fido2.AspNet" />
     <PackageReference Include="HtmlSanitizer" />
     <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
@@ -40,27 +41,12 @@
     <PackageReference Include="MongoDB.Driver" />
   </ItemGroup>
   <ItemGroup>
-    <Content
-      Include="..\..\..\appsettings.json"
-      Link="appsettings.json"
-      CopyToOutputDirectory="PreserveNewest"
-      Condition="Exists('..\..\..\appsettings.json')"
-    />
-    <Content
-      Include="..\..\..\appsettings.Development.json"
-      Link="appsettings.Development.json"
-      CopyToOutputDirectory="PreserveNewest"
-      Condition="Exists('..\..\..\appsettings.Development.json')"
-    />
+    <Content Include="..\..\..\appsettings.json" Link="appsettings.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\..\appsettings.json')" />
+    <Content Include="..\..\..\appsettings.Development.json" Link="appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\..\appsettings.Development.json')" />
     <!-- oref.wasm is optional — only needed when Predictions:Source=OrefWasm.
          Download from https://github.com/nightscout/nocturne-heuristics-wasm/releases
          and place in the build output directory. -->
-    <Content
-      Include="oref.wasm"
-      Link="oref.wasm"
-      CopyToOutputDirectory="PreserveNewest"
-      Condition="Exists('oref.wasm')"
-    />
+    <Content Include="oref.wasm" Link="oref.wasm" CopyToOutputDirectory="PreserveNewest" Condition="Exists('oref.wasm')" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Nocturne.API.Tests" />
@@ -94,11 +80,7 @@
   </PropertyGroup>
   <Target Name="GenerateClient" AfterTargets="Build" Condition="'$(GenerateNSwagClient)' == 'true'">
     <Message Importance="high" Text="Generating TypeScript API client with NSwag..." />
-    <Exec
-      Command="$(NSwagExe_Net100) run nswag.json /variables:Configuration=$(Configuration)"
-      WorkingDirectory="$(MSBuildProjectDirectory)"
-      ContinueOnError="false"
-    />
+    <Exec Command="$(NSwagExe_Net100) run nswag.json /variables:Configuration=$(Configuration)" WorkingDirectory="$(MSBuildProjectDirectory)" ContinueOnError="false" />
     <Message Importance="high" Text="TypeScript API client generation complete." />
   </Target>
   <!-- Zod Schema Generation — runs after NSwag to generate Zod schemas from openapi.json -->
@@ -108,11 +90,7 @@
       <WebMonorepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../../Web'))</WebMonorepoRoot>
     </PropertyGroup>
     <Message Importance="high" Text="Generating Zod schemas from OpenAPI spec..." />
-    <Exec
-      Command="pnpm run generate-zod-schemas"
-      WorkingDirectory="$(WebMonorepoRoot)"
-      ContinueOnError="false"
-    />
+    <Exec Command="pnpm run generate-zod-schemas" WorkingDirectory="$(WebMonorepoRoot)" ContinueOnError="false" />
     <Message Importance="high" Text="Zod schema generation complete." />
   </Target>
   <!-- Remote Function Codegen — runs after Zod schemas to generate remote functions from openapi.json -->
@@ -122,11 +100,7 @@
       <WebMonorepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../../Web'))</WebMonorepoRoot>
     </PropertyGroup>
     <Message Importance="high" Text="Generating remote functions from OpenAPI spec..." />
-    <Exec
-      Command="pnpm --filter @nocturne/remote-function-codegen generate"
-      WorkingDirectory="$(WebMonorepoRoot)"
-      ContinueOnError="false"
-    />
+    <Exec Command="pnpm --filter @nocturne/remote-function-codegen generate" WorkingDirectory="$(WebMonorepoRoot)" ContinueOnError="false" />
     <Message Importance="high" Text="Remote function generation complete." />
   </Target>
 </Project>
