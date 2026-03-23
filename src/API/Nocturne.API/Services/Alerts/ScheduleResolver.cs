@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 
 namespace Nocturne.API.Services.Alerts;
@@ -26,26 +27,45 @@ internal static class ScheduleResolver
 
         foreach (var schedule in schedules.Where(s => !s.IsDefault))
         {
-            if (IsActive(schedule, utcNow))
+            if (IsActive(schedule.DaysOfWeek, schedule.StartTime, schedule.EndTime, schedule.Timezone, utcNow))
                 return schedule;
         }
 
         return defaultSchedule;
     }
 
-    private static bool IsActive(AlertScheduleEntity schedule, DateTime utcNow)
+    /// <summary>
+    /// Resolve the active schedule snapshot for the given UTC time.
+    /// </summary>
+    public static AlertScheduleSnapshot Resolve(
+        IReadOnlyList<AlertScheduleSnapshot> schedules,
+        DateTime utcNow)
     {
-        if (schedule.StartTime is null || schedule.EndTime is null)
+        var defaultSchedule = schedules.FirstOrDefault(s => s.IsDefault)
+            ?? throw new InvalidOperationException("No default schedule found for alert rule.");
+
+        foreach (var schedule in schedules.Where(s => !s.IsDefault))
+        {
+            if (IsActive(schedule.DaysOfWeek, schedule.StartTime, schedule.EndTime, schedule.Timezone, utcNow))
+                return schedule;
+        }
+
+        return defaultSchedule;
+    }
+
+    private static bool IsActive(string? daysOfWeek, TimeOnly? startTime, TimeOnly? endTime, string timezone, DateTime utcNow)
+    {
+        if (startTime is null || endTime is null)
             return false;
 
-        var tz = TimeZoneInfo.FindSystemTimeZoneById(schedule.Timezone);
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(timezone);
         var localDateTime = TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);
         var localTime = TimeOnly.FromDateTime(localDateTime);
 
         // Check day-of-week filter (ISO: 1=Mon..7=Sun)
-        if (schedule.DaysOfWeek is not null)
+        if (daysOfWeek is not null)
         {
-            var allowedDays = JsonSerializer.Deserialize<int[]>(schedule.DaysOfWeek);
+            var allowedDays = JsonSerializer.Deserialize<int[]>(daysOfWeek);
             if (allowedDays is not null)
             {
                 var isoDay = ToIsoDayOfWeek(localDateTime.DayOfWeek);
@@ -55,8 +75,8 @@ internal static class ScheduleResolver
         }
 
         // Check time window
-        var start = schedule.StartTime.Value;
-        var end = schedule.EndTime.Value;
+        var start = startTime.Value;
+        var end = endTime.Value;
 
         if (start <= end)
         {

@@ -33,7 +33,7 @@ public class EscalationAdvancer : IEscalationAdvancer
         {
             // No more steps; stop escalating
             await _repository.UpdateInstanceAsync(new UpdateAlertInstanceRequest(instance.Id,
-                Status: "triggered", NextEscalationAt: null), ct);
+                Status: "triggered", NextEscalationAt: DateTime.MinValue), ct);
             return;
         }
 
@@ -41,7 +41,7 @@ public class EscalationAdvancer : IEscalationAdvancer
         await _repository.UpdateInstanceAsync(new UpdateAlertInstanceRequest(instance.Id,
             CurrentStepOrder: nextStepOrder,
             Status: followingStep is null ? "triggered" : instance.Status,
-            NextEscalationAt: followingStep is not null ? now.AddSeconds(nextStep.DelaySeconds) : null), ct);
+            NextEscalationAt: followingStep is not null ? now.AddSeconds(nextStep.DelaySeconds) : DateTime.MinValue), ct);
 
         // Build payload and dispatch delivery
         var tenant = await _repository.GetTenantAlertContextAsync(instance.TenantId, ct);

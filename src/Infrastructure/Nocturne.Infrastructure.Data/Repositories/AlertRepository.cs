@@ -151,10 +151,12 @@ public class AlertRepository : IAlertRepository
             entity.Status = request.Status;
 
         if (request.NextEscalationAt.HasValue)
-            entity.NextEscalationAt = request.NextEscalationAt.Value;
+            entity.NextEscalationAt = request.NextEscalationAt == DateTime.MinValue
+                ? null : request.NextEscalationAt.Value;
 
         if (request.SnoozedUntil.HasValue)
-            entity.SnoozedUntil = request.SnoozedUntil.Value;
+            entity.SnoozedUntil = request.SnoozedUntil == DateTime.MinValue
+                ? null : request.SnoozedUntil.Value;
 
         if (request.SnoozeCount.HasValue)
             entity.SnoozeCount = request.SnoozeCount.Value;

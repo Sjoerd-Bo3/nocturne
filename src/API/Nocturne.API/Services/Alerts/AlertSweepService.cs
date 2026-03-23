@@ -1,9 +1,7 @@
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data;
 
 namespace Nocturne.API.Services.Alerts;
 
@@ -81,30 +79,22 @@ public class AlertSweepService : BackgroundService
     private async Task AdvanceEscalationsAsync(CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
-        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
-        await using var db = await factory.CreateDbContextAsync(ct);
+        var repository = scope.ServiceProvider.GetRequiredService<IAlertRepository>();
+        var advancer = scope.ServiceProvider.GetRequiredService<IEscalationAdvancer>();
 
         var now = DateTime.UtcNow;
 
-        var instances = await db.AlertInstances
-            .Where(i => i.Status == "escalating"
-                        && i.NextEscalationAt != null
-                        && i.NextEscalationAt <= now
-                        && i.SnoozedUntil == null)
-            .ToListAsync(ct);
+        var instances = await repository.GetEscalatingInstancesDueAsync(now, ct);
 
         if (instances.Count == 0) return;
 
         _logger.LogDebug("Advancing {Count} escalations", instances.Count);
 
-        var deliveryService = scope.ServiceProvider.GetRequiredService<IAlertDeliveryService>();
-
         foreach (var instance in instances)
         {
             try
             {
-                await AlertOrchestrator.AdvanceEscalationAsync(
-                    instance, instance.TenantId, db, now, ct, deliveryService, _logger);
+                await advancer.AdvanceAsync(instance, ct);
             }
             catch (Exception ex)
             {
@@ -119,68 +109,27 @@ public class AlertSweepService : BackgroundService
     private async Task CloseHysteresisWindowsAsync(CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
-        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
-        await using var db = await factory.CreateDbContextAsync(ct);
+        var repository = scope.ServiceProvider.GetRequiredService<IAlertRepository>();
 
         var now = DateTime.UtcNow;
 
-        // Load open excursions that have hysteresis started
-        var excursions = await db.AlertExcursions
-            .Where(e => e.EndedAt == null && e.HysteresisStartedAt != null)
-            .ToListAsync(ct);
+        var excursions = await repository.GetExcursionsInHysteresisAsync(ct);
 
         if (excursions.Count == 0) return;
-
-        // Join to rules to get hysteresis minutes
-        var ruleIds = excursions.Select(e => e.AlertRuleId).Distinct().ToList();
-        var rules = await db.AlertRules
-            .AsNoTracking()
-            .Where(r => ruleIds.Contains(r.Id))
-            .ToDictionaryAsync(r => r.Id, ct);
 
         var closedCount = 0;
 
         foreach (var excursion in excursions)
         {
-            if (!rules.TryGetValue(excursion.AlertRuleId, out var rule)) continue;
-
-            var expiry = excursion.HysteresisStartedAt!.Value.AddMinutes(rule.HysteresisMinutes);
+            var expiry = excursion.HysteresisStartedAt!.Value.AddMinutes(excursion.HysteresisMinutes);
             if (now < expiry) continue;
 
-            // Close the excursion
-            excursion.EndedAt = now;
-            excursion.HysteresisStartedAt = null;
-
-            // Reset tracker state
-            var trackerState = await db.AlertTrackerState
-                .FirstOrDefaultAsync(s => s.AlertRuleId == excursion.AlertRuleId, ct);
-
-            if (trackerState is not null)
-            {
-                trackerState.State = "idle";
-                trackerState.ConfirmationCount = 0;
-                trackerState.ActiveExcursionId = null;
-                trackerState.UpdatedAt = now;
-            }
-
-            // Resolve any open instances for this excursion
-            var instances = await db.AlertInstances
-                .Where(i => i.AlertExcursionId == excursion.Id && i.ResolvedAt == null)
-                .ToListAsync(ct);
-
-            foreach (var instance in instances)
-            {
-                instance.Status = "resolved";
-                instance.ResolvedAt = now;
-                instance.NextEscalationAt = null;
-            }
-
+            await repository.CloseHysteresisExcursionAsync(excursion.Id, excursion.AlertRuleId, now, ct);
             closedCount++;
         }
 
         if (closedCount > 0)
         {
-            await db.SaveChangesAsync(ct);
             _logger.LogInformation("Closed {Count} hysteresis-expired excursions", closedCount);
         }
     }
@@ -192,16 +141,11 @@ public class AlertSweepService : BackgroundService
     private async Task EvaluateSignalLossAsync(CancellationToken ct)
     {
         using var lookupScope = _serviceProvider.CreateScope();
-        var factory = lookupScope.ServiceProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
-        await using var lookupDb = await factory.CreateDbContextAsync(ct);
+        var repository = lookupScope.ServiceProvider.GetRequiredService<IAlertRepository>();
 
         var now = DateTime.UtcNow;
 
-        // Find signal_loss rules joined with tenants where last_reading_at is stale
-        var signalLossRules = await lookupDb.AlertRules
-            .AsNoTracking()
-            .Where(r => r.IsEnabled && r.ConditionType == "signal_loss")
-            .ToListAsync(ct);
+        var signalLossRules = await repository.GetEnabledSignalLossRulesAsync(ct);
 
         if (signalLossRules.Count == 0) return;
 
@@ -212,32 +156,27 @@ public class AlertSweepService : BackgroundService
         {
             var tenantId = tenantGroup.Key;
 
-            // Get tenant's last reading time
-            var tenant = await lookupDb.Tenants
-                .AsNoTracking()
-                .Where(t => t.Id == tenantId && t.IsActive)
-                .Select(t => new { t.Id, t.Slug, t.DisplayName, t.LastReadingAt })
-                .FirstOrDefaultAsync(ct);
-
-            if (tenant is null) continue;
+            // Get tenant context
+            var tenantContext = await repository.GetTenantAlertContextAsync(tenantId, ct);
+            if (tenantContext is null || !tenantContext.IsActive) continue;
 
             foreach (var rule in tenantGroup)
             {
                 try
                 {
                     // Parse timeout from condition params
-                    var conditionParams = System.Text.Json.JsonSerializer.Deserialize<SignalLossCondition>(rule.ConditionParams);
+                    var conditionParams = JsonSerializer.Deserialize<SignalLossCondition>(rule.ConditionParams);
                     if (conditionParams is null) continue;
 
                     var timeout = TimeSpan.FromMinutes(conditionParams.TimeoutMinutes);
-                    var lastReading = tenant.LastReadingAt ?? DateTime.MinValue;
+                    var lastReading = tenantContext.LastReadingAt ?? DateTime.MinValue;
 
                     if (now - lastReading < timeout) continue;
 
                     // Signal loss detected for this rule. Create a scoped service and evaluate.
                     using var tenantScope = _serviceProvider.CreateScope();
                     var tenantAccessor = tenantScope.ServiceProvider.GetRequiredService<ITenantAccessor>();
-                    tenantAccessor.SetTenant(new TenantContext(tenant.Id, tenant.Slug, tenant.DisplayName, true));
+                    tenantAccessor.SetTenant(new TenantContext(tenantContext.TenantId, tenantContext.Slug ?? string.Empty, tenantContext.DisplayName ?? string.Empty, true));
 
                     var excursionTracker = tenantScope.ServiceProvider.GetRequiredService<IExcursionTracker>();
                     await excursionTracker.ProcessEvaluationAsync(rule.Id, true, ct);
@@ -258,59 +197,29 @@ public class AlertSweepService : BackgroundService
     private async Task CheckSnoozedInstancesAsync(CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
-        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
-        await using var db = await factory.CreateDbContextAsync(ct);
+        var repository = scope.ServiceProvider.GetRequiredService<IAlertRepository>();
 
         var now = DateTime.UtcNow;
 
-        // Find instances with expired snooze that are still active
-        var instances = await db.AlertInstances
-            .Where(i => i.SnoozedUntil != null
-                        && i.SnoozedUntil <= now
-                        && i.Status != "resolved"
-                        && i.Status != "acknowledged")
-            .ToListAsync(ct);
+        var instances = await repository.GetExpiredSnoozedInstancesAsync(now, ct);
 
         if (instances.Count == 0) return;
 
         _logger.LogDebug("Processing {Count} expired snoozed instances", instances.Count);
 
-        // Load the excursions and rules we need
-        var excursionIds = instances.Select(i => i.AlertExcursionId).Distinct().ToList();
-        var excursionToRule = await db.AlertExcursions
-            .AsNoTracking()
-            .Where(e => excursionIds.Contains(e.Id))
-            .Join(db.AlertRules, e => e.AlertRuleId, r => r.Id, (e, r) => new { ExcursionId = e.Id, Rule = r })
-            .ToDictionaryAsync(x => x.ExcursionId, x => x.Rule, ct);
-
-        // Gather distinct tenant IDs so we can batch-load latest glucose
+        // Gather distinct tenant IDs so we can batch-load latest trend rates
         var tenantIds = instances.Select(i => i.TenantId).Distinct().ToList();
-        var latestGlucoseByTenant = new Dictionary<Guid, double?>();
+        var latestTrendByTenant = new Dictionary<Guid, double?>();
 
         foreach (var tenantId in tenantIds)
         {
-            var latestReading = await db.SensorGlucose
-                .AsNoTracking()
-                .Where(sg => sg.TenantId == tenantId)
-                .OrderByDescending(sg => sg.Timestamp)
-                .Select(sg => sg.TrendRate)
-                .FirstOrDefaultAsync(ct);
-
-            latestGlucoseByTenant[tenantId] = latestReading;
+            latestTrendByTenant[tenantId] = await repository.GetLatestTrendRateAsync(tenantId, ct);
         }
 
         var modifiedCount = 0;
 
         foreach (var instance in instances)
         {
-            if (!excursionToRule.TryGetValue(instance.AlertExcursionId, out var rule))
-            {
-                // Can't resolve rule — clear snooze to be safe
-                instance.SnoozedUntil = null;
-                modifiedCount++;
-                continue;
-            }
-
             // Parse client configuration for snooze settings
             var smartSnooze = false;
             var smartSnoozeExtendMinutes = 15;
@@ -318,7 +227,7 @@ public class AlertSweepService : BackgroundService
 
             try
             {
-                using var doc = JsonDocument.Parse(rule.ClientConfiguration);
+                using var doc = JsonDocument.Parse(instance.ClientConfiguration);
                 if (doc.RootElement.TryGetProperty("snooze", out var snoozeEl))
                 {
                     if (snoozeEl.TryGetProperty("smartSnooze", out var smartEl))
@@ -331,37 +240,48 @@ public class AlertSweepService : BackgroundService
             }
             catch (JsonException ex)
             {
-                _logger.LogWarning(ex, "Failed to parse client configuration for rule {RuleId}", rule.Id);
+                _logger.LogWarning(ex, "Failed to parse client configuration for rule {RuleId}", instance.AlertRuleId);
             }
 
             if (smartSnooze && instance.SnoozeCount < maxCount)
             {
                 // Determine if glucose trend is favorable
-                var favorable = IsTrendFavorable(rule, latestGlucoseByTenant.GetValueOrDefault(instance.TenantId));
+                var favorable = IsTrendFavorable(
+                    instance.ConditionType, instance.ConditionParams,
+                    latestTrendByTenant.GetValueOrDefault(instance.TenantId));
 
                 if (favorable)
                 {
-                    instance.SnoozedUntil = now.AddMinutes(smartSnoozeExtendMinutes);
-                    instance.SnoozeCount++;
+                    await repository.UpdateInstanceAsync(new UpdateAlertInstanceRequest(
+                        instance.InstanceId,
+                        SnoozedUntil: now.AddMinutes(smartSnoozeExtendMinutes),
+                        SnoozeCount: instance.SnoozeCount + 1), ct);
+
                     _logger.LogDebug(
                         "Smart snooze extended instance {InstanceId} by {Minutes}m (count: {Count})",
-                        instance.Id, smartSnoozeExtendMinutes, instance.SnoozeCount);
+                        instance.InstanceId, smartSnoozeExtendMinutes, instance.SnoozeCount + 1);
                 }
                 else
                 {
-                    instance.SnoozedUntil = null;
+                    await repository.UpdateInstanceAsync(new UpdateAlertInstanceRequest(
+                        instance.InstanceId,
+                        SnoozedUntil: DateTime.MinValue), ct);
+
                     _logger.LogDebug(
                         "Smart snooze cleared for instance {InstanceId} — trend not favorable",
-                        instance.Id);
+                        instance.InstanceId);
                 }
             }
             else
             {
                 // Smart snooze disabled or max count reached — clear snooze
-                instance.SnoozedUntil = null;
+                await repository.UpdateInstanceAsync(new UpdateAlertInstanceRequest(
+                    instance.InstanceId,
+                    SnoozedUntil: DateTime.MinValue), ct);
+
                 _logger.LogDebug(
                     "Snooze expired for instance {InstanceId} (smartSnooze={Smart}, count={Count}/{Max})",
-                    instance.Id, smartSnooze, instance.SnoozeCount, maxCount);
+                    instance.InstanceId, smartSnooze, instance.SnoozeCount, maxCount);
             }
 
             modifiedCount++;
@@ -369,7 +289,6 @@ public class AlertSweepService : BackgroundService
 
         if (modifiedCount > 0)
         {
-            await db.SaveChangesAsync(ct);
             _logger.LogInformation("Processed {Count} expired snoozed instances", modifiedCount);
         }
     }
@@ -380,14 +299,14 @@ public class AlertSweepService : BackgroundService
     /// For "above" (high alerts): favorable if BG is falling (trend rate &lt; 0).
     /// For other condition types: not favorable (don't extend).
     /// </summary>
-    private static bool IsTrendFavorable(Nocturne.Infrastructure.Data.Entities.AlertRuleEntity rule, double? trendRate)
+    private static bool IsTrendFavorable(string conditionType, string conditionParams, double? trendRate)
     {
         if (trendRate is null) return false;
-        if (rule.ConditionType != "threshold") return false;
+        if (conditionType != "threshold") return false;
 
         try
         {
-            var condition = JsonSerializer.Deserialize<ThresholdCondition>(rule.ConditionParams);
+            var condition = JsonSerializer.Deserialize<ThresholdCondition>(conditionParams);
             if (condition is null) return false;
 
             return condition.Direction.ToLowerInvariant() switch

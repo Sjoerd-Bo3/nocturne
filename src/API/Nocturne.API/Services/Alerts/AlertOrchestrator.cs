@@ -1,10 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using Nocturne.API.Services.Alerts.Evaluators;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data;
-using Nocturne.Infrastructure.Data.Entities;
 
 namespace Nocturne.API.Services.Alerts;
 
@@ -15,7 +12,8 @@ namespace Nocturne.API.Services.Alerts;
 internal sealed class AlertOrchestrator(
     ConditionEvaluatorRegistry evaluatorRegistry,
     IExcursionTracker excursionTracker,
-    IDbContextFactory<NocturneDbContext> contextFactory,
+    IAlertRepository repository,
+    IEscalationAdvancer escalationAdvancer,
     ITenantAccessor tenantAccessor,
     IAlertDeliveryService deliveryService,
     ISignalRBroadcastService broadcastService,
@@ -28,13 +26,7 @@ internal sealed class AlertOrchestrator(
         var tenantId = tenantAccessor.TenantId;
         if (tenantId == Guid.Empty) return;
 
-        await using var db = await contextFactory.CreateDbContextAsync(ct);
-
-        var rules = await db.AlertRules
-            .AsNoTracking()
-            .Where(r => r.TenantId == tenantId && r.IsEnabled)
-            .OrderBy(r => r.SortOrder)
-            .ToListAsync(ct);
+        var rules = await repository.GetEnabledRulesAsync(tenantId, ct);
 
         if (rules.Count == 0) return;
 
@@ -42,7 +34,7 @@ internal sealed class AlertOrchestrator(
         {
             try
             {
-                await EvaluateRuleAsync(rule, context, tenantId, db, ct);
+                await EvaluateRuleAsync(rule, context, tenantId, ct);
             }
             catch (Exception ex)
             {
@@ -53,10 +45,9 @@ internal sealed class AlertOrchestrator(
     }
 
     private async Task EvaluateRuleAsync(
-        AlertRuleEntity rule,
+        AlertRuleSnapshot rule,
         SensorContext context,
         Guid tenantId,
-        NocturneDbContext db,
         CancellationToken ct)
     {
         var evaluator = evaluatorRegistry.GetEvaluator(rule.ConditionType);
@@ -72,25 +63,24 @@ internal sealed class AlertOrchestrator(
         switch (transition.Type)
         {
             case ExcursionTransitionType.ExcursionOpened:
-                await HandleExcursionOpened(rule, transition, context, tenantId, db, ct);
+                await HandleExcursionOpened(rule, transition, context, tenantId, ct);
                 break;
 
             case ExcursionTransitionType.ExcursionClosed:
-                await HandleExcursionClosed(transition, tenantId, db, ct);
+                await HandleExcursionClosed(transition, tenantId, ct);
                 break;
 
             case ExcursionTransitionType.ExcursionContinues:
-                await HandleExcursionContinues(transition, tenantId, db, ct);
+                await HandleExcursionContinues(transition, ct);
                 break;
         }
     }
 
     private async Task HandleExcursionOpened(
-        AlertRuleEntity rule,
+        AlertRuleSnapshot rule,
         ExcursionTransition transition,
         SensorContext context,
         Guid tenantId,
-        NocturneDbContext db,
         CancellationToken ct)
     {
         if (!transition.ExcursionId.HasValue) return;
@@ -98,10 +88,7 @@ internal sealed class AlertOrchestrator(
         var excursionId = transition.ExcursionId.Value;
 
         // Resolve active schedule
-        var schedules = await db.AlertSchedules
-            .AsNoTracking()
-            .Where(s => s.AlertRuleId == rule.Id)
-            .ToListAsync(ct);
+        var schedules = await repository.GetSchedulesForRuleAsync(rule.Id, ct);
 
         if (schedules.Count == 0)
         {
@@ -113,38 +100,25 @@ internal sealed class AlertOrchestrator(
         var activeSchedule = ScheduleResolver.Resolve(schedules, now);
 
         // Get escalation steps for step 0
-        var steps = await db.AlertEscalationSteps
-            .AsNoTracking()
-            .Where(s => s.AlertScheduleId == activeSchedule.Id)
-            .OrderBy(s => s.StepOrder)
-            .ToListAsync(ct);
+        var steps = await repository.GetEscalationStepsAsync(activeSchedule.Id, ct);
 
         // Create alert instance
-        var instance = new AlertInstanceEntity
-        {
-            Id = Guid.CreateVersion7(),
-            TenantId = tenantId,
-            AlertExcursionId = excursionId,
-            AlertScheduleId = activeSchedule.Id,
-            CurrentStepOrder = 0,
-            Status = steps.Count > 1 ? "escalating" : "triggered",
-            TriggeredAt = now,
-            NextEscalationAt = steps.Count > 1 ? now.AddSeconds(steps[0].DelaySeconds) : null,
-        };
+        var request = new CreateAlertInstanceRequest(
+            TenantId: tenantId,
+            ExcursionId: excursionId,
+            ScheduleId: activeSchedule.Id,
+            InitialStepOrder: 0,
+            Status: steps.Count > 1 ? "escalating" : "triggered",
+            TriggeredAt: now,
+            NextEscalationAt: steps.Count > 1 ? now.AddSeconds(steps[0].DelaySeconds) : null);
 
-        db.AlertInstances.Add(instance);
-        await db.SaveChangesAsync(ct);
+        var instance = await repository.CreateInstanceAsync(request, ct);
 
         // Count active excursions for payload
-        var activeExcursionCount = await db.AlertExcursions
-            .CountAsync(e => e.TenantId == tenantId && e.EndedAt == null, ct);
+        var activeExcursionCount = await repository.CountActiveExcursionsAsync(tenantId, ct);
 
         // Get tenant subject name
-        var tenant = await db.Tenants
-            .AsNoTracking()
-            .Where(t => t.Id == tenantId)
-            .Select(t => new { t.SubjectName, t.DisplayName })
-            .FirstOrDefaultAsync(ct);
+        var tenant = await repository.GetTenantAlertContextAsync(tenantId, ct);
 
         var payload = new AlertPayload
         {
@@ -175,7 +149,6 @@ internal sealed class AlertOrchestrator(
     private async Task HandleExcursionClosed(
         ExcursionTransition transition,
         Guid tenantId,
-        NocturneDbContext db,
         CancellationToken ct)
     {
         if (!transition.ExcursionId.HasValue) return;
@@ -183,31 +156,18 @@ internal sealed class AlertOrchestrator(
         var excursionId = transition.ExcursionId.Value;
         var now = timeProvider.GetUtcNow().UtcDateTime;
 
-        // Resolve instances for this excursion
-        var instances = await db.AlertInstances
-            .Where(i => i.AlertExcursionId == excursionId && i.ResolvedAt == null)
-            .ToListAsync(ct);
+        // Get instance IDs before resolving so we can expire deliveries
+        var instances = await repository.GetInstancesForExcursionAsync(excursionId, ct);
+        var instanceIds = instances.Select(i => i.Id).ToList();
 
-        foreach (var instance in instances)
-        {
-            instance.Status = "resolved";
-            instance.ResolvedAt = now;
-            instance.NextEscalationAt = null;
-        }
+        // Resolve instances for this excursion
+        await repository.ResolveInstancesForExcursionAsync(excursionId, now, ct);
 
         // Cancel pending deliveries
-        var pendingDeliveries = await db.AlertDeliveries
-            .Where(d => d.AlertInstanceId != Guid.Empty
-                && instances.Select(i => i.Id).Contains(d.AlertInstanceId)
-                && d.Status == "pending")
-            .ToListAsync(ct);
-
-        foreach (var delivery in pendingDeliveries)
+        if (instanceIds.Count > 0)
         {
-            delivery.Status = "expired";
+            await repository.ExpirePendingDeliveriesAsync(instanceIds, ct);
         }
-
-        await db.SaveChangesAsync(ct);
 
         try
         {
@@ -228,8 +188,6 @@ internal sealed class AlertOrchestrator(
 
     private async Task HandleExcursionContinues(
         ExcursionTransition transition,
-        Guid tenantId,
-        NocturneDbContext db,
         CancellationToken ct)
     {
         if (!transition.ExcursionId.HasValue) return;
@@ -237,101 +195,14 @@ internal sealed class AlertOrchestrator(
         // Check for event-driven escalation advancement
         var now = timeProvider.GetUtcNow().UtcDateTime;
 
-        var instances = await db.AlertInstances
-            .Where(i => i.AlertExcursionId == transition.ExcursionId.Value
-                && i.Status == "escalating"
-                && i.NextEscalationAt != null
-                && i.NextEscalationAt <= now)
-            .ToListAsync(ct);
+        var allDueInstances = await repository.GetEscalatingInstancesDueAsync(now, ct);
+        var instances = allDueInstances
+            .Where(i => i.AlertExcursionId == transition.ExcursionId.Value)
+            .ToList();
 
         foreach (var instance in instances)
         {
-            await AdvanceEscalationAsync(instance, tenantId, db, now, ct);
+            await escalationAdvancer.AdvanceAsync(instance, ct);
         }
-    }
-
-    internal static async Task AdvanceEscalationAsync(
-        AlertInstanceEntity instance,
-        Guid tenantId,
-        NocturneDbContext db,
-        DateTime now,
-        CancellationToken ct,
-        IAlertDeliveryService? deliveryService = null,
-        ILogger? logger = null)
-    {
-        var nextStepOrder = instance.CurrentStepOrder + 1;
-
-        var steps = await db.AlertEscalationSteps
-            .AsNoTracking()
-            .Where(s => s.AlertScheduleId == instance.AlertScheduleId)
-            .OrderBy(s => s.StepOrder)
-            .ToListAsync(ct);
-
-        var nextStep = steps.FirstOrDefault(s => s.StepOrder == nextStepOrder);
-        if (nextStep is null)
-        {
-            // No more steps; stay at current step, stop escalating
-            instance.Status = "triggered";
-            instance.NextEscalationAt = null;
-            await db.SaveChangesAsync(ct);
-            return;
-        }
-
-        instance.CurrentStepOrder = nextStepOrder;
-
-        var followingStep = steps.FirstOrDefault(s => s.StepOrder == nextStepOrder + 1);
-        instance.NextEscalationAt = followingStep is not null
-            ? now.AddSeconds(nextStep.DelaySeconds)
-            : null;
-
-        if (followingStep is null)
-        {
-            // This is the last step
-            instance.Status = "triggered";
-        }
-
-        await db.SaveChangesAsync(ct);
-
-        if (deliveryService is not null)
-        {
-            // Build a minimal payload for escalation dispatch
-            var excursion = await db.AlertExcursions
-                .AsNoTracking()
-                .FirstOrDefaultAsync(e => e.Id == instance.AlertExcursionId, ct);
-
-            var rule = excursion is not null
-                ? await db.AlertRules.AsNoTracking().FirstOrDefaultAsync(r => r.Id == excursion.AlertRuleId, ct)
-                : null;
-
-            var activeExcursionCount = await db.AlertExcursions
-                .CountAsync(e => e.TenantId == tenantId && e.EndedAt == null, ct);
-
-            var tenant = await db.Tenants
-                .AsNoTracking()
-                .Where(t => t.Id == tenantId)
-                .Select(t => new { t.SubjectName, t.DisplayName })
-                .FirstOrDefaultAsync(ct);
-
-            var payload = new AlertPayload
-            {
-                AlertType = rule?.ConditionType ?? "unknown",
-                RuleName = rule?.Name ?? "Unknown Rule",
-                GlucoseValue = null,
-                Trend = null,
-                TrendRate = null,
-                ReadingTimestamp = now,
-                ExcursionId = instance.AlertExcursionId,
-                InstanceId = instance.Id,
-                TenantId = tenantId,
-                SubjectName = tenant?.SubjectName ?? tenant?.DisplayName ?? "Unknown",
-                ActiveExcursionCount = activeExcursionCount,
-            };
-
-            await deliveryService.DispatchAsync(instance.Id, nextStepOrder, payload, ct);
-        }
-
-        logger?.LogInformation(
-            "Escalated instance {InstanceId} to step {StepOrder}",
-            instance.Id, nextStepOrder);
     }
 }

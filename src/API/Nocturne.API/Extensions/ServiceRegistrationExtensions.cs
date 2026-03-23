@@ -394,6 +394,8 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<IExcursionTracker, ExcursionTracker>();
 
         // Alert engine core
+        services.AddScoped<IAlertRepository, AlertRepository>();
+        services.AddScoped<IEscalationAdvancer, EscalationAdvancer>();
         services.AddScoped<IAlertOrchestrator, AlertOrchestrator>();
         services.AddScoped<IAlertDeliveryService, AlertDeliveryService>();
         services.AddScoped<IAlertAcknowledgementService, AlertAcknowledgementService>();
