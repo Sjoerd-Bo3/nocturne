@@ -27,7 +27,6 @@ public class OAuthController : ControllerBase
     private readonly ISubjectService _subjectService;
     private readonly IJwtService _jwtService;
     private readonly IOAuthTokenRevocationCache _revocationCache;
-    private readonly ILocalIdentityService _localIdentityService;
     private readonly ILogger<OAuthController> _logger;
 
     /// <summary>
@@ -42,7 +41,6 @@ public class OAuthController : ControllerBase
         ISubjectService subjectService,
         IJwtService jwtService,
         IOAuthTokenRevocationCache revocationCache,
-        ILocalIdentityService localIdentityService,
         ILogger<OAuthController> logger
     )
     {
@@ -54,7 +52,6 @@ public class OAuthController : ControllerBase
         _subjectService = subjectService;
         _jwtService = jwtService;
         _revocationCache = revocationCache;
-        _localIdentityService = localIdentityService;
         _logger = logger;
     }
 
@@ -773,70 +770,6 @@ public class OAuthController : ControllerBase
         });
         var follower = subjects.FirstOrDefault(s =>
             string.Equals(s.Email, request.FollowerEmail, StringComparison.OrdinalIgnoreCase));
-
-        // If follower doesn't exist and a temporary password is provided, create them
-        if (follower == null && !string.IsNullOrWhiteSpace(request.TemporaryPassword))
-        {
-            try
-            {
-                var registrationResult = await _localIdentityService.RegisterAsync(
-                    email: request.FollowerEmail,
-                    password: request.TemporaryPassword,
-                    displayName: request.FollowerDisplayName ?? request.FollowerEmail,
-                    skipAllowlistCheck: true,
-                    autoVerifyEmail: true
-                );
-
-                if (!registrationResult.Success)
-                {
-                    return BadRequest(new OAuthError
-                    {
-                        Error = "registration_failed",
-                        ErrorDescription = registrationResult.ErrorMessage ?? "Failed to create follower account.",
-                    });
-                }
-
-                // Set temporary password flag
-                await _localIdentityService.SetTemporaryPasswordAsync(
-                    registrationResult.User!.Id,
-                    request.TemporaryPassword,
-                    subjectId.Value
-                );
-
-                // Assign follower role
-                if (registrationResult.SubjectId.HasValue)
-                {
-                    await _subjectService.AssignRoleAsync(
-                        registrationResult.SubjectId.Value,
-                        "follower",
-                        subjectId.Value
-                    );
-                }
-
-                // Get the newly created subject
-                follower = await _subjectService.GetSubjectByIdAsync(registrationResult.SubjectId!.Value);
-
-                _logger.LogInformation(
-                    "Created follower account for {Email} by admin {AdminId}",
-                    request.FollowerEmail,
-                    subjectId.Value
-                );
-            }
-            catch (OperationCanceledException)
-            {
-                // Preserve cancellation semantics so upstream middleware can handle it appropriately.
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to create follower account for {Email}", request.FollowerEmail);
-                return BadRequest(new OAuthError
-                {
-                    Error = "creation_failed",
-                    ErrorDescription = "Failed to create follower account.",
-                });
-            }
-        }
 
         if (follower == null)
         {

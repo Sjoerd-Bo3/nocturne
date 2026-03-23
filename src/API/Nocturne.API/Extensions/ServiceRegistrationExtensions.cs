@@ -30,9 +30,7 @@ using Nocturne.Infrastructure.Data.Repositories;
 using Nocturne.Infrastructure.Data.Repositories.V4;
 using Nocturne.Infrastructure.Data.Services;
 using Nocturne.Infrastructure.Shared.Services;
-using EmailOptions = Nocturne.Core.Models.Configuration.EmailOptions;
 using JwtOptions = Nocturne.Core.Models.Configuration.JwtOptions;
-using LocalIdentityOptions = Nocturne.Core.Models.Configuration.LocalIdentityOptions;
 using OidcOptions = Nocturne.Core.Models.Configuration.OidcOptions;
 
 namespace Nocturne.API.Extensions;
@@ -120,11 +118,6 @@ public static class ServiceRegistrationExtensions
         // Options
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<OidcOptions>(configuration.GetSection(OidcOptions.SectionName));
-        services.Configure<LocalIdentityOptions>(
-            configuration.GetSection(LocalIdentityOptions.SectionName)
-        );
-        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
-
         // Auth services
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
@@ -142,10 +135,6 @@ public static class ServiceRegistrationExtensions
         services.AddSingleton<IOAuthTokenRevocationCache, OAuthTokenRevocationCache>();
         services.AddHostedService<OAuthCodeCleanupService>();
 
-        // Local identity provider
-        services.AddScoped<ILocalIdentityService, LocalIdentityService>();
-        services.AddScoped<IEmailService, EmailService>();
-        services.AddHostedService<UserSeedService>();
         services.AddHostedService<AuthorizationSeedService>();
 
         // Passkey (WebAuthn/FIDO2) services

@@ -19,7 +19,6 @@ namespace Nocturne.API.Controllers;
 [AllowAnonymous]
 public class WellKnownController : ControllerBase
 {
-    private readonly LocalIdentityOptions _localOptions;
     private readonly JwtOptions _jwtOptions;
     private readonly OidcOptions _oidcOptions;
 
@@ -27,12 +26,10 @@ public class WellKnownController : ControllerBase
     /// Creates a new instance of WellKnownController
     /// </summary>
     public WellKnownController(
-        IOptions<LocalIdentityOptions> localOptions,
         IOptions<JwtOptions> jwtOptions,
         IOptions<OidcOptions> oidcOptions
     )
     {
-        _localOptions = localOptions.Value;
         _jwtOptions = jwtOptions.Value;
         _oidcOptions = oidcOptions.Value;
     }
@@ -54,9 +51,7 @@ public class WellKnownController : ControllerBase
                 TokenEndpoint = $"{baseUrl}/auth/local/token",
                 UserinfoEndpoint = $"{baseUrl}/auth/userinfo",
                 JwksUri = $"{baseUrl}/.well-known/jwks.json",
-                RegistrationEndpoint = _localOptions.Registration.AllowRegistration
-                    ? $"{baseUrl}/auth/local/register"
-                    : null,
+                RegistrationEndpoint = null,
                 ScopesSupported = new[] { "openid", "profile", "email", "offline_access" },
                 ResponseTypesSupported = new[]
                 {

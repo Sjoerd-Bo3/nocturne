@@ -131,18 +131,6 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<AuthAuditLogEntity> AuthAuditLog { get; set; }
 
-    // Local Identity Provider entities
-
-    /// <summary>
-    /// Gets or sets the LocalUsers table for built-in authentication users
-    /// </summary>
-    public DbSet<LocalUserEntity> LocalUsers { get; set; }
-
-    /// <summary>
-    /// Gets or sets the PasswordResetRequests table for pending password reset requests
-    /// </summary>
-    public DbSet<PasswordResetRequestEntity> PasswordResetRequests { get; set; }
-
     /// <summary>
     /// Gets or sets the PasskeyCredentials table for WebAuthn/passkey credentials
     /// </summary>
@@ -2234,67 +2222,11 @@ public class NocturneDbContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // Configure LocalUser entity for built-in identity provider
-        modelBuilder.Entity<LocalUserEntity>(entity =>
-        {
-            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
-            entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.EmailVerified).HasDefaultValue(false);
-            entity.Property(e => e.PendingApproval).HasDefaultValue(false);
-            entity.Property(e => e.FailedLoginAttempts).HasDefaultValue(0);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity
-                .Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .ValueGeneratedOnAddOrUpdate();
-
-            // Unique index on normalized email for fast lookups
-            entity
-                .HasIndex(e => e.NormalizedEmail)
-                .IsUnique()
-                .HasDatabaseName("ix_local_users_normalized_email");
-
-            // Relationship to Subject for permissions
-            entity
-                .HasOne(e => e.Subject)
-                .WithMany()
-                .HasForeignKey(e => e.SubjectId)
-                .OnDelete(DeleteBehavior.SetNull);
-        });
-
         // Configure LinkedRecordEntity defaults
         modelBuilder.Entity<LinkedRecordEntity>(entity =>
         {
             entity.Property(e => e.IsPrimary).HasDefaultValue(false);
             entity.Property(e => e.SysCreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-        });
-
-        // Configure PasswordResetRequest entity
-        modelBuilder.Entity<PasswordResetRequestEntity>(entity =>
-        {
-            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
-            entity.Property(e => e.AdminNotified).HasDefaultValue(false);
-            entity.Property(e => e.Handled).HasDefaultValue(false);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            // Index for finding pending requests
-            entity
-                .HasIndex(e => e.Handled)
-                .HasFilter("handled = false")
-                .HasDatabaseName("ix_password_reset_requests_pending");
-
-            // Relationships
-            entity
-                .HasOne(e => e.LocalUser)
-                .WithMany()
-                .HasForeignKey(e => e.LocalUserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity
-                .HasOne(e => e.HandledBy)
-                .WithMany()
-                .HasForeignKey(e => e.HandledById)
-                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configure InAppNotification entity

@@ -54,25 +54,7 @@ if (demoEnabled)
             options.TargetPlatform =
                 ContainerTargetPlatform.LinuxAmd64 | ContainerTargetPlatform.LinuxArm64;
         })
-        .WithEnvironment("DemoService__Enabled", "true")
-        // Seed demo user accounts
-        // Admin account - full access
-        .WithEnvironment("LocalIdentity__SeedUsers__0__Email", "admin@demo.nocturne.local")
-        .WithEnvironment("LocalIdentity__SeedUsers__0__Password", "DemoAdmin123!")
-        .WithEnvironment("LocalIdentity__SeedUsers__0__DisplayName", "Demo Admin")
-        .WithEnvironment("LocalIdentity__SeedUsers__0__IsAdmin", "true")
-        // Teacher account - caregiver access
-        .WithEnvironment("LocalIdentity__SeedUsers__1__Email", "teacher@demo.nocturne.local")
-        .WithEnvironment("LocalIdentity__SeedUsers__1__Password", "DemoTeacher123!")
-        .WithEnvironment("LocalIdentity__SeedUsers__1__DisplayName", "Demo Teacher")
-        .WithEnvironment("LocalIdentity__SeedUsers__1__Roles__0", "readable")
-        .WithEnvironment("LocalIdentity__SeedUsers__1__Roles__1", "caregiver")
-        // HCP (Healthcare Provider) account - caregiver access
-        .WithEnvironment("LocalIdentity__SeedUsers__2__Email", "hcp@demo.nocturne.local")
-        .WithEnvironment("LocalIdentity__SeedUsers__2__Password", "DemoHCP123!")
-        .WithEnvironment("LocalIdentity__SeedUsers__2__DisplayName", "Demo HCP")
-        .WithEnvironment("LocalIdentity__SeedUsers__2__Roles__0", "readable")
-        .WithEnvironment("LocalIdentity__SeedUsers__2__Roles__1", "caregiver");
+        .WithEnvironment("DemoService__Enabled", "true");
 
     // Add Demo Data Service
     var demoService = builder
