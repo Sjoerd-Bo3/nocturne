@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Common;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Entities.OwnedTypes;
@@ -50,6 +51,10 @@ public static class TreatmentMapper
             AdditionalPropertiesJson =
                 treatment.AdditionalProperties != null
                     ? JsonSerializer.Serialize(treatment.AdditionalProperties)
+                    : null,
+            InsulinContextJson =
+                treatment.InsulinContext != null
+                    ? JsonSerializer.Serialize(treatment.InsulinContext)
                     : null,
 
             GlucoseData = new TreatmentGlucoseData
@@ -179,6 +184,9 @@ public static class TreatmentMapper
             AdditionalProperties = DeserializeJsonProperty<Dictionary<string, object>>(
                 entity.AdditionalPropertiesJson
             ),
+            InsulinContext = DeserializeJsonProperty<TreatmentInsulinContext>(
+                entity.InsulinContextJson
+            ),
             SrvModified = entity.SysUpdatedAt != default
                 ? new DateTimeOffset(entity.SysUpdatedAt, TimeSpan.Zero).ToUnixTimeMilliseconds()
                 : null,
@@ -217,7 +225,7 @@ public static class TreatmentMapper
             InsulinOnBoard = entity.BolusCalc.InsulinOnBoard,
             BloodGlucoseInput = entity.BolusCalc.BloodGlucoseInput,
             BloodGlucoseInputSource = entity.BolusCalc.BloodGlucoseInputSource,
-            CalculationType = Enum.TryParse<CalculationType>(entity.BolusCalc.CalculationType, out var calcType) ? calcType : null,
+            CalculationType = Enum.TryParse<Nocturne.Core.Models.CalculationType>(entity.BolusCalc.CalculationType, out var calcType) ? calcType : null,
             BolusCalc = DeserializeJsonProperty<Dictionary<string, object>>(entity.BolusCalc.BolusCalcJson),
             BolusCalculatorResult = entity.BolusCalc.BolusCalculatorResult,
             EnteredInsulin = entity.BolusCalc.EnteredInsulin,
@@ -293,6 +301,10 @@ public static class TreatmentMapper
         entity.AdditionalPropertiesJson =
             treatment.AdditionalProperties != null
                 ? JsonSerializer.Serialize(treatment.AdditionalProperties)
+                : null;
+        entity.InsulinContextJson =
+            treatment.InsulinContext != null
+                ? JsonSerializer.Serialize(treatment.InsulinContext)
                 : null;
 
         // GlucoseData

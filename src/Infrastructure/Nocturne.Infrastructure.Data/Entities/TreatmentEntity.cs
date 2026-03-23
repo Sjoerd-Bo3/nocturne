@@ -204,6 +204,12 @@ public class TreatmentEntity : ITenantScoped, ISoftDeletable
     [Column("additional_properties", TypeName = "jsonb")]
     public string? AdditionalPropertiesJson { get; set; }
 
+    /// <summary>
+    /// Insulin context snapshot at delivery time (DIA, peak, curve, concentration)
+    /// </summary>
+    [Column("insulin_context", TypeName = "jsonb")]
+    public string? InsulinContextJson { get; set; }
+
     // === System Tracking ===
 
     /// <summary>
