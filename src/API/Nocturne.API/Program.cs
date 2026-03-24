@@ -14,6 +14,8 @@ using Nocturne.Infrastructure.Cache.Extensions;
 using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Infrastructure.Data.Extensions;
 using OpenTelemetry.Logs;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Scalar.AspNetCore;
 using JwtOptions = Nocturne.Core.Models.Configuration.JwtOptions;
 
@@ -132,6 +134,9 @@ builder.Services.AddControllers(options =>
 {
     options.Filters.Add<NightscoutJsonFilter>();
 });
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 
 // Note: Using NSwag instead of Microsoft.AspNetCore.OpenApi for better compatibility
@@ -218,6 +223,8 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure middleware pipeline
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseResponseCaching();
 app.UseCors();
 
