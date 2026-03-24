@@ -42,3 +42,6 @@ nul
 
 # Git worktrees
 .worktrees/
+
+# External projects
+Trio/
