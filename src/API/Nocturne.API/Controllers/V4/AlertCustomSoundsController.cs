@@ -39,10 +39,10 @@ public class AlertCustomSoundsController : ControllerBase
         [FromForm] IFormFile file, CancellationToken ct)
     {
         if (file.Length > 512_000)
-            return BadRequest(new { error = "File exceeds 500KB limit" });
+            return Problem(detail: "File exceeds 500KB limit", statusCode: 400, title: "Bad Request");
 
         if (!file.ContentType.StartsWith("audio/"))
-            return BadRequest(new { error = "File must be an audio type" });
+            return Problem(detail: "File must be an audio type", statusCode: 400, title: "Bad Request");
 
         using var ms = new MemoryStream();
         await file.CopyToAsync(ms, ct);

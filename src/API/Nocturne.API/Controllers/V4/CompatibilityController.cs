@@ -77,7 +77,7 @@ public class CompatibilityController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving compatibility metrics");
-            return StatusCode(500, new { error = "Failed to retrieve metrics" });
+            return Problem(detail: "Failed to retrieve metrics", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -104,7 +104,7 @@ public class CompatibilityController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving endpoint metrics");
-            return StatusCode(500, new { error = "Failed to retrieve endpoint metrics" });
+            return Problem(detail: "Failed to retrieve endpoint metrics", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -166,7 +166,7 @@ public class CompatibilityController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving analyses");
-            return StatusCode(500, new { error = "Failed to retrieve analyses" });
+            return Problem(detail: "Failed to retrieve analyses", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -197,7 +197,7 @@ public class CompatibilityController : ControllerBase
 
             if (analysis == null)
             {
-                return NotFound(new { error = "Analysis not found" });
+                return Problem(detail: "Analysis not found", statusCode: 404, title: "Not Found");
             }
 
             var detail = new AnalysisDetailDto
@@ -244,7 +244,7 @@ public class CompatibilityController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving analysis detail for {Id}", id);
-            return StatusCode(500, new { error = "Failed to retrieve analysis detail" });
+            return Problem(detail: "Failed to retrieve analysis detail", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -265,12 +265,12 @@ public class CompatibilityController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.NightscoutUrl))
         {
-            return BadRequest(new { error = "NightscoutUrl is required" });
+            return Problem(detail: "NightscoutUrl is required", statusCode: 400, title: "Bad Request");
         }
 
         if (string.IsNullOrWhiteSpace(request.QueryPath))
         {
-            return BadRequest(new { error = "QueryPath is required" });
+            return Problem(detail: "QueryPath is required", statusCode: 400, title: "Bad Request");
         }
 
         var result = new ManualTestResult

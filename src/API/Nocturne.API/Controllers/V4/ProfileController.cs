@@ -215,7 +215,7 @@ public class ProfileController : ControllerBase
     )
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         var created = await _therapyRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetTherapySettingsById), new { id = created.Id }, created);
     }
@@ -237,7 +237,7 @@ public class ProfileController : ControllerBase
     )
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         try
         {
             var updated = await _therapyRepo.UpdateAsync(id, model, ct);
@@ -317,7 +317,7 @@ public class ProfileController : ControllerBase
     )
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         var created = await _basalRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetBasalScheduleById), new { id = created.Id }, created);
     }
@@ -339,7 +339,7 @@ public class ProfileController : ControllerBase
     )
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         try
         {
             var updated = await _basalRepo.UpdateAsync(id, model, ct);
@@ -419,7 +419,7 @@ public class ProfileController : ControllerBase
     )
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         var created = await _carbRatioRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetCarbRatioScheduleById), new { id = created.Id }, created);
     }
@@ -445,7 +445,7 @@ public class ProfileController : ControllerBase
     )
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         try
         {
             var updated = await _carbRatioRepo.UpdateAsync(id, model, ct);
@@ -525,7 +525,7 @@ public class ProfileController : ControllerBase
     )
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         var created = await _sensitivityRepo.CreateAsync(model, ct);
         return CreatedAtAction(
             nameof(GetSensitivityScheduleById),
@@ -555,7 +555,7 @@ public class ProfileController : ControllerBase
     )
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         try
         {
             var updated = await _sensitivityRepo.UpdateAsync(id, model, ct);
@@ -638,7 +638,7 @@ public class ProfileController : ControllerBase
     )
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         var created = await _targetRangeRepo.CreateAsync(model, ct);
         return CreatedAtAction(
             nameof(GetTargetRangeScheduleById),
@@ -668,7 +668,7 @@ public class ProfileController : ControllerBase
     )
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         try
         {
             var updated = await _targetRangeRepo.UpdateAsync(id, model, ct);

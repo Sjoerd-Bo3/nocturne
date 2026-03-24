@@ -67,7 +67,7 @@ public class RetrospectiveController : ControllerBase
         {
             if (time <= 0)
             {
-                return BadRequest(new { error = "Time parameter must be a positive Unix timestamp in milliseconds" });
+                return Problem(detail: "Time parameter must be a positive Unix timestamp in milliseconds", statusCode: 400, title: "Bad Request");
             }
             // Get glucose entries for context (entries around the target time)
             // Use JSON format for the findQuery with mills field
@@ -164,7 +164,7 @@ public class RetrospectiveController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error calculating retrospective data for time {Time}", time);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
     /// <summary>
@@ -193,11 +193,11 @@ public class RetrospectiveController : ControllerBase
         {
             if (string.IsNullOrEmpty(date) || !DateTimeOffset.TryParse(date, out var parsedDate))
             {
-                return BadRequest(new { error = "Date parameter must be in YYYY-MM-DD format" });
+                return Problem(detail: "Date parameter must be in YYYY-MM-DD format", statusCode: 400, title: "Bad Request");
             }
             if (intervalMinutes < 1 || intervalMinutes > 60)
             {
-                return BadRequest(new { error = "Interval must be between 1 and 60 minutes" });
+                return Problem(detail: "Interval must be between 1 and 60 minutes", statusCode: 400, title: "Bad Request");
             }
             // Calculate day boundaries
             var dayStart = new DateTimeOffset(parsedDate.Year, parsedDate.Month, parsedDate.Day, 0, 0, 0, TimeSpan.Zero);
@@ -290,7 +290,7 @@ public class RetrospectiveController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error calculating retrospective timeline for date {Date}", date);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
     /// <summary>
@@ -316,7 +316,7 @@ public class RetrospectiveController : ControllerBase
         {
             if (string.IsNullOrEmpty(date) || !DateTimeOffset.TryParse(date, out var parsedDate))
             {
-                return BadRequest(new { error = "Date parameter must be in YYYY-MM-DD format" });
+                return Problem(detail: "Date parameter must be in YYYY-MM-DD format", statusCode: 400, title: "Bad Request");
             }
             // Calculate day boundaries
             var dayStart = new DateTimeOffset(parsedDate.Year, parsedDate.Month, parsedDate.Day, 0, 0, 0, TimeSpan.Zero);
@@ -363,7 +363,7 @@ public class RetrospectiveController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error calculating basal timeline for date {Date}", date);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
     #region Helper Methods

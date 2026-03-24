@@ -54,18 +54,18 @@ public class MigrationController : ControllerBase
         {
             if (string.IsNullOrEmpty(request.NightscoutUrl))
             {
-                return BadRequest("Nightscout URL is required for API mode");
+                return Problem(detail: "Nightscout URL is required for API mode", statusCode: 400, title: "Bad Request");
             }
         }
         else
         {
             if (string.IsNullOrEmpty(request.MongoConnectionString))
             {
-                return BadRequest("MongoDB connection string is required for MongoDB mode");
+                return Problem(detail: "MongoDB connection string is required for MongoDB mode", statusCode: 400, title: "Bad Request");
             }
             if (string.IsNullOrEmpty(request.MongoDatabaseName))
             {
-                return BadRequest("MongoDB database name is required for MongoDB mode");
+                return Problem(detail: "MongoDB database name is required for MongoDB mode", statusCode: 400, title: "Bad Request");
             }
         }
 

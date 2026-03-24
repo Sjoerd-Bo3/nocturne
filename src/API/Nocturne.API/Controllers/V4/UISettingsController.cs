@@ -101,7 +101,7 @@ public class UISettingsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving UI settings");
-            return StatusCode(500, new { error = "Failed to retrieve UI settings" });
+            return Problem(detail: "Failed to retrieve UI settings", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -134,7 +134,7 @@ public class UISettingsController : ControllerBase
                 "features" => Ok(config.Features),
                 "notifications" => Ok(config.Notifications),
                 "services" => Ok(config.Services),
-                _ => NotFound(new { error = $"Unknown settings section: {section}" }),
+                _ => Problem(detail: $"Unknown settings section: {section}", statusCode: 404, title: "Not Found"),
             };
         }
 
@@ -182,7 +182,7 @@ public class UISettingsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error saving UI settings");
-            return StatusCode(500, new { error = "Failed to save UI settings" });
+            return Problem(detail: "Failed to save UI settings", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -220,7 +220,7 @@ public class UISettingsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error saving notification settings");
-            return StatusCode(500, new { error = "Failed to save notification settings" });
+            return Problem(detail: "Failed to save notification settings", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -255,7 +255,7 @@ public class UISettingsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving alarm configuration");
-            return StatusCode(500, new { error = "Failed to retrieve alarm configuration" });
+            return Problem(detail: "Failed to retrieve alarm configuration", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -297,7 +297,7 @@ public class UISettingsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error saving alarm configuration");
-            return StatusCode(500, new { error = "Failed to save alarm configuration" });
+            return Problem(detail: "Failed to save alarm configuration", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -337,7 +337,7 @@ public class UISettingsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error saving alarm profile");
-            return StatusCode(500, new { error = "Failed to save alarm profile" });
+            return Problem(detail: "Failed to save alarm profile", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -375,7 +375,7 @@ public class UISettingsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting alarm profile");
-            return StatusCode(500, new { error = "Failed to delete alarm profile" });
+            return Problem(detail: "Failed to delete alarm profile", statusCode: 500, title: "Internal Server Error");
         }
     }
 

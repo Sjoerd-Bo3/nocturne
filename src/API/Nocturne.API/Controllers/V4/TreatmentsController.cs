@@ -119,7 +119,7 @@ public class TreatmentsController : ControllerBase
     )
     {
         if (treatment == null)
-            return BadRequest("Treatment data is required");
+            return Problem(detail: "Treatment data is required", statusCode: 400, title: "Bad Request");
 
         var userId = HttpContext.GetSubjectIdString()!;
 
@@ -130,7 +130,7 @@ public class TreatmentsController : ControllerBase
         var created = await _repository.CreateTreatmentAsync(processedTreatment, cancellationToken);
 
         if (created == null)
-            return StatusCode(500, "Failed to create treatment");
+            return Problem(detail: "Failed to create treatment", statusCode: 500, title: "Internal Server Error");
 
         _logger.LogInformation(
             "Created V4 treatment {Id} ({EventType}) for user {UserId}",
@@ -164,10 +164,10 @@ public class TreatmentsController : ControllerBase
     )
     {
         if (treatments == null || treatments.Length == 0)
-            return BadRequest("Treatment data is required");
+            return Problem(detail: "Treatment data is required", statusCode: 400, title: "Bad Request");
 
         if (treatments.Length > 1000)
-            return BadRequest("Bulk operations are limited to 1000 treatments per request");
+            return Problem(detail: "Bulk operations are limited to 1000 treatments per request", statusCode: 400, title: "Bad Request");
 
         var userId = HttpContext.GetSubjectIdString()!;
 
@@ -247,7 +247,7 @@ public class TreatmentsController : ControllerBase
     )
     {
         if (treatment == null)
-            return BadRequest("Treatment data is required");
+            return Problem(detail: "Treatment data is required", statusCode: 400, title: "Bad Request");
 
         // Ensure the treatment has the correct ID
         treatment.Id = id;

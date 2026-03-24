@@ -49,10 +49,7 @@ public class PredictionController : ControllerBase
     {
         if (_predictionService == null || _source == PredictionSource.None)
         {
-            return NotFound(new PredictionErrorResponse
-            {
-                Error = "Predictions are not configured. Set Predictions:Source to DeviceStatus or OrefWasm."
-            });
+            return Problem(detail: "Predictions are not configured. Set Predictions:Source to DeviceStatus or OrefWasm.", statusCode: 404, title: "Not Found");
         }
 
         _logger.LogDebug("Getting glucose predictions (source: {Source}) for profile: {ProfileId}",
@@ -66,12 +63,12 @@ public class PredictionController : ControllerBase
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "Invalid operation for predictions");
-            return BadRequest(new PredictionErrorResponse { Error = ex.Message });
+            return Problem(detail: ex.Message, statusCode: 400, title: "Bad Request");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting predictions");
-            return StatusCode(500, new PredictionErrorResponse { Error = "Failed to calculate predictions" });
+            return Problem(detail: "Failed to calculate predictions", statusCode: 500, title: "Internal Server Error");
         }
     }
 

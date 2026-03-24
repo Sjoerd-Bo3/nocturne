@@ -59,7 +59,7 @@ public class NutritionController : ControllerBase
         CancellationToken ct = default)
     {
         if (sort is not "timestamp_desc" and not "timestamp_asc")
-            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." });
+            return Problem(detail: $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'.", statusCode: 400, title: "Bad Request");
         var descending = sort == "timestamp_desc";
         var data = await _carbIntakeRepo.GetAsync(from, to, device, source, limit, offset, descending, ct: ct);
         var total = await _carbIntakeRepo.CountAsync(from, to, ct);
@@ -89,7 +89,7 @@ public class NutritionController : ControllerBase
     public async Task<ActionResult<CarbIntake>> CreateCarbIntake([FromBody] CarbIntake model, CancellationToken ct = default)
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         var created = await _carbIntakeRepo.CreateAsync(model, ct);
         return CreatedAtAction(nameof(GetCarbIntakeById), new { id = created.Id }, created);
     }
@@ -105,7 +105,7 @@ public class NutritionController : ControllerBase
     public async Task<ActionResult<CarbIntake>> UpdateCarbIntake(Guid id, [FromBody] CarbIntake model, CancellationToken ct = default)
     {
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
         try
         {
             var updated = await _carbIntakeRepo.UpdateAsync(id, model, ct);

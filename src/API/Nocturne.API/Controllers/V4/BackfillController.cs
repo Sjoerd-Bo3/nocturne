@@ -42,7 +42,7 @@ public class BackfillController : ControllerBase
     {
         if (!await BackfillLock.WaitAsync(0, ct))
         {
-            return Conflict(new { error = "A backfill operation is already in progress" });
+            return Problem(detail: "A backfill operation is already in progress", statusCode: 409, title: "Conflict");
         }
 
         try
@@ -59,7 +59,7 @@ public class BackfillController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "V4 backfill failed");
-            return StatusCode(500, new { error = "Backfill failed", message = ex.Message });
+            return Problem(detail: ex.Message, statusCode: 500, title: "Internal Server Error");
         }
         finally
         {

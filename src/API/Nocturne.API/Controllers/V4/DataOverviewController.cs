@@ -48,7 +48,7 @@ public class DataOverviewController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting available years for data overview");
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -73,7 +73,7 @@ public class DataOverviewController : ControllerBase
         try
         {
             if (year < 1970 || year > 2100)
-                return BadRequest(new { error = "Year must be between 1970 and 2100" });
+                return Problem(detail: "Year must be between 1970 and 2100", statusCode: 400, title: "Bad Request");
 
             // Filter out empty strings
             var cleanSources = dataSources?.Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
@@ -90,7 +90,7 @@ public class DataOverviewController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting daily summary for year {Year}", year);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -115,7 +115,7 @@ public class DataOverviewController : ControllerBase
         try
         {
             if (year < 1970 || year > 2100)
-                return BadRequest(new { error = "Year must be between 1970 and 2100" });
+                return Problem(detail: "Year must be between 1970 and 2100", statusCode: 400, title: "Bad Request");
 
             // Filter out empty strings
             var cleanSources = dataSources?.Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
@@ -132,7 +132,7 @@ public class DataOverviewController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting GRI timeline for year {Year}", year);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 }

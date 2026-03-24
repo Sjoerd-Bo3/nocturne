@@ -64,7 +64,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating JWT from access token");
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -90,7 +90,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting all permissions");
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -119,7 +119,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting permission trie");
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -149,7 +149,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting all subjects");
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -192,7 +192,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating subject: {Name}", subject.Name);
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -223,7 +223,7 @@ public class AuthorizationController : ControllerBase
 
             if (string.IsNullOrEmpty(subject.Id))
             {
-                return BadRequest("Subject ID is required for update");
+                return Problem(detail: "Subject ID is required for update", statusCode: 400, title: "Bad Request");
             }
 
             var updatedSubject = await _authorizationService.UpdateSubjectAsync(subject);
@@ -240,7 +240,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating subject: {Id}", subject.Id);
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -277,7 +277,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting subject: {Id}", id);
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -307,7 +307,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting all roles");
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -350,7 +350,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating role: {Name}", role.Name);
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -381,7 +381,7 @@ public class AuthorizationController : ControllerBase
 
             if (string.IsNullOrEmpty(role.Id))
             {
-                return BadRequest("Role ID is required for update");
+                return Problem(detail: "Role ID is required for update", statusCode: 400, title: "Bad Request");
             }
 
             var updatedRole = await _authorizationService.UpdateRoleAsync(role);
@@ -398,7 +398,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating role: {Id}", role.Id);
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -435,7 +435,7 @@ public class AuthorizationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting role: {Id}", id);
-            return StatusCode(500, "Internal server error");
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 }

@@ -82,7 +82,7 @@ public class ClockFacesController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {
-            return BadRequest("Name is required");
+            return Problem(detail: "Name is required", statusCode: 400, title: "Bad Request");
         }
 
         var userId = HttpContext.GetSubjectIdString()!;

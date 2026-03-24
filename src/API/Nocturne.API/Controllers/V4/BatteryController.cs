@@ -54,7 +54,7 @@ public class BatteryController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting current battery status");
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -98,7 +98,7 @@ public class BatteryController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting battery readings");
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -142,7 +142,7 @@ public class BatteryController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting battery statistics");
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -190,7 +190,7 @@ public class BatteryController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting charge cycles");
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -217,7 +217,7 @@ public class BatteryController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting known devices");
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 }

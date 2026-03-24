@@ -47,7 +47,7 @@ public class StepCountController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving step count records");
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -70,14 +70,14 @@ public class StepCountController : ControllerBase
         {
             var record = await _stepCountService.GetStepCountByIdAsync(id, cancellationToken);
             if (record == null)
-                return NotFound(new { error = $"Step count record with ID {id} not found" });
+                return Problem(detail: $"Step count record with ID {id} not found", statusCode: 404, title: "Not Found");
 
             return Ok(record);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving step count record with ID {Id}", id);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -96,7 +96,7 @@ public class StepCountController : ControllerBase
         try
         {
             if (stepCounts == null)
-                return BadRequest(new { error = "Step count data is required" });
+                return Problem(detail: "Step count data is required", statusCode: 400, title: "Bad Request");
 
             List<StepCount> stepCountList;
 
@@ -119,11 +119,11 @@ public class StepCountController : ControllerBase
             }
             else
             {
-                return BadRequest(new { error = "Invalid data format" });
+                return Problem(detail: "Invalid data format", statusCode: 400, title: "Bad Request");
             }
 
             if (stepCountList.Count == 0)
-                return BadRequest(new { error = "At least one step count record is required" });
+                return Problem(detail: "At least one step count record is required", statusCode: 400, title: "Bad Request");
 
             var result = await _stepCountService.CreateStepCountsAsync(stepCountList, cancellationToken);
             return Ok(result);
@@ -131,7 +131,7 @@ public class StepCountController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating step count records");
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -152,14 +152,14 @@ public class StepCountController : ControllerBase
         {
             var updated = await _stepCountService.UpdateStepCountAsync(id, stepCount, cancellationToken);
             if (updated == null)
-                return NotFound(new { error = $"Step count record with ID {id} not found" });
+                return Problem(detail: $"Step count record with ID {id} not found", statusCode: 404, title: "Not Found");
 
             return Ok(updated);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating step count record with ID {Id}", id);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -179,14 +179,14 @@ public class StepCountController : ControllerBase
         {
             var deleted = await _stepCountService.DeleteStepCountAsync(id, cancellationToken);
             if (!deleted)
-                return NotFound(new { error = $"Step count record with ID {id} not found" });
+                return Problem(detail: $"Step count record with ID {id} not found", statusCode: 404, title: "Not Found");
 
             return Ok(new { message = "Step count record deleted successfully" });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting step count record with ID {Id}", id);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 }

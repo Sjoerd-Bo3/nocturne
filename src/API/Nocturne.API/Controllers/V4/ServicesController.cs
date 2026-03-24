@@ -77,7 +77,7 @@ public class ServicesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting services overview");
-            return StatusCode(500, new { error = "Failed to get services overview" });
+            return Problem(detail: "Failed to get services overview", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -105,7 +105,7 @@ public class ServicesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting active data sources");
-            return StatusCode(500, new { error = "Failed to get active data sources" });
+            return Problem(detail: "Failed to get active data sources", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -132,14 +132,14 @@ public class ServicesController : ControllerBase
             var dataSource = await _dataSourceService.GetDataSourceInfoAsync(id, cancellationToken);
             if (dataSource == null)
             {
-                return NotFound(new { error = $"Data source not found: {id}" });
+                return Problem(detail: $"Data source not found: {id}", statusCode: 404, title: "Not Found");
             }
             return Ok(dataSource);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting data source: {Id}", id);
-            return StatusCode(500, new { error = "Failed to get data source" });
+            return Problem(detail: "Failed to get data source", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -173,7 +173,7 @@ public class ServicesController : ControllerBase
         var capabilities = _dataSourceService.GetConnectorCapabilities(id);
         if (capabilities == null)
         {
-            return NotFound(new { error = $"Connector not found: {id}" });
+            return Problem(detail: $"Connector not found: {id}", statusCode: 404, title: "Not Found");
         }
 
         return Ok(capabilities);
@@ -241,7 +241,7 @@ public class ServicesController : ControllerBase
 
         if (app == null)
         {
-            return NotFound(new { error = $"Uploader app not found: {appId}" });
+            return Problem(detail: $"Uploader app not found: {appId}", statusCode: 404, title: "Not Found");
         }
 
         var baseUrl = GetBaseUrl();
@@ -289,7 +289,7 @@ public class ServicesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting demo data");
-            return StatusCode(500, new { error = "Failed to delete demo data" });
+            return Problem(detail: "Failed to delete demo data", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -328,7 +328,7 @@ public class ServicesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting data for data source: {Id}", id);
-            return StatusCode(500, new { error = "Failed to delete data source data" });
+            return Problem(detail: "Failed to delete data source data", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -361,7 +361,7 @@ public class ServicesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting data summary for connector: {Id}", id);
-            return StatusCode(500, new { error = "Failed to get connector data summary" });
+            return Problem(detail: "Failed to get connector data summary", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -402,7 +402,7 @@ public class ServicesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting data for connector: {Id}", id);
-            return StatusCode(500, new { error = "Failed to delete connector data" });
+            return Problem(detail: "Failed to delete connector data", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -426,7 +426,7 @@ public class ServicesController : ControllerBase
     )
     {
         if (string.IsNullOrWhiteSpace(id))
-            return BadRequest(new { error = "Connector ID is required" });
+            return Problem(detail: "Connector ID is required", statusCode: 400, title: "Bad Request");
 
         var result = await _connectorSyncService.TriggerSyncAsync(id, request, cancellationToken);
         return Ok(result);
@@ -453,7 +453,7 @@ public class ServicesController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(id))
         {
-            return BadRequest(new { error = "Connector ID is required" });
+            return Problem(detail: "Connector ID is required", statusCode: 400, title: "Bad Request");
         }
 
         try
@@ -514,7 +514,7 @@ public class ServicesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting sync status for connector: {Id}", id);
-            return StatusCode(500, new { error = "Failed to get sync status" });
+            return Problem(detail: "Failed to get sync status", statusCode: 500, title: "Internal Server Error");
         }
     }
 

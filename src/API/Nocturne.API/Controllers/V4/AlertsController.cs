@@ -248,7 +248,7 @@ public class AlertsController : ControllerBase
         }
 
         if (instance.SnoozeCount >= maxCount)
-            return Conflict(new { error = "Maximum snooze count reached" });
+            return Problem(detail: "Maximum snooze count reached", statusCode: 409, title: "Conflict");
 
         instance.SnoozedUntil = DateTime.UtcNow.AddMinutes(request.Minutes);
         instance.SnoozeCount++;

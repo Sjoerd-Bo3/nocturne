@@ -94,7 +94,7 @@ public class PasskeyController : ControllerBase
     {
         if (string.IsNullOrEmpty(request.ChallengeToken))
         {
-            return BadRequest(new ErrorResponse { Error = "invalid_state", Message = "Challenge token not found or expired" });
+            return Problem(detail: "Challenge token not found or expired", statusCode: 400, title: "Bad Request");
         }
 
         var tenantId = _tenantAccessor.TenantId;
@@ -113,7 +113,7 @@ public class PasskeyController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Passkey registration completion failed");
-            return BadRequest(new ErrorResponse { Error = "registration_failed", Message = "Passkey registration failed" });
+            return Problem(detail: "Passkey registration failed", statusCode: 400, title: "Bad Request");
         }
     }
 
@@ -169,7 +169,7 @@ public class PasskeyController : ControllerBase
     {
         if (string.IsNullOrEmpty(request.ChallengeToken))
         {
-            return BadRequest(new ErrorResponse { Error = "invalid_state", Message = "Challenge token not found or expired" });
+            return Problem(detail: "Challenge token not found or expired", statusCode: 400, title: "Bad Request");
         }
 
         var tenantId = _tenantAccessor.TenantId;
@@ -183,7 +183,7 @@ public class PasskeyController : ControllerBase
             var subject = await _subjectService.GetSubjectByIdAsync(assertionResult.SubjectId);
             if (subject == null)
             {
-                return BadRequest(new ErrorResponse { Error = "subject_not_found", Message = "User account not found" });
+                return Problem(detail: "User account not found", statusCode: 400, title: "Bad Request");
             }
 
             var roles = await _subjectService.GetSubjectRolesAsync(assertionResult.SubjectId);
@@ -219,7 +219,7 @@ public class PasskeyController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Passkey login completion failed");
-            return BadRequest(new ErrorResponse { Error = "login_failed", Message = "Passkey authentication failed" });
+            return Problem(detail: "Passkey authentication failed", statusCode: 400, title: "Bad Request");
         }
     }
 
@@ -246,13 +246,13 @@ public class PasskeyController : ControllerBase
         if (subjectEntity == null)
         {
             // Don't reveal whether the username exists
-            return BadRequest(new ErrorResponse { Error = "recovery_failed", Message = "Invalid username or recovery code" });
+            return Problem(detail: "Invalid username or recovery code", statusCode: 400, title: "Bad Request");
         }
 
         var verified = await _recoveryCodeService.VerifyAndConsumeAsync(subjectEntity.Id, request.Code);
         if (!verified)
         {
-            return BadRequest(new ErrorResponse { Error = "recovery_failed", Message = "Invalid username or recovery code" });
+            return Problem(detail: "Invalid username or recovery code", statusCode: 400, title: "Bad Request");
         }
 
         // Issue a restricted recovery session (short-lived)
@@ -300,7 +300,7 @@ public class PasskeyController : ControllerBase
         var auth = HttpContext.GetAuthContext();
         if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
         {
-            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+            return Problem(detail: "Authentication required", statusCode: 401, title: "Unauthorized");
         }
 
         var tenantId = _tenantAccessor.TenantId;
@@ -334,7 +334,7 @@ public class PasskeyController : ControllerBase
         var auth = HttpContext.GetAuthContext();
         if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
         {
-            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+            return Problem(detail: "Authentication required", statusCode: 401, title: "Unauthorized");
         }
 
         var tenantId = _tenantAccessor.TenantId;
@@ -345,11 +345,7 @@ public class PasskeyController : ControllerBase
 
         if (credentialCount <= 1 && !hasOidc)
         {
-            return BadRequest(new ErrorResponse
-            {
-                Error = "removal_blocked",
-                Message = "Cannot remove your last passkey without an alternative sign-in method",
-            });
+            return Problem(detail: "Cannot remove your last passkey without an alternative sign-in method", statusCode: 400, title: "Bad Request");
         }
 
         try
@@ -360,7 +356,7 @@ public class PasskeyController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to remove passkey credential {CredentialId}", id);
-            return NotFound(new ErrorResponse { Error = "not_found", Message = "Credential not found" });
+            return Problem(detail: "Credential not found", statusCode: 404, title: "Not Found");
         }
     }
 
@@ -376,7 +372,7 @@ public class PasskeyController : ControllerBase
         var auth = HttpContext.GetAuthContext();
         if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
         {
-            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+            return Problem(detail: "Authentication required", statusCode: 401, title: "Unauthorized");
         }
 
         var codes = await _recoveryCodeService.GenerateCodesAsync(auth.SubjectId.Value);
@@ -399,7 +395,7 @@ public class PasskeyController : ControllerBase
         var auth = HttpContext.GetAuthContext();
         if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
         {
-            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+            return Problem(detail: "Authentication required", statusCode: 401, title: "Unauthorized");
         }
 
         var remaining = await _recoveryCodeService.GetRemainingCountAsync(auth.SubjectId.Value);

@@ -174,7 +174,7 @@ public class TrackersController : ControllerBase
 
         // Validate mode-specific requirements
         if (request.Mode == TrackerMode.Event && request.LifespanHours.HasValue)
-            return BadRequest("Event mode trackers should not have a lifespan");
+            return Problem(detail: "Event mode trackers should not have a lifespan", statusCode: 400, title: "Bad Request");
 
         var entity = new TrackerDefinitionEntity
         {
@@ -266,7 +266,7 @@ public class TrackersController : ControllerBase
 
         // Validate mode-specific requirements
         if (mode == TrackerMode.Event && lifespan.HasValue)
-            return BadRequest("Event mode trackers should not have a lifespan");
+            return Problem(detail: "Event mode trackers should not have a lifespan", statusCode: 400, title: "Bad Request");
 
         existing.Name = request.Name ?? existing.Name;
         existing.Description = request.Description ?? existing.Description;
@@ -441,9 +441,9 @@ public class TrackersController : ControllerBase
 
         // Validate mode-specific requirements
         if (definition.Mode == TrackerMode.Event && !request.ScheduledAt.HasValue)
-            return BadRequest("Event mode trackers require a ScheduledAt datetime");
+            return Problem(detail: "Event mode trackers require a ScheduledAt datetime", statusCode: 400, title: "Bad Request");
         if (definition.Mode == TrackerMode.Duration && request.ScheduledAt.HasValue)
-            return BadRequest("Duration mode trackers should not have a ScheduledAt datetime");
+            return Problem(detail: "Duration mode trackers should not have a ScheduledAt datetime", statusCode: 400, title: "Bad Request");
 
         var instance = await _repository.StartInstanceAsync(
             request.DefinitionId,
@@ -491,7 +491,7 @@ public class TrackersController : ControllerBase
             return Forbid();
 
         if (existing.CompletedAt != null)
-            return BadRequest("Instance already completed");
+            return Problem(detail: "Instance already completed", statusCode: 400, title: "Bad Request");
 
         var completed = await _repository.CompleteInstanceAsync(
             id,

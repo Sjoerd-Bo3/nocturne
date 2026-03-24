@@ -25,7 +25,7 @@ public abstract class V4CrudControllerBase<TModel, TCreateRequest, TUpdateReques
         var model = MapCreateToModel(request);
 
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
 
         var created = await Repository.CreateAsync(model, ct);
         created = await OnAfterCreateAsync(created, ct);
@@ -46,7 +46,7 @@ public abstract class V4CrudControllerBase<TModel, TCreateRequest, TUpdateReques
         var model = MapUpdateToModel(id, request, existing);
 
         if (model.Timestamp == default)
-            return BadRequest(new { error = "Timestamp must be set" });
+            return Problem(detail: "Timestamp must be set", statusCode: 400, title: "Bad Request");
 
         try
         {

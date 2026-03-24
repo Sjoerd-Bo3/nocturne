@@ -122,7 +122,7 @@ public class MealMatchingController : ControllerBase
         {
             _logger.LogError(ex, "Failed to accept meal match for food entry {FoodEntryId} and treatment {TreatmentId}",
                 request.FoodEntryId, request.TreatmentId);
-            return StatusCode(500, new { error = ex.Message });
+            return Problem(detail: ex.Message, statusCode: 500, title: "Internal Server Error");
         }
     }
 

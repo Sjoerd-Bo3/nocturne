@@ -62,7 +62,7 @@ public class DiscrepancyController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving compatibility metrics");
-            return StatusCode(500, "Error retrieving compatibility metrics");
+            return Problem(detail: "Error retrieving compatibility metrics", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -99,7 +99,7 @@ public class DiscrepancyController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving endpoint metrics");
-            return StatusCode(500, "Error retrieving endpoint metrics");
+            return Problem(detail: "Error retrieving endpoint metrics", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -130,12 +130,12 @@ public class DiscrepancyController : ControllerBase
             // Validate parameters
             if (count <= 0)
             {
-                return BadRequest("Count must be positive");
+                return Problem(detail: "Count must be positive", statusCode: 400, title: "Bad Request");
             }
 
             if (skip < 0)
             {
-                return BadRequest("Skip must be non-negative");
+                return Problem(detail: "Skip must be non-negative", statusCode: 400, title: "Bad Request");
             }
 
             _logger.LogDebug(
@@ -201,7 +201,7 @@ public class DiscrepancyController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving discrepancy analyses");
-            return StatusCode(500, "Error retrieving discrepancy analyses");
+            return Problem(detail: "Error retrieving discrepancy analyses", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -275,7 +275,7 @@ public class DiscrepancyController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving discrepancy analysis {Id}", id);
-            return StatusCode(500, "Error retrieving discrepancy analysis");
+            return Problem(detail: "Error retrieving discrepancy analysis", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -315,7 +315,7 @@ public class DiscrepancyController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving compatibility status");
-            return StatusCode(500, "Error retrieving compatibility status");
+            return Problem(detail: "Error retrieving compatibility status", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -359,7 +359,7 @@ public class DiscrepancyController : ControllerBase
         {
             if (request == null || request.Analysis == null)
             {
-                return BadRequest(new { status = 400, message = "Invalid request body" });
+                return Problem(detail: "Invalid request body", statusCode: 400, title: "Bad Request");
             }
 
             var sourceId = request.SourceId;
@@ -429,7 +429,7 @@ public class DiscrepancyController : ControllerBase
                 "Error ingesting forwarded discrepancy from {SourceId}",
                 request?.SourceId ?? "unknown"
             );
-            return StatusCode(500, new { status = 500, message = "Error processing forwarded discrepancy" });
+            return Problem(detail: "Error processing forwarded discrepancy", statusCode: 500, title: "Internal Server Error");
         }
     }
 }

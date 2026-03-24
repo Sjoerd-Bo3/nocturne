@@ -43,7 +43,7 @@ public class UserPreferencesController : ControllerBase
         var authContext = HttpContext.GetAuthContext();
         if (authContext == null || !authContext.IsAuthenticated || !authContext.SubjectId.HasValue)
         {
-            return Unauthorized(new { error = "not_authenticated", message = "Not authenticated" });
+            return Problem(detail: "Not authenticated", statusCode: 401, title: "Unauthorized");
         }
 
         var subject = await _dbContext.Subjects
@@ -52,7 +52,7 @@ public class UserPreferencesController : ControllerBase
 
         if (subject == null)
         {
-            return Unauthorized(new { error = "subject_not_found", message = "Subject not found" });
+            return Problem(detail: "Subject not found", statusCode: 401, title: "Unauthorized");
         }
 
         return Ok(new UserPreferencesResponse
@@ -76,7 +76,7 @@ public class UserPreferencesController : ControllerBase
         var authContext = HttpContext.GetAuthContext();
         if (authContext == null || !authContext.IsAuthenticated || !authContext.SubjectId.HasValue)
         {
-            return Unauthorized(new { error = "not_authenticated", message = "Not authenticated" });
+            return Problem(detail: "Not authenticated", statusCode: 401, title: "Unauthorized");
         }
 
         // Validate language code if provided
@@ -94,7 +94,7 @@ public class UserPreferencesController : ControllerBase
 
         if (subject == null)
         {
-            return Unauthorized(new { error = "subject_not_found", message = "Subject not found" });
+            return Problem(detail: "Subject not found", statusCode: 401, title: "Unauthorized");
         }
 
         // Update preferences

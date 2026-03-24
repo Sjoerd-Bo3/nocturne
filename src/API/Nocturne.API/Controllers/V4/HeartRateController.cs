@@ -47,7 +47,7 @@ public class HeartRateController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving heart rate records");
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -70,14 +70,14 @@ public class HeartRateController : ControllerBase
         {
             var record = await _heartRateService.GetHeartRateByIdAsync(id, cancellationToken);
             if (record == null)
-                return NotFound(new { error = $"Heart rate record with ID {id} not found" });
+                return Problem(detail: $"Heart rate record with ID {id} not found", statusCode: 404, title: "Not Found");
 
             return Ok(record);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving heart rate record with ID {Id}", id);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -96,7 +96,7 @@ public class HeartRateController : ControllerBase
         try
         {
             if (heartRates == null)
-                return BadRequest(new { error = "Heart rate data is required" });
+                return Problem(detail: "Heart rate data is required", statusCode: 400, title: "Bad Request");
 
             List<HeartRate> heartRateList;
 
@@ -119,11 +119,11 @@ public class HeartRateController : ControllerBase
             }
             else
             {
-                return BadRequest(new { error = "Invalid data format" });
+                return Problem(detail: "Invalid data format", statusCode: 400, title: "Bad Request");
             }
 
             if (heartRateList.Count == 0)
-                return BadRequest(new { error = "At least one heart rate record is required" });
+                return Problem(detail: "At least one heart rate record is required", statusCode: 400, title: "Bad Request");
 
             var result = await _heartRateService.CreateHeartRatesAsync(heartRateList, cancellationToken);
             return Ok(result);
@@ -131,7 +131,7 @@ public class HeartRateController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating heart rate records");
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -152,14 +152,14 @@ public class HeartRateController : ControllerBase
         {
             var updated = await _heartRateService.UpdateHeartRateAsync(id, heartRate, cancellationToken);
             if (updated == null)
-                return NotFound(new { error = $"Heart rate record with ID {id} not found" });
+                return Problem(detail: $"Heart rate record with ID {id} not found", statusCode: 404, title: "Not Found");
 
             return Ok(updated);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating heart rate record with ID {Id}", id);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -179,14 +179,14 @@ public class HeartRateController : ControllerBase
         {
             var deleted = await _heartRateService.DeleteHeartRateAsync(id, cancellationToken);
             if (!deleted)
-                return NotFound(new { error = $"Heart rate record with ID {id} not found" });
+                return Problem(detail: $"Heart rate record with ID {id} not found", statusCode: 404, title: "Not Found");
 
             return Ok(new { message = "Heart rate record deleted successfully" });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting heart rate record with ID {Id}", id);
-            return StatusCode(500, new { error = "Internal server error" });
+            return Problem(detail: "Internal server error", statusCode: 500, title: "Internal Server Error");
         }
     }
 }

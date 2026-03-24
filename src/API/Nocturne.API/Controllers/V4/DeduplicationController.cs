@@ -55,7 +55,7 @@ public class DeduplicationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to start deduplication job");
-            return StatusCode(500, new { error = "Failed to start deduplication job" });
+            return Problem(detail: "Failed to start deduplication job", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -82,7 +82,7 @@ public class DeduplicationController : ControllerBase
 
             if (status == null)
             {
-                return NotFound(new { error = "Job not found" });
+                return Problem(detail: "Job not found", statusCode: 404, title: "Not Found");
             }
 
             return Ok(status);
@@ -90,7 +90,7 @@ public class DeduplicationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get status for job {JobId}", jobId);
-            return StatusCode(500, new { error = "Failed to get job status" });
+            return Problem(detail: "Failed to get job status", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -117,7 +117,7 @@ public class DeduplicationController : ControllerBase
 
             if (!cancelled)
             {
-                return NotFound(new { error = "Job not found or already completed" });
+                return Problem(detail: "Job not found or already completed", statusCode: 404, title: "Not Found");
             }
 
             return Ok(new CancelJobResponse
@@ -130,7 +130,7 @@ public class DeduplicationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to cancel job {JobId}", jobId);
-            return StatusCode(500, new { error = "Failed to cancel job" });
+            return Problem(detail: "Failed to cancel job", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -153,7 +153,7 @@ public class DeduplicationController : ControllerBase
         {
             if (!Guid.TryParse(entryId, out var entryGuid))
             {
-                return BadRequest(new { error = "Invalid entry ID format" });
+                return Problem(detail: "Invalid entry ID format", statusCode: 400, title: "Bad Request");
             }
 
             var linkedRecord = await _deduplicationService.GetLinkedRecordAsync(
@@ -161,7 +161,7 @@ public class DeduplicationController : ControllerBase
 
             if (linkedRecord == null)
             {
-                return NotFound(new { error = "Entry not found or not linked" });
+                return Problem(detail: "Entry not found or not linked", statusCode: 404, title: "Not Found");
             }
 
             var allLinked = await _deduplicationService.GetLinkedRecordsAsync(
@@ -177,7 +177,7 @@ public class DeduplicationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get linked records for entry {EntryId}", entryId);
-            return StatusCode(500, new { error = "Failed to get linked records" });
+            return Problem(detail: "Failed to get linked records", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -200,7 +200,7 @@ public class DeduplicationController : ControllerBase
         {
             if (!Guid.TryParse(treatmentId, out var treatmentGuid))
             {
-                return BadRequest(new { error = "Invalid treatment ID format" });
+                return Problem(detail: "Invalid treatment ID format", statusCode: 400, title: "Bad Request");
             }
 
             var linkedRecord = await _deduplicationService.GetLinkedRecordAsync(
@@ -208,7 +208,7 @@ public class DeduplicationController : ControllerBase
 
             if (linkedRecord == null)
             {
-                return NotFound(new { error = "Treatment not found or not linked" });
+                return Problem(detail: "Treatment not found or not linked", statusCode: 404, title: "Not Found");
             }
 
             var allLinked = await _deduplicationService.GetLinkedRecordsAsync(
@@ -224,7 +224,7 @@ public class DeduplicationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get linked records for treatment {TreatmentId}", treatmentId);
-            return StatusCode(500, new { error = "Failed to get linked records" });
+            return Problem(detail: "Failed to get linked records", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -247,7 +247,7 @@ public class DeduplicationController : ControllerBase
         {
             if (!Guid.TryParse(stateSpanId, out var stateSpanGuid))
             {
-                return BadRequest(new { error = "Invalid state span ID format" });
+                return Problem(detail: "Invalid state span ID format", statusCode: 400, title: "Bad Request");
             }
 
             var linkedRecord = await _deduplicationService.GetLinkedRecordAsync(
@@ -255,7 +255,7 @@ public class DeduplicationController : ControllerBase
 
             if (linkedRecord == null)
             {
-                return NotFound(new { error = "State span not found or not linked" });
+                return Problem(detail: "State span not found or not linked", statusCode: 404, title: "Not Found");
             }
 
             var allLinked = await _deduplicationService.GetLinkedRecordsAsync(
@@ -271,7 +271,7 @@ public class DeduplicationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get linked records for state span {StateSpanId}", stateSpanId);
-            return StatusCode(500, new { error = "Failed to get linked records" });
+            return Problem(detail: "Failed to get linked records", statusCode: 500, title: "Internal Server Error");
         }
     }
 
@@ -296,7 +296,7 @@ public class DeduplicationController : ControllerBase
         {
             if (!Guid.TryParse(recordId, out var recordGuid))
             {
-                return BadRequest(new { error = "Invalid record ID format" });
+                return Problem(detail: "Invalid record ID format", statusCode: 400, title: "Bad Request");
             }
 
             var linkedRecord = await _deduplicationService.GetLinkedRecordAsync(
@@ -304,7 +304,7 @@ public class DeduplicationController : ControllerBase
 
             if (linkedRecord == null)
             {
-                return NotFound(new { error = "Record not found or not linked" });
+                return Problem(detail: "Record not found or not linked", statusCode: 404, title: "Not Found");
             }
 
             var allLinked = await _deduplicationService.GetLinkedRecordsAsync(
@@ -320,7 +320,7 @@ public class DeduplicationController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get linked records for {RecordType} {RecordId}", recordType, recordId);
-            return StatusCode(500, new { error = "Failed to get linked records" });
+            return Problem(detail: "Failed to get linked records", statusCode: 500, title: "Internal Server Error");
         }
     }
 }

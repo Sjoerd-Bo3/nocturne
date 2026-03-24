@@ -81,7 +81,7 @@ public class CompressionLowController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { error = ex.Message });
+            return Problem(detail: ex.Message, statusCode: 400, title: "Bad Request");
         }
     }
 
@@ -104,7 +104,7 @@ public class CompressionLowController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { error = ex.Message });
+            return Problem(detail: ex.Message, statusCode: 400, title: "Bad Request");
         }
     }
 
@@ -126,7 +126,7 @@ public class CompressionLowController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return NotFound(new { error = ex.Message });
+            return Problem(detail: ex.Message, statusCode: 404, title: "Not Found");
         }
     }
 
@@ -148,7 +148,7 @@ public class CompressionLowController : ControllerBase
         if (!string.IsNullOrEmpty(request.NightOf))
         {
             if (!DateOnly.TryParse(request.NightOf, out var nightOf))
-                return BadRequest(new { error = "Invalid date format. Use yyyy-MM-dd" });
+                return Problem(detail: "Invalid date format. Use yyyy-MM-dd", statusCode: 400, title: "Bad Request");
 
             var count = await _detectionService.DetectForNightAsync(nightOf, cancellationToken);
             return Ok(new DetectionResult
@@ -161,16 +161,16 @@ public class CompressionLowController : ControllerBase
 
         // Date range mode
         if (string.IsNullOrEmpty(request.StartDate) || string.IsNullOrEmpty(request.EndDate))
-            return BadRequest(new { error = "Provide either 'nightOf' for a single night or 'startDate' and 'endDate' for a range" });
+            return Problem(detail: "Provide either 'nightOf' for a single night or 'startDate' and 'endDate' for a range", statusCode: 400, title: "Bad Request");
 
         if (!DateOnly.TryParse(request.StartDate, out var startDate))
-            return BadRequest(new { error = "Invalid startDate format. Use yyyy-MM-dd" });
+            return Problem(detail: "Invalid startDate format. Use yyyy-MM-dd", statusCode: 400, title: "Bad Request");
 
         if (!DateOnly.TryParse(request.EndDate, out var endDate))
-            return BadRequest(new { error = "Invalid endDate format. Use yyyy-MM-dd" });
+            return Problem(detail: "Invalid endDate format. Use yyyy-MM-dd", statusCode: 400, title: "Bad Request");
 
         if (endDate < startDate)
-            return BadRequest(new { error = "endDate must be >= startDate" });
+            return Problem(detail: "endDate must be >= startDate", statusCode: 400, title: "Bad Request");
 
         var dayCount = endDate.DayNumber - startDate.DayNumber + 1;
         var results = new List<NightDetectionResult>();

@@ -211,7 +211,7 @@ public class DebugController : ControllerBase
             if (entries == null)
             {
                 return Task.FromResult<ActionResult<object>>(
-                    BadRequest(new { error = "Entry data is required" })
+                    Problem(detail: "Entry data is required", statusCode: 400, title: "Bad Request")
                 );
             }
 
@@ -271,7 +271,7 @@ public class DebugController : ControllerBase
             else
             {
                 return Task.FromResult<ActionResult<object>>(
-                    BadRequest(new { error = "Invalid entry data format" })
+                    Problem(detail: "Invalid entry data format", statusCode: 400, title: "Bad Request")
                 );
             }
 

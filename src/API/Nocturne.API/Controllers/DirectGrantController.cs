@@ -50,7 +50,7 @@ public class DirectGrantController : ControllerBase
         var auth = HttpContext.GetAuthContext();
         if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
         {
-            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+            return Problem(detail: "Authentication required", statusCode: 401, title: "Unauthorized");
         }
 
         // Generate opaque token
@@ -109,7 +109,7 @@ public class DirectGrantController : ControllerBase
         var auth = HttpContext.GetAuthContext();
         if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
         {
-            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+            return Problem(detail: "Authentication required", statusCode: 401, title: "Unauthorized");
         }
 
         var grants = await _dbContext.OAuthGrants
@@ -144,7 +144,7 @@ public class DirectGrantController : ControllerBase
         var auth = HttpContext.GetAuthContext();
         if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
         {
-            return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
+            return Problem(detail: "Authentication required", statusCode: 401, title: "Unauthorized");
         }
 
         var grant = await _dbContext.OAuthGrants
@@ -155,7 +155,7 @@ public class DirectGrantController : ControllerBase
 
         if (grant == null)
         {
-            return NotFound(new ErrorResponse { Error = "not_found", Message = "Direct grant not found" });
+            return Problem(detail: "Direct grant not found", statusCode: 404, title: "Not Found");
         }
 
         if (grant.RevokedAt.HasValue)

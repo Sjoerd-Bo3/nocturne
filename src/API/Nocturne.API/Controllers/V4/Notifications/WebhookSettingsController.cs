@@ -62,13 +62,13 @@ public class WebhookSettingsController(
 
             if (urls == null || urls.Count == 0)
             {
-                return BadRequest(new { error = "Webhook URLs are required" });
+                return Problem(detail: "Webhook URLs are required", statusCode: 400, title: "Bad Request");
             }
 
             var secret = request.Secret;
             if (string.IsNullOrWhiteSpace(secret))
             {
-                return BadRequest(new { error = "Webhook secret is required" });
+                return Problem(detail: "Webhook secret is required", statusCode: 400, title: "Bad Request");
             }
 
             var userId = GetUserId();
@@ -102,7 +102,7 @@ public class WebhookSettingsController(
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to test webhook settings");
-            return StatusCode(500, new { error = "Failed to test webhook settings" });
+            return Problem(detail: "Failed to test webhook settings", statusCode: 500, title: "Internal Server Error");
         }
     }
 

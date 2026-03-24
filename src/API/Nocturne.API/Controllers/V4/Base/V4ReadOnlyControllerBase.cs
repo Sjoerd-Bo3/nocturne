@@ -24,7 +24,7 @@ public abstract class V4ReadOnlyControllerBase<TModel, TRepository>(TRepository 
         CancellationToken ct = default)
     {
         if (sort is not "timestamp_desc" and not "timestamp_asc")
-            return BadRequest(new { error = $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'." });
+            return Problem(detail: $"Invalid sort value '{sort}'. Must be 'timestamp_asc' or 'timestamp_desc'.", statusCode: 400, title: "Bad Request");
 
         var descending = sort == "timestamp_desc";
         var data = await Repository.GetAsync(from, to, device, source, limit, offset, descending, ct);

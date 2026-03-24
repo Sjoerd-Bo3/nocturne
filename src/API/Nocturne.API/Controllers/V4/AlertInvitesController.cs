@@ -46,7 +46,7 @@ public class AlertInvitesController : ControllerBase
             .AnyAsync(s => s.Id == request.EscalationStepId, ct);
 
         if (!stepExists)
-            return BadRequest(new { error = "Escalation step not found" });
+            return Problem(detail: "Escalation step not found", statusCode: 400, title: "Bad Request");
 
         var subjectId = HttpContext.GetSubjectId();
         if (subjectId is null)
@@ -107,10 +107,10 @@ public class AlertInvitesController : ControllerBase
             return NotFound();
 
         if (invite.IsUsed)
-            return StatusCode(StatusCodes.Status410Gone, new { error = "Invite has already been redeemed" });
+            return Problem(detail: "Invite has already been redeemed", statusCode: 410, title: "Gone");
 
         if (invite.ExpiresAt < DateTime.UtcNow)
-            return StatusCode(StatusCodes.Status410Gone, new { error = "Invite has expired" });
+            return Problem(detail: "Invite has expired", statusCode: 410, title: "Gone");
 
         return Ok(new AlertInviteResponse
         {
@@ -144,10 +144,10 @@ public class AlertInvitesController : ControllerBase
             return NotFound();
 
         if (invite.IsUsed)
-            return StatusCode(StatusCodes.Status410Gone, new { error = "Invite has already been redeemed" });
+            return Problem(detail: "Invite has already been redeemed", statusCode: 410, title: "Gone");
 
         if (invite.ExpiresAt < DateTime.UtcNow)
-            return StatusCode(StatusCodes.Status410Gone, new { error = "Invite has expired" });
+            return Problem(detail: "Invite has expired", statusCode: 410, title: "Gone");
 
         var subjectId = HttpContext.GetSubjectId();
         if (subjectId is null)
@@ -180,7 +180,7 @@ public class AlertInvitesController : ControllerBase
             return NotFound();
 
         if (invite.IsUsed)
-            return Conflict(new { error = "Cannot revoke an already-redeemed invite" });
+            return Problem(detail: "Cannot revoke an already-redeemed invite", statusCode: 409, title: "Conflict");
 
         db.AlertInvites.Remove(invite);
         await db.SaveChangesAsync(ct);
