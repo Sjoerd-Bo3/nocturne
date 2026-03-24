@@ -5,8 +5,8 @@
 import { getRequestEvent, query, command, form } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { NoteSchema } from '$lib/api/generated/schemas';
-import { type Note } from '$api';
+import { UpsertNoteRequestSchema } from '$lib/api/generated/schemas';
+import { type UpsertNoteRequest } from '$api';
 
 export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
@@ -22,11 +22,11 @@ export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.c
   }
 });
 
-export const create = form(NoteSchema as any, async (request) => {
+export const create = form(UpsertNoteRequestSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    const result = await apiClient.notes.create(request as Note);
+    const result = await apiClient.notes.create(request as UpsertNoteRequest);
     return result;
   } catch (err) {
     const status = (err as any)?.status;
@@ -51,11 +51,11 @@ export const getById = query(z.string(), async (id) => {
   }
 });
 
-export const update = form(z.object({ id: z.string(), request: NoteSchema }) as any, async ({ id, request }) => {
+export const update = form(z.object({ id: z.string(), request: UpsertNoteRequestSchema }) as any, async ({ id, request }) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    const result = await apiClient.notes.update(id, request as Note);
+    const result = await apiClient.notes.update(id, request as UpsertNoteRequest);
     return result;
   } catch (err) {
     const status = (err as any)?.status;

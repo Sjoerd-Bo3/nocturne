@@ -1097,7 +1097,7 @@ export class ConnectorStatusClient {
     }
 }
 
-export class LocalAuthClient {
+export class DirectGrantClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
@@ -1108,47 +1108,10 @@ export class LocalAuthClient {
     }
 
     /**
-     * Get local identity provider configuration
+     * Create a new direct grant token. The plaintext token is returned once and cannot be retrieved again.
      */
-    getConfig(signal?: AbortSignal): Promise<LocalAuthConfigResponse> {
-        let url_ = this.baseUrl + "/auth/local/config";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetConfig(_response);
-        });
-    }
-
-    protected processGetConfig(response: Response): Promise<LocalAuthConfigResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as LocalAuthConfigResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<LocalAuthConfigResponse>(null as any);
-    }
-
-    /**
-     * Register a new user account
-     */
-    register(request: RegisterRequest, signal?: AbortSignal): Promise<RegisterResponse> {
-        let url_ = this.baseUrl + "/auth/local/register";
+    create(request: CreateDirectGrantRequest, signal?: AbortSignal): Promise<CreateDirectGrantResponse> {
+        let url_ = this.baseUrl + "/api/auth/direct-grants";
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(request);
@@ -1164,256 +1127,23 @@ export class LocalAuthClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processRegister(_response);
+            return this.processCreate(_response);
         });
     }
 
-    protected processRegister(response: Response): Promise<RegisterResponse> {
+    protected processCreate(response: Response): Promise<CreateDirectGrantResponse> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RegisterResponse;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateDirectGrantResponse;
             return result200;
             });
         } else if (status === 400) {
             return response.text().then((_responseText) => {
             let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<RegisterResponse>(null as any);
-    }
-
-    /**
-     * Log in with email and password
-     */
-    login(request: LoginRequest, signal?: AbortSignal): Promise<LoginResponse> {
-        let url_ = this.baseUrl + "/auth/local/login";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processLogin(_response);
-        });
-    }
-
-    protected processLogin(response: Response): Promise<LoginResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as LoginResponse;
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<LoginResponse>(null as any);
-    }
-
-    /**
-     * Verify email address
-     * @param token (optional) 
-     */
-    verifyEmail(token?: string | undefined, signal?: AbortSignal): Promise<void> {
-        let url_ = this.baseUrl + "/auth/local/verify-email?";
-        if (token === null)
-            throw new globalThis.Error("The parameter 'token' cannot be null.");
-        else if (token !== undefined)
-            url_ += "token=" + encodeURIComponent("" + token) + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processVerifyEmail(_response);
-        });
-    }
-
-    protected processVerifyEmail(response: Response): Promise<void> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 302) {
-            return response.text().then((_responseText) => {
-            return throwException("A server side error occurred.", status, _responseText, _headers);
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<void>(null as any);
-    }
-
-    /**
-     * Request password reset
-     */
-    forgotPassword(request: ForgotPasswordRequest, signal?: AbortSignal): Promise<ForgotPasswordResponse> {
-        let url_ = this.baseUrl + "/auth/local/forgot-password";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processForgotPassword(_response);
-        });
-    }
-
-    protected processForgotPassword(response: Response): Promise<ForgotPasswordResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ForgotPasswordResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ForgotPasswordResponse>(null as any);
-    }
-
-    /**
-     * Reset password with token
-     */
-    resetPassword(request: ResetPasswordRequest, signal?: AbortSignal): Promise<ResetPasswordResponse> {
-        let url_ = this.baseUrl + "/auth/local/reset-password";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processResetPassword(_response);
-        });
-    }
-
-    protected processResetPassword(response: Response): Promise<ResetPasswordResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ResetPasswordResponse;
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ResetPasswordResponse>(null as any);
-    }
-
-    /**
-     * Change password for authenticated user
-     */
-    changePassword(request: ChangePasswordRequest, signal?: AbortSignal): Promise<ChangePasswordResponse> {
-        let url_ = this.baseUrl + "/auth/local/change-password";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processChangePassword(_response);
-        });
-    }
-
-    protected processChangePassword(response: Response): Promise<ChangePasswordResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ChangePasswordResponse;
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ErrorResponse;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("A server side error occurred.", status, _responseText, _headers, result400);
             });
         } else if (status === 401) {
@@ -1427,19 +1157,15 @@ export class LocalAuthClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ChangePasswordResponse>(null as any);
+        return Promise.resolve<CreateDirectGrantResponse>(null as any);
     }
 
     /**
-     * Check if email is allowed to register (for form validation)
-     * @param email (optional) 
+     * List all active direct grants for the authenticated user.
+    Never returns the token itself.
      */
-    checkEmail(email?: string | undefined, signal?: AbortSignal): Promise<CheckEmailResponse> {
-        let url_ = this.baseUrl + "/auth/local/check-email?";
-        if (email === null)
-            throw new globalThis.Error("The parameter 'email' cannot be null.");
-        else if (email !== undefined)
-            url_ += "email=" + encodeURIComponent("" + email) + "&";
+    list(signal?: AbortSignal): Promise<DirectGrantDto[]> {
+        let url_ = this.baseUrl + "/api/auth/direct-grants";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -1451,196 +1177,80 @@ export class LocalAuthClient {
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCheckEmail(_response);
+            return this.processList(_response);
         });
     }
 
-    protected processCheckEmail(response: Response): Promise<CheckEmailResponse> {
+    protected processList(response: Response): Promise<DirectGrantDto[]> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CheckEmailResponse;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DirectGrantDto[];
             return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<CheckEmailResponse>(null as any);
+        return Promise.resolve<DirectGrantDto[]>(null as any);
     }
 
     /**
-     * Resend email verification
+     * Revoke a direct grant by setting its RevokedAt timestamp
      */
-    resendVerification(request: ResendVerificationRequest, signal?: AbortSignal): Promise<ResendVerificationResponse> {
-        let url_ = this.baseUrl + "/auth/local/resend-verification";
+    revoke(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/auth/direct-grants/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(request);
-
         let options_: RequestInit = {
-            body: content_,
-            method: "POST",
+            method: "DELETE",
             signal,
             headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
             }
         };
 
         return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processResendVerification(_response);
+            return this.processRevoke(_response);
         });
     }
 
-    protected processResendVerification(response: Response): Promise<ResendVerificationResponse> {
+    protected processRevoke(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
+        if (status === 204) {
             return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ResendVerificationResponse;
-            return result200;
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<ResendVerificationResponse>(null as any);
-    }
-
-    /**
-     * Get pending password reset requests (admin only)
-     */
-    getPendingPasswordResets(signal?: AbortSignal): Promise<PasswordResetRequestListResponse> {
-        let url_ = this.baseUrl + "/auth/local/admin/password-resets";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetPendingPasswordResets(_response);
-        });
-    }
-
-    protected processGetPendingPasswordResets(response: Response): Promise<PasswordResetRequestListResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PasswordResetRequestListResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PasswordResetRequestListResponse>(null as any);
-    }
-
-    /**
-     * Set a temporary password for a user (admin only)
-     */
-    setTemporaryPassword(request: SetTemporaryPasswordRequest, signal?: AbortSignal): Promise<SetTemporaryPasswordResponse> {
-        let url_ = this.baseUrl + "/auth/local/admin/set-temporary-password";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processSetTemporaryPassword(_response);
-        });
-    }
-
-    protected processSetTemporaryPassword(response: Response): Promise<SetTemporaryPasswordResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as SetTemporaryPasswordResponse;
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SetTemporaryPasswordResponse>(null as any);
-    }
-
-    /**
-     * Handle a password reset request by generating a reset link (admin only)
-     */
-    handlePasswordReset(requestId: string, signal?: AbortSignal): Promise<HandlePasswordResetResponse> {
-        let url_ = this.baseUrl + "/auth/local/admin/handle-password-reset/{requestId}";
-        if (requestId === undefined || requestId === null)
-            throw new globalThis.Error("The parameter 'requestId' must be defined.");
-        url_ = url_.replace("{requestId}", encodeURIComponent("" + requestId));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "POST",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processHandlePasswordReset(_response);
-        });
-    }
-
-    protected processHandlePasswordReset(response: Response): Promise<HandlePasswordResetResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as HandlePasswordResetResponse;
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ErrorResponse;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<HandlePasswordResetResponse>(null as any);
+        return Promise.resolve<void>(null as any);
     }
 }
 
@@ -3225,6 +2835,509 @@ export class OidcClient {
             });
         }
         return Promise.resolve<SessionInfo>(null as any);
+    }
+}
+
+export class PasskeyClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Generate registration options for a new passkey credential
+     */
+    registerOptions(request: PasskeyRegisterOptionsRequest, signal?: AbortSignal): Promise<PasskeyOptionsResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/register/options";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRegisterOptions(_response);
+        });
+    }
+
+    protected processRegisterOptions(response: Response): Promise<PasskeyOptionsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PasskeyOptionsResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasskeyOptionsResponse>(null as any);
+    }
+
+    /**
+     * Complete passkey registration with attestation response
+     */
+    registerComplete(request: PasskeyRegisterCompleteRequest, signal?: AbortSignal): Promise<PasskeyRegisterCompleteResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/register/complete";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRegisterComplete(_response);
+        });
+    }
+
+    protected processRegisterComplete(response: Response): Promise<PasskeyRegisterCompleteResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PasskeyRegisterCompleteResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasskeyRegisterCompleteResponse>(null as any);
+    }
+
+    /**
+     * Generate discoverable assertion options (no username required)
+     */
+    discoverableLoginOptions(signal?: AbortSignal): Promise<PasskeyOptionsResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/login/discoverable/options";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDiscoverableLoginOptions(_response);
+        });
+    }
+
+    protected processDiscoverableLoginOptions(response: Response): Promise<PasskeyOptionsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PasskeyOptionsResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasskeyOptionsResponse>(null as any);
+    }
+
+    /**
+     * Generate assertion options for a specific user
+     */
+    loginOptions(request: PasskeyLoginOptionsRequest, signal?: AbortSignal): Promise<PasskeyOptionsResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/login/options";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processLoginOptions(_response);
+        });
+    }
+
+    protected processLoginOptions(response: Response): Promise<PasskeyOptionsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PasskeyOptionsResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasskeyOptionsResponse>(null as any);
+    }
+
+    /**
+     * Complete passkey login with assertion response
+     */
+    loginComplete(request: PasskeyLoginCompleteRequest, signal?: AbortSignal): Promise<PasskeyLoginCompleteResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/login/complete";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processLoginComplete(_response);
+        });
+    }
+
+    protected processLoginComplete(response: Response): Promise<PasskeyLoginCompleteResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PasskeyLoginCompleteResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasskeyLoginCompleteResponse>(null as any);
+    }
+
+    /**
+     * Verify a recovery code and issue a restricted recovery session
+     */
+    recoveryVerify(request: RecoveryVerifyRequest, signal?: AbortSignal): Promise<RecoveryVerifyResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/recovery/verify";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRecoveryVerify(_response);
+        });
+    }
+
+    protected processRecoveryVerify(response: Response): Promise<RecoveryVerifyResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RecoveryVerifyResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RecoveryVerifyResponse>(null as any);
+    }
+
+    /**
+     * List all passkey credentials for the authenticated user
+     */
+    listCredentials(signal?: AbortSignal): Promise<PasskeyCredentialListResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/credentials";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processListCredentials(_response);
+        });
+    }
+
+    protected processListCredentials(response: Response): Promise<PasskeyCredentialListResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PasskeyCredentialListResponse;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasskeyCredentialListResponse>(null as any);
+    }
+
+    /**
+     * Remove a passkey credential. Cannot remove the last credential if user has no OIDC link.
+     */
+    removeCredential(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/auth/passkey/credentials/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRemoveCredential(_response);
+        });
+    }
+
+    protected processRemoveCredential(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Regenerate recovery codes for the authenticated user. Invalidates all existing codes.
+     */
+    regenerateRecoveryCodes(signal?: AbortSignal): Promise<RecoveryRegenerateResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/recovery/regenerate";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRegenerateRecoveryCodes(_response);
+        });
+    }
+
+    protected processRegenerateRecoveryCodes(response: Response): Promise<RecoveryRegenerateResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RecoveryRegenerateResponse;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RecoveryRegenerateResponse>(null as any);
+    }
+
+    /**
+     * Get the count of remaining recovery codes for the authenticated user
+     */
+    getRecoveryStatus(signal?: AbortSignal): Promise<RecoveryStatusResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/recovery/status";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetRecoveryStatus(_response);
+        });
+    }
+
+    protected processGetRecoveryStatus(response: Response): Promise<RecoveryStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RecoveryStatusResponse;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RecoveryStatusResponse>(null as any);
+    }
+
+    /**
+     * Returns whether the instance is currently in recovery mode.
+    Recovery mode activates when active subjects exist that have no
+    passkey credential and no OIDC binding (orphaned after upgrade).
+     */
+    getRecoveryModeStatus(signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/auth/passkey/recovery-mode-status";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetRecoveryModeStatus(_response);
+        });
+    }
+
+    protected processGetRecoveryModeStatus(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
     }
 }
 
@@ -6172,11 +6285,11 @@ export class BGCheckClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    create(model: BGCheck, signal?: AbortSignal): Promise<BGCheck> {
+    create(request: UpsertBGCheckRequest, signal?: AbortSignal): Promise<BGCheck> {
         let url_ = this.baseUrl + "/api/v4/observations/bg-checks";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -6276,14 +6389,14 @@ export class BGCheckClient {
         return Promise.resolve<PaginatedResponseOfBGCheck>(null as any);
     }
 
-    update(id: string, model: BGCheck, signal?: AbortSignal): Promise<BGCheck> {
+    update(id: string, request: UpsertBGCheckRequest, signal?: AbortSignal): Promise<BGCheck> {
         let url_ = this.baseUrl + "/api/v4/observations/bg-checks/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -6423,11 +6536,11 @@ export class BolusCalculationClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    create(model: BolusCalculation, signal?: AbortSignal): Promise<BolusCalculation> {
+    create(request: UpsertBolusCalculationRequest, signal?: AbortSignal): Promise<BolusCalculation> {
         let url_ = this.baseUrl + "/api/v4/insulin/calculations";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -6527,14 +6640,14 @@ export class BolusCalculationClient {
         return Promise.resolve<PaginatedResponseOfBolusCalculation>(null as any);
     }
 
-    update(id: string, model: BolusCalculation, signal?: AbortSignal): Promise<BolusCalculation> {
+    update(id: string, request: UpsertBolusCalculationRequest, signal?: AbortSignal): Promise<BolusCalculation> {
         let url_ = this.baseUrl + "/api/v4/insulin/calculations/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -6734,11 +6847,11 @@ export class BolusClient {
         return Promise.resolve<PaginatedResponseOfBolus>(null as any);
     }
 
-    create(model: Bolus, signal?: AbortSignal): Promise<Bolus> {
+    create(request: CreateBolusRequest, signal?: AbortSignal): Promise<Bolus> {
         let url_ = this.baseUrl + "/api/v4/insulin/boluses";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -6778,14 +6891,14 @@ export class BolusClient {
         return Promise.resolve<Bolus>(null as any);
     }
 
-    update(id: string, model: Bolus, signal?: AbortSignal): Promise<Bolus> {
+    update(id: string, request: UpdateBolusRequest, signal?: AbortSignal): Promise<Bolus> {
         let url_ = this.baseUrl + "/api/v4/insulin/boluses/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -6985,11 +7098,11 @@ export class CalibrationClient {
         return Promise.resolve<PaginatedResponseOfCalibration>(null as any);
     }
 
-    create(model: Calibration, signal?: AbortSignal): Promise<Calibration> {
+    create(request: UpsertCalibrationRequest, signal?: AbortSignal): Promise<Calibration> {
         let url_ = this.baseUrl + "/api/v4/glucose/calibrations";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -7029,14 +7142,14 @@ export class CalibrationClient {
         return Promise.resolve<Calibration>(null as any);
     }
 
-    update(id: string, model: Calibration, signal?: AbortSignal): Promise<Calibration> {
+    update(id: string, request: UpsertCalibrationRequest, signal?: AbortSignal): Promise<Calibration> {
         let url_ = this.baseUrl + "/api/v4/glucose/calibrations/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -9595,11 +9708,11 @@ export class DeviceEventClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    create(model: DeviceEvent, signal?: AbortSignal): Promise<DeviceEvent> {
+    create(request: UpsertDeviceEventRequest, signal?: AbortSignal): Promise<DeviceEvent> {
         let url_ = this.baseUrl + "/api/v4/observations/device-events";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -9699,14 +9812,14 @@ export class DeviceEventClient {
         return Promise.resolve<PaginatedResponseOfDeviceEvent>(null as any);
     }
 
-    update(id: string, model: DeviceEvent, signal?: AbortSignal): Promise<DeviceEvent> {
+    update(id: string, request: UpsertDeviceEventRequest, signal?: AbortSignal): Promise<DeviceEvent> {
         let url_ = this.baseUrl + "/api/v4/observations/device-events/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -11011,11 +11124,11 @@ export class MeterGlucoseClient {
         return Promise.resolve<PaginatedResponseOfMeterGlucose>(null as any);
     }
 
-    create(model: MeterGlucose, signal?: AbortSignal): Promise<MeterGlucose> {
+    create(request: UpsertMeterGlucoseRequest, signal?: AbortSignal): Promise<MeterGlucose> {
         let url_ = this.baseUrl + "/api/v4/glucose/meter";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -11055,14 +11168,14 @@ export class MeterGlucoseClient {
         return Promise.resolve<MeterGlucose>(null as any);
     }
 
-    update(id: string, model: MeterGlucose, signal?: AbortSignal): Promise<MeterGlucose> {
+    update(id: string, request: UpsertMeterGlucoseRequest, signal?: AbortSignal): Promise<MeterGlucose> {
         let url_ = this.baseUrl + "/api/v4/glucose/meter/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -11723,11 +11836,11 @@ export class NoteClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    create(model: Note, signal?: AbortSignal): Promise<Note> {
+    create(request: UpsertNoteRequest, signal?: AbortSignal): Promise<Note> {
         let url_ = this.baseUrl + "/api/v4/observations/notes";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -11827,14 +11940,14 @@ export class NoteClient {
         return Promise.resolve<PaginatedResponseOfNote>(null as any);
     }
 
-    update(id: string, model: Note, signal?: AbortSignal): Promise<Note> {
+    update(id: string, request: UpsertNoteRequest, signal?: AbortSignal): Promise<Note> {
         let url_ = this.baseUrl + "/api/v4/observations/notes/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -15873,11 +15986,11 @@ export class SensorGlucoseClient {
         return Promise.resolve<PaginatedResponseOfSensorGlucose>(null as any);
     }
 
-    create(model: SensorGlucose, signal?: AbortSignal): Promise<SensorGlucose> {
+    create(request: UpsertSensorGlucoseRequest, signal?: AbortSignal): Promise<SensorGlucose> {
         let url_ = this.baseUrl + "/api/v4/glucose/sensor";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -15917,14 +16030,14 @@ export class SensorGlucoseClient {
         return Promise.resolve<SensorGlucose>(null as any);
     }
 
-    update(id: string, model: SensorGlucose, signal?: AbortSignal): Promise<SensorGlucose> {
+    update(id: string, request: UpsertSensorGlucoseRequest, signal?: AbortSignal): Promise<SensorGlucose> {
         let url_ = this.baseUrl + "/api/v4/glucose/sensor/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(model);
+        const content_ = JSON.stringify(request);
 
         let options_: RequestInit = {
             body: content_,
@@ -25917,157 +26030,29 @@ Keys are data type names (e.g., "Glucose", "Treatments", "Food") */
     itemsLast24HoursBreakdown?: { [key: string]: number; } | undefined;
 }
 
-/** Local auth configuration response */
-export interface LocalAuthConfigResponse {
-    enabled?: boolean;
-    displayName?: string;
-    allowRegistration?: boolean;
-    requireEmailVerification?: boolean;
-    passwordRequirements?: PasswordRequirementsDto;
-}
-
-/** Password requirements */
-export interface PasswordRequirementsDto {
-    minLength?: number;
-    requireUppercase?: boolean;
-    requireLowercase?: boolean;
-    requireDigit?: boolean;
-    requireSpecialCharacter?: boolean;
-}
-
-/** Registration response */
-export interface RegisterResponse {
-    success?: boolean;
-    userId?: string;
-    requiresEmailVerification?: boolean;
-    requiresAdminApproval?: boolean;
-    message?: string;
-}
-
-/** Error response */
-export interface ErrorResponse {
-    error?: string;
-    message?: string;
-    details?: any | undefined;
-}
-
-/** Registration request */
-export interface RegisterRequest {
-    email?: string;
-    password?: string;
-    displayName?: string | undefined;
-}
-
-/** Login response */
-export interface LoginResponse {
-    success?: boolean;
-    accessToken?: string;
-    refreshToken?: string;
-    expiresIn?: number;
-    refreshExpiresIn?: number;
-    user?: UserInfoDto;
-    requirePasswordChange?: boolean;
-}
-
-/** User info */
-export interface UserInfoDto {
+/** Response containing the newly created direct grant and plaintext token */
+export interface CreateDirectGrantResponse {
     id?: string;
-    email?: string;
-    displayName?: string | undefined;
-    roles?: string[];
-}
-
-/** Login request */
-export interface LoginRequest {
-    email?: string;
-    password?: string;
-}
-
-/** Forgot password response */
-export interface ForgotPasswordResponse {
-    success?: boolean;
-    message?: string;
-    adminNotificationRequired?: boolean;
-}
-
-/** Forgot password request */
-export interface ForgotPasswordRequest {
-    email?: string;
-}
-
-/** Reset password response */
-export interface ResetPasswordResponse {
-    success?: boolean;
-    message?: string;
-}
-
-/** Reset password request */
-export interface ResetPasswordRequest {
     token?: string;
-    newPassword?: string;
-}
-
-/** Change password response */
-export interface ChangePasswordResponse {
-    success?: boolean;
-    message?: string;
-}
-
-/** Change password request */
-export interface ChangePasswordRequest {
-    currentPassword?: string;
-    newPassword?: string;
-}
-
-/** Check email response */
-export interface CheckEmailResponse {
-    isValid?: boolean;
-    error?: string | undefined;
-    requiresApproval?: boolean;
-}
-
-/** Resend verification response */
-export interface ResendVerificationResponse {
-    success?: boolean;
-    message?: string;
-}
-
-/** Resend verification request */
-export interface ResendVerificationRequest {
-    email?: string;
-}
-
-/** Response for pending password reset requests */
-export interface PasswordResetRequestListResponse {
-    requests?: PasswordResetRequestDto[];
-    totalCount?: number;
-}
-
-/** Password reset request info for admin view */
-export interface PasswordResetRequestDto {
-    id?: string;
-    email?: string;
-    displayName?: string | undefined;
-    requestedFromIp?: string | undefined;
-    userAgent?: string | undefined;
+    label?: string;
+    scopes?: string[];
     createdAt?: Date;
 }
 
-/** Response for setting a temporary password */
-export interface SetTemporaryPasswordResponse {
-    success?: boolean;
+/** Request to create a new direct grant */
+export interface CreateDirectGrantRequest {
+    label?: string;
+    scopes?: string[];
+    expiresAt?: Date | undefined;
 }
 
-/** Request to set a temporary password */
-export interface SetTemporaryPasswordRequest {
-    email?: string;
-    temporaryPassword?: string;
-}
-
-/** Response for handling password reset */
-export interface HandlePasswordResetResponse {
-    success?: boolean;
-    resetUrl?: string;
+/** Direct grant information (never includes the token) */
+export interface DirectGrantDto {
+    id?: string;
+    label?: string;
+    scopes?: string[];
+    createdAt?: Date;
+    lastUsedAt?: Date | undefined;
 }
 
 /** Metadata about available WebSocket events */
@@ -26706,6 +26691,87 @@ export interface SessionInfo {
     expiresAt?: Date | undefined;
     /** User's preferred language code (e.g., "en", "fr", "de") */
     preferredLanguage?: string | undefined;
+}
+
+/** Response containing WebAuthn options and the encrypted challenge token */
+export interface PasskeyOptionsResponse {
+    options?: string;
+    challengeToken?: string;
+}
+
+/** Request for passkey registration options */
+export interface PasskeyRegisterOptionsRequest {
+    subjectId?: string;
+    username?: string;
+}
+
+/** Response for completed passkey registration */
+export interface PasskeyRegisterCompleteResponse {
+    credentialId?: string;
+    subjectId?: string;
+}
+
+/** Request to complete passkey registration */
+export interface PasskeyRegisterCompleteRequest {
+    attestationResponseJson?: string;
+    challengeToken?: string;
+    label?: string | undefined;
+}
+
+/** Request for passkey login options */
+export interface PasskeyLoginOptionsRequest {
+    username?: string;
+}
+
+/** Response for completed passkey login */
+export interface PasskeyLoginCompleteResponse {
+    success?: boolean;
+    accessToken?: string;
+    expiresIn?: number;
+}
+
+/** Request to complete passkey login */
+export interface PasskeyLoginCompleteRequest {
+    assertionResponseJson?: string;
+    challengeToken?: string;
+}
+
+/** Response for recovery code verification */
+export interface RecoveryVerifyResponse {
+    success?: boolean;
+    remainingCodes?: number;
+}
+
+/** Request to verify a recovery code */
+export interface RecoveryVerifyRequest {
+    username?: string;
+    code?: string;
+}
+
+/** Response containing the list of passkey credentials */
+export interface PasskeyCredentialListResponse {
+    credentials?: PasskeyCredentialDto[];
+    hasOidcLink?: boolean;
+}
+
+/** A passkey credential summary (never includes the public key) */
+export interface PasskeyCredentialDto {
+    id?: string;
+    label?: string | undefined;
+    createdAt?: Date;
+    lastUsedAt?: Date | undefined;
+}
+
+/** Response containing regenerated recovery codes */
+export interface RecoveryRegenerateResponse {
+    codes?: string[];
+}
+
+/** Response containing recovery code status */
+export interface RecoveryStatusResponse {
+    remainingCodes?: number;
+    hasCodes?: boolean;
+    totalCodes?: number;
 }
 
 /** Pebble response model for 1:1 Nightscout compatibility */
@@ -28137,6 +28203,18 @@ export enum GlucoseUnit {
     Mmol = "Mmol",
 }
 
+export interface UpsertBGCheckRequest {
+    timestamp?: Date;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    glucose?: number;
+    units?: GlucoseUnit | undefined;
+    glucoseType?: GlucoseType | undefined;
+    syncIdentifier?: string | undefined;
+}
+
 export interface PaginatedResponseOfBGCheck {
     data?: BGCheck[];
     pagination?: PaginationInfo;
@@ -28176,6 +28254,27 @@ export enum CalculationType2 {
     Automatic = "Automatic",
 }
 
+export interface UpsertBolusCalculationRequest {
+    timestamp?: Date;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    bloodGlucoseInput?: number | undefined;
+    bloodGlucoseInputSource?: string | undefined;
+    carbInput?: number | undefined;
+    insulinOnBoard?: number | undefined;
+    insulinRecommendation?: number | undefined;
+    carbRatio?: number | undefined;
+    calculationType?: CalculationType2 | undefined;
+    insulinRecommendationForCarbs?: number | undefined;
+    insulinProgrammed?: number | undefined;
+    enteredInsulin?: number | undefined;
+    splitNow?: number | undefined;
+    splitExt?: number | undefined;
+    preBolus?: number | undefined;
+}
+
 export interface PaginatedResponseOfBolusCalculation {
     data?: BolusCalculation[];
     pagination?: PaginationInfo;
@@ -28184,6 +28283,44 @@ export interface PaginatedResponseOfBolusCalculation {
 export interface PaginatedResponseOfBolus {
     data?: Bolus[];
     pagination?: PaginationInfo;
+}
+
+export interface CreateBolusRequest {
+    timestamp?: Date;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    insulin?: number;
+    programmed?: number | undefined;
+    delivered?: number | undefined;
+    bolusType?: BolusType | undefined;
+    kind?: BolusKind;
+    automatic?: boolean;
+    duration?: number | undefined;
+    syncIdentifier?: string | undefined;
+    insulinType?: string | undefined;
+    unabsorbed?: number | undefined;
+    bolusCalculationId?: string | undefined;
+    apsSnapshotId?: string | undefined;
+}
+
+export interface UpdateBolusRequest {
+    timestamp?: Date;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    insulin?: number;
+    programmed?: number | undefined;
+    delivered?: number | undefined;
+    automatic?: boolean;
+    duration?: number | undefined;
+    syncIdentifier?: string | undefined;
+    insulinType?: string | undefined;
+    unabsorbed?: number | undefined;
+    bolusCalculationId?: string | undefined;
+    apsSnapshotId?: string | undefined;
 }
 
 export interface PaginatedResponseOfCalibration {
@@ -28207,6 +28344,17 @@ export interface Calibration {
     intercept?: number | undefined;
     scale?: number | undefined;
     additionalProperties?: { [key: string]: any; } | undefined;
+}
+
+export interface UpsertCalibrationRequest {
+    timestamp?: Date;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    slope?: number | undefined;
+    intercept?: number | undefined;
+    scale?: number | undefined;
 }
 
 export interface DashboardChartData {
@@ -29112,6 +29260,17 @@ export interface SensorAgeInfo {
     min?: string;
 }
 
+export interface UpsertDeviceEventRequest {
+    timestamp?: Date;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    eventType?: DeviceEventType;
+    notes?: string | undefined;
+    syncIdentifier?: string | undefined;
+}
+
 export interface PaginatedResponseOfDeviceEvent {
     data?: DeviceEvent[];
     pagination?: PaginationInfo;
@@ -29245,6 +29404,15 @@ export interface MeterGlucose {
     mgdl?: number;
     mmol?: number;
     additionalProperties?: { [key: string]: any; } | undefined;
+}
+
+export interface UpsertMeterGlucoseRequest {
+    timestamp?: Date;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    mgdl?: number;
 }
 
 /** Result of testing a migration connection */
@@ -29415,6 +29583,18 @@ export interface Note {
     isAnnouncement?: boolean;
     syncIdentifier?: string | undefined;
     additionalProperties?: { [key: string]: any; } | undefined;
+}
+
+export interface UpsertNoteRequest {
+    timestamp?: Date;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    text?: string | undefined;
+    eventType?: string | undefined;
+    isAnnouncement?: boolean;
+    syncIdentifier?: string | undefined;
 }
 
 export interface PaginatedResponseOfNote {
@@ -29911,6 +30091,18 @@ export interface BasalDataPoint {
 export interface PaginatedResponseOfSensorGlucose {
     data?: SensorGlucose[];
     pagination?: PaginationInfo;
+}
+
+export interface UpsertSensorGlucoseRequest {
+    timestamp?: Date;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    mgdl?: number;
+    direction?: GlucoseDirection | undefined;
+    trendRate?: number | undefined;
+    noise?: number | undefined;
 }
 
 export interface ServicesOverview {

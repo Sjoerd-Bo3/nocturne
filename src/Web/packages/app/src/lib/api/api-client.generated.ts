@@ -36,6 +36,7 @@ import {
   DeviceAgeClient,
   DeviceEventClient,
   DeviceStatusClient,
+  DirectGrantClient,
   DiscrepancyClient,
   EntriesClient,
   FoodClient,
@@ -44,7 +45,6 @@ import {
   InsulinCatalogClient,
   IobClient,
   LastModifiedClient,
-  LocalAuthClient,
   LoopClient,
   MealMatchingClient,
   MetadataClient,
@@ -57,6 +57,7 @@ import {
   OAuthClient,
   OidcClient,
   WellKnownClient,
+  PasskeyClient,
   PatientRecordClient,
   PebbleClient,
   PredictionClient,
@@ -128,6 +129,7 @@ export class ApiClient {
   public readonly deviceAge: DeviceAgeClient;
   public readonly deviceEvents: DeviceEventClient;
   public readonly deviceStatus: DeviceStatusClient;
+  public readonly directGrants: DirectGrantClient;
   public readonly discrepancy: DiscrepancyClient;
   public readonly entries: EntriesClient;
   public readonly food: FoodClient;
@@ -136,7 +138,6 @@ export class ApiClient {
   public readonly insulins: InsulinCatalogClient;
   public readonly iob: IobClient;
   public readonly lastModified: LastModifiedClient;
-  public readonly localAuth: LocalAuthClient;
   public readonly loopNotifications: LoopClient;
   public readonly mealMatching: MealMatchingClient;
   public readonly metadata: MetadataClient;
@@ -149,6 +150,7 @@ export class ApiClient {
   public readonly oAuth: OAuthClient;
   public readonly oidc: OidcClient;
   public readonly oidcDiscovery: WellKnownClient;
+  public readonly passkey: PasskeyClient;
   public readonly patientRecord: PatientRecordClient;
   public readonly pebble: PebbleClient;
   public readonly predictions: PredictionClient;
@@ -220,6 +222,7 @@ export class ApiClient {
     this.deviceAge = new DeviceAgeClient(apiBaseUrl, http);
     this.deviceEvents = new DeviceEventClient(apiBaseUrl, http);
     this.deviceStatus = new DeviceStatusClient(apiBaseUrl, http);
+    this.directGrants = new DirectGrantClient(apiBaseUrl, http);
     this.discrepancy = new DiscrepancyClient(apiBaseUrl, http);
     this.entries = new EntriesClient(apiBaseUrl, http);
     this.food = new FoodClient(apiBaseUrl, http);
@@ -228,7 +231,6 @@ export class ApiClient {
     this.insulins = new InsulinCatalogClient(apiBaseUrl, http);
     this.iob = new IobClient(apiBaseUrl, http);
     this.lastModified = new LastModifiedClient(apiBaseUrl, http);
-    this.localAuth = new LocalAuthClient(apiBaseUrl, http);
     this.loopNotifications = new LoopClient(apiBaseUrl, http);
     this.mealMatching = new MealMatchingClient(apiBaseUrl, http);
     this.metadata = new MetadataClient(apiBaseUrl, http);
@@ -241,6 +243,7 @@ export class ApiClient {
     this.oAuth = new OAuthClient(apiBaseUrl, http);
     this.oidc = new OidcClient(apiBaseUrl, http);
     this.oidcDiscovery = new WellKnownClient(apiBaseUrl, http);
+    this.passkey = new PasskeyClient(apiBaseUrl, http);
     this.patientRecord = new PatientRecordClient(apiBaseUrl, http);
     this.pebble = new PebbleClient(apiBaseUrl, http);
     this.predictions = new PredictionClient(apiBaseUrl, http);

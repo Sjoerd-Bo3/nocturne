@@ -3,10 +3,11 @@
 
 export * from './authorizations.generated.remote';
 // './connectorStatus.generated.remote' - all exports collide, import directly
-export * from './localauths.generated.remote';
+export { revoke } from './directgrants.generated.remote';
 export * from './metadatas.generated.remote';
 export { getGrants, updateGrant, deleteGrant, createFollowerGrant, getFollowerTargets, listInvites } from './oauths.generated.remote';
 export * from './oidcs.generated.remote';
+export * from './passkeys.generated.remote';
 export * from './statistics.generated.remote';
 export * from './alertSounds.generated.remote';
 export { validateInvite, redeemInvite } from './alertInvites.generated.remote';
@@ -20,7 +21,7 @@ export * from './batteries.generated.remote';
 // './calibrations.generated.remote' - all exports collide, import directly
 export * from './chartDatas.generated.remote';
 export * from './chatIdentities.generated.remote';
-export { list } from './clockFaces.generated.remote';
+// './clockFaces.generated.remote' - all exports collide, import directly
 export { getSuggestion, deleteSuggestion, acceptSuggestion, dismissSuggestion, triggerDetection } from './compressionLows.generated.remote';
 export * from './dataOverviews.generated.remote';
 export * from './deduplications.generated.remote';

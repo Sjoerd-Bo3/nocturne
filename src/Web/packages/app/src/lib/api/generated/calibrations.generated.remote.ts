@@ -5,8 +5,8 @@
 import { getRequestEvent, query, command, form } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { CalibrationSchema } from '$lib/api/generated/schemas';
-import { type Calibration } from '$api';
+import { UpsertCalibrationRequestSchema } from '$lib/api/generated/schemas';
+import { type UpsertCalibrationRequest } from '$api';
 
 export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
@@ -22,11 +22,11 @@ export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.c
   }
 });
 
-export const create = form(CalibrationSchema as any, async (request) => {
+export const create = form(UpsertCalibrationRequestSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    const result = await apiClient.calibrations.create(request as Calibration);
+    const result = await apiClient.calibrations.create(request as UpsertCalibrationRequest);
     return result;
   } catch (err) {
     const status = (err as any)?.status;
@@ -51,11 +51,11 @@ export const getById = query(z.string(), async (id) => {
   }
 });
 
-export const update = form(z.object({ id: z.string(), request: CalibrationSchema }) as any, async ({ id, request }) => {
+export const update = form(z.object({ id: z.string(), request: UpsertCalibrationRequestSchema }) as any, async ({ id, request }) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    const result = await apiClient.calibrations.update(id, request as Calibration);
+    const result = await apiClient.calibrations.update(id, request as UpsertCalibrationRequest);
     return result;
   } catch (err) {
     const status = (err as any)?.status;

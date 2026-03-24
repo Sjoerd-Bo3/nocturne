@@ -5,8 +5,8 @@
 import { getRequestEvent, query, command, form } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { SensorGlucoseSchema } from '$lib/api/generated/schemas';
-import { type SensorGlucose } from '$api';
+import { UpsertSensorGlucoseRequestSchema } from '$lib/api/generated/schemas';
+import { type UpsertSensorGlucoseRequest } from '$api';
 
 export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
@@ -22,11 +22,11 @@ export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.c
   }
 });
 
-export const create = form(SensorGlucoseSchema as any, async (request) => {
+export const create = form(UpsertSensorGlucoseRequestSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    const result = await apiClient.sensorGlucose.create(request as SensorGlucose);
+    const result = await apiClient.sensorGlucose.create(request as UpsertSensorGlucoseRequest);
     return result;
   } catch (err) {
     const status = (err as any)?.status;
@@ -51,11 +51,11 @@ export const getById = query(z.string(), async (id) => {
   }
 });
 
-export const update = form(z.object({ id: z.string(), request: SensorGlucoseSchema }) as any, async ({ id, request }) => {
+export const update = form(z.object({ id: z.string(), request: UpsertSensorGlucoseRequestSchema }) as any, async ({ id, request }) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    const result = await apiClient.sensorGlucose.update(id, request as SensorGlucose);
+    const result = await apiClient.sensorGlucose.update(id, request as UpsertSensorGlucoseRequest);
     return result;
   } catch (err) {
     const status = (err as any)?.status;

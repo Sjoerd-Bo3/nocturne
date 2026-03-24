@@ -850,40 +850,19 @@
         "x-remote-type": "query"
       }
     },
-    "/auth/local/config": {
-      "get": {
-        "tags": [
-          "LocalAuth"
-        ],
-        "summary": "Get local identity provider configuration",
-        "operationId": "LocalAuth_GetConfig",
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LocalAuthConfigResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/local/register": {
+    "/api/auth/direct-grants": {
       "post": {
         "tags": [
-          "LocalAuth"
+          "DirectGrants"
         ],
-        "summary": "Register a new user account",
-        "operationId": "LocalAuth_Register",
+        "summary": "Create a new direct grant token. The plaintext token is returned once and cannot be retrieved again.",
+        "operationId": "DirectGrant_Create",
         "requestBody": {
           "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterRequest"
+                "$ref": "#/components/schemas/CreateDirectGrantRequest"
               }
             }
           },
@@ -896,60 +875,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RegisterResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/local/login": {
-      "post": {
-        "tags": [
-          "LocalAuth"
-        ],
-        "summary": "Log in with email and password",
-        "operationId": "LocalAuth_Login",
-        "requestBody": {
-          "x-name": "request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginRequest"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LoginResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/CreateDirectGrantResponse"
                 }
               }
             }
@@ -959,160 +885,43 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
           }
-        }
-      }
-    },
-    "/auth/local/verify-email": {
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "List"
+        ]
+      },
       "get": {
         "tags": [
-          "LocalAuth"
+          "DirectGrants"
         ],
-        "summary": "Verify email address",
-        "operationId": "LocalAuth_VerifyEmail",
-        "parameters": [
-          {
-            "name": "token",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "302": {
-            "description": ""
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/local/forgot-password": {
-      "post": {
-        "tags": [
-          "LocalAuth"
-        ],
-        "summary": "Request password reset",
-        "operationId": "LocalAuth_ForgotPassword",
-        "requestBody": {
-          "x-name": "request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ForgotPasswordRequest"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
+        "summary": "List all active direct grants for the authenticated user.\nNever returns the token itself.",
+        "operationId": "DirectGrant_List",
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForgotPasswordResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/local/reset-password": {
-      "post": {
-        "tags": [
-          "LocalAuth"
-        ],
-        "summary": "Reset password with token",
-        "operationId": "LocalAuth_ResetPassword",
-        "requestBody": {
-          "x-name": "request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResetPasswordRequest"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResetPasswordResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/local/change-password": {
-      "post": {
-        "tags": [
-          "LocalAuth"
-        ],
-        "summary": "Change password for authenticated user",
-        "operationId": "LocalAuth_ChangePassword",
-        "requestBody": {
-          "x-name": "request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChangePasswordRequest"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChangePasswordResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DirectGrantDto"
+                  }
                 }
               }
             }
@@ -1127,152 +936,20 @@
               }
             }
           }
-        }
-      }
-    },
-    "/auth/local/check-email": {
-      "get": {
-        "tags": [
-          "LocalAuth"
-        ],
-        "summary": "Check if email is allowed to register (for form validation)",
-        "operationId": "LocalAuth_CheckEmail",
-        "parameters": [
-          {
-            "name": "email",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckEmailResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/local/resend-verification": {
-      "post": {
-        "tags": [
-          "LocalAuth"
-        ],
-        "summary": "Resend email verification",
-        "operationId": "LocalAuth_ResendVerification",
-        "requestBody": {
-          "x-name": "request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResendVerificationRequest"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResendVerificationResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/local/admin/password-resets": {
-      "get": {
-        "tags": [
-          "LocalAuth"
-        ],
-        "summary": "Get pending password reset requests (admin only)",
-        "operationId": "LocalAuth_GetPendingPasswordResets",
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PasswordResetRequestListResponse"
-                }
-              }
-            }
-          }
         },
         "x-remote-type": "query"
       }
     },
-    "/auth/local/admin/set-temporary-password": {
-      "post": {
+    "/api/auth/direct-grants/{id}": {
+      "delete": {
         "tags": [
-          "LocalAuth"
+          "DirectGrants"
         ],
-        "summary": "Set a temporary password for a user (admin only)",
-        "operationId": "LocalAuth_SetTemporaryPassword",
-        "requestBody": {
-          "x-name": "request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetTemporaryPasswordRequest"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SetTemporaryPasswordResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "x-remote-type": "form",
-        "x-remote-invalidates": [
-          "GetPendingPasswordResets"
-        ]
-      }
-    },
-    "/auth/local/admin/handle-password-reset/{requestId}": {
-      "post": {
-        "tags": [
-          "LocalAuth"
-        ],
-        "summary": "Handle a password reset request by generating a reset link (admin only)",
-        "operationId": "LocalAuth_HandlePasswordReset",
+        "summary": "Revoke a direct grant by setting its RevokedAt timestamp",
+        "operationId": "DirectGrant_Revoke",
         "parameters": [
           {
-            "name": "requestId",
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
@@ -1283,30 +960,33 @@
           }
         ],
         "responses": {
-          "200": {
+          "204": {
+            "description": ""
+          },
+          "401": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HandlePasswordResetResponse"
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
           },
-          "400": {
+          "404": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
           }
         },
-        "x-remote-type": "form",
+        "x-remote-type": "command",
         "x-remote-invalidates": [
-          "GetPendingPasswordResets"
+          "List"
         ]
       }
     },
@@ -2566,6 +2246,425 @@
             }
           }
         }
+      }
+    },
+    "/api/auth/passkey/register/options": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Generate registration options for a new passkey credential",
+        "operationId": "Passkey_RegisterOptions",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterOptionsRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/auth/passkey/register/complete": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Complete passkey registration with attestation response",
+        "operationId": "Passkey_RegisterComplete",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterCompleteRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyRegisterCompleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "ListCredentials"
+        ]
+      }
+    },
+    "/api/auth/passkey/login/discoverable/options": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Generate discoverable assertion options (no username required)",
+        "operationId": "Passkey_DiscoverableLoginOptions",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/auth/passkey/login/options": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Generate assertion options for a specific user",
+        "operationId": "Passkey_LoginOptions",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyLoginOptionsRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/auth/passkey/login/complete": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Complete passkey login with assertion response",
+        "operationId": "Passkey_LoginComplete",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyLoginCompleteRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyLoginCompleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/auth/passkey/recovery/verify": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Verify a recovery code and issue a restricted recovery session",
+        "operationId": "Passkey_RecoveryVerify",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoveryVerifyRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryVerifyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/auth/passkey/credentials": {
+      "get": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "List all passkey credentials for the authenticated user",
+        "operationId": "Passkey_ListCredentials",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyCredentialListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/auth/passkey/credentials/{id}": {
+      "delete": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Remove a passkey credential. Cannot remove the last credential if user has no OIDC link.",
+        "operationId": "Passkey_RemoveCredential",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "ListCredentials"
+        ]
+      }
+    },
+    "/api/auth/passkey/recovery/regenerate": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Regenerate recovery codes for the authenticated user. Invalidates all existing codes.",
+        "operationId": "Passkey_RegenerateRecoveryCodes",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryRegenerateResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetRecoveryStatus"
+        ]
+      }
+    },
+    "/api/auth/passkey/recovery/status": {
+      "get": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Get the count of remaining recovery codes for the authenticated user",
+        "operationId": "Passkey_GetRecoveryStatus",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/auth/passkey/recovery-mode-status": {
+      "get": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Returns whether the instance is currently in recovery mode.\nRecovery mode activates when active subjects exist that have no\npasskey credential and no OIDC binding (orphaned after upgrade).",
+        "operationId": "Passkey_GetRecoveryModeStatus",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "x-remote-type": "query"
       }
     },
     "/pebble": {
@@ -5089,11 +5188,11 @@
         ],
         "operationId": "BGCheck_Create",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BGCheck"
+                "$ref": "#/components/schemas/UpsertBGCheckRequest"
               }
             }
           },
@@ -5242,11 +5341,11 @@
           }
         ],
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BGCheck"
+                "$ref": "#/components/schemas/UpsertBGCheckRequest"
               }
             }
           },
@@ -5370,11 +5469,11 @@
         ],
         "operationId": "BolusCalculation_Create",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BolusCalculation"
+                "$ref": "#/components/schemas/UpsertBolusCalculationRequest"
               }
             }
           },
@@ -5523,11 +5622,11 @@
           }
         ],
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BolusCalculation"
+                "$ref": "#/components/schemas/UpsertBolusCalculationRequest"
               }
             }
           },
@@ -5749,11 +5848,11 @@
         ],
         "operationId": "Bolus_Create",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Bolus"
+                "$ref": "#/components/schemas/CreateBolusRequest"
               }
             }
           },
@@ -5804,11 +5903,11 @@
           }
         ],
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Bolus"
+                "$ref": "#/components/schemas/UpdateBolusRequest"
               }
             }
           },
@@ -6030,11 +6129,11 @@
         ],
         "operationId": "Calibration_Create",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Calibration"
+                "$ref": "#/components/schemas/UpsertCalibrationRequest"
               }
             }
           },
@@ -6085,11 +6184,11 @@
           }
         ],
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Calibration"
+                "$ref": "#/components/schemas/UpsertCalibrationRequest"
               }
             }
           },
@@ -8374,11 +8473,11 @@
         ],
         "operationId": "DeviceEvent_Create",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeviceEvent"
+                "$ref": "#/components/schemas/UpsertDeviceEventRequest"
               }
             }
           },
@@ -8527,11 +8626,11 @@
           }
         ],
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeviceEvent"
+                "$ref": "#/components/schemas/UpsertDeviceEventRequest"
               }
             }
           },
@@ -9729,11 +9828,11 @@
         ],
         "operationId": "MeterGlucose_Create",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MeterGlucose"
+                "$ref": "#/components/schemas/UpsertMeterGlucoseRequest"
               }
             }
           },
@@ -9784,11 +9883,11 @@
           }
         ],
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MeterGlucose"
+                "$ref": "#/components/schemas/UpsertMeterGlucoseRequest"
               }
             }
           },
@@ -10304,11 +10403,11 @@
         ],
         "operationId": "Note_Create",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Note"
+                "$ref": "#/components/schemas/UpsertNoteRequest"
               }
             }
           },
@@ -10457,11 +10556,11 @@
           }
         ],
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Note"
+                "$ref": "#/components/schemas/UpsertNoteRequest"
               }
             }
           },
@@ -13588,11 +13687,11 @@
         ],
         "operationId": "SensorGlucose_Create",
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SensorGlucose"
+                "$ref": "#/components/schemas/UpsertSensorGlucoseRequest"
               }
             }
           },
@@ -13643,11 +13742,11 @@
           }
         ],
         "requestBody": {
-          "x-name": "model",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SensorGlucose"
+                "$ref": "#/components/schemas/UpsertSensorGlucoseRequest"
               }
             }
           },
@@ -23807,332 +23906,26 @@
           }
         }
       },
-      "LocalAuthConfigResponse": {
+      "CreateDirectGrantResponse": {
         "type": "object",
-        "description": "Local auth configuration response",
-        "additionalProperties": false,
-        "properties": {
-          "enabled": {
-            "type": "boolean"
-          },
-          "displayName": {
-            "type": "string"
-          },
-          "allowRegistration": {
-            "type": "boolean"
-          },
-          "requireEmailVerification": {
-            "type": "boolean"
-          },
-          "passwordRequirements": {
-            "$ref": "#/components/schemas/PasswordRequirementsDto"
-          }
-        }
-      },
-      "PasswordRequirementsDto": {
-        "type": "object",
-        "description": "Password requirements",
-        "additionalProperties": false,
-        "properties": {
-          "minLength": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "requireUppercase": {
-            "type": "boolean"
-          },
-          "requireLowercase": {
-            "type": "boolean"
-          },
-          "requireDigit": {
-            "type": "boolean"
-          },
-          "requireSpecialCharacter": {
-            "type": "boolean"
-          }
-        }
-      },
-      "RegisterResponse": {
-        "type": "object",
-        "description": "Registration response",
-        "additionalProperties": false,
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "userId": {
-            "type": "string",
-            "format": "guid"
-          },
-          "requiresEmailVerification": {
-            "type": "boolean"
-          },
-          "requiresAdminApproval": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "description": "Error response",
-        "additionalProperties": false,
-        "properties": {
-          "error": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "details": {
-            "nullable": true
-          }
-        }
-      },
-      "RegisterRequest": {
-        "type": "object",
-        "description": "Registration request",
-        "additionalProperties": false,
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          },
-          "displayName": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "LoginResponse": {
-        "type": "object",
-        "description": "Login response",
-        "additionalProperties": false,
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "accessToken": {
-            "type": "string"
-          },
-          "refreshToken": {
-            "type": "string"
-          },
-          "expiresIn": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "refreshExpiresIn": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "user": {
-            "$ref": "#/components/schemas/UserInfoDto"
-          },
-          "requirePasswordChange": {
-            "type": "boolean"
-          }
-        }
-      },
-      "UserInfoDto": {
-        "type": "object",
-        "description": "User info",
+        "description": "Response containing the newly created direct grant and plaintext token",
         "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string",
             "format": "guid"
           },
-          "email": {
+          "token": {
             "type": "string"
           },
-          "displayName": {
-            "type": "string",
-            "nullable": true
+          "label": {
+            "type": "string"
           },
-          "roles": {
+          "scopes": {
             "type": "array",
             "items": {
               "type": "string"
             }
-          }
-        }
-      },
-      "LoginRequest": {
-        "type": "object",
-        "description": "Login request",
-        "additionalProperties": false,
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          }
-        }
-      },
-      "ForgotPasswordResponse": {
-        "type": "object",
-        "description": "Forgot password response",
-        "additionalProperties": false,
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string"
-          },
-          "adminNotificationRequired": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ForgotPasswordRequest": {
-        "type": "object",
-        "description": "Forgot password request",
-        "additionalProperties": false,
-        "properties": {
-          "email": {
-            "type": "string"
-          }
-        }
-      },
-      "ResetPasswordResponse": {
-        "type": "object",
-        "description": "Reset password response",
-        "additionalProperties": false,
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      },
-      "ResetPasswordRequest": {
-        "type": "object",
-        "description": "Reset password request",
-        "additionalProperties": false,
-        "properties": {
-          "token": {
-            "type": "string"
-          },
-          "newPassword": {
-            "type": "string"
-          }
-        }
-      },
-      "ChangePasswordResponse": {
-        "type": "object",
-        "description": "Change password response",
-        "additionalProperties": false,
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      },
-      "ChangePasswordRequest": {
-        "type": "object",
-        "description": "Change password request",
-        "additionalProperties": false,
-        "properties": {
-          "currentPassword": {
-            "type": "string"
-          },
-          "newPassword": {
-            "type": "string"
-          }
-        }
-      },
-      "CheckEmailResponse": {
-        "type": "object",
-        "description": "Check email response",
-        "additionalProperties": false,
-        "properties": {
-          "isValid": {
-            "type": "boolean"
-          },
-          "error": {
-            "type": "string",
-            "nullable": true
-          },
-          "requiresApproval": {
-            "type": "boolean"
-          }
-        }
-      },
-      "ResendVerificationResponse": {
-        "type": "object",
-        "description": "Resend verification response",
-        "additionalProperties": false,
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      },
-      "ResendVerificationRequest": {
-        "type": "object",
-        "description": "Resend verification request",
-        "additionalProperties": false,
-        "properties": {
-          "email": {
-            "type": "string"
-          }
-        }
-      },
-      "PasswordResetRequestListResponse": {
-        "type": "object",
-        "description": "Response for pending password reset requests",
-        "additionalProperties": false,
-        "properties": {
-          "requests": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PasswordResetRequestDto"
-            }
-          },
-          "totalCount": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "PasswordResetRequestDto": {
-        "type": "object",
-        "description": "Password reset request info for admin view",
-        "additionalProperties": false,
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "guid"
-          },
-          "email": {
-            "type": "string"
-          },
-          "displayName": {
-            "type": "string",
-            "nullable": true
-          },
-          "requestedFromIp": {
-            "type": "string",
-            "nullable": true
-          },
-          "userAgent": {
-            "type": "string",
-            "nullable": true
           },
           "createdAt": {
             "type": "string",
@@ -24140,39 +23933,53 @@
           }
         }
       },
-      "SetTemporaryPasswordResponse": {
+      "CreateDirectGrantRequest": {
         "type": "object",
-        "description": "Response for setting a temporary password",
+        "description": "Request to create a new direct grant",
         "additionalProperties": false,
         "properties": {
-          "success": {
-            "type": "boolean"
+          "label": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         }
       },
-      "SetTemporaryPasswordRequest": {
+      "DirectGrantDto": {
         "type": "object",
-        "description": "Request to set a temporary password",
+        "description": "Direct grant information (never includes the token)",
         "additionalProperties": false,
         "properties": {
-          "email": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "label": {
             "type": "string"
           },
-          "temporaryPassword": {
-            "type": "string"
-          }
-        }
-      },
-      "HandlePasswordResetResponse": {
-        "type": "object",
-        "description": "Response for handling password reset",
-        "additionalProperties": false,
-        "properties": {
-          "success": {
-            "type": "boolean"
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
-          "resetUrl": {
-            "type": "string"
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         }
       },
@@ -25910,6 +25717,203 @@
             "type": "string",
             "description": "User's preferred language code (e.g., \"en\", \"fr\", \"de\")",
             "nullable": true
+          }
+        }
+      },
+      "PasskeyOptionsResponse": {
+        "type": "object",
+        "description": "Response containing WebAuthn options and the encrypted challenge token",
+        "additionalProperties": false,
+        "properties": {
+          "options": {
+            "type": "string"
+          },
+          "challengeToken": {
+            "type": "string"
+          }
+        }
+      },
+      "PasskeyRegisterOptionsRequest": {
+        "type": "object",
+        "description": "Request for passkey registration options",
+        "additionalProperties": false,
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "PasskeyRegisterCompleteResponse": {
+        "type": "object",
+        "description": "Response for completed passkey registration",
+        "additionalProperties": false,
+        "properties": {
+          "credentialId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "subjectId": {
+            "type": "string",
+            "format": "guid"
+          }
+        }
+      },
+      "PasskeyRegisterCompleteRequest": {
+        "type": "object",
+        "description": "Request to complete passkey registration",
+        "additionalProperties": false,
+        "properties": {
+          "attestationResponseJson": {
+            "type": "string"
+          },
+          "challengeToken": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "PasskeyLoginOptionsRequest": {
+        "type": "object",
+        "description": "Request for passkey login options",
+        "additionalProperties": false,
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "PasskeyLoginCompleteResponse": {
+        "type": "object",
+        "description": "Response for completed passkey login",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PasskeyLoginCompleteRequest": {
+        "type": "object",
+        "description": "Request to complete passkey login",
+        "additionalProperties": false,
+        "properties": {
+          "assertionResponseJson": {
+            "type": "string"
+          },
+          "challengeToken": {
+            "type": "string"
+          }
+        }
+      },
+      "RecoveryVerifyResponse": {
+        "type": "object",
+        "description": "Response for recovery code verification",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "remainingCodes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "RecoveryVerifyRequest": {
+        "type": "object",
+        "description": "Request to verify a recovery code",
+        "additionalProperties": false,
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "PasskeyCredentialListResponse": {
+        "type": "object",
+        "description": "Response containing the list of passkey credentials",
+        "additionalProperties": false,
+        "properties": {
+          "credentials": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PasskeyCredentialDto"
+            }
+          },
+          "hasOidcLink": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PasskeyCredentialDto": {
+        "type": "object",
+        "description": "A passkey credential summary (never includes the public key)",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "RecoveryRegenerateResponse": {
+        "type": "object",
+        "description": "Response containing regenerated recovery codes",
+        "additionalProperties": false,
+        "properties": {
+          "codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RecoveryStatusResponse": {
+        "type": "object",
+        "description": "Response containing recovery code status",
+        "additionalProperties": false,
+        "properties": {
+          "remainingCodes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasCodes": {
+            "type": "boolean"
+          },
+          "totalCodes": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -30687,6 +30691,57 @@
           "Mmol"
         ]
       },
+      "UpsertBGCheckRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "glucose": {
+            "type": "number",
+            "format": "double"
+          },
+          "units": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/GlucoseUnit"
+              }
+            ]
+          },
+          "glucoseType": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/GlucoseType"
+              }
+            ]
+          },
+          "syncIdentifier": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "PaginatedResponseOfBGCheck": {
         "type": "object",
         "additionalProperties": false,
@@ -30840,6 +30895,100 @@
           "Automatic"
         ]
       },
+      "UpsertBolusCalculationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "bloodGlucoseInput": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "bloodGlucoseInputSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "carbInput": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "insulinOnBoard": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "insulinRecommendation": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "carbRatio": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "calculationType": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CalculationType2"
+              }
+            ]
+          },
+          "insulinRecommendationForCarbs": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "insulinProgrammed": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "enteredInsulin": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "splitNow": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "splitExt": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "preBolus": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        }
+      },
       "PaginatedResponseOfBolusCalculation": {
         "type": "object",
         "additionalProperties": false,
@@ -30867,6 +31016,161 @@
           },
           "pagination": {
             "$ref": "#/components/schemas/PaginationInfo"
+          }
+        }
+      },
+      "CreateBolusRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "insulin": {
+            "type": "number",
+            "format": "double"
+          },
+          "programmed": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "delivered": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "bolusType": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/BolusType"
+              }
+            ]
+          },
+          "kind": {
+            "$ref": "#/components/schemas/BolusKind"
+          },
+          "automatic": {
+            "type": "boolean"
+          },
+          "duration": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "syncIdentifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "insulinType": {
+            "type": "string",
+            "nullable": true
+          },
+          "unabsorbed": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "bolusCalculationId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "apsSnapshotId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateBolusRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "insulin": {
+            "type": "number",
+            "format": "double"
+          },
+          "programmed": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "delivered": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "automatic": {
+            "type": "boolean"
+          },
+          "duration": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "syncIdentifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "insulinType": {
+            "type": "string",
+            "nullable": true
+          },
+          "unabsorbed": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "bolusCalculationId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "apsSnapshotId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
           }
         }
       },
@@ -30954,6 +31258,48 @@
             "type": "object",
             "nullable": true,
             "additionalProperties": {}
+          }
+        }
+      },
+      "UpsertCalibrationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "slope": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "intercept": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "scale": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         }
       },
@@ -33819,6 +34165,44 @@
           }
         }
       },
+      "UpsertDeviceEventRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "eventType": {
+            "$ref": "#/components/schemas/DeviceEventType"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "syncIdentifier": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "PaginatedResponseOfDeviceEvent": {
         "type": "object",
         "additionalProperties": false,
@@ -34246,6 +34630,37 @@
             "type": "object",
             "nullable": true,
             "additionalProperties": {}
+          }
+        }
+      },
+      "UpsertMeterGlucoseRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "mgdl": {
+            "type": "number",
+            "format": "double"
           }
         }
       },
@@ -34738,6 +35153,48 @@
             "type": "object",
             "nullable": true,
             "additionalProperties": {}
+          }
+        }
+      },
+      "UpsertNoteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          },
+          "eventType": {
+            "type": "string",
+            "nullable": true
+          },
+          "isAnnouncement": {
+            "type": "boolean"
+          },
+          "syncIdentifier": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -36482,6 +36939,55 @@
           },
           "pagination": {
             "$ref": "#/components/schemas/PaginationInfo"
+          }
+        }
+      },
+      "UpsertSensorGlucoseRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "utcOffset": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "device": {
+            "type": "string",
+            "nullable": true
+          },
+          "app": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataSource": {
+            "type": "string",
+            "nullable": true
+          },
+          "mgdl": {
+            "type": "number",
+            "format": "double"
+          },
+          "direction": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/GlucoseDirection"
+              }
+            ]
+          },
+          "trendRate": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "noise": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         }
       },

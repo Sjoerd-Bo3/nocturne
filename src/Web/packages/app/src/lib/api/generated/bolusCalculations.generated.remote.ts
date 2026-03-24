@@ -5,8 +5,8 @@
 import { getRequestEvent, query, command, form } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { BolusCalculationSchema } from '$lib/api/generated/schemas';
-import { type BolusCalculation } from '$api';
+import { UpsertBolusCalculationRequestSchema } from '$lib/api/generated/schemas';
+import { type UpsertBolusCalculationRequest } from '$api';
 
 export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
@@ -22,11 +22,11 @@ export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.c
   }
 });
 
-export const create = form(BolusCalculationSchema as any, async (request) => {
+export const create = form(UpsertBolusCalculationRequestSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    const result = await apiClient.bolusCalculations.create(request as BolusCalculation);
+    const result = await apiClient.bolusCalculations.create(request as UpsertBolusCalculationRequest);
     return result;
   } catch (err) {
     const status = (err as any)?.status;
@@ -51,11 +51,11 @@ export const getById = query(z.string(), async (id) => {
   }
 });
 
-export const update = form(z.object({ id: z.string(), request: BolusCalculationSchema }) as any, async ({ id, request }) => {
+export const update = form(z.object({ id: z.string(), request: UpsertBolusCalculationRequestSchema }) as any, async ({ id, request }) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    const result = await apiClient.bolusCalculations.update(id, request as BolusCalculation);
+    const result = await apiClient.bolusCalculations.update(id, request as UpsertBolusCalculationRequest);
     return result;
   } catch (err) {
     const status = (err as any)?.status;

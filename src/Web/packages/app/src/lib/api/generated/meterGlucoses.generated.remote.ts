@@ -5,8 +5,8 @@
 import { getRequestEvent, query, command, form } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { MeterGlucoseSchema } from '$lib/api/generated/schemas';
-import { type MeterGlucose } from '$api';
+import { UpsertMeterGlucoseRequestSchema } from '$lib/api/generated/schemas';
+import { type UpsertMeterGlucoseRequest } from '$api';
 
 export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.coerce.date().optional(), limit: z.number().optional(), offset: z.number().optional(), sort: z.string().optional(), device: z.string().optional(), source: z.string().optional() }).optional(), async (params) => {
   const { locals } = getRequestEvent();
@@ -22,11 +22,11 @@ export const getAll = query(z.object({ from: z.coerce.date().optional(), to: z.c
   }
 });
 
-export const create = form(MeterGlucoseSchema as any, async (request) => {
+export const create = form(UpsertMeterGlucoseRequestSchema as any, async (request) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    const result = await apiClient.meterGlucose.create(request as MeterGlucose);
+    const result = await apiClient.meterGlucose.create(request as UpsertMeterGlucoseRequest);
     return result;
   } catch (err) {
     const status = (err as any)?.status;
@@ -51,11 +51,11 @@ export const getById = query(z.string(), async (id) => {
   }
 });
 
-export const update = form(z.object({ id: z.string(), request: MeterGlucoseSchema }) as any, async ({ id, request }) => {
+export const update = form(z.object({ id: z.string(), request: UpsertMeterGlucoseRequestSchema }) as any, async ({ id, request }) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
   try {
-    const result = await apiClient.meterGlucose.update(id, request as MeterGlucose);
+    const result = await apiClient.meterGlucose.update(id, request as UpsertMeterGlucoseRequest);
     return result;
   } catch (err) {
     const status = (err as any)?.status;
