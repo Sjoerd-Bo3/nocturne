@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { error, invalid } from "@sveltejs/kit";
+import { error } from "@sveltejs/kit";
 import { getRequestEvent, query, command, form } from "$app/server";
 import type { Entry, SensorGlucose, UserAlarmConfiguration } from "$lib/api";
 
@@ -44,8 +44,10 @@ const CreateFakeEntrySchema = z.object({
 });
 
 export const createFakeEntry = form(
-  CreateFakeEntrySchema,
-  async ({ sgv, device }) => {
+  "unchecked",
+  async (raw) => {
+    const parsed = CreateFakeEntrySchema.parse(raw);
+    const { sgv, device } = parsed;
     const { locals } = getRequestEvent();
     const { apiClient } = locals;
 

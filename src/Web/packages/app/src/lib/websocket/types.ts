@@ -117,8 +117,6 @@ export interface WebSocketEventHandlers {
   notificationArchived: (notification: InAppNotificationDto) => void;
   notificationUpdated: (notification: InAppNotificationDto) => void;
 
-  // Admin events (for admin users subscribed to admin group)
-  passwordResetRequested: () => void;
 }
 
 // Error types

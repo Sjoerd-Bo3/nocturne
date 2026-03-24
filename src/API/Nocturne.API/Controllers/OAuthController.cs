@@ -1421,7 +1421,6 @@ public class CreateFollowerGrantRequest
     public string FollowerEmail { get; set; } = string.Empty;
     public List<string> Scopes { get; set; } = new();
     public string? Label { get; set; }
-    public string? TemporaryPassword { get; set; }
     public string? FollowerDisplayName { get; set; }
 }
 

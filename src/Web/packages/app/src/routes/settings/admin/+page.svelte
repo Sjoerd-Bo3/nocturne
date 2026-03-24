@@ -17,7 +17,6 @@
   import {
     Shield,
     Users,
-    Key,
     KeyRound,
     Plus,
     Pencil,
@@ -26,7 +25,6 @@
     AlertTriangle,
     Copy,
     Check,
-    Lock,
     User,
     Cpu,
     Globe,
@@ -36,13 +34,8 @@
   } from "lucide-svelte";
   import * as Alert from "$lib/components/ui/alert";
   import * as authorizationRemote from "$api/generated/authorizations.generated.remote";
-  import * as adminRemote from "$api/generated/localauths.generated.remote";
   import * as grantsRemote from "$api/generated/oauths.generated.remote";
-  import { getRealtimeStore } from "$lib/stores/realtime-store.svelte";
-  import type { Subject, Role, PasswordResetRequestDto, OAuthGrantDto } from "$api";
-
-  // Get the realtime store for reactive admin events
-  const realtimeStore = getRealtimeStore();
+  import type { Subject, Role, OAuthGrantDto } from "$api";
 
   // State
   let activeTab = $state("users");
@@ -77,24 +70,6 @@
   let roleSaving = $state(false);
   let roleCreatedFromSubjectDialog = $state(false); // Track if we opened role dialog from subject dialog
 
-  // Form instances for password reset actions
-  const setTempPasswordForm = adminRemote.setTemporaryPassword;
-  const handleResetForm = adminRemote.handlePasswordReset;
-
-  // Password reset state
-  let pendingResets = $state<PasswordResetRequestDto[]>([]);
-  let pendingResetCount = $state(0);
-
-  // Set password dialog state
-  let isSetPasswordDialogOpen = $state(false);
-  let selectedResetRequest = $state<PasswordResetRequestDto | null>(null);
-  let tempPassword = $state("");
-  const setPasswordSaving = $derived(setTempPasswordForm.pending > 0);
-
-  // Reset link dialog state
-  let isResetLinkDialogOpen = $state(false);
-  let generatedResetLink = $state("");
-  let resetLinkCopied = $state(false);
 
   // Derived: check if admin role is selected (shows warning)
   const hasAdminRoleSelected = $derived(
@@ -115,23 +90,19 @@
 
   // Derived counts
   const subjectCount = $derived(subjects.length);
-  const roleCount = $derived(roles.length);
 
   // Load data
   async function loadData() {
     loading = true;
     error = null;
     try {
-      const [subs, rols, resetSummary, grantsList] = await Promise.all([
+      const [subs, rols, grantsList] = await Promise.all([
         authorizationRemote.getAllSubjects(),
         authorizationRemote.getAllRoles(),
-        adminRemote.getPendingPasswordResets(),
         loadAllGrants(),
       ]);
       subjects = subs || [];
       roles = rols || [];
-      pendingResets = resetSummary?.requests ?? [];
-      pendingResetCount = resetSummary?.totalCount ?? 0;
       grants = grantsList;
     } catch (err) {
       console.error("Failed to load admin data:", err);
@@ -156,16 +127,6 @@
   // Initial load
   $effect(() => {
     loadData();
-  });
-
-  // Reload password resets when counter changes (via SignalR through realtime store)
-  $effect(() => {
-    // Track the counter to trigger reload
-    const _count = realtimeStore.passwordResetRequestCount;
-    // Skip initial load (handled by loadData)
-    if (_count > 0) {
-      loadPasswordResets();
-    }
   });
 
   // Format date
@@ -267,16 +228,6 @@
     openNewRole(true);
   }
 
-  function openEditRole(role: Role) {
-    isNewRole = false;
-    editingRole = role;
-    roleFormName = role.name || "";
-    roleFormNotes = role.notes || "";
-    roleFormPermissions = role.permissions || [];
-    customPermission = "";
-    isRoleDialogOpen = true;
-  }
-
   async function saveRole() {
     roleSaving = true;
     const wasFromSubjectDialog = roleCreatedFromSubjectDialog;
@@ -310,16 +261,6 @@
       console.error("Failed to save role:", err);
     } finally {
       roleSaving = false;
-    }
-  }
-
-  async function deleteRoleHandler(id: string) {
-    if (!confirm("Delete this role? This action cannot be undone.")) return;
-    try {
-      await authorizationRemote.deleteRole(id);
-      await loadData();
-    } catch (err) {
-      console.error("Failed to delete role:", err);
     }
   }
 
@@ -379,53 +320,6 @@
         tokenCopied = false;
       }, 2000);
     }
-  }
-
-  // ============================================================================
-  // Password reset handlers
-  // ============================================================================
-
-  async function loadPasswordResets() {
-    try {
-      const response = await adminRemote.getPendingPasswordResets();
-      pendingResets = response?.requests ?? [];
-      pendingResetCount = response?.totalCount ?? 0;
-    } catch (err) {
-      console.error("Failed to load password resets:", err);
-    }
-  }
-
-  function openSetPasswordDialog(request: PasswordResetRequestDto) {
-    selectedResetRequest = request;
-    tempPassword = "";
-    isSetPasswordDialogOpen = true;
-  }
-
-  async function onSetPasswordSuccess() {
-    isSetPasswordDialogOpen = false;
-    await loadPasswordResets();
-  }
-
-  let resetLinkRequestId = $state<string>("");
-
-  function initiateGenerateResetLink(requestId: string | undefined) {
-    if (!requestId) return;
-    resetLinkRequestId = requestId;
-    // Submit the hidden form programmatically
-    queueMicrotask(() => {
-      resetLinkFormEl?.requestSubmit();
-    });
-  }
-
-  let resetLinkFormEl = $state<HTMLFormElement | null>(null);
-
-  async function copyResetLink() {
-    if (!generatedResetLink) return;
-    await navigator.clipboard.writeText(generatedResetLink);
-    resetLinkCopied = true;
-    setTimeout(() => {
-      resetLinkCopied = false;
-    }, 2000);
   }
 
   // Known permission categories for the picker
@@ -541,15 +435,6 @@
             <Badge variant="secondary" class="ml-1">{grants.length}</Badge>
           {/if}
         </Tabs.Trigger>
-        <Tabs.Trigger value="password-resets" class="gap-2">
-          <Lock class="h-4 w-4" />
-          Password Resets
-          {#if pendingResetCount > 0}
-            <Badge variant="destructive" class="ml-1">
-              {pendingResetCount}
-            </Badge>
-          {/if}
-        </Tabs.Trigger>
       </Tabs.List>
 
       <!-- Users Tab -->
@@ -616,9 +501,9 @@
                           <div class="text-sm text-muted-foreground">
                             Defines what unauthenticated users can access
                           </div>
-                        {:else if subject.email}
+                        {:else if subject.notes}
                           <div class="text-sm text-muted-foreground">
-                            {subject.email}
+                            {subject.notes}
                           </div>
                         {/if}
                         <div class="text-sm text-muted-foreground">
@@ -723,7 +608,7 @@
                             {/if}
                           </div>
                           <div class="text-sm text-muted-foreground">
-                            Scopes: {grant.scopes.join(", ")}
+                            Scopes: {(grant.scopes ?? []).join(", ")}
                           </div>
                           <div class="text-xs text-muted-foreground mt-1">
                             Created: {formatDate(grant.createdAt)}
@@ -737,7 +622,7 @@
                         <Button
                           variant="ghost"
                           size="icon"
-                          onclick={() => revokeGrant(grant.id)}
+                          onclick={() => revokeGrant(grant.id!)}
                         >
                           <Trash2 class="h-4 w-4" />
                         </Button>
@@ -785,69 +670,6 @@
         </Card>
       </Tabs.Content>
 
-      <!-- Password Resets Tab -->
-      <Tabs.Content value="password-resets">
-        <Card>
-          <CardHeader>
-            <CardTitle>Pending Password Resets</CardTitle>
-            <CardDescription>
-              Review password reset requests and provide temporary access.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {#if pendingResets.length === 0}
-              <div class="text-center py-8 text-muted-foreground">
-                <Lock class="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No pending password reset requests</p>
-              </div>
-            {:else}
-              <div class="space-y-3">
-                {#each pendingResets as request}
-                  <div
-                    class="flex items-center justify-between p-4 rounded-lg border"
-                  >
-                    <div class="flex items-center gap-3">
-                      <div class="p-2 rounded-lg bg-muted">
-                        <Lock class="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div class="font-medium">
-                          {request.displayName ?? request.email}
-                        </div>
-                        <div class="text-sm text-muted-foreground">
-                          {request.email}
-                        </div>
-                        <div class="text-xs text-muted-foreground mt-1">
-                          Requested: {formatDate(request.createdAt)}
-                          {#if request.requestedFromIp}
-                            IP: {request.requestedFromIp}
-                          {/if}
-                        </div>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onclick={() => openSetPasswordDialog(request)}
-                      >
-                        Set Password
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onclick={() => initiateGenerateResetLink(request.id)}
-                      >
-                        Generate Link
-                      </Button>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </CardContent>
-        </Card>
-      </Tabs.Content>
     </Tabs.Root>
   {/if}
 </div>
@@ -1277,120 +1099,3 @@
   </Dialog.Content>
 </Dialog.Root>
 
-<!-- Set Password Dialog -->
-<Dialog.Root bind:open={isSetPasswordDialogOpen}>
-  <Dialog.Content class="max-w-md">
-    <Dialog.Header>
-      <Dialog.Title>Set Temporary Password</Dialog.Title>
-      <Dialog.Description>
-        Set a temporary password for {selectedResetRequest?.email}. They will be
-        required to change it on next login.
-      </Dialog.Description>
-    </Dialog.Header>
-
-    <form
-      {...setTempPasswordForm.enhance(async ({ submit }) => {
-        await submit();
-        if (setTempPasswordForm.result) {
-          await onSetPasswordSuccess();
-        }
-      })}
-    >
-      <input type="hidden" name="email" value={selectedResetRequest?.email ?? ""} />
-      <div class="space-y-4 py-4">
-        <div class="space-y-2">
-          <Label for="temp-password">Temporary Password</Label>
-          <Input
-            id="temp-password"
-            name="temporaryPassword"
-            type="text"
-            bind:value={tempPassword}
-            placeholder="Leave empty for no password"
-          />
-          <p class="text-xs text-muted-foreground">
-            Leave empty to allow login with no password. The user must set a new
-            password on their next login.
-          </p>
-        </div>
-      </div>
-
-      <Dialog.Footer>
-        <Button
-          type="button"
-          variant="outline"
-          onclick={() => (isSetPasswordDialogOpen = false)}
-          disabled={setPasswordSaving}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={setPasswordSaving}>
-          {#if setPasswordSaving}
-            <Loader2 class="h-4 w-4 mr-2 animate-spin" />
-          {/if}
-          Set Password
-        </Button>
-      </Dialog.Footer>
-    </form>
-  </Dialog.Content>
-</Dialog.Root>
-
-{#key resetLinkRequestId}
-<!-- Hidden form for generating reset link (keyed by requestId) -->
-{#if resetLinkRequestId}
-  {@const keyedResetForm = handleResetForm.for(resetLinkRequestId)}
-  <form
-    bind:this={resetLinkFormEl}
-    class="hidden"
-    {...keyedResetForm.enhance(async ({ submit }) => {
-      await submit();
-      if (keyedResetForm.result) {
-        generatedResetLink = keyedResetForm.result.resetUrl ?? "";
-        resetLinkCopied = false;
-        isResetLinkDialogOpen = true;
-        await loadPasswordResets();
-      } else {
-        console.error("Failed to generate reset link");
-      }
-    })}
-  >
-    <button type="submit"></button>
-  </form>
-{/if}
-{/key}
-
-<!-- Reset Link Dialog -->
-<Dialog.Root bind:open={isResetLinkDialogOpen}>
-  <Dialog.Content class="max-w-lg">
-    <Dialog.Header>
-      <Dialog.Title>Password Reset Link</Dialog.Title>
-      <Dialog.Description>
-        Share this link securely with the user.
-      </Dialog.Description>
-    </Dialog.Header>
-
-    <div class="space-y-4 py-4">
-      <div class="p-4 rounded-lg bg-muted font-mono text-sm break-all">
-        {generatedResetLink}
-      </div>
-      <Button
-        class="w-full"
-        onclick={copyResetLink}
-        disabled={!generatedResetLink}
-      >
-        {#if resetLinkCopied}
-          <Check class="h-4 w-4 mr-2" />
-          Copied!
-        {:else}
-          <Copy class="h-4 w-4 mr-2" />
-          Copy to Clipboard
-        {/if}
-      </Button>
-    </div>
-
-    <Dialog.Footer>
-      <Button variant="outline" onclick={() => (isResetLinkDialogOpen = false)}>
-        Close
-      </Button>
-    </Dialog.Footer>
-  </Dialog.Content>
-</Dialog.Root>

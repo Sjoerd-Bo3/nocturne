@@ -235,11 +235,6 @@ public enum CalculationType
 public enum InAppNotificationType
 {
     /// <summary>
-    /// Admin notification for pending password reset request
-    /// </summary>
-    PasswordResetRequest,
-
-    /// <summary>
     /// Notification that a tracker has not been configured/started
     /// </summary>
     UnconfiguredTracker,

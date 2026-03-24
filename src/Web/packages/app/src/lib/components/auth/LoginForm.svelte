@@ -79,8 +79,8 @@
 
     try {
       const response = await discoverableLoginOptions();
-      const options = JSON.parse(response.options);
-      const challengeToken = response.challengeToken;
+      const options = JSON.parse(response.options ?? "");
+      const challengeToken = response.challengeToken ?? "";
 
       const assertion = await startAuthentication({ optionsJSON: options });
 
@@ -107,8 +107,8 @@
 
     try {
       const response = await loginOptions({ username: username.trim() });
-      const options = JSON.parse(response.options);
-      const challengeToken = response.challengeToken;
+      const options = JSON.parse(response.options ?? "");
+      const challengeToken = response.challengeToken ?? "";
 
       const assertion = await startAuthentication({ optionsJSON: options });
 

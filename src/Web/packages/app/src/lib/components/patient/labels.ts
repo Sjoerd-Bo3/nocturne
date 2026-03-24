@@ -3,6 +3,7 @@ import {
   DeviceCategory,
   AidAlgorithm,
   InsulinCategory,
+  InsulinRole,
 } from "$api";
 
 export const diabetesTypeLabels: Record<string, string> = {
@@ -53,4 +54,16 @@ export const insulinCategoryDescriptions: Record<string, string> = {
   [InsulinCategory.LongActing]: "e.g. Lantus, Levemir, Tresiba",
   [InsulinCategory.UltraLongActing]: "e.g. Toujeo",
   [InsulinCategory.Premixed]: "e.g. NovoMix 30, Humalog Mix",
+};
+
+export const insulinRoleLabels: Record<string, string> = {
+  [InsulinRole.Bolus]: "Bolus",
+  [InsulinRole.Basal]: "Basal",
+  [InsulinRole.Both]: "Both",
+};
+
+export const insulinRoleDescriptions: Record<string, string> = {
+  [InsulinRole.Bolus]: "Used for meal and correction boluses",
+  [InsulinRole.Basal]: "Used for background insulin coverage",
+  [InsulinRole.Both]: "Used for both basal and bolus",
 };

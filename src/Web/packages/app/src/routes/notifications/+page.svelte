@@ -20,36 +20,25 @@
     Loader2,
     Settings2,
     ChevronDown,
-    Shield,
-    KeyRound,
-    ExternalLink,
   } from "lucide-svelte";
   import { cn } from "$lib/utils";
   import { getRealtimeStore } from "$lib/stores/realtime-store.svelte";
-  import { getAuthStore } from "$lib/stores/auth-store.svelte";
   import * as trackersRemote from "$api/generated/trackers.generated.remote";
-  import * as adminRemote from "$api/generated/localauths.generated.remote";
   import {
     CompletionReason,
     type TrackerInstanceDto,
-    type PasswordResetRequestDto,
   } from "$api";
+
   import * as Collapsible from "$lib/components/ui/collapsible";
-  import { goto } from "$app/navigation";
   import { onMount, untrack } from "svelte";
 
   // Get the realtime store for reactive tracker data
   const realtimeStore = getRealtimeStore();
-  const authStore = getAuthStore();
-
-  // Check if user is an admin
-  const isAdmin = $derived(authStore.hasRole("admin"));
 
   // State
   let loading = $state(true);
   let error = $state<string | null>(null);
   let historyInstances = $state<TrackerInstanceDto[]>([]);
-  let pendingResets = $state<PasswordResetRequestDto[]>([]);
 
   // Use active tracker notifications from realtime store
   const trackerNotifications = $derived(realtimeStore.trackerNotifications);
@@ -86,14 +75,8 @@
     loading = true;
     error = null;
     try {
-      const [history, resets] = await Promise.all([
-        trackersRemote.getInstanceHistory(undefined),
-        isAdmin
-          ? adminRemote.getPendingPasswordResets()
-          : Promise.resolve(null),
-      ]);
+      const history = await trackersRemote.getInstanceHistory(undefined);
       historyInstances = history || [];
-      pendingResets = resets?.requests ?? [];
     } catch (err) {
       console.error("Failed to load notification data:", err);
       error = "Failed to load notification data";
@@ -105,30 +88,6 @@
   // Initial load on mount (not in $effect to avoid unnecessary re-runs)
   onMount(() => {
     loadData();
-  });
-
-  // Reload when password reset request counter changes (via SignalR)
-  // Use untrack to avoid creating a dependency cycle with lastResetCount
-  let lastResetCount = $state<number | undefined>(undefined);
-
-  $effect(() => {
-    const currentCount = realtimeStore.passwordResetRequestCount;
-    // Read previous count without creating a subscription
-    const previousCount = untrack(() => lastResetCount);
-
-    // Only reload if the count actually changed (not on initial mount)
-    if (previousCount !== undefined && currentCount !== previousCount) {
-      // Capture isAdmin value here to avoid reactive re-runs
-      const shouldReload = authStore.hasRole("admin");
-      if (shouldReload) {
-        loadData();
-      }
-    }
-
-    // Write without creating a subscription
-    untrack(() => {
-      lastResetCount = currentCount;
-    });
   });
 
   // Format age
@@ -266,9 +225,7 @@
   }
 
   // Total active count for header
-  const totalActiveCount = $derived(
-    trackerNotifications.length + pendingResets.length
-  );
+  const totalActiveCount = $derived(trackerNotifications.length);
 </script>
 
 <svelte:head>
@@ -312,59 +269,6 @@
     </Card>
   {:else}
     <div class="space-y-6">
-      <!-- Admin Notifications Section (for admins only) -->
-      {#if isAdmin && pendingResets.length > 0}
-        <Card class="border-destructive/50">
-          <CardHeader class="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle class="flex items-center gap-2">
-                <Shield class="h-5 w-5 text-destructive" />
-                Admin Actions Required
-              </CardTitle>
-              <CardDescription>
-                Administrative tasks requiring your attention
-              </CardDescription>
-            </div>
-            <Badge variant="destructive">{pendingResets.length}</Badge>
-          </CardHeader>
-          <CardContent>
-            <div class="space-y-3">
-              {#each pendingResets as request (request.id)}
-                <div
-                  class="flex items-start gap-3 p-4 rounded-lg border text-red-500 bg-red-500/10 border-red-500/20"
-                >
-                  <div class="flex-shrink-0 mt-0.5">
-                    <KeyRound class="h-5 w-5" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between gap-2">
-                      <span class="font-medium">Password Reset Request</span>
-                      <span class="text-xs opacity-75">
-                        {request.createdAt ? formatDate(request.createdAt) : ""}
-                      </span>
-                    </div>
-                    <p class="text-sm mt-1 opacity-75">
-                      {request.displayName ?? request.email}
-                    </p>
-                    <div class="flex items-center gap-2 mt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onclick={() =>
-                          goto("/settings/admin?tab=password-resets")}
-                      >
-                        <ExternalLink class="h-3 w-3 mr-1" />
-                        Handle Request
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-          </CardContent>
-        </Card>
-      {/if}
-
       <!-- Tracker Notifications Section -->
       <Card>
         <CardHeader class="flex flex-row items-center justify-between">

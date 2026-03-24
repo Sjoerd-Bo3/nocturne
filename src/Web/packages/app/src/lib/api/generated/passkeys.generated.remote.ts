@@ -5,8 +5,8 @@
 import { getRequestEvent, query, command } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { PasskeyRegisterOptionsRequestSchema, PasskeyRegisterCompleteRequestSchema, PasskeyLoginOptionsRequestSchema, PasskeyLoginCompleteRequestSchema, RecoveryVerifyRequestSchema } from '$lib/api/generated/schemas';
-import { type PasskeyRegisterOptionsRequest, type PasskeyRegisterCompleteRequest, type PasskeyLoginOptionsRequest, type PasskeyLoginCompleteRequest, type RecoveryVerifyRequest } from '$api';
+import { PasskeyRegisterOptionsRequestSchema, PasskeyRegisterCompleteRequestSchema, PasskeyLoginOptionsRequestSchema, PasskeyLoginCompleteRequestSchema, RecoveryVerifyRequestSchema, SetupOptionsRequestSchema, SetupCompleteRequestSchema } from '$lib/api/generated/schemas';
+import { type PasskeyRegisterOptionsRequest, type PasskeyRegisterCompleteRequest, type PasskeyLoginOptionsRequest, type PasskeyLoginCompleteRequest, type RecoveryVerifyRequest, type SetupOptionsRequest, type SetupCompleteRequest } from '$api';
 
 /** Generate registration options for a new passkey credential */
 export const registerOptions = command(PasskeyRegisterOptionsRequestSchema, async (request) => {
@@ -189,5 +189,56 @@ export const getRecoveryModeStatus = query(async () => {
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in passkey.getRecoveryModeStatus:', err);
     throw error(500, 'Failed to get recovery mode status');
+  }
+});
+
+/** Returns instance auth status: whether setup is required or recovery mode is active. */
+export const getAuthStatus = query(async () => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    return await apiClient.passkey.getAuthStatus();
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in passkey.getAuthStatus:', err);
+    throw error(500, 'Failed to get auth status');
+  }
+});
+
+/** Generate registration options for the first user during initial setup.
+Only available when no non-system subjects exist (setup mode).
+Creates the subject, assigns admin role, and returns passkey registration options. */
+export const setupOptions = command(SetupOptionsRequestSchema, async (request) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    const result = await apiClient.passkey.setupOptions(request as SetupOptionsRequest);
+    return result;
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in passkey.setupOptions:', err);
+    throw error(500, 'Failed to setup options');
+  }
+});
+
+/** Complete passkey registration during initial setup.
+Verifies attestation, generates recovery codes, issues a full JWT session,
+and exits setup mode. */
+export const setupComplete = command(SetupCompleteRequestSchema, async (request) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    const result = await apiClient.passkey.setupComplete(request as SetupCompleteRequest);
+    return result;
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in passkey.setupComplete:', err);
+    throw error(500, 'Failed to setup complete');
   }
 });

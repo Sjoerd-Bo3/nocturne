@@ -100,8 +100,8 @@
 
       // Step 2: Register a passkey for the new user via generated remote functions
       const response = await registerOptions({ subjectId: acceptResult.subjectId, username: username.trim() });
-      const options = JSON.parse(response.options);
-      const challengeToken = response.challengeToken;
+      const options = JSON.parse(response.options ?? "");
+      const challengeToken = response.challengeToken ?? "";
 
       const attestation = await startRegistration({ optionsJSON: options });
 

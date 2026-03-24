@@ -318,26 +318,6 @@ public class SignalRBroadcastServiceTests
 
     [Fact]
     [Parity]
-    public async Task BroadcastPasswordResetRequestAsync_ShouldSendToAdminGroup()
-    {
-        // Act
-        await _service.BroadcastPasswordResetRequestAsync();
-
-        // Assert
-        _mockDataClients.Verify(x => x.Group("00000000-0000-0000-0000-000000000001:admin"), Times.Once);
-        _mockDataGroupProxy.Verify(
-            x =>
-                x.SendCoreAsync(
-                    "passwordResetRequested",
-                    It.Is<object[]>(args => args.Length == 0),
-                    default
-                ),
-            Times.Once
-        );
-    }
-
-    [Fact]
-    [Parity]
     public async Task BroadcastStorageCreateAsync_WithException_ShouldLogError()
     {
         // Arrange

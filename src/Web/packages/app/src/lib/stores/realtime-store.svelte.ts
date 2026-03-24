@@ -72,9 +72,6 @@ export class RealtimeStore {
   notes = $state.raw<Note[]>([]);
   deviceEvents = $state.raw<DeviceEvent[]>([]);
 
-  /** Password reset request counter - increments on each request to trigger refreshes */
-  passwordResetRequestCount = $state(0);
-
   /** Connection state (with safe initialization) */
   connectionStatus = $derived(
     this.websocketClient?.connectionStatus || "disconnected"
@@ -400,10 +397,6 @@ export class RealtimeStore {
       this.handleNotificationUpdated(notification);
     });
 
-    // Admin events - password reset requests
-    this.websocketClient.on("passwordResetRequested", () => {
-      this.passwordResetRequestCount++;
-    });
   }
 
   /** Handle real-time data updates */

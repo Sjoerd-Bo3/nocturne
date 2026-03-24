@@ -13,12 +13,11 @@
   } from "lucide-svelte";
   import { startRegistration } from "@simplewebauthn/browser";
   import {
-    registerOptions,
-    registerComplete,
+    setupOptions,
+    setupComplete,
   } from "$lib/api/generated/passkeys.generated.remote";
-  import { getAuthState } from "$routes/auth/auth.remote";
-
-  const authState = getAuthState();
+  import { setAuthCookies } from "$routes/auth/auth.remote";
+  import { invalidateAll } from "$app/navigation";
 
   // Form state
   let displayName = $state("");
@@ -35,34 +34,40 @@
     displayName.trim().length > 0 && username.trim().length > 0
   );
 
-  const canProceed = $derived(registrationComplete && codesCopied);
+  const canProceed = $derived(registrationComplete && (codesCopied || recoveryCodes.length === 0));
 
   async function handleRegister() {
-    const subjectId = authState.current?.user?.subjectId;
-    if (!subjectId) {
-      errorMessage = "You must be signed in to register a passkey.";
-      return;
-    }
-
     isRegistering = true;
     errorMessage = null;
 
     try {
-      const response = await registerOptions({ subjectId, username: username.trim() });
-      const options = JSON.parse(response.options);
-      const challengeToken = response.challengeToken;
+      // Use setup endpoints — creates the first user + starts passkey registration
+      const response = await setupOptions({
+        username: username.trim(),
+        displayName: displayName.trim(),
+      });
+      const options = JSON.parse(response.options ?? "");
+      const challengeToken = response.challengeToken ?? "";
 
       const attestation = await startRegistration({ optionsJSON: options });
 
-      await registerComplete({
+      const result = await setupComplete({
         attestationResponseJson: JSON.stringify(attestation),
         challengeToken,
-        label: `${displayName.trim()}'s passkey`,
       });
 
+      // Set auth cookies so the user is logged in immediately
+      if (result.accessToken) {
+        await setAuthCookies({
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken ?? undefined,
+          expiresIn: result.expiresIn ?? undefined,
+        });
+        await invalidateAll();
+      }
+
       registrationComplete = true;
-      // Recovery codes are generated separately, not returned from registration
-      recoveryCodes = [];
+      recoveryCodes = result.recoveryCodes ?? [];
     } catch (err) {
       errorMessage =
         err instanceof Error ? err.message : "Failed to register passkey";

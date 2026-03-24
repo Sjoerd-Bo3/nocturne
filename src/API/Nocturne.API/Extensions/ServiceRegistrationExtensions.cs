@@ -144,11 +144,15 @@ public static class ServiceRegistrationExtensions
         // Passkey (WebAuthn/FIDO2) services
         services.AddScoped<IPasskeyService, PasskeyService>();
         services.AddScoped<IRecoveryCodeService, RecoveryCodeService>();
+        // Derive WebAuthn RP config from the multitenancy base domain (single source of truth)
+        var baseDomain = configuration["Multitenancy:BaseDomain"] ?? "localhost:1612";
+        var rpId = baseDomain.Split(':')[0]; // hostname without port
+        var origin = $"https://{baseDomain}";
         services.AddFido2(options =>
         {
-            options.ServerDomain = configuration["Passkey:RpId"] ?? "localhost";
+            options.ServerDomain = rpId;
             options.ServerName = "Nocturne";
-            options.Origins = new HashSet<string> { configuration["Passkey:Origin"] ?? "https://localhost:1613" };
+            options.Origins = new HashSet<string> { origin };
         });
 
         // Multitenancy

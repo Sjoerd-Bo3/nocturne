@@ -37,6 +37,19 @@ export function convertToDisplayUnits(mgdl: number, units: GlucoseUnits): number
 }
 
 /**
+ * Convert a glucose value from display units back to mg/dL
+ * @param value - Glucose value in display units
+ * @param units - Source units ("mg/dl" or "mmol")
+ * @returns Glucose value in mg/dL
+ */
+export function convertFromDisplayUnits(value: number, units: GlucoseUnits): number {
+  if (units === "mmol") {
+    return Math.round(value * MGDL_TO_MMOL);
+  }
+  return Math.round(value);
+}
+
+/**
  * Format a glucose value for display with appropriate precision
  * @param mgdl - Glucose value in mg/dL
  * @param units - Display units ("mg/dl" or "mmol")

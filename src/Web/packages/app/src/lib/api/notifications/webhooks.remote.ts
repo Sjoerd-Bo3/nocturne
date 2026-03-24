@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { error, invalid } from "@sveltejs/kit";
+import { error } from "@sveltejs/kit";
 import { getRequestEvent, query, command, form } from "$app/server";
 import type { WebhookNotificationSettings, WebhookTestResult } from "$lib/api";
 
@@ -27,8 +27,9 @@ export const getWebhookSettings = query(async () => {
 });
 
 export const saveWebhookSettings = form(
-  WebhookSettingsSchema,
-  async (settings) => {
+  "unchecked",
+  async (raw) => {
+    const settings = WebhookSettingsSchema.parse(raw);
     const { locals } = getRequestEvent();
     const { apiClient } = locals;
 

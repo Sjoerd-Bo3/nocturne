@@ -16,9 +16,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                 name: "FK_oauth_grants_oauth_clients_client_id",
                 table: "oauth_grants");
 
-            migrationBuilder.DropTable(
-                name: "notification_preferences");
-
             migrationBuilder.AddColumn<string>(
                 name: "username",
                 table: "subjects",

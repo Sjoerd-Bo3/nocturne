@@ -3339,6 +3339,153 @@ export class PasskeyClient {
         }
         return Promise.resolve<void>(null as any);
     }
+
+    /**
+     * Returns instance auth status: whether setup is required or recovery mode is active.
+     */
+    getAuthStatus(signal?: AbortSignal): Promise<AuthStatusResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/status";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAuthStatus(_response);
+        });
+    }
+
+    protected processGetAuthStatus(response: Response): Promise<AuthStatusResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AuthStatusResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AuthStatusResponse>(null as any);
+    }
+
+    /**
+     * Generate registration options for the first user during initial setup.
+    Only available when no non-system subjects exist (setup mode).
+    Creates the subject, assigns admin role, and returns passkey registration options.
+     */
+    setupOptions(request: SetupOptionsRequest, signal?: AbortSignal): Promise<PasskeyOptionsResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/setup/options";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSetupOptions(_response);
+        });
+    }
+
+    protected processSetupOptions(response: Response): Promise<PasskeyOptionsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PasskeyOptionsResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasskeyOptionsResponse>(null as any);
+    }
+
+    /**
+     * Complete passkey registration during initial setup.
+    Verifies attestation, generates recovery codes, issues a full JWT session,
+    and exits setup mode.
+     */
+    setupComplete(request: SetupCompleteRequest, signal?: AbortSignal): Promise<SetupCompleteResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/setup/complete";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSetupComplete(_response);
+        });
+    }
+
+    protected processSetupComplete(response: Response): Promise<SetupCompleteResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as SetupCompleteResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SetupCompleteResponse>(null as any);
+    }
 }
 
 export class PebbleClient {
@@ -26521,7 +26668,6 @@ export interface CreateFollowerGrantRequest {
     followerEmail?: string;
     scopes?: string[];
     label?: string | undefined;
-    temporaryPassword?: string | undefined;
     followerDisplayName?: string | undefined;
 }
 
@@ -26772,6 +26918,33 @@ export interface RecoveryStatusResponse {
     remainingCodes?: number;
     hasCodes?: boolean;
     totalCodes?: number;
+}
+
+/** Instance auth status */
+export interface AuthStatusResponse {
+    setupRequired?: boolean;
+    recoveryMode?: boolean;
+}
+
+/** Request for initial setup registration options (first user creation) */
+export interface SetupOptionsRequest {
+    username?: string;
+    displayName?: string;
+}
+
+/** Response for completed setup registration */
+export interface SetupCompleteResponse {
+    success?: boolean;
+    recoveryCodes?: string[];
+    accessToken?: string;
+    refreshToken?: string | undefined;
+    expiresIn?: number;
+}
+
+/** Request to complete initial setup registration */
+export interface SetupCompleteRequest {
+    attestationResponseJson?: string;
+    challengeToken?: string;
 }
 
 /** Pebble response model for 1:1 Nightscout compatibility */
@@ -29082,7 +29255,6 @@ export interface InAppNotificationDto {
 }
 
 export enum InAppNotificationType {
-    PasswordResetRequest = "PasswordResetRequest",
     UnconfiguredTracker = "UnconfiguredTracker",
     TrackerAlert = "TrackerAlert",
     StatisticsSummary = "StatisticsSummary",

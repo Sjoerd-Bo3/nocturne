@@ -8,8 +8,16 @@
   import { Label } from "$lib/components/ui/label";
   import { Separator } from "$lib/components/ui/separator";
   import * as Select from "$lib/components/ui/select";
-  import { CheckCircle } from "lucide-svelte";
+  import * as Popover from "$lib/components/ui/popover";
+  import * as Command from "$lib/components/ui/command";
+  import { Button } from "$lib/components/ui/button";
+  import { CheckCircle, ChevronsUpDown, Check } from "lucide-svelte";
+  import { cn } from "$lib/utils";
   import { glucoseUnits } from "$lib/stores/appearance-store.svelte";
+  import {
+    convertToDisplayUnits,
+    convertFromDisplayUnits,
+  } from "$lib/utils/formatting";
   import {
     getProfileSummary,
     createTherapySettings,
@@ -45,10 +53,160 @@
   let saving = $state(false);
 
   // Basics
+  // ── Timezone → units mapping ──────────────────────────────────
+  // Countries/regions that use mmol/L. The rest default to mg/dL.
+  const mmolTimezones = new Set([
+    // UK & Ireland
+    "Europe/London",
+    "Europe/Dublin",
+    // Canada
+    "America/Toronto",
+    "America/Vancouver",
+    "America/Winnipeg",
+    "America/Edmonton",
+    "America/Halifax",
+    "America/St_Johns",
+    "America/Regina",
+    "America/Whitehorse",
+    "America/Yellowknife",
+    "America/Iqaluit",
+    "America/Moncton",
+    "America/Thunder_Bay",
+    "America/Nipigon",
+    "America/Rainy_River",
+    "America/Rankin_Inlet",
+    "America/Resolute",
+    "America/Swift_Current",
+    "America/Atikokan",
+    "America/Pangnirtung",
+    "America/Dawson",
+    "America/Dawson_Creek",
+    "America/Fort_Nelson",
+    "America/Creston",
+    "America/Glace_Bay",
+    "America/Goose_Bay",
+    "America/Blanc-Sablon",
+    "America/Cambridge_Bay",
+    "America/Inuvik",
+    // Australia
+    "Australia/Sydney",
+    "Australia/Melbourne",
+    "Australia/Brisbane",
+    "Australia/Perth",
+    "Australia/Adelaide",
+    "Australia/Hobart",
+    "Australia/Darwin",
+    "Australia/Lord_Howe",
+    "Australia/Lindeman",
+    "Australia/Currie",
+    "Australia/Eucla",
+    "Australia/Broken_Hill",
+    // New Zealand
+    "Pacific/Auckland",
+    "Pacific/Chatham",
+    // Western Europe (mmol/L)
+    "Europe/Amsterdam",
+    "Europe/Berlin",
+    "Europe/Paris",
+    "Europe/Brussels",
+    "Europe/Luxembourg",
+    "Europe/Zurich",
+    "Europe/Vienna",
+    "Europe/Rome",
+    "Europe/Madrid",
+    "Europe/Lisbon",
+    "Europe/Stockholm",
+    "Europe/Oslo",
+    "Europe/Copenhagen",
+    "Europe/Helsinki",
+    "Europe/Athens",
+    "Europe/Bucharest",
+    "Europe/Budapest",
+    "Europe/Prague",
+    "Europe/Warsaw",
+    "Europe/Vilnius",
+    "Europe/Riga",
+    "Europe/Tallinn",
+    "Europe/Sofia",
+    "Europe/Zagreb",
+    "Europe/Ljubljana",
+    "Europe/Bratislava",
+    "Europe/Belgrade",
+    "Europe/Sarajevo",
+    "Europe/Skopje",
+    "Europe/Podgorica",
+    "Europe/Tirane",
+    // Russia & neighbors
+    "Europe/Moscow",
+    "Europe/Samara",
+    "Europe/Volgograd",
+    "Asia/Yekaterinburg",
+    "Asia/Novosibirsk",
+    "Asia/Krasnoyarsk",
+    "Asia/Irkutsk",
+    "Asia/Yakutsk",
+    "Asia/Vladivostok",
+    "Asia/Magadan",
+    "Asia/Kamchatka",
+    "Europe/Kaliningrad",
+    "Europe/Minsk",
+    "Europe/Kiev",
+    "Europe/Chisinau",
+    // China, Hong Kong, Macau
+    "Asia/Shanghai",
+    "Asia/Hong_Kong",
+    "Asia/Macau",
+    // India, Sri Lanka, Bangladesh, Nepal, Pakistan
+    "Asia/Kolkata",
+    "Asia/Colombo",
+    "Asia/Dhaka",
+    "Asia/Kathmandu",
+    "Asia/Karachi",
+    // Southeast Asia
+    "Asia/Singapore",
+    "Asia/Kuala_Lumpur",
+    "Asia/Bangkok",
+    "Asia/Jakarta",
+    "Asia/Ho_Chi_Minh",
+    "Asia/Manila",
+    // Middle East (mmol/L users)
+    "Asia/Riyadh",
+    "Asia/Dubai",
+    "Asia/Qatar",
+    "Asia/Bahrain",
+    "Asia/Kuwait",
+    "Asia/Muscat",
+    // Africa (mmol/L users)
+    "Africa/Johannesburg",
+    "Africa/Lagos",
+    "Africa/Nairobi",
+    "Africa/Cairo",
+    "Africa/Casablanca",
+    "Africa/Algiers",
+    "Africa/Tunis",
+    // South Korea, Japan use mg/dL — intentionally excluded
+    // Caribbean (mostly mg/dL) — intentionally excluded
+    // Central & South America (mostly mg/dL) — intentionally excluded
+  ]);
+
+  function unitsForTimezone(tz: string): "mg/dL" | "mmol/L" {
+    return mmolTimezones.has(tz) ? "mmol/L" : "mg/dL";
+  }
+
   let profileName = $state("Default");
-  let units = $state("mg/dL");
-  let timezone = $state("");
-  let dia = $state(3.0);
+  const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  let units = $state(unitsForTimezone(detectedTz));
+  let timezone = $state(detectedTz);
+  const allTimezones = Intl.supportedValuesOf("timeZone");
+  let tzOpen = $state(false);
+  let tzSearch = $state("");
+  const filteredTimezones = $derived(
+    tzSearch
+      ? allTimezones.filter((tz) =>
+          tz.toLowerCase().includes(tzSearch.toLowerCase())
+        )
+      : allTimezones
+  );
   let carbsHr = $state(20);
 
   // Schedule entries
@@ -61,9 +219,9 @@
   let sensitivityEntries = $state<Array<{ time: string; value: number }>>([
     { time: "00:00", value: 50 },
   ]);
-  let targetEntries = $state<Array<{ time: string; low: number; high: number }>>(
-    [{ time: "00:00", low: 70, high: 180 }],
-  );
+  let targetEntries = $state<
+    Array<{ time: string; low: number; high: number }>
+  >([{ time: "00:00", low: 70, high: 180 }]);
 
   // Track existing IDs for update vs create
   let existingSettingsId = $state<string | undefined>();
@@ -79,6 +237,28 @@
     return settings?.isExternallyManaged === true;
   });
 
+  function setUnits(newUnits: "mg/dL" | "mmol/L") {
+    if (newUnits === units) return;
+
+    const prev = units === "mmol/L" ? "mmol" : ("mg/dl" as const);
+    const next = newUnits === "mmol/L" ? "mmol" : ("mg/dl" as const);
+    const convert = (v: number) =>
+      convertToDisplayUnits(convertFromDisplayUnits(v, prev), next);
+
+    sensitivityEntries = sensitivityEntries.map((e) => ({
+      ...e,
+      value: convert(e.value),
+    }));
+    targetEntries = targetEntries.map((e) => ({
+      ...e,
+      low: convert(e.low),
+      high: convert(e.high),
+    }));
+
+    units = newUnits;
+    glucoseUnits.current = next;
+  }
+
   // ── Pre-populate from summary ───────────────────────────────────
 
   $effect(() => {
@@ -90,8 +270,7 @@
       existingSettingsId = settings.id;
       profileName = settings.profileName ?? "Default";
       units = settings.units ?? "mg/dL";
-      timezone = settings.timezone ?? "";
-      dia = settings.dia ?? 3.0;
+      timezone = settings.timezone || detectedTz;
       carbsHr = settings.carbsHr ?? 20;
     }
 
@@ -136,11 +315,11 @@
   // ── Derived labels ──────────────────────────────────────────────
 
   const sensitivityUnit = $derived(
-    units === "mmol/L" ? "mmol/L per U" : "mg/dL per U",
+    units === "mmol/L" ? "mmol/L per U" : "mg/dL per U"
   );
   const targetUnit = $derived(units === "mmol/L" ? "mmol/L" : "mg/dL");
 
-  // Sync appearance store when units change
+  // Sync appearance store on init
   $effect(() => {
     glucoseUnits.current = units === "mmol/L" ? "mmol" : "mg/dl";
   });
@@ -152,7 +331,7 @@
 
   function submitHiddenForm(
     el: HTMLFormElement | null,
-    setResolver: (resolver: (success: boolean) => void) => void,
+    setResolver: (resolver: (success: boolean) => void) => void
   ): Promise<boolean> {
     return new Promise((resolve) => {
       setResolver(resolve);
@@ -170,7 +349,7 @@
       // 1. Save therapy settings (form-based)
       const settingsOk = await submitHiddenForm(
         settingsFormEl,
-        (r) => (settingsSubmitResolve = r),
+        (r) => (settingsSubmitResolve = r)
       );
       if (!settingsOk) {
         saveError = "Failed to save therapy settings.";
@@ -180,7 +359,7 @@
       // 2. Save basal schedule (form-based)
       const basalOk = await submitHiddenForm(
         basalFormEl,
-        (r) => (basalSubmitResolve = r),
+        (r) => (basalSubmitResolve = r)
       );
       if (!basalOk) {
         saveError = "Failed to save basal schedule.";
@@ -192,33 +371,52 @@
 
       const carbRatioPayload = {
         profileName,
-        entries: carbRatioEntries.map((e) => ({ time: e.time, value: e.value })),
+        entries: carbRatioEntries.map((e) => ({
+          time: e.time,
+          value: e.value,
+        })),
         timestamp,
       };
       if (existingCarbRatioId) {
-        await updateCarbRatioSchedule({ id: existingCarbRatioId, request: carbRatioPayload });
+        await updateCarbRatioSchedule({
+          id: existingCarbRatioId,
+          request: carbRatioPayload,
+        });
       } else {
         await createCarbRatioSchedule(carbRatioPayload);
       }
 
       const sensitivityPayload = {
         profileName,
-        entries: sensitivityEntries.map((e) => ({ time: e.time, value: e.value })),
+        entries: sensitivityEntries.map((e) => ({
+          time: e.time,
+          value: e.value,
+        })),
         timestamp,
       };
       if (existingSensitivityId) {
-        await updateSensitivitySchedule({ id: existingSensitivityId, request: sensitivityPayload });
+        await updateSensitivitySchedule({
+          id: existingSensitivityId,
+          request: sensitivityPayload,
+        });
       } else {
         await createSensitivitySchedule(sensitivityPayload);
       }
 
       const targetRangePayload = {
         profileName,
-        entries: targetEntries.map((e) => ({ time: e.time, low: e.low, high: e.high })),
+        entries: targetEntries.map((e) => ({
+          time: e.time,
+          low: e.low,
+          high: e.high,
+        })),
         timestamp,
       };
       if (existingTargetRangeId) {
-        await updateTargetRangeSchedule({ id: existingTargetRangeId, request: targetRangePayload });
+        await updateTargetRangeSchedule({
+          id: existingTargetRangeId,
+          request: targetRangePayload,
+        });
       } else {
         await createTargetRangeSchedule(targetRangePayload);
       }
@@ -242,20 +440,25 @@
   <form
     bind:this={settingsFormEl}
     class="hidden"
-    {...updateSettingsForm.for(existingSettingsId).enhance(async ({ submit }) => {
-      await submit();
-      const success = !!updateSettingsForm.for(existingSettingsId!).result;
-      settingsSubmitResolve?.(success);
-      settingsSubmitResolve = null;
-    })}
+    {...updateSettingsForm
+      .for(existingSettingsId)
+      .enhance(async ({ submit }) => {
+        await submit();
+        const success = !!updateSettingsForm.for(existingSettingsId!).result;
+        settingsSubmitResolve?.(success);
+        settingsSubmitResolve = null;
+      })}
   >
     <input type="hidden" name="id" value={existingSettingsId} />
     <input type="hidden" name="request.profileName" value={profileName} />
     <input type="hidden" name="request.units" value={units} />
     <input type="hidden" name="request.timezone" value={timezone} />
-    <input type="hidden" name="n:request.dia" value={dia} />
     <input type="hidden" name="n:request.carbsHr" value={carbsHr} />
-    <input type="hidden" name="request.timestamp" value={new Date().toISOString()} />
+    <input
+      type="hidden"
+      name="request.timestamp"
+      value={new Date().toISOString()}
+    />
   </form>
 {:else}
   <form
@@ -271,7 +474,6 @@
     <input type="hidden" name="profileName" value={profileName} />
     <input type="hidden" name="units" value={units} />
     <input type="hidden" name="timezone" value={timezone} />
-    <input type="hidden" name="n:dia" value={dia} />
     <input type="hidden" name="n:carbsHr" value={carbsHr} />
     <input type="hidden" name="timestamp" value={new Date().toISOString()} />
   </form>
@@ -291,10 +493,22 @@
   >
     <input type="hidden" name="id" value={existingBasalId} />
     <input type="hidden" name="request.profileName" value={profileName} />
-    <input type="hidden" name="request.timestamp" value={new Date().toISOString()} />
+    <input
+      type="hidden"
+      name="request.timestamp"
+      value={new Date().toISOString()}
+    />
     {#each basalEntries as entry, i}
-      <input type="hidden" name="request.entries[{i}].time" value={entry.time} />
-      <input type="hidden" name="n:request.entries[{i}].value" value={entry.value} />
+      <input
+        type="hidden"
+        name="request.entries[{i}].time"
+        value={entry.time}
+      />
+      <input
+        type="hidden"
+        name="n:request.entries[{i}].value"
+        value={entry.value}
+      />
     {/each}
   </form>
 {:else}
@@ -359,7 +573,11 @@
 
           <div class="space-y-2">
             <Label for="units">Units</Label>
-            <Select.Root type="single" bind:value={units}>
+            <Select.Root
+              type="single"
+              value={units}
+              onValueChange={(v) => setUnits(v as "mg/dL" | "mmol/L")}
+            >
               <Select.Trigger id="units">
                 {units || "Select units"}
               </Select.Trigger>
@@ -371,27 +589,59 @@
           </div>
 
           <div class="space-y-2">
-            <Label for="timezone">Timezone</Label>
-            <Input
-              id="timezone"
-              bind:value={timezone}
-              placeholder="America/New_York"
-            />
-          </div>
-
-          <div class="space-y-2">
-            <Label for="dia">Duration of Insulin Action</Label>
-            <div class="flex items-center gap-2">
-              <Input
-                id="dia"
-                type="number"
-                bind:value={dia}
-                step={0.5}
-                min={1}
-                class="flex-1"
-              />
-              <span class="text-sm text-muted-foreground whitespace-nowrap">hours</span>
-            </div>
+            <Label>Timezone</Label>
+            <Popover.Root bind:open={tzOpen}>
+              <Popover.Trigger>
+                {#snippet child({ props })}
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={tzOpen}
+                    class="w-full justify-between font-normal"
+                    {...props}
+                  >
+                    <span class="truncate">
+                      {timezone || "Select timezone"}
+                    </span>
+                    <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                {/snippet}
+              </Popover.Trigger>
+              <Popover.Content
+                class="w-[--bits-popover-anchor-width] p-0"
+                align="start"
+              >
+                <Command.Root shouldFilter={false}>
+                  <Command.Input
+                    placeholder="Search timezones..."
+                    bind:value={tzSearch}
+                  />
+                  <Command.List class="max-h-60">
+                    <Command.Empty>No timezone found.</Command.Empty>
+                    {#each filteredTimezones as tz}
+                      <Command.Item
+                        value={tz}
+                        onSelect={() => {
+                          timezone = tz;
+                          tzOpen = false;
+                          tzSearch = "";
+                          if (!existingSettingsId)
+                            setUnits(unitsForTimezone(tz));
+                        }}
+                      >
+                        <Check
+                          class={cn(
+                            "mr-2 h-4 w-4",
+                            timezone === tz ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {tz}
+                      </Command.Item>
+                    {/each}
+                  </Command.List>
+                </Command.Root>
+              </Popover.Content>
+            </Popover.Root>
           </div>
 
           <div class="space-y-2">
@@ -405,7 +655,9 @@
                 min={1}
                 class="flex-1"
               />
-              <span class="text-sm text-muted-foreground whitespace-nowrap">g/hr</span>
+              <span class="text-sm text-muted-foreground whitespace-nowrap">
+                g/hr
+              </span>
             </div>
           </div>
         </div>

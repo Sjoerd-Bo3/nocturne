@@ -89,7 +89,6 @@ public class ResolutionConditions
 
     /// <summary>
     /// If set, notification is archived when the source entity of this type is deleted
-    /// (e.g., "PasswordResetRequest" to auto-archive when the request is handled)
     /// </summary>
     public string? SourceDeletedType { get; set; }
 

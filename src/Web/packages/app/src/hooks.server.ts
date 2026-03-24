@@ -160,13 +160,14 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
     return resolve(event);
   }
 
-  // Skip security check for public routes (auth pages, API, static assets)
+  // Skip security check for public routes (auth pages, API, static assets, setup)
   const path = event.url.pathname;
   if (
     path.startsWith("/auth") ||
     path.startsWith("/api") ||
     path.startsWith("/_app") ||
     path.startsWith("/assets") ||
+    path.startsWith("/settings/setup") ||
     path === "/" ||
     path === "/favicon.ico"
   ) {
@@ -200,6 +201,26 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
       });
     }
   } catch (error) {
+    // Check if the API returned a setup/recovery mode 503
+    if (error && typeof error === "object" && "status" in error && (error as any).status === 503) {
+      try {
+        const body = JSON.parse((error as any).response ?? "{}");
+        if (body.setupRequired) {
+          return new Response(null, {
+            status: 303,
+            headers: { Location: "/settings/setup/passkey" },
+          });
+        }
+        if (body.recoveryMode) {
+          return new Response(null, {
+            status: 303,
+            headers: { Location: "/auth/recovery" },
+          });
+        }
+      } catch {
+        // Couldn't parse, fall through
+      }
+    }
     // If we can't check security settings, allow the request to proceed
     // This prevents site lockout if the API is temporarily unavailable
     console.error("Failed to check site security settings:", error);

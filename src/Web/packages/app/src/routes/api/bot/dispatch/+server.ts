@@ -1,11 +1,28 @@
 import type { RequestHandler } from "./$types";
 import { handleBotDispatch } from "$lib/server/bot";
-import type { AlertDispatchEvent } from "@nocturne/bot";
+import type { AlertDispatchEvent, BotApiClient } from "@nocturne/bot";
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		const event: AlertDispatchEvent = await request.json();
-		await handleBotDispatch(event, locals.apiClient);
+		const api = locals.apiClient;
+		const botApiClient: BotApiClient = {
+			sensorGlucose: {
+				async getAll(page?: number, pageSize?: number) {
+					return api.sensorGlucose.getAll(
+						undefined, undefined,
+						pageSize, page !== undefined && pageSize !== undefined ? page * pageSize : undefined
+					);
+				},
+			},
+			alerts: {
+				acknowledgeAlerts: (body) => api.alerts.acknowledgeAlerts(body),
+			},
+			chatIdentity: {
+				resolve: (platform, platformUserId) => api.chatIdentity.resolve(platform, platformUserId),
+			},
+		};
+		await handleBotDispatch(event, botApiClient);
 		return new Response(null, { status: 204 });
 	} catch (err) {
 		console.error("Bot dispatch failed:", err);

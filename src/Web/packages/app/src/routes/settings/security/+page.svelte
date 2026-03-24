@@ -78,8 +78,8 @@
 
     try {
       const response = await registerOptions({ subjectId: user.subjectId, username: user.name });
-      const options = JSON.parse(response.options);
-      const challengeToken = response.challengeToken;
+      const options = JSON.parse(response.options ?? "");
+      const challengeToken = response.challengeToken ?? "";
 
       const attestation = await startRegistration({ optionsJSON: options });
 

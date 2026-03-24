@@ -336,10 +336,10 @@ public class NotificationsIntegrationTests : IntegrationTestBase
         // Create multiple notifications
         var notification1 = await notificationService.CreateNotificationAsync(
             TestUserId,
-            InAppNotificationType.PasswordResetRequest,
+            InAppNotificationType.AnonymousLoginRequest,
             NotificationUrgency.Warn,
-            "Password Reset Request",
-            subtitle: "User requested password reset"
+            "Anonymous Login Request",
+            subtitle: "User requested anonymous login"
         );
 
         var notification2 = await notificationService.CreateNotificationAsync(

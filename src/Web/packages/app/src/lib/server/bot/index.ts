@@ -1,21 +1,23 @@
-import { createBot, AlertDeliveryHandler } from "@nocturne/bot";
+import { createBot, AlertDeliveryHandler, type BotOptions } from "@nocturne/bot";
 import type { BotApiClient, AlertDispatchEvent } from "@nocturne/bot";
 import { env } from "$env/dynamic/private";
-import type { Chat } from "chat";
 
-let botInstance: Chat | null = null;
+type Bot = ReturnType<typeof createBot>;
 
-export function getBot(): Chat {
+let botInstance: Bot | null = null;
+
+export function getBot(): Bot {
 	if (!botInstance) {
-		botInstance = createBot({
+		const options: BotOptions = {
 			platforms: {
 				discord: !!env.DISCORD_TOKEN,
 				slack: !!env.SLACK_BOT_TOKEN && !!env.SLACK_SIGNING_SECRET,
 				telegram: !!env.TELEGRAM_BOT_TOKEN,
 				whatsapp: !!env.WHATSAPP_ACCESS_TOKEN,
 			},
-			postgresUrl: env.ConnectionStrings__nocturne_postgres ?? "",
-		});
+			postgresConnectionString: env.ConnectionStrings__nocturne_postgres ?? "",
+		};
+		botInstance = createBot(options);
 	}
 	return botInstance;
 }

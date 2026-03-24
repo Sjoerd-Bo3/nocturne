@@ -3,7 +3,7 @@
  */
 import { getRequestEvent, query, command, form } from '$app/server';
 import { z } from 'zod';
-import { error, invalid } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 
 /**
  * JSON Schema types for connector configuration
@@ -131,12 +131,15 @@ export const getConnectorEffectiveConfig = query(z.string(), async (connectorNam
 /**
  * Save connector configuration
  */
+const SaveConnectorConfigurationSchema = z.object({
+	connectorName: z.string(),
+	configuration: z.record(z.string(), z.unknown()),
+});
+
 export const saveConnectorConfiguration = form(
-	z.object({
-		connectorName: z.string(),
-		configuration: z.record(z.string(), z.unknown()),
-	}),
-	async ({ connectorName, configuration }) => {
+	"unchecked",
+	async (raw) => {
+		const { connectorName, configuration } = SaveConnectorConfigurationSchema.parse(raw);
 		const { locals } = getRequestEvent();
 		const { apiClient } = locals;
 

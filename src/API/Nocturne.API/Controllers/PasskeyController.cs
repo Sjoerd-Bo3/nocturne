@@ -422,6 +422,191 @@ public class PasskeyController : ControllerBase
         return Ok(new { recoveryMode = state.IsEnabled });
     }
 
+    /// <summary>
+    /// Returns instance auth status: whether setup is required or recovery mode is active.
+    /// </summary>
+    [HttpGet("status")]
+    [AllowAnonymous]
+    [RemoteQuery]
+    [ProducesResponseType(typeof(AuthStatusResponse), StatusCodes.Status200OK)]
+    public IActionResult GetAuthStatus([FromServices] RecoveryModeState state)
+    {
+        return Ok(new AuthStatusResponse
+        {
+            SetupRequired = state.IsSetupRequired,
+            RecoveryMode = state.IsEnabled,
+        });
+    }
+
+    /// <summary>
+    /// Generate registration options for the first user during initial setup.
+    /// Only available when no non-system subjects exist (setup mode).
+    /// Creates the subject, assigns admin role, and returns passkey registration options.
+    /// </summary>
+    [HttpPost("setup/options")]
+    [AllowAnonymous]
+    [RemoteCommand]
+    [ProducesResponseType(typeof(PasskeyOptionsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PasskeyOptionsResponse>> SetupOptions(
+        [FromBody] SetupOptionsRequest request,
+        [FromServices] RecoveryModeState state)
+    {
+        if (!state.IsSetupRequired)
+        {
+            return Problem(detail: "Setup mode is not active", statusCode: 403, title: "Forbidden");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            return Problem(detail: "Username and display name are required", statusCode: 400, title: "Bad Request");
+        }
+
+        // Find the default tenant (created by DefaultTenantSeeder on startup)
+        var defaultTenant = await _dbContext.Tenants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.IsDefault);
+
+        if (defaultTenant == null)
+        {
+            return Problem(detail: "Default tenant not found — restart the application", statusCode: 500, title: "Server Error");
+        }
+
+        // Create the first user subject
+        var subjectId = Guid.CreateVersion7();
+        _dbContext.Subjects.Add(new Infrastructure.Data.Entities.SubjectEntity
+        {
+            Id = subjectId,
+            Name = request.DisplayName.Trim(),
+            Username = request.Username.Trim().ToLowerInvariant(),
+            IsActive = true,
+            IsSystemSubject = false,
+        });
+
+        // Add as owner of the default tenant
+        _dbContext.TenantMembers.Add(new Infrastructure.Data.Entities.TenantMemberEntity
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = defaultTenant.Id,
+            SubjectId = subjectId,
+            Role = Infrastructure.Data.Entities.TenantRole.Owner,
+        });
+
+        await _dbContext.SaveChangesAsync();
+
+        // Assign admin role
+        await _subjectService.AssignRoleAsync(subjectId, "admin");
+
+        _logger.LogInformation(
+            "Setup: created first user {SubjectId} ({Username}) in tenant {TenantId}",
+            subjectId, request.Username.Trim(), defaultTenant.Id);
+
+        // Generate passkey registration options for the new subject
+        var result = await _passkeyService.GenerateRegistrationOptionsAsync(
+            subjectId, request.Username.Trim(), defaultTenant.Id);
+
+        return Ok(new PasskeyOptionsResponse
+        {
+            Options = result.OptionsJson,
+            ChallengeToken = result.ChallengeToken,
+        });
+    }
+
+    /// <summary>
+    /// Complete passkey registration during initial setup.
+    /// Verifies attestation, generates recovery codes, issues a full JWT session,
+    /// and exits setup mode.
+    /// </summary>
+    [HttpPost("setup/complete")]
+    [AllowAnonymous]
+    [RemoteCommand]
+    [ProducesResponseType(typeof(SetupCompleteResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<SetupCompleteResponse>> SetupComplete(
+        [FromBody] SetupCompleteRequest request,
+        [FromServices] RecoveryModeState state)
+    {
+        if (!state.IsSetupRequired)
+        {
+            return Problem(detail: "Setup mode is not active", statusCode: 403, title: "Forbidden");
+        }
+
+        if (string.IsNullOrEmpty(request.ChallengeToken))
+        {
+            return Problem(detail: "Challenge token is required", statusCode: 400, title: "Bad Request");
+        }
+
+        // Find the default tenant
+        var defaultTenant = await _dbContext.Tenants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.IsDefault);
+
+        if (defaultTenant == null)
+        {
+            return Problem(detail: "Default tenant not found", statusCode: 500, title: "Server Error");
+        }
+
+        try
+        {
+            var credResult = await _passkeyService.CompleteRegistrationAsync(
+                request.AttestationResponseJson, request.ChallengeToken, defaultTenant.Id);
+
+            // Generate recovery codes
+            var recoveryCodes = await _recoveryCodeService.GenerateCodesAsync(credResult.SubjectId);
+
+            // Get subject details for token generation
+            var subject = await _subjectService.GetSubjectByIdAsync(credResult.SubjectId);
+            if (subject == null)
+            {
+                return Problem(detail: "Created subject not found", statusCode: 500, title: "Server Error");
+            }
+
+            var roles = await _subjectService.GetSubjectRolesAsync(credResult.SubjectId);
+            var permissions = await _subjectService.GetSubjectPermissionsAsync(credResult.SubjectId);
+
+            // Issue session
+            var subjectInfo = new SubjectInfo
+            {
+                Id = subject.Id,
+                Name = subject.Name,
+                Email = subject.Email,
+            };
+
+            var accessToken = _jwtService.GenerateAccessToken(subjectInfo, permissions, roles);
+            var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
+                credResult.SubjectId,
+                oidcSessionId: null,
+                deviceDescription: "Setup Passkey",
+                ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                userAgent: Request.Headers.UserAgent.ToString());
+
+            SetSessionCookies(accessToken, refreshToken);
+
+            // Exit setup mode
+            state.IsSetupRequired = false;
+
+            _logger.LogInformation(
+                "Setup complete: first user {SubjectId} registered with passkey",
+                credResult.SubjectId);
+
+            return Ok(new SetupCompleteResponse
+            {
+                Success = true,
+                RecoveryCodes = recoveryCodes,
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                ExpiresIn = (int)_jwtService.GetAccessTokenLifetime().TotalSeconds,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Setup passkey registration failed");
+            return Problem(detail: "Passkey registration failed during setup", statusCode: 400, title: "Registration Failed");
+        }
+    }
+
     #region Private Helpers
 
     private void SetSessionCookies(string accessToken, string refreshToken)
@@ -587,6 +772,45 @@ public class RecoveryStatusResponse
     public int RemainingCodes { get; set; }
     public bool HasCodes { get; set; }
     public int TotalCodes { get; set; }
+}
+
+/// <summary>
+/// Instance auth status
+/// </summary>
+public class AuthStatusResponse
+{
+    public bool SetupRequired { get; set; }
+    public bool RecoveryMode { get; set; }
+}
+
+/// <summary>
+/// Request for initial setup registration options (first user creation)
+/// </summary>
+public class SetupOptionsRequest
+{
+    public string Username { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Request to complete initial setup registration
+/// </summary>
+public class SetupCompleteRequest
+{
+    public string AttestationResponseJson { get; set; } = string.Empty;
+    public string ChallengeToken { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Response for completed setup registration
+/// </summary>
+public class SetupCompleteResponse
+{
+    public bool Success { get; set; }
+    public List<string> RecoveryCodes { get; set; } = new();
+    public string AccessToken { get; set; } = string.Empty;
+    public string? RefreshToken { get; set; }
+    public int ExpiresIn { get; set; }
 }
 
 #endregion

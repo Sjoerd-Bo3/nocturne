@@ -25,7 +25,7 @@ public class RecoveryModeMiddleware
 
     public async Task InvokeAsync(HttpContext context, RecoveryModeState state)
     {
-        if (!state.IsEnabled)
+        if (!state.IsEnabled && !state.IsSetupRequired)
         {
             await _next(context);
             return;
@@ -33,10 +33,8 @@ public class RecoveryModeMiddleware
 
         var path = context.Request.Path.Value ?? "";
 
-        // Allow passkey registration and recovery endpoints
-        if (path.StartsWith("/api/auth/passkey/register", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/api/auth/passkey/recovery", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/api/auth/passkey/login", StringComparison.OrdinalIgnoreCase) ||
+        // Allow passkey registration, login, recovery, and setup endpoints
+        if (path.StartsWith("/api/auth/passkey/", StringComparison.OrdinalIgnoreCase) ||
             path.StartsWith("/api/metadata", StringComparison.OrdinalIgnoreCase))
         {
             await _next(context);
@@ -46,14 +44,18 @@ public class RecoveryModeMiddleware
         // Block other API endpoints with a clear message
         if (path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogDebug("Recovery mode: blocking request to {Path}", path);
+            var mode = state.IsSetupRequired ? "setup" : "recovery";
+            _logger.LogDebug("{Mode} mode: blocking request to {Path}", mode, path);
 
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             await context.Response.WriteAsJsonAsync(new
             {
-                error = "recovery_mode_active",
-                message = "Instance is in recovery mode. Please register a passkey to continue.",
-                recoveryMode = true,
+                error = state.IsSetupRequired ? "setup_required" : "recovery_mode_active",
+                message = state.IsSetupRequired
+                    ? "Initial setup required. Please register your first passkey."
+                    : "Instance is in recovery mode. Please register a passkey to continue.",
+                setupRequired = state.IsSetupRequired,
+                recoveryMode = state.IsEnabled,
             });
             return;
         }

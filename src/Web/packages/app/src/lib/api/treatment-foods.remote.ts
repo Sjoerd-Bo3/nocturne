@@ -8,7 +8,7 @@
  * Kept here: functions with custom logic or broken generated equivalents.
  */
 import { getRequestEvent, query, command, form } from "$app/server";
-import { error, invalid } from "@sveltejs/kit";
+import { error } from "@sveltejs/kit";
 import { z } from "zod";
 import { type CarbIntakeFoodRequest, type Food } from "$lib/api";
 import { CarbIntakeFoodRequestSchema, FoodSchema } from "$lib/api/generated/schemas";
@@ -19,13 +19,16 @@ import { getRecentFoods } from "$api/generated/foods.generated.remote";
  * Update a food breakdown entry
  * NOTE: Generated version is broken (missing parameters in codegen), so kept here.
  */
+const UpdateCarbIntakeFoodSchema = z.object({
+  carbIntakeId: z.string(),
+  entryId: z.string(),
+  request: CarbIntakeFoodRequestSchema,
+});
+
 export const updateCarbIntakeFood = form(
-  z.object({
-    carbIntakeId: z.string(),
-    entryId: z.string(),
-    request: CarbIntakeFoodRequestSchema,
-  }),
-  async ({ carbIntakeId, entryId, request }) => {
+  "unchecked",
+  async (raw) => {
+    const { carbIntakeId, entryId, request } = UpdateCarbIntakeFoodSchema.parse(raw);
     const { locals } = getRequestEvent();
     const { apiClient } = locals;
 
@@ -106,13 +109,14 @@ export const getFoodById = query(z.string(), async (foodId) => {
  * Create a new food record
  */
 export const createNewFood = form(
-  FoodSchema,
-  async (food) => {
+  "unchecked",
+  async (raw) => {
+    const food = FoodSchema.parse(raw) as Food;
     const { locals } = getRequestEvent();
     const { apiClient } = locals;
 
     try {
-      const result = await apiClient.food.createFood2(food as Food);
+      const result = await apiClient.food.createFood2(food);
       await Promise.all([
         getAllFoods().refresh(),
         getRecentFoods(undefined).refresh(),
@@ -128,10 +132,10 @@ export const createNewFood = form(
 /**
  * Update an existing food record
  */
-export const updateExistingFood = form(FoodSchema, async (food) => {
+export const updateExistingFood = form("unchecked", async (raw) => {
   const { locals } = getRequestEvent();
   const { apiClient } = locals;
-  const f = food as Food;
+  const f = FoodSchema.parse(raw) as Food;
 
   try {
     if (!f._id) {

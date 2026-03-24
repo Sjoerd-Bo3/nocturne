@@ -418,17 +418,6 @@ public class TenantIsolationTests
     }
 
     [Fact]
-    public async Task Broadcast_PasswordReset_TargetsTenantSpecificAdminGroup()
-    {
-        var (service, dataClients, _, _, _, _, _) = CreateBroadcastService(TenantA);
-
-        await service.BroadcastPasswordResetRequestAsync();
-
-        dataClients.Verify(c => c.Group($"{TenantAId}:admin"), Times.Once);
-        dataClients.Verify(c => c.Group("admin"), Times.Never);
-    }
-
-    [Fact]
     public async Task Broadcast_NotificationCreated_TargetsTenantSpecificUserAndAuthorizedGroups()
     {
         var (service, dataClients, _, _, _, _, _) = CreateBroadcastService(TenantA);

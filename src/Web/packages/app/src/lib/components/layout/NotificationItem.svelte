@@ -4,7 +4,6 @@
     Info,
     Bell,
     Timer,
-    KeyRound,
     Settings2,
     Utensils,
     TrendingDown,
@@ -29,8 +28,6 @@
   // Get icon based on notification type
   function getIcon(type: InAppNotificationType | undefined) {
     switch (type) {
-      case InAppNotificationType.PasswordResetRequest:
-        return KeyRound;
       case InAppNotificationType.UnconfiguredTracker:
         return Settings2;
       case InAppNotificationType.TrackerAlert:

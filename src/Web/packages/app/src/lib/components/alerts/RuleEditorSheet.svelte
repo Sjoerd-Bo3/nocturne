@@ -972,8 +972,9 @@
                 <div class="space-y-2">
                   <Label>Start Volume: {clientConfig.audio.startVolume}%</Label>
                   <Slider
+                    type="multiple"
                     value={startVolumeArr}
-                    onValueChange={(v) => {
+                    onValueChange={(v: number[]) => {
                       clientConfig.audio.startVolume = v[0];
                     }}
                     min={0}
@@ -986,8 +987,9 @@
               <div class="space-y-2">
                 <Label>Max Volume: {clientConfig.audio.maxVolume}%</Label>
                 <Slider
+                  type="multiple"
                   value={maxVolumeArr}
-                  onValueChange={(v) => {
+                  onValueChange={(v: number[]) => {
                     clientConfig.audio.maxVolume = v[0];
                   }}
                   min={0}

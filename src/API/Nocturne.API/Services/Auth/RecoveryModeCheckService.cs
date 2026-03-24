@@ -46,6 +46,20 @@ public class RecoveryModeCheckService : IHostedService
 
             // Use IgnoreQueryFilters to bypass tenant scoping — this is a
             // global startup check that must inspect all subjects across tenants.
+            var activeSubjects = await db.Subjects
+                .IgnoreQueryFilters()
+                .Where(s => s.IsActive && !s.IsSystemSubject)
+                .AnyAsync(cancellationToken);
+
+            if (!activeSubjects)
+            {
+                _state.IsSetupRequired = true;
+                _logger.LogWarning(
+                    "Setup mode enabled: no user subjects found (fresh database)"
+                );
+                return;
+            }
+
             var hasOrphaned = await db.Subjects
                 .IgnoreQueryFilters()
                 .Where(s => s.IsActive && !s.IsSystemSubject)

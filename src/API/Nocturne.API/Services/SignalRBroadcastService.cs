@@ -68,11 +68,6 @@ public interface ISignalRBroadcastService
     Task BroadcastTrackerUpdateAsync(string action, object trackerInstance);
 
     /// <summary>
-    /// Broadcast password reset request to admin subscribers via DataHub
-    /// </summary>
-    Task BroadcastPasswordResetRequestAsync();
-
-    /// <summary>
     /// Broadcast configuration change event to subscribers via ConfigHub
     /// </summary>
     Task BroadcastConfigChangeAsync(ConfigurationChangeEvent change);
@@ -362,22 +357,6 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error broadcasting tracker update event");
-        }
-    }
-
-    /// <inheritdoc />
-    public async Task BroadcastPasswordResetRequestAsync()
-    {
-        try
-        {
-            _logger.LogInformation("Broadcasting password reset request to admin subscribers");
-            await _dataHubContext
-                .Clients.Group(TenantGroup("admin"))
-                .SendCoreAsync("passwordResetRequested", Array.Empty<object>());
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error broadcasting password reset request");
         }
     }
 

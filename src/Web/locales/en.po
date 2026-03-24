@@ -850,9 +850,9 @@ msgstr "Strategy"
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/migration/+page.svelte
 #: src/routes/settings/migration/+page.svelte
-#: src/routes/settings/security/+page.svelte
-#: src/routes/settings/security/+page.svelte
 #: src/routes/settings/setup/uploaders/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Unknown"
 msgstr "Unknown"
 
@@ -1129,13 +1129,16 @@ msgstr "Delete the attribution entries entirely."
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
-#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/alerts/+page.svelte
 #: src/routes/settings/alerts/setup/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/security/+page.svelte
 #: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -1475,6 +1478,7 @@ msgstr "Show hidden <0/>"
 #: src/lib/components/treatments/TreatmentFoodEntryEditDialog.svelte
 #: src/routes/food/QuickPicksList.svelte
 #: src/routes/settings/admin/+page.svelte
+#: src/routes/settings/security/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -1798,6 +1802,7 @@ msgid "Removing..."
 msgstr "Removing..."
 
 #: src/routes/meals/+page.svelte
+#: src/routes/settings/security/+page.svelte
 msgid "Remove"
 msgstr "Remove"
 
@@ -1934,21 +1939,17 @@ msgstr "{0} active"
 msgid "View and manage all notifications and alerts"
 msgstr "View and manage all notifications and alerts"
 
-#: src/routes/notifications/+page.svelte
-msgid "<0/> Admin Actions Required"
-msgstr "<0/> Admin Actions Required"
+#~ msgid "<0/> Admin Actions Required"
+#~ msgstr "<0/> Admin Actions Required"
 
-#: src/routes/notifications/+page.svelte
-msgid "Administrative tasks requiring your attention"
-msgstr "Administrative tasks requiring your attention"
+#~ msgid "Administrative tasks requiring your attention"
+#~ msgstr "Administrative tasks requiring your attention"
 
-#: src/routes/notifications/+page.svelte
-msgid "Password Reset Request"
-msgstr "Password Reset Request"
+#~ msgid "Password Reset Request"
+#~ msgstr "Password Reset Request"
 
-#: src/routes/notifications/+page.svelte
-msgid "<0/> Handle Request"
-msgstr "<0/> Handle Request"
+#~ msgid "<0/> Handle Request"
+#~ msgstr "<0/> Handle Request"
 
 #: src/routes/notifications/+page.svelte
 msgid "<0/> Tracker Alerts"
@@ -2159,6 +2160,9 @@ msgstr "Checking availability..."
 msgid "Available"
 msgstr "Available"
 
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/invite/[token]/+page.svelte
+#: src/routes/settings/setup/passkey/+page.svelte
 #: src/routes/tenants/+page.svelte
 msgid "Display name"
 msgstr "Display name"
@@ -2599,59 +2603,54 @@ msgstr "Sign In Required"
 msgid "Please sign in to continue"
 msgstr "Please sign in to continue"
 
-#: src/lib/components/auth/LoginForm.svelte
-msgid "Registration successful! Please sign in."
-msgstr "Registration successful! Please sign in."
+#~ msgid "Registration successful! Please sign in."
+#~ msgstr "Registration successful! Please sign in."
 
-#: src/lib/components/auth/LoginForm.svelte
-msgid "Password reset successful! Please sign in with your new password."
-msgstr "Password reset successful! Please sign in with your new password."
+#~ msgid "Password reset successful! Please sign in with your new password."
+#~ msgstr "Password reset successful! Please sign in with your new password."
 
-#: src/lib/components/auth/LoginForm.svelte
-msgid "Email"
-msgstr "Email"
+#~ msgid "Email"
+#~ msgstr "Email"
 
-#: src/lib/components/auth/LoginForm.svelte
-msgid "Password"
-msgstr "Password"
+#~ msgid "Password"
+#~ msgstr "Password"
 
-#: src/lib/components/auth/LoginForm.svelte
-msgid "Forgot password?"
-msgstr "Forgot password?"
+#~ msgid "Forgot password?"
+#~ msgstr "Forgot password?"
 
-#: src/lib/components/auth/LoginForm.svelte
-msgid "<0/> Signing in..."
-msgstr "<0/> Signing in..."
+#~ msgid "<0/> Signing in..."
+#~ msgstr "<0/> Signing in..."
 
-#: src/lib/components/auth/LoginForm.svelte
 #: src/lib/components/layout/UserMenu.svelte
 msgid "Sign in"
 msgstr "Sign in"
 
-#: src/lib/components/auth/LoginForm.svelte
-msgid "Don't have an account? <0>Sign up</0>"
-msgstr "Don't have an account? <0>Sign up</0>"
+#~ msgid "Don't have an account? <0>Sign up</0>"
+#~ msgstr "Don't have an account? <0>Sign up</0>"
 
 #: src/lib/components/auth/LoginForm.svelte
+#: src/routes/invite/[token]/+page.svelte
 msgid "Or continue with"
 msgstr "Or continue with"
 
 #: src/lib/components/auth/LoginForm.svelte
+#: src/routes/invite/[token]/+page.svelte
 msgid "<0/> Redirecting..."
 msgstr "<0/> Redirecting..."
 
 #. placeholder {0}: provider.name
+#. placeholder {0}: provider.name
 #: src/lib/components/auth/LoginForm.svelte
+#: src/routes/invite/[token]/+page.svelte
 msgid "<0/> Sign in with {0}"
 msgstr "<0/> Sign in with {0}"
 
-#: src/lib/components/auth/LoginForm.svelte
-msgid ""
-"No authentication providers are configured. Please contact your\n"
-"administrator to set up authentication."
-msgstr ""
-"No authentication providers are configured. Please contact your\n"
-"administrator to set up authentication."
+#~ msgid ""
+#~ "No authentication providers are configured. Please contact your\n"
+#~ "administrator to set up authentication."
+#~ msgstr ""
+#~ "No authentication providers are configured. Please contact your\n"
+#~ "administrator to set up authentication."
 
 #: src/lib/components/clock/ClockFaceRenderer.svelte
 msgid "DoubleUp"
@@ -3133,6 +3132,8 @@ msgid "Error loading recent entries."
 msgstr "Error loading recent entries."
 
 #: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/auth/LoginForm.svelte
+#: src/lib/components/auth/LoginForm.svelte
 #: src/lib/components/dashboard/RecentTreatmentsCard.svelte
 #: src/routes/tools/packing/list/+page.svelte
 #: src/routes/tools/packing/list/+page.svelte
@@ -4214,6 +4215,7 @@ msgid "Icon"
 msgstr "Icon"
 
 #: src/lib/components/profile/ProfileEditDialog.svelte
+#: src/routes/settings/setup/profile/+page.svelte
 msgid "Select timezone"
 msgstr "Select timezone"
 
@@ -5455,6 +5457,11 @@ msgstr "StaleData"
 
 #: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/lib/components/alerts/RuleEditorSheet.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/routes/settings/trackers/+page.svelte
@@ -5822,6 +5829,8 @@ msgstr "mg/dL/5min"
 msgid "Extend by"
 msgstr "Extend by"
 
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 msgid "min"
@@ -7963,6 +7972,7 @@ msgid "Create Account"
 msgstr "Create Account"
 
 #: src/routes/auth/register/+page.svelte
+#: src/routes/invite/[token]/+page.svelte
 msgid "Already have an account? <0>Sign in</0>"
 msgstr "Already have an account? <0>Sign in</0>"
 
@@ -10582,9 +10592,8 @@ msgstr "Public"
 msgid "Delete this subject? This action cannot be undone."
 msgstr "Delete this subject? This action cannot be undone."
 
-#: src/routes/settings/admin/+page.svelte
-msgid "Delete this role? This action cannot be undone."
-msgstr "Delete this role? This action cannot be undone."
+#~ msgid "Delete this role? This action cannot be undone."
+#~ msgstr "Delete this role? This action cannot be undone."
 
 #: src/routes/settings/admin/+page.svelte
 msgid "API - Entries"
@@ -10630,9 +10639,8 @@ msgstr "Administration"
 #~ msgid "<0/> Tokens"
 #~ msgstr "<0/> Tokens"
 
-#: src/routes/settings/admin/+page.svelte
-msgid "<0/> Password Resets <1/>"
-msgstr "<0/> Password Resets <1/>"
+#~ msgid "<0/> Password Resets <1/>"
+#~ msgstr "<0/> Password Resets <1/>"
 
 #~ msgid "Subjects"
 #~ msgstr "Subjects"
@@ -10717,35 +10725,26 @@ msgstr "<0/> View Token"
 #~ msgid "<0/> Copy Token"
 #~ msgstr "<0/> Copy Token"
 
-#: src/routes/settings/admin/+page.svelte
-msgid "Pending Password Resets"
-msgstr "Pending Password Resets"
+#~ msgid "Pending Password Resets"
+#~ msgstr "Pending Password Resets"
 
-#: src/routes/settings/admin/+page.svelte
-msgid "Review password reset requests and provide temporary access."
-msgstr "Review password reset requests and provide temporary access."
+#~ msgid "Review password reset requests and provide temporary access."
+#~ msgstr "Review password reset requests and provide temporary access."
 
-#: src/routes/settings/admin/+page.svelte
-msgid "No pending password reset requests"
-msgstr "No pending password reset requests"
+#~ msgid "No pending password reset requests"
+#~ msgstr "No pending password reset requests"
 
-#. placeholder {0}: request.requestedFromIp
-#: src/routes/settings/admin/+page.svelte
-msgid "IP: {0}"
-msgstr "IP: {0}"
+#~ msgid "IP: {0}"
+#~ msgstr "IP: {0}"
 
-#. placeholder {0}: formatDate(request.createdAt)
-#: src/routes/settings/admin/+page.svelte
-msgid "Requested: {0} <0/>"
-msgstr "Requested: {0} <0/>"
+#~ msgid "Requested: {0} <0/>"
+#~ msgstr "Requested: {0} <0/>"
 
-#: src/routes/settings/admin/+page.svelte
-msgid "Set Password"
-msgstr "Set Password"
+#~ msgid "Set Password"
+#~ msgstr "Set Password"
 
-#: src/routes/settings/admin/+page.svelte
-msgid "Generate Link"
-msgstr "Generate Link"
+#~ msgid "Generate Link"
+#~ msgstr "Generate Link"
 
 #~ msgid "New Subject"
 #~ msgstr "New Subject"
@@ -10868,12 +10867,10 @@ msgstr "Selected Permissions ({0})"
 #~ msgstr "Use this token to authenticate API requests."
 
 #: src/routes/settings/admin/+page.svelte
-#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/support/+page.svelte
 msgid "<0/> Copied!"
 msgstr "<0/> Copied!"
 
-#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/support/+page.svelte
 msgid "<0/> Copy to Clipboard"
@@ -10892,7 +10889,6 @@ msgstr "<0/> Copy to Clipboard"
 #: src/lib/components/ui/dialog/dialog-content.svelte
 #: src/lib/components/ui/sheet/sheet-content.svelte
 #: src/routes/settings/admin/+page.svelte
-#: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -10900,46 +10896,37 @@ msgstr "<0/> Copy to Clipboard"
 msgid "Close"
 msgstr "Close"
 
-#: src/routes/settings/admin/+page.svelte
-msgid "Set Temporary Password"
-msgstr "Set Temporary Password"
+#~ msgid "Set Temporary Password"
+#~ msgstr "Set Temporary Password"
 
-#. placeholder {0}: selectedResetRequest?.email
-#: src/routes/settings/admin/+page.svelte
-msgid ""
-"Set a temporary password for {0}. They will be\n"
-"required to change it on next login."
-msgstr ""
-"Set a temporary password for {0}. They will be\n"
-"required to change it on next login."
+#~ msgid ""
+#~ "Set a temporary password for {0}. They will be\n"
+#~ "required to change it on next login."
+#~ msgstr ""
+#~ "Set a temporary password for {0}. They will be\n"
+#~ "required to change it on next login."
 
-#: src/routes/settings/admin/+page.svelte
-msgid "Temporary Password"
-msgstr "Temporary Password"
+#~ msgid "Temporary Password"
+#~ msgstr "Temporary Password"
 
-#: src/routes/settings/admin/+page.svelte
-msgid "Leave empty for no password"
-msgstr "Leave empty for no password"
+#~ msgid "Leave empty for no password"
+#~ msgstr "Leave empty for no password"
 
-#: src/routes/settings/admin/+page.svelte
-msgid ""
-"Leave empty to allow login with no password. The user must set a new\n"
-"password on their next login."
-msgstr ""
-"Leave empty to allow login with no password. The user must set a new\n"
-"password on their next login."
+#~ msgid ""
+#~ "Leave empty to allow login with no password. The user must set a new\n"
+#~ "password on their next login."
+#~ msgstr ""
+#~ "Leave empty to allow login with no password. The user must set a new\n"
+#~ "password on their next login."
 
-#: src/routes/settings/admin/+page.svelte
-msgid "<0/> Set Password"
-msgstr "<0/> Set Password"
+#~ msgid "<0/> Set Password"
+#~ msgstr "<0/> Set Password"
 
-#: src/routes/settings/admin/+page.svelte
-msgid "Password Reset Link"
-msgstr "Password Reset Link"
+#~ msgid "Password Reset Link"
+#~ msgstr "Password Reset Link"
 
-#: src/routes/settings/admin/+page.svelte
-msgid "Share this link securely with the user."
-msgstr "Share this link securely with the user."
+#~ msgid "Share this link securely with the user."
+#~ msgstr "Share this link securely with the user."
 
 #: src/routes/settings/data-quality/+page.svelte
 msgid "Data Quality - Settings - Nocturne"
@@ -11747,8 +11734,10 @@ msgid "Safe to run multiple times"
 msgstr "Safe to run multiple times"
 
 #: src/lib/components/connectors/ConnectorSetup.svelte
+#: src/routes/settings/api-access/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Done"
 msgstr "Done"
 
@@ -12697,6 +12686,7 @@ msgstr "· Entered by {0}"
 msgid "Created {0} <0/>"
 msgstr "Created {0} <0/>"
 
+#: src/lib/components/patient/PatientInsulinManager.svelte
 #: src/routes/settings/profile/+page.svelte
 #: src/routes/settings/profile/+page.svelte
 msgid "DIA"
@@ -13141,10 +13131,8 @@ msgstr "Therapy Profile"
 msgid "Configure your basal rates and therapy settings"
 msgstr "Configure your basal rates and therapy settings"
 
-#. placeholder {0}: requiredComplete
-#: src/routes/settings/setup/+page.svelte
-msgid "{0} of 4 required steps complete"
-msgstr "{0} of 4 required steps complete"
+#~ msgid "{0} of 4 required steps complete"
+#~ msgstr "{0} of 4 required steps complete"
 
 #: src/routes/tools/packing/+page.svelte
 msgid "<0/> Packing Calculator"
@@ -14172,15 +14160,15 @@ msgstr "Something went wrong. Please try again."
 msgid "Basics"
 msgstr "Basics"
 
-#: src/routes/settings/setup/profile/+page.svelte
-msgid "America/New_York"
-msgstr "America/New_York"
+#~ msgid "America/New_York"
+#~ msgstr "America/New_York"
 
-#: src/routes/settings/setup/profile/+page.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
 msgid "Duration of Insulin Action"
 msgstr "Duration of Insulin Action"
 
-#: src/routes/settings/setup/profile/+page.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
 msgid "hours"
 msgstr "hours"
 
@@ -15307,7 +15295,8 @@ msgstr "Destination"
 
 #: src/lib/components/alerts/RuleEditorSheet.svelte
 #: src/routes/settings/security/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Label (optional)"
 msgstr "Label (optional)"
 
@@ -15626,27 +15615,31 @@ msgstr "Manage data sources, set up new connections, and control app access"
 
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/invite/[token]/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View glucose readings"
 msgstr "View glucose readings"
 
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View and record glucose readings"
 msgstr "View and record glucose readings"
 
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/invite/[token]/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View treatments"
 msgstr "View treatments"
 
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View and record treatments"
 msgstr "View and record treatments"
 
@@ -15654,27 +15647,31 @@ msgstr "View and record treatments"
 #: src/routes/invite/[token]/+page.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View device status"
 msgstr "View device status"
 
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View and update device status"
 msgstr "View and update device status"
 
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/invite/[token]/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View profile settings"
 msgstr "View profile settings"
 
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View and update profile settings"
 msgstr "View and update profile settings"
 
@@ -15682,14 +15679,16 @@ msgstr "View and update profile settings"
 #: src/routes/invite/[token]/+page.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View notifications"
 msgstr "View notifications"
 
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Manage notifications"
 msgstr "Manage notifications"
 
@@ -15697,7 +15696,8 @@ msgstr "Manage notifications"
 #: src/routes/invite/[token]/+page.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View reports and analytics"
 msgstr "View reports and analytics"
 
@@ -15705,14 +15705,16 @@ msgstr "View reports and analytics"
 #: src/routes/invite/[token]/+page.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View basic account info"
 msgstr "View basic account info"
 
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Manage sharing settings"
 msgstr "Manage sharing settings"
 
@@ -15720,14 +15722,14 @@ msgstr "Manage sharing settings"
 #: src/routes/invite/[token]/+page.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "View all health data (read-only)"
 msgstr "View all health data (read-only)"
 
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/oauth/consent/+page.svelte
 #: src/routes/oauth/device/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Full access including delete"
 msgstr "Full access including delete"
 
@@ -15764,21 +15766,29 @@ msgid "<0/> Verified"
 msgstr "<0/> Verified"
 
 #: src/lib/components/settings/ConnectedApps.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "<0/> Revoke"
 msgstr "<0/> Revoke"
 
 #. placeholder {0}: formatDate(grant.createdAt)
 #. placeholder {0}: formatDate(grant.createdAt)
+#. placeholder {0}: formatDate(credential.createdAt)
+#. placeholder {0}: formatDate(grant.createdAt)
 #: src/lib/components/settings/ConnectedApps.svelte
+#: src/routes/settings/api-access/+page.svelte
 #: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "<0/> Created {0}"
 msgstr "<0/> Created {0}"
 
 #. placeholder {0}: formatDate(grant.lastUsedAt)
 #. placeholder {0}: formatDate(grant.lastUsedAt)
+#. placeholder {0}: formatDate(credential.lastUsedAt)
+#. placeholder {0}: formatDate(grant.lastUsedAt)
 #: src/lib/components/settings/ConnectedApps.svelte
+#: src/routes/settings/api-access/+page.svelte
 #: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "<0/> Last used {0}"
 msgstr "<0/> Last used {0}"
 
@@ -15787,7 +15797,7 @@ msgid "Connectors & Apps"
 msgstr "Connectors & Apps"
 
 #: src/lib/components/layout/AppSidebar.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Followers & Sharing"
 msgstr "Followers & Sharing"
 
@@ -15800,52 +15810,52 @@ msgstr "<0/> Viewing data for"
 msgid "My Data"
 msgstr "My Data"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Grant revoked successfully."
 msgstr "Grant revoked successfully."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Failed to revoke grant. Please try again."
 msgstr "Failed to revoke grant. Please try again."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Follower added successfully."
 msgstr "Follower added successfully."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Failed to add follower. Please try again."
 msgstr "Failed to add follower. Please try again."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Failed to create invite. Please try again."
 msgstr "Failed to create invite. Please try again."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Invite revoked successfully."
 msgstr "Invite revoked successfully."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Failed to revoke invite. Please try again."
 msgstr "Failed to revoke invite. Please try again."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Followers & Sharing - Settings - Nocturne"
 msgstr "Followers & Sharing - Settings - Nocturne"
 
-#: src/routes/settings/security/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Share your data with caregivers and family members"
 msgstr "Share your data with caregivers and family members"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "<0/> Create Invite Link"
 msgstr "<0/> Create Invite Link"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "<0/> Add by Email"
 msgstr "<0/> Add by Email"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Create Invite Link"
 msgstr "Create Invite Link"
 
@@ -15859,51 +15869,51 @@ msgstr "Create Invite Link"
 #~ msgid "Invite link created! Share it with your friend or family member."
 #~ msgstr "Invite link created! Share it with your friend or family member."
 
-#: src/routes/settings/security/+page.svelte
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Data to share"
 msgstr "Data to share"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Allow multiple uses"
 msgstr "Allow multiple uses"
 
 #~ msgid "By default, invite links can only be used once. Enable this to allow unlimited uses."
 #~ msgstr "By default, invite links can only be used once. Enable this to allow unlimited uses."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "<0/> Create Link"
 msgstr "<0/> Create Link"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "<0/> Pending Invites"
 msgstr "<0/> Pending Invites"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Invite Link"
 msgstr "Invite Link"
 
 #. placeholder {0}: invite.useCount
 #. placeholder {1}: invite.maxUses
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "· {0}/{1} uses"
 msgstr "· {0}/{1} uses"
 
 #. placeholder {0}: formatDate(invite.expiresAt)
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Expires {0} <0/>"
 msgstr "Expires {0} <0/>"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Used by"
 msgstr "Used by"
 
 #. placeholder {0}: formatDate(usage.usedAt)
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "on {0}"
 msgstr "on {0}"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Add a Follower"
 msgstr "Add a Follower"
 
@@ -15914,42 +15924,42 @@ msgstr "Add a Follower"
 #~ "Grant someone read access to your data by entering their email\n"
 #~ "and selecting which data to share."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Email address"
 msgstr "Email address"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Create new account with temporary password"
 msgstr "Create new account with temporary password"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Display name (optional)"
 msgstr "Display name (optional)"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Temporary password"
 msgstr "Temporary password"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Enter a temporary password"
 msgstr "Enter a temporary password"
 
 #~ msgid "The follower will be required to change this password on first login."
 #~ msgstr "The follower will be required to change this password on first login."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "<0/> Add Follower"
 msgstr "<0/> Add Follower"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "No followers. Share your data with caregivers by adding a follower."
 msgstr "No followers. Share your data with caregivers by adding a follower."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid "Shared Data"
 msgstr "Shared Data"
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid ""
 "Generate a shareable link. Anyone with this link can accept the\n"
 "invite after signing in."
@@ -15957,7 +15967,7 @@ msgstr ""
 "Generate a shareable link. Anyone with this link can accept the\n"
 "invite after signing in."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid ""
 "Invite link created! Share it with your friend or family\n"
 "member."
@@ -15965,7 +15975,7 @@ msgstr ""
 "Invite link created! Share it with your friend or family\n"
 "member."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid ""
 "By default, invite links can only be used once. Enable this\n"
 "to allow unlimited uses."
@@ -15973,7 +15983,7 @@ msgstr ""
 "By default, invite links can only be used once. Enable this\n"
 "to allow unlimited uses."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid ""
 "Grant someone read access to your data by entering their email and\n"
 "selecting which data to share."
@@ -15981,7 +15991,7 @@ msgstr ""
 "Grant someone read access to your data by entering their email and\n"
 "selecting which data to share."
 
-#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/sharing/+page.svelte
 msgid ""
 "The follower will be required to change this password on\n"
 "first login."
@@ -16052,13 +16062,11 @@ msgstr "You'll be able to see:"
 msgid "<0/> Accept Invite"
 msgstr "<0/> Accept Invite"
 
-#: src/routes/invite/[token]/+page.svelte
-msgid "Sign in or create an account to accept this invite"
-msgstr "Sign in or create an account to accept this invite"
+#~ msgid "Sign in or create an account to accept this invite"
+#~ msgstr "Sign in or create an account to accept this invite"
 
-#: src/routes/invite/[token]/+page.svelte
-msgid "Sign In to Accept"
-msgstr "Sign In to Accept"
+#~ msgid "Sign In to Accept"
+#~ msgstr "Sign In to Accept"
 
 #. placeholder {0}: new Date(invite.expiresAt).toLocaleDateString()
 #: src/routes/invite/[token]/+page.svelte
@@ -16291,7 +16299,7 @@ msgstr "Follower: {0}"
 msgid "User: {0}"
 msgstr "User: {0}"
 
-#. placeholder {0}: grant.scopes.join(", ")
+#. placeholder {0}: (grant.scopes ?? []).join(", ")
 #: src/routes/settings/admin/+page.svelte
 msgid "Scopes: {0}"
 msgstr "Scopes: {0}"
@@ -16362,3 +16370,1093 @@ msgstr "Invite not found or has expired."
 #: src/routes/invite/[token]/+page.server.ts
 msgid "Failed to accept invite."
 msgstr "Failed to accept invite."
+
+#: src/lib/components/auth/LoginForm.svelte
+#: src/lib/components/auth/LoginForm.svelte
+#: src/lib/components/auth/LoginForm.svelte
+msgid "Authentication failed"
+msgstr "Authentication failed"
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "Please enter your username"
+msgstr "Please enter your username"
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "Please enter your username and recovery code"
+msgstr "Please enter your username and recovery code"
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "Recovery code verification failed"
+msgstr "Recovery code verification failed"
+
+#: src/lib/components/auth/LoginForm.svelte
+#: src/lib/components/auth/LoginForm.svelte
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/invite/[token]/+page.svelte
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "<0/> Waiting for passkey..."
+msgstr "<0/> Waiting for passkey..."
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "<0/> Sign in with passkey"
+msgstr "<0/> Sign in with passkey"
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "<0/> Sign in with username"
+msgstr "<0/> Sign in with username"
+
+#: src/lib/components/auth/LoginForm.svelte
+#: src/lib/components/auth/LoginForm.svelte
+msgid "Use a recovery code"
+msgstr "Use a recovery code"
+
+#: src/lib/components/auth/LoginForm.svelte
+#: src/lib/components/auth/LoginForm.svelte
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/invite/[token]/+page.svelte
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "Username"
+msgstr "Username"
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "<0/> Continue with passkey"
+msgstr "<0/> Continue with passkey"
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "Back"
+msgstr "Back"
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "Recovery code"
+msgstr "Recovery code"
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "<0/> Verifying..."
+msgstr "<0/> Verifying..."
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "Verify recovery code"
+msgstr "Verify recovery code"
+
+#: src/lib/components/auth/LoginForm.svelte
+msgid "Back to sign in"
+msgstr "Back to sign in"
+
+#: src/lib/components/layout/AppSidebar.svelte
+#: src/routes/settings/security/+page.svelte
+msgid "Security"
+msgstr "Security"
+
+#: src/lib/components/layout/AppSidebar.svelte
+#: src/routes/settings/api-access/+page.svelte
+msgid "API Access"
+msgstr "API Access"
+
+#: src/routes/invite/[token]/+page.svelte
+msgid "Failed to accept invite"
+msgstr "Failed to accept invite"
+
+#: src/routes/invite/[token]/+page.svelte
+msgid "Registration failed"
+msgstr "Registration failed"
+
+#: src/routes/invite/[token]/+page.svelte
+msgid "Account created and passkey registered."
+msgstr "Account created and passkey registered."
+
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/invite/[token]/+page.svelte
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "Recovery Codes"
+msgstr "Recovery Codes"
+
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/invite/[token]/+page.svelte
+msgid "Save these recovery codes in a safe place. Each code can only be used once."
+msgstr "Save these recovery codes in a safe place. Each code can only be used once."
+
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/invite/[token]/+page.svelte
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "<0/> Codes copied"
+msgstr "<0/> Codes copied"
+
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/invite/[token]/+page.svelte
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "<0/> Copy recovery codes"
+msgstr "<0/> Copy recovery codes"
+
+#: src/routes/invite/[token]/+page.svelte
+msgid "Continue to Nocturne"
+msgstr "Continue to Nocturne"
+
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/invite/[token]/+page.svelte
+msgid "Copy your recovery codes before continuing."
+msgstr "Copy your recovery codes before continuing."
+
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/invite/[token]/+page.svelte
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "Your name"
+msgstr "Your name"
+
+#: src/routes/invite/[token]/+page.svelte
+msgid "<0/> Register with passkey"
+msgstr "<0/> Register with passkey"
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Full access (including delete)"
+msgstr "Full access (including delete)"
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Failed to load API tokens."
+msgstr "Failed to load API tokens."
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Failed to create token."
+msgstr "Failed to create token."
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "API token revoked."
+msgstr "API token revoked."
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Failed to revoke token."
+msgstr "Failed to revoke token."
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "API Access - Settings - Nocturne"
+msgstr "API Access - Settings - Nocturne"
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Create and manage API tokens for programmatic access to your data"
+msgstr "Create and manage API tokens for programmatic access to your data"
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "<0/> API Tokens"
+msgstr "<0/> API Tokens"
+
+#: src/routes/settings/api-access/+page.svelte
+msgid ""
+"Tokens use the <0/> prefix and\n"
+"grant programmatic access to your data. Each token is shown only once\n"
+"at creation."
+msgstr ""
+"Tokens use the <0/> prefix and\n"
+"grant programmatic access to your data. Each token is shown only once\n"
+"at creation."
+
+#: src/routes/settings/api-access/+page.svelte
+#: src/routes/settings/api-access/+page.svelte
+msgid "<0/> Create token"
+msgstr "<0/> Create token"
+
+#: src/routes/settings/api-access/+page.svelte
+msgid ""
+"No API tokens. Create a token to enable programmatic access to\n"
+"your data."
+msgstr ""
+"No API tokens. Create a token to enable programmatic access to\n"
+"your data."
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Token created"
+msgstr "Token created"
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Copy this token now. It will not be shown again."
+msgstr "Copy this token now. It will not be shown again."
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "This token will only be shown once. Copy it now."
+msgstr "This token will only be shown once. Copy it now."
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Create API token"
+msgstr "Create API token"
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Choose a label and select the scopes this token should have access to."
+msgstr "Choose a label and select the scopes this token should have access to."
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Label"
+msgstr "Label"
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Scopes"
+msgstr "Scopes"
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Revoke API token"
+msgstr "Revoke API token"
+
+#. placeholder {0}: revokeTarget?.label
+#: src/routes/settings/api-access/+page.svelte
+msgid ""
+"Are you sure you want to revoke \"{0}\"? Any\n"
+"applications using this token will immediately lose access."
+msgstr ""
+"Are you sure you want to revoke \"{0}\"? Any\n"
+"applications using this token will immediately lose access."
+
+#: src/routes/settings/api-access/+page.svelte
+msgid "Revoke"
+msgstr "Revoke"
+
+#: src/routes/settings/security/+page.svelte
+msgid "Failed to register passkey."
+msgstr "Failed to register passkey."
+
+#: src/routes/settings/security/+page.svelte
+msgid "Passkey added successfully."
+msgstr "Passkey added successfully."
+
+#: src/routes/settings/security/+page.svelte
+msgid "Passkey removed."
+msgstr "Passkey removed."
+
+#: src/routes/settings/security/+page.svelte
+msgid "Failed to remove passkey."
+msgstr "Failed to remove passkey."
+
+#: src/routes/settings/security/+page.svelte
+msgid "Failed to regenerate recovery codes."
+msgstr "Failed to regenerate recovery codes."
+
+#: src/routes/settings/security/+page.svelte
+msgid "Security - Settings - Nocturne"
+msgstr "Security - Settings - Nocturne"
+
+#: src/routes/settings/security/+page.svelte
+msgid "Manage your passkeys and account recovery options"
+msgstr "Manage your passkeys and account recovery options"
+
+#: src/routes/settings/security/+page.svelte
+msgid "<0/> Passkeys"
+msgstr "<0/> Passkeys"
+
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"Passkeys provide secure, phishing-resistant authentication using\n"
+"your device's biometrics or security key."
+msgstr ""
+"Passkeys provide secure, phishing-resistant authentication using\n"
+"your device's biometrics or security key."
+
+#: src/routes/settings/security/+page.svelte
+msgid "<0/> Add passkey"
+msgstr "<0/> Add passkey"
+
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"No passkeys registered. Add a passkey to enable passwordless\n"
+"sign-in."
+msgstr ""
+"No passkeys registered. Add a passkey to enable passwordless\n"
+"sign-in."
+
+#: src/routes/settings/security/+page.svelte
+#: src/routes/settings/security/+page.svelte
+msgid "Unnamed passkey"
+msgstr "Unnamed passkey"
+
+#. placeholder {0}: maxPasskeys
+#: src/routes/settings/security/+page.svelte
+msgid "Maximum of {0} passkeys reached."
+msgstr "Maximum of {0} passkeys reached."
+
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"You cannot remove your only passkey without an alternative sign-in\n"
+"method linked to your account."
+msgstr ""
+"You cannot remove your only passkey without an alternative sign-in\n"
+"method linked to your account."
+
+#: src/routes/settings/security/+page.svelte
+msgid "<0/> Recovery Codes"
+msgstr "<0/> Recovery Codes"
+
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"Recovery codes allow you to access your account if you lose all your\n"
+"passkeys. Store them in a safe place."
+msgstr ""
+"Recovery codes allow you to access your account if you lose all your\n"
+"passkeys. Store them in a safe place."
+
+#. placeholder {0}: recoveryStatus.remainingCodes
+#. placeholder {1}: recoveryStatus.totalCodes
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"{0} of {1} recovery\n"
+"codes remaining"
+msgstr ""
+"{0} of {1} recovery\n"
+"codes remaining"
+
+#: src/routes/settings/security/+page.svelte
+msgid "Each code can only be used once."
+msgstr "Each code can only be used once."
+
+#. placeholder {0}: recoveryStatus.remainingCodes
+#: src/routes/settings/security/+page.svelte
+msgid "{0} remaining"
+msgstr "{0} remaining"
+
+#: src/routes/settings/security/+page.svelte
+msgid "No recovery codes have been generated yet."
+msgstr "No recovery codes have been generated yet."
+
+#: src/routes/settings/security/+page.svelte
+msgid "<0/> Regenerate recovery codes"
+msgstr "<0/> Regenerate recovery codes"
+
+#: src/routes/settings/security/+page.svelte
+msgid "<0/> Server-Side Account Recovery"
+msgstr "<0/> Server-Side Account Recovery"
+
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"If you lose all your passkeys and recovery codes, you can recover\n"
+"your account by setting the <0/> environment variable on your server."
+msgstr ""
+"If you lose all your passkeys and recovery codes, you can recover\n"
+"your account by setting the <0/> environment variable on your server."
+
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"This enables a temporary recovery flow that allows you to register\n"
+"a new passkey. It requires physical access to the server\n"
+"environment."
+msgstr ""
+"This enables a temporary recovery flow that allows you to register\n"
+"a new passkey. It requires physical access to the server\n"
+"environment."
+
+#: src/routes/settings/security/+page.svelte
+msgid "Name your passkey"
+msgstr "Name your passkey"
+
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"Give this passkey a name to help you identify it later (e.g. \"MacBook\n"
+"Touch ID\", \"YubiKey 5\")."
+msgstr ""
+"Give this passkey a name to help you identify it later (e.g. \"MacBook\n"
+"Touch ID\", \"YubiKey 5\")."
+
+#: src/routes/settings/security/+page.svelte
+msgid "Skip"
+msgstr "Skip"
+
+#: src/routes/settings/security/+page.svelte
+msgid "Remove passkey"
+msgstr "Remove passkey"
+
+#. placeholder {0}: removeTarget?.label ?? "Unnamed passkey"
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"Are you sure you want to remove \"{0}\"? You will no longer be able to sign in with this\n"
+"passkey."
+msgstr ""
+"Are you sure you want to remove \"{0}\"? You will no longer be able to sign in with this\n"
+"passkey."
+
+#: src/routes/settings/security/+page.svelte
+msgid "Regenerate recovery codes"
+msgstr "Regenerate recovery codes"
+
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"This will invalidate all existing recovery codes and generate new ones.\n"
+"Make sure to save the new codes in a safe place."
+msgstr ""
+"This will invalidate all existing recovery codes and generate new ones.\n"
+"Make sure to save the new codes in a safe place."
+
+#: src/routes/settings/security/+page.svelte
+msgid "Regenerate"
+msgstr "Regenerate"
+
+#: src/routes/settings/security/+page.svelte
+msgid "New recovery codes"
+msgstr "New recovery codes"
+
+#: src/routes/settings/security/+page.svelte
+msgid ""
+"Save these codes in a safe place. Each code can only be used once. This\n"
+"is the only time they will be shown."
+msgstr ""
+"Save these codes in a safe place. Each code can only be used once. This\n"
+"is the only time they will be shown."
+
+#: src/routes/settings/security/+page.svelte
+msgid "<0/> Copied"
+msgstr "<0/> Copied"
+
+#: src/routes/settings/security/+page.svelte
+msgid "<0/> Copy all codes"
+msgstr "<0/> Copy all codes"
+
+#: src/routes/settings/setup/+page.svelte
+msgid "Passkey"
+msgstr "Passkey"
+
+#: src/routes/settings/setup/+page.svelte
+msgid "Set up passwordless authentication with a passkey"
+msgstr "Set up passwordless authentication with a passkey"
+
+#. placeholder {0}: requiredComplete
+#: src/routes/settings/setup/+page.svelte
+msgid "{0} of 5 required steps complete"
+msgstr "{0} of 5 required steps complete"
+
+#~ msgid "You must be signed in to register a passkey."
+#~ msgstr "You must be signed in to register a passkey."
+
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "Failed to register passkey"
+msgstr "Failed to register passkey"
+
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "Passkey Setup - Setup - Nocturne"
+msgstr "Passkey Setup - Setup - Nocturne"
+
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "Set Up Your Passkey"
+msgstr "Set Up Your Passkey"
+
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "Create a passkey for secure, passwordless authentication. You will also receive recovery codes in case you lose access to your passkey."
+msgstr "Create a passkey for secure, passwordless authentication. You will also receive recovery codes in case you lose access to your passkey."
+
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "This is how you will appear to others."
+msgstr "This is how you will appear to others."
+
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "A unique identifier for your account. Used for non-discoverable login."
+msgstr "A unique identifier for your account. Used for non-discoverable login."
+
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "<0/> Register passkey"
+msgstr "<0/> Register passkey"
+
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "Passkey registered successfully."
+msgstr "Passkey registered successfully."
+
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid ""
+"Save these recovery codes in a safe place. If you lose access to your\n"
+"passkey, you can use one of these codes to sign in. Each code can only\n"
+"be used once."
+msgstr ""
+"Save these recovery codes in a safe place. If you lose access to your\n"
+"passkey, you can use one of these codes to sign in. Each code can only\n"
+"be used once."
+
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid "You must copy your recovery codes before continuing."
+msgstr "You must copy your recovery codes before continuing."
+
+#: src/routes/settings/setup/passkey/+page.svelte
+msgid ""
+"No recovery codes were returned. You can generate new ones later\n"
+"from your account settings."
+msgstr ""
+"No recovery codes were returned. You can generate new ones later\n"
+"from your account settings."
+
+#: src/routes/auth/recovery/+page.svelte
+msgid "Username is required."
+msgstr "Username is required."
+
+#: src/routes/auth/recovery/+page.svelte
+msgid "Failed to register passkey. Check that your username is correct."
+msgstr "Failed to register passkey. Check that your username is correct."
+
+#: src/routes/auth/recovery/+page.svelte
+msgid "Recovery Mode - Nocturne"
+msgstr "Recovery Mode - Nocturne"
+
+#: src/routes/auth/recovery/+page.svelte
+msgid "Recovery Mode"
+msgstr "Recovery Mode"
+
+#: src/routes/auth/recovery/+page.svelte
+msgid "This instance has accounts that need a passkey registered. Enter your username and register a passkey to restore access."
+msgstr "This instance has accounts that need a passkey registered. Enter your username and register a passkey to restore access."
+
+#: src/routes/auth/recovery/+page.svelte
+msgid "Optional. Updates your display name if provided."
+msgstr "Optional. Updates your display name if provided."
+
+#: src/routes/auth/recovery/+page.svelte
+#: src/routes/auth/recovery/+page.svelte
+msgid "Continue"
+msgstr "Continue"
+
+#: src/routes/auth/recovery/+page.svelte
+msgid "Passkey registered. Recovery mode will be deactivated on next restart."
+msgstr "Passkey registered. Recovery mode will be deactivated on next restart."
+
+#: src/routes/auth/recovery/+page.svelte
+msgid "To disable recovery mode, restart the application after registering a passkey."
+msgstr "To disable recovery mode, restart the application after registering a passkey."
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Search timezones..."
+msgstr "Search timezones..."
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "No timezone found."
+msgstr "No timezone found."
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/London"
+msgstr "Europe/London"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Dublin"
+msgstr "Europe/Dublin"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Toronto"
+msgstr "America/Toronto"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Vancouver"
+msgstr "America/Vancouver"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Winnipeg"
+msgstr "America/Winnipeg"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Edmonton"
+msgstr "America/Edmonton"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Halifax"
+msgstr "America/Halifax"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/St_Johns"
+msgstr "America/St_Johns"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Regina"
+msgstr "America/Regina"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Whitehorse"
+msgstr "America/Whitehorse"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Yellowknife"
+msgstr "America/Yellowknife"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Iqaluit"
+msgstr "America/Iqaluit"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Moncton"
+msgstr "America/Moncton"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Thunder_Bay"
+msgstr "America/Thunder_Bay"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Nipigon"
+msgstr "America/Nipigon"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Rainy_River"
+msgstr "America/Rainy_River"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Rankin_Inlet"
+msgstr "America/Rankin_Inlet"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Resolute"
+msgstr "America/Resolute"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Swift_Current"
+msgstr "America/Swift_Current"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Atikokan"
+msgstr "America/Atikokan"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Pangnirtung"
+msgstr "America/Pangnirtung"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Dawson"
+msgstr "America/Dawson"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Dawson_Creek"
+msgstr "America/Dawson_Creek"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Fort_Nelson"
+msgstr "America/Fort_Nelson"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Creston"
+msgstr "America/Creston"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Glace_Bay"
+msgstr "America/Glace_Bay"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Goose_Bay"
+msgstr "America/Goose_Bay"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Blanc-Sablon"
+msgstr "America/Blanc-Sablon"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Cambridge_Bay"
+msgstr "America/Cambridge_Bay"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "America/Inuvik"
+msgstr "America/Inuvik"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Sydney"
+msgstr "Australia/Sydney"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Melbourne"
+msgstr "Australia/Melbourne"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Brisbane"
+msgstr "Australia/Brisbane"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Perth"
+msgstr "Australia/Perth"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Adelaide"
+msgstr "Australia/Adelaide"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Hobart"
+msgstr "Australia/Hobart"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Darwin"
+msgstr "Australia/Darwin"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Lord_Howe"
+msgstr "Australia/Lord_Howe"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Lindeman"
+msgstr "Australia/Lindeman"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Currie"
+msgstr "Australia/Currie"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Eucla"
+msgstr "Australia/Eucla"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Australia/Broken_Hill"
+msgstr "Australia/Broken_Hill"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Pacific/Auckland"
+msgstr "Pacific/Auckland"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Pacific/Chatham"
+msgstr "Pacific/Chatham"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Amsterdam"
+msgstr "Europe/Amsterdam"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Berlin"
+msgstr "Europe/Berlin"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Paris"
+msgstr "Europe/Paris"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Brussels"
+msgstr "Europe/Brussels"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Luxembourg"
+msgstr "Europe/Luxembourg"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Zurich"
+msgstr "Europe/Zurich"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Vienna"
+msgstr "Europe/Vienna"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Rome"
+msgstr "Europe/Rome"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Madrid"
+msgstr "Europe/Madrid"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Lisbon"
+msgstr "Europe/Lisbon"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Stockholm"
+msgstr "Europe/Stockholm"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Oslo"
+msgstr "Europe/Oslo"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Copenhagen"
+msgstr "Europe/Copenhagen"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Helsinki"
+msgstr "Europe/Helsinki"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Athens"
+msgstr "Europe/Athens"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Bucharest"
+msgstr "Europe/Bucharest"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Budapest"
+msgstr "Europe/Budapest"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Prague"
+msgstr "Europe/Prague"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Warsaw"
+msgstr "Europe/Warsaw"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Vilnius"
+msgstr "Europe/Vilnius"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Riga"
+msgstr "Europe/Riga"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Tallinn"
+msgstr "Europe/Tallinn"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Sofia"
+msgstr "Europe/Sofia"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Zagreb"
+msgstr "Europe/Zagreb"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Ljubljana"
+msgstr "Europe/Ljubljana"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Bratislava"
+msgstr "Europe/Bratislava"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Belgrade"
+msgstr "Europe/Belgrade"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Sarajevo"
+msgstr "Europe/Sarajevo"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Skopje"
+msgstr "Europe/Skopje"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Podgorica"
+msgstr "Europe/Podgorica"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Tirane"
+msgstr "Europe/Tirane"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Moscow"
+msgstr "Europe/Moscow"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Samara"
+msgstr "Europe/Samara"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Volgograd"
+msgstr "Europe/Volgograd"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Yekaterinburg"
+msgstr "Asia/Yekaterinburg"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Novosibirsk"
+msgstr "Asia/Novosibirsk"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Krasnoyarsk"
+msgstr "Asia/Krasnoyarsk"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Irkutsk"
+msgstr "Asia/Irkutsk"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Yakutsk"
+msgstr "Asia/Yakutsk"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Vladivostok"
+msgstr "Asia/Vladivostok"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Magadan"
+msgstr "Asia/Magadan"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Kamchatka"
+msgstr "Asia/Kamchatka"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Kaliningrad"
+msgstr "Europe/Kaliningrad"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Minsk"
+msgstr "Europe/Minsk"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Kiev"
+msgstr "Europe/Kiev"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Europe/Chisinau"
+msgstr "Europe/Chisinau"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Shanghai"
+msgstr "Asia/Shanghai"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Hong_Kong"
+msgstr "Asia/Hong_Kong"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Macau"
+msgstr "Asia/Macau"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Kolkata"
+msgstr "Asia/Kolkata"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Colombo"
+msgstr "Asia/Colombo"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Dhaka"
+msgstr "Asia/Dhaka"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Kathmandu"
+msgstr "Asia/Kathmandu"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Karachi"
+msgstr "Asia/Karachi"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Singapore"
+msgstr "Asia/Singapore"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Kuala_Lumpur"
+msgstr "Asia/Kuala_Lumpur"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Bangkok"
+msgstr "Asia/Bangkok"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Jakarta"
+msgstr "Asia/Jakarta"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Ho_Chi_Minh"
+msgstr "Asia/Ho_Chi_Minh"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Manila"
+msgstr "Asia/Manila"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Riyadh"
+msgstr "Asia/Riyadh"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Dubai"
+msgstr "Asia/Dubai"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Qatar"
+msgstr "Asia/Qatar"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Bahrain"
+msgstr "Asia/Bahrain"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Kuwait"
+msgstr "Asia/Kuwait"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Asia/Muscat"
+msgstr "Asia/Muscat"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Africa/Johannesburg"
+msgstr "Africa/Johannesburg"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Africa/Lagos"
+msgstr "Africa/Lagos"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Africa/Nairobi"
+msgstr "Africa/Nairobi"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Africa/Cairo"
+msgstr "Africa/Cairo"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Africa/Casablanca"
+msgstr "Africa/Casablanca"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Africa/Algiers"
+msgstr "Africa/Algiers"
+
+#: src/routes/settings/setup/profile/+page.svelte
+msgid "Africa/Tunis"
+msgstr "Africa/Tunis"
+
+#. placeholder {0}: insulin.dia
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "· DIA {0}h"
+msgstr "· DIA {0}h"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "· Primary"
+msgstr "· Primary"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "Formulation"
+msgstr "Formulation"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "Select formulation"
+msgstr "Select formulation"
+
+#. placeholder {0}: f.defaultDia
+#. placeholder {1}: f.concentration
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "DIA {0}h · U-{1}"
+msgstr "DIA {0}h · U-{1}"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "Enter a custom insulin name"
+msgstr "Enter a custom insulin name"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "Role"
+msgstr "Role"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "Peak"
+msgstr "Peak"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "Concentration"
+msgstr "Concentration"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "U-"
+msgstr "U-"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "Primary"
+msgstr "Primary"
+
+#. placeholder {0}: insulin.dia
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "DIA {0}h"
+msgstr "DIA {0}h"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "Select formulation or enter custom"
+msgstr "Select formulation or enter custom"
+
+#. placeholder {0}: f.defaultDia
+#. placeholder {1}: f.defaultPeak
+#. placeholder {2}: f.concentration
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "DIA {0}h · Peak {1}min · U-{2}"
+msgstr "DIA {0}h · Peak {1}min · U-{2}"
+
+#: src/lib/components/patient/PatientInsulinManager.svelte
+msgid "Primary for this role"
+msgstr "Primary for this role"

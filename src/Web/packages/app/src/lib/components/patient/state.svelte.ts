@@ -1,7 +1,9 @@
 import * as patientRemote from "$api/generated/patientRecords.generated.remote";
+import { getInsulinCatalog } from "$api/generated/insulinCatalog.generated.remote";
 import {
   type PatientDevice,
   type PatientInsulin,
+  type InsulinFormulation,
   DiabetesType,
 } from "$api";
 
@@ -102,9 +104,10 @@ export function createDeviceListState() {
   };
 }
 
-/** Creates reactive insulin list state with CRUD */
+/** Creates reactive insulin list state with CRUD and catalog */
 export function createInsulinListState() {
   const insulins = patientRemote.getInsulins();
+  const catalog = getInsulinCatalog(undefined);
   const createForm = patientRemote.createInsulin;
   const updateForm = patientRemote.updateInsulin;
 
@@ -114,6 +117,7 @@ export function createInsulinListState() {
 
   return {
     get items(): PatientInsulin[] { return (insulins.current ?? []) as PatientInsulin[]; },
+    get catalog(): InsulinFormulation[] { return (catalog.current ?? []) as InsulinFormulation[]; },
     get createForm() { return createForm; },
     get updateForm() { return updateForm; },
     remove,
