@@ -8,7 +8,6 @@
   import {
     Users,
     Trash2,
-    Plus,
     Check,
     AlertTriangle,
     Clock,
@@ -17,35 +16,26 @@
     Loader2,
   } from "lucide-svelte";
   import { formatDate } from "$lib/utils/formatting";
+
+  import { getFollowers } from "$lib/api/generated/memberinvites.generated.remote";
   import {
-    getGrants,
     listInvites,
-    deleteGrant,
-    createFollowerGrant,
     createInvite,
     revokeInvite,
-  } from "$lib/api/generated/oauths.generated.remote";
+    removeMember,
+  } from "$api/generated/tenants.generated.remote";
 
-  /** Human-readable descriptions for each OAuth scope. */
+  /** Human-readable descriptions for each scope. */
   const scopeDescriptions: Record<string, string> = {
     "entries.read": "View glucose readings",
-    "entries.readwrite": "View and record glucose readings",
     "treatments.read": "View treatments",
-    "treatments.readwrite": "View and record treatments",
     "devicestatus.read": "View device status",
-    "devicestatus.readwrite": "View and update device status",
     "profile.read": "View profile settings",
-    "profile.readwrite": "View and update profile settings",
     "notifications.read": "View notifications",
-    "notifications.readwrite": "Manage notifications",
     "reports.read": "View reports and analytics",
-    "identity.read": "View basic account info",
-    "sharing.readwrite": "Manage sharing settings",
-    "health.read": "View all health data (read-only)",
-    "*": "Full access including delete",
   };
 
-  /** Available scopes for follower grants. */
+  /** Available scopes for follower invites (read-only subset). */
   const followerScopes = [
     "entries.read",
     "treatments.read",
@@ -56,34 +46,17 @@
   ] as const;
 
   // Remote queries
-  const grantsQuery = $derived(getGrants());
+  const followersQuery = $derived(getFollowers());
   const invitesQuery = $derived(listInvites());
 
   // Derived data from queries
-  const grants = $derived(grantsQuery.current?.grants ?? []);
+  const followers = $derived(followersQuery.current?.members ?? []);
   const invites = $derived(invitesQuery.current?.invites ?? []);
   const activeInvites = $derived(invites.filter((i) => i.isValid));
-  const followerGrants = $derived(
-    grants.filter((g) => g.grantType === "follower")
-  );
 
   // UI state
-  let showAddFollower = $state(false);
   let showCreateInvite = $state(false);
-  let followerEmail = $state("");
-  let followerLabel = $state("");
-  let followerDisplayName = $state("");
-  let createNewAccount = $state(false);
-  let temporaryPassword = $state("");
   let inviteLabel = $state("");
-  let selectedScopes = $state<Record<string, boolean>>({
-    "entries.read": true,
-    "treatments.read": false,
-    "devicestatus.read": false,
-    "profile.read": false,
-    "notifications.read": false,
-    "reports.read": false,
-  });
   let inviteScopes = $state<Record<string, boolean>>({
     "entries.read": true,
     "treatments.read": false,
@@ -93,47 +66,22 @@
     "reports.read": false,
   });
   let allowMultipleUses = $state(false);
+  let limitTo24Hours = $state(false);
   let createdInviteUrl = $state<string | null>(null);
   let copiedInvite = $state(false);
 
   // Loading/error states
   let isRevoking = $state<string | null>(null);
-  let isAddingFollower = $state(false);
   let isCreatingInvite = $state(false);
   let isRevokingInvite = $state<string | null>(null);
   let errorMessage = $state<string | null>(null);
   let successMessage = $state<string | null>(null);
-
-  const selectedScopeList = $derived(
-    Object.entries(selectedScopes)
-      .filter(([, v]) => v)
-      .map(([k]) => k)
-  );
 
   const inviteScopeList = $derived(
     Object.entries(inviteScopes)
       .filter(([, v]) => v)
       .map(([k]) => k)
   );
-
-  /** Reset the add-follower form to its defaults. */
-  function resetFollowerForm() {
-    followerEmail = "";
-    followerLabel = "";
-    followerDisplayName = "";
-    createNewAccount = false;
-    temporaryPassword = "";
-    selectedScopes = {
-      "entries.read": true,
-      "treatments.read": false,
-      "devicestatus.read": false,
-      "profile.read": false,
-      "notifications.read": false,
-      "reports.read": false,
-    };
-    showAddFollower = false;
-    errorMessage = null;
-  }
 
   /** Reset the create-invite form to its defaults. */
   function resetInviteForm() {
@@ -147,6 +95,7 @@
       "reports.read": false,
     };
     allowMultipleUses = false;
+    limitTo24Hours = false;
     showCreateInvite = false;
     createdInviteUrl = null;
     errorMessage = null;
@@ -169,41 +118,19 @@
     }, 3000);
   }
 
-  /** Handle revoking a grant */
-  async function handleRevokeGrant(grantId: string) {
-    isRevoking = grantId;
+  /** Handle revoking a follower membership */
+  async function handleRevokeMember(subjectId: string) {
+    isRevoking = subjectId;
     errorMessage = null;
     try {
-      await deleteGrant(grantId);
-      successMessage = "Grant revoked successfully.";
+      await removeMember(subjectId);
+      successMessage = "Follower removed successfully.";
       clearMessages();
     } catch (err) {
-      errorMessage = "Failed to revoke grant. Please try again.";
+      errorMessage = "Failed to remove follower. Please try again.";
       clearMessages();
     } finally {
       isRevoking = null;
-    }
-  }
-
-  /** Handle adding a follower */
-  async function handleAddFollower() {
-    isAddingFollower = true;
-    errorMessage = null;
-    try {
-      await createFollowerGrant({
-        followerEmail,
-        scopes: selectedScopeList,
-        label: followerLabel || undefined,
-        temporaryPassword: createNewAccount ? temporaryPassword : undefined,
-        followerDisplayName: createNewAccount ? followerDisplayName : undefined,
-      });
-      successMessage = "Follower added successfully.";
-      resetFollowerForm();
-      clearMessages();
-    } catch (err) {
-      errorMessage = "Failed to add follower. Please try again.";
-    } finally {
-      isAddingFollower = false;
     }
   }
 
@@ -213,10 +140,12 @@
     errorMessage = null;
     try {
       const result = await createInvite({
+        role: "follower",
         scopes: inviteScopeList,
         label: inviteLabel || undefined,
         expiresInDays: 7,
         maxUses: allowMultipleUses ? undefined : 1,
+        limitTo24Hours,
       });
       if (result.inviteUrl) {
         createdInviteUrl = result.inviteUrl;
@@ -285,7 +214,7 @@
         Share your data with caregivers and family members
       </p>
       <div class="flex gap-2">
-        {#if !showCreateInvite && !showAddFollower}
+        {#if !showCreateInvite}
           <Button
             variant="outline"
             size="sm"
@@ -293,14 +222,6 @@
           >
             <Link class="mr-1.5 h-3.5 w-3.5" />
             Create Invite Link
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onclick={() => (showAddFollower = true)}
-          >
-            <Plus class="mr-1.5 h-3.5 w-3.5" />
-            Add by Email
           </Button>
         {/if}
       </div>
@@ -416,6 +337,30 @@
                 </div>
               </div>
 
+              <div
+                class="flex items-start gap-2 rounded-md border p-3 bg-muted/30"
+              >
+                <Checkbox
+                  id="limit-to-24-hours"
+                  checked={limitTo24Hours}
+                  onCheckedChange={(checked) => {
+                    limitTo24Hours = checked === true;
+                  }}
+                />
+                <div class="flex-1">
+                  <label
+                    for="limit-to-24-hours"
+                    class="text-sm font-medium cursor-pointer select-none"
+                  >
+                    Only last 24 hours
+                  </label>
+                  <p class="text-xs text-muted-foreground mt-0.5">
+                    Restrict access to only the most recent 24 hours of data.
+                    Older data will not be visible to the follower.
+                  </p>
+                </div>
+              </div>
+
               <div class="flex gap-3">
                 <Button
                   type="button"
@@ -444,7 +389,7 @@
     {/if}
 
     <!-- Pending Invites -->
-    {#if activeInvites.length > 0 && !showCreateInvite && !showAddFollower}
+    {#if activeInvites.length > 0 && !showCreateInvite}
       <Card.Root>
         <Card.Header class="pb-3">
           <Card.Title class="text-base flex items-center gap-2">
@@ -469,6 +414,9 @@
                     &middot; {invite.useCount}
                     {invite.useCount === 1 ? "use" : "uses"}
                   {/if}
+                  {#if invite.limitTo24Hours}
+                    &middot; Last 24 hours only
+                  {/if}
                 </p>
                 {#if invite.usedBy && invite.usedBy.length > 0}
                   <div class="mt-2 pt-2 border-t space-y-1">
@@ -480,7 +428,7 @@
                     {#each invite.usedBy as usage}
                       <p class="text-xs text-foreground">
                         <Check class="inline h-3 w-3 mr-1 text-primary" />
-                        {usage.followerName ?? usage.followerEmail ?? "Unknown"}
+                        {usage.name ?? "Unknown"}
                         <span class="text-muted-foreground ml-1">
                           on {formatDate(usage.usedAt)}
                         </span>
@@ -509,141 +457,7 @@
       </Card.Root>
     {/if}
 
-    {#if showAddFollower}
-      <Card.Root>
-        <Card.Header>
-          <Card.Title class="text-lg">Add a Follower</Card.Title>
-          <Card.Description>
-            Grant someone read access to your data by entering their email and
-            selecting which data to share.
-          </Card.Description>
-        </Card.Header>
-        <Card.Content>
-          <div class="space-y-4">
-            <div class="space-y-2">
-              <Label for="follower-email">Email address</Label>
-              <Input
-                id="follower-email"
-                type="email"
-                placeholder="caregiver@example.com"
-                bind:value={followerEmail}
-              />
-            </div>
-
-            <div class="space-y-2">
-              <Label for="follower-label">Label (optional)</Label>
-              <Input
-                id="follower-label"
-                type="text"
-                placeholder="e.g. Mom, Endocrinologist"
-                bind:value={followerLabel}
-              />
-            </div>
-
-            <div class="space-y-3 rounded-md border p-4">
-              <div class="flex items-center gap-2">
-                <Checkbox
-                  id="create-new-account"
-                  checked={createNewAccount}
-                  onCheckedChange={(checked) => {
-                    createNewAccount = checked === true;
-                    if (!checked) {
-                      temporaryPassword = "";
-                      followerDisplayName = "";
-                    }
-                  }}
-                />
-                <label
-                  for="create-new-account"
-                  class="text-sm font-medium cursor-pointer select-none"
-                >
-                  Create new account with temporary password
-                </label>
-              </div>
-
-              {#if createNewAccount}
-                <div class="space-y-3 pl-6">
-                  <div class="space-y-2">
-                    <Label for="follower-display-name">
-                      Display name (optional)
-                    </Label>
-                    <Input
-                      id="follower-display-name"
-                      type="text"
-                      placeholder="e.g. Mom"
-                      bind:value={followerDisplayName}
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="temporary-password">Temporary password</Label>
-                    <Input
-                      id="temporary-password"
-                      type="password"
-                      placeholder="Enter a temporary password"
-                      bind:value={temporaryPassword}
-                    />
-                    <p class="text-xs text-muted-foreground">
-                      The follower will be required to change this password on
-                      first login.
-                    </p>
-                  </div>
-                </div>
-              {/if}
-            </div>
-
-            <div class="space-y-3">
-              <Label>Data to share</Label>
-              <div class="grid gap-3 sm:grid-cols-2">
-                {#each followerScopes as scope}
-                  <div class="flex items-center gap-2">
-                    <Checkbox
-                      id="scope-{scope}"
-                      checked={selectedScopes[scope]}
-                      onCheckedChange={(checked) => {
-                        selectedScopes[scope] = checked === true;
-                      }}
-                    />
-                    <label
-                      for="scope-{scope}"
-                      class="text-sm text-foreground cursor-pointer select-none"
-                    >
-                      {scopeDescriptions[scope] ?? scope}
-                    </label>
-                  </div>
-                {/each}
-              </div>
-            </div>
-
-            <div class="flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                class="flex-1"
-                onclick={() => resetFollowerForm()}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                class="flex-1"
-                disabled={selectedScopeList.length === 0 ||
-                  !followerEmail ||
-                  isAddingFollower ||
-                  (createNewAccount && !temporaryPassword)}
-                onclick={handleAddFollower}
-              >
-                {#if isAddingFollower}
-                  <Loader2 class="mr-1.5 h-4 w-4 animate-spin" />
-                {/if}
-                Add Follower
-              </Button>
-            </div>
-          </div>
-        </Card.Content>
-      </Card.Root>
-    {/if}
-
-    {#if followerGrants.length === 0 && !showAddFollower}
+    {#if followers.length === 0}
       <Card.Root>
         <Card.Content
           class="flex flex-col items-center justify-center py-12 text-center"
@@ -654,30 +468,25 @@
             <Users class="h-6 w-6 text-muted-foreground" />
           </div>
           <p class="text-sm text-muted-foreground max-w-sm">
-            No followers. Share your data with caregivers by adding a follower.
+            No followers. Share your data with caregivers by creating an invite
+            link.
           </p>
         </Card.Content>
       </Card.Root>
     {:else}
-      {#each followerGrants as grant (grant.id)}
+      {#each followers as follower (follower.subjectId)}
         <Card.Root>
           <Card.Header>
             <div class="flex items-start justify-between gap-4">
               <div class="space-y-1 flex-1 min-w-0">
                 <Card.Title class="flex items-center gap-2 flex-wrap">
                   <span class="truncate">
-                    {grant.followerName ?? grant.followerEmail ?? "Unknown"}
+                    {follower.name ?? "Unknown"}
                   </span>
                 </Card.Title>
                 <Card.Description>
-                  {#if grant.followerEmail}
-                    {grant.followerEmail}
-                  {/if}
-                  {#if grant.label}
-                    {#if grant.followerEmail}
-                      <span class="mx-1">&middot;</span>
-                    {/if}
-                    {grant.label}
+                  {#if follower.label}
+                    {follower.label}
                   {/if}
                 </Card.Description>
               </div>
@@ -686,10 +495,10 @@
                 variant="outline"
                 size="sm"
                 class="text-destructive border-destructive/30 hover:bg-destructive/10 shrink-0"
-                disabled={isRevoking === grant.id}
-                onclick={() => handleRevokeGrant(grant.id!)}
+                disabled={isRevoking === follower.subjectId}
+                onclick={() => handleRevokeMember(follower.subjectId!)}
               >
-                {#if isRevoking === grant.id}
+                {#if isRevoking === follower.subjectId}
                   <Loader2 class="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 {:else}
                   <Trash2 class="mr-1.5 h-3.5 w-3.5" />
@@ -706,7 +515,7 @@
                 Shared Data
               </p>
               <ul class="space-y-1.5">
-                {#each grant.scopes ?? [] as scope}
+                {#each follower.scopes ?? [] as scope}
                   <li class="flex items-start gap-2 text-sm">
                     <Check class="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                     <span class="text-muted-foreground">
@@ -717,6 +526,19 @@
               </ul>
             </div>
 
+            {#if follower.limitTo24Hours}
+              <div
+                class="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-900/50 dark:bg-amber-900/20"
+              >
+                <Clock
+                  class="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400"
+                />
+                <p class="text-xs text-amber-800 dark:text-amber-200">
+                  Limited to last 24 hours of data
+                </p>
+              </div>
+            {/if}
+
             <Separator />
 
             <div
@@ -724,12 +546,12 @@
             >
               <span class="flex items-center gap-1.5">
                 <Clock class="h-3 w-3" />
-                Created {formatDate(grant.createdAt)}
+                Created {formatDate(follower.sysCreatedAt)}
               </span>
-              {#if grant.lastUsedAt}
+              {#if follower.lastUsedAt}
                 <span class="flex items-center gap-1.5">
                   <Clock class="h-3 w-3" />
-                  Last used {formatDate(grant.lastUsedAt)}
+                  Last used {formatDate(follower.lastUsedAt)}
                 </span>
               {/if}
             </div>

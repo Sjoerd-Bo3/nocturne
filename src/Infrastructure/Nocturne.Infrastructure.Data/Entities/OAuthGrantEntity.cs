@@ -6,7 +6,6 @@ namespace Nocturne.Infrastructure.Data.Entities;
 
 /// <summary>
 /// The core authorization record: "user X approved app Y for scopes Z."
-/// User-to-user shares (followers/caregivers) use the same table with grant_type = follower.
 /// </summary>
 [Table("oauth_grants")]
 public class OAuthGrantEntity
@@ -31,7 +30,7 @@ public class OAuthGrantEntity
     public Guid SubjectId { get; set; }
 
     /// <summary>
-    /// Type of grant: app (third-party application) or follower (user-to-user sharing)
+    /// Type of grant: app (third-party application) or direct (programmatic API token)
     /// </summary>
     [Required]
     [MaxLength(50)]
@@ -78,30 +77,10 @@ public class OAuthGrantEntity
     public string? LastUsedUserAgent { get; set; }
 
     /// <summary>
-    /// For follower grants: the subject ID of the follower receiving access.
-    /// Null for app grants. SubjectId remains the data owner.
-    /// </summary>
-    [Column("follower_subject_id")]
-    public Guid? FollowerSubjectId { get; set; }
-
-    /// <summary>
-    /// For follower grants created from an invite: the invite ID
-    /// </summary>
-    [Column("created_from_invite_id")]
-    public Guid? CreatedFromInviteId { get; set; }
-
-    /// <summary>
     /// When this grant was revoked (soft delete for audit trail)
     /// </summary>
     [Column("revoked_at")]
     public DateTime? RevokedAt { get; set; }
-
-    /// <summary>
-    /// When true, data requests using this grant should only return data from
-    /// the last 24 hours (rolling window from current request time).
-    /// </summary>
-    [Column("limit_to_24_hours")]
-    public bool LimitTo24Hours { get; set; }
 
     /// <summary>
     /// SHA-256 hash of opaque direct grant token for secure lookup
@@ -129,16 +108,6 @@ public class OAuthGrantEntity
     public SubjectEntity? Subject { get; set; }
 
     /// <summary>
-    /// The follower subject (for follower grants only)
-    /// </summary>
-    public SubjectEntity? FollowerSubject { get; set; }
-
-    /// <summary>
-    /// The invite this grant was created from (for follower grants only)
-    /// </summary>
-    public FollowerInviteEntity? CreatedFromInvite { get; set; }
-
-    /// <summary>
     /// Refresh tokens issued under this grant
     /// </summary>
     public ICollection<OAuthRefreshTokenEntity> RefreshTokens { get; set; } =
@@ -151,6 +120,5 @@ public class OAuthGrantEntity
 public static class OAuthGrantTypes
 {
     public const string App = OAuthScopes.GrantTypeApp;
-    public const string Follower = OAuthScopes.GrantTypeFollower;
     public const string Direct = OAuthScopes.GrantTypeDirect;
 }

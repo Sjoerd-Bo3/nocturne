@@ -16,6 +16,6 @@ public record TenantDto(Guid Id, string Slug, string DisplayName, bool IsActive,
 
 public record TenantDetailDto(Guid Id, string Slug, string DisplayName, bool IsActive, bool IsDefault, DateTime SysCreatedAt, List<TenantMemberDto> Members);
 
-public record TenantMemberDto(Guid SubjectId, string Role, DateTime SysCreatedAt);
+public record TenantMemberDto(Guid SubjectId, string? Name, string Role, DateTime SysCreatedAt);
 
 public record SlugValidationResult(bool IsValid, string? Message = null);

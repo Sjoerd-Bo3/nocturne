@@ -22,6 +22,9 @@
     Loader2,
     Copy,
     ShieldCheck,
+    Shield,
+    PenLine,
+    Crown,
   } from "lucide-svelte";
   import { startRegistration } from "@simplewebauthn/browser";
   import { getOidcProviders } from "$routes/auth/auth.remote";
@@ -54,9 +57,28 @@
     "reports.read": FileText,
   };
 
+  /** Role descriptions for non-follower roles */
+  const roleDescriptions: Record<string, { text: string; icon: typeof Shield }> = {
+    caretaker: {
+      text: "you'll be able to read and write clinical data",
+      icon: PenLine,
+    },
+    admin: {
+      text: "you'll have full management access",
+      icon: Shield,
+    },
+    owner: {
+      text: "you'll have full ownership of this tenant",
+      icon: Crown,
+    },
+  };
+
   const invite = $derived(data.invite);
   const isAuthenticated = $derived(data.isAuthenticated);
   const formError = $derived(form?.error as string | undefined);
+
+  const isFollower = $derived(invite?.role === "follower");
+  const roleInfo = $derived(invite?.role ? roleDescriptions[invite.role] : undefined);
 
   // OIDC providers for unauthenticated registration
   const oidcQuery = getOidcProviders();
@@ -83,7 +105,7 @@
     errorMessage = null;
 
     try {
-      // Step 1: Accept the invite and create the user account
+      // TODO: Update to use member invite accept endpoint after NSwag regeneration
       const acceptResponse = await fetch(`/api/auth/passkey/invite/accept`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -192,9 +214,9 @@
         </Card.Title>
         <Card.Description>
           {#if invite.isExpired}
-            This invite link has expired. Please ask {invite.ownerName ?? "the data owner"} for a new invite.
+            This invite link has expired. Please ask {invite.createdByName ?? "the invite creator"} for a new invite.
           {:else if invite.isRevoked}
-            This invite link has been revoked by {invite.ownerName ?? "the data owner"}.
+            This invite link has been revoked by {invite.createdByName ?? "the invite creator"}.
           {:else}
             This invite link is no longer available.
           {/if}
@@ -213,10 +235,17 @@
         </div>
         <Card.Title class="text-xl">You're Invited</Card.Title>
         <Card.Description>
-          <span class="font-medium text-foreground">
-            {invite.ownerName ?? invite.ownerEmail ?? "Someone"}
-          </span>
-          wants to share their health data with you
+          {#if isFollower}
+            You've been invited to follow
+            <span class="font-medium text-foreground">{invite.tenantName ?? "a Nocturne site"}</span>
+          {:else}
+            You've been invited to join
+            <span class="font-medium text-foreground">{invite.tenantName ?? "a Nocturne site"}</span>
+            {#if invite.role}
+              as {invite.role === "admin" ? "an" : "a"}
+              <span class="font-medium text-foreground capitalize">{invite.role}</span>
+            {/if}
+          {/if}
           {#if invite.label}
             <Badge variant="secondary" class="ml-2">{invite.label}</Badge>
           {/if}
@@ -224,21 +253,38 @@
       </Card.Header>
 
       <Card.Content class="space-y-6">
-        <!-- What you'll be able to see -->
-        <div>
-          <p class="mb-3 text-sm font-medium">You'll be able to see:</p>
-          <ul class="space-y-2">
-            {#each invite.scopes as scope}
-              {@const Icon = scopeIcons[scope] ?? Eye}
-              <li class="flex items-center gap-3 text-sm">
-                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                  <Icon class="h-4 w-4 text-muted-foreground" />
-                </div>
-                <span>{scopeDescriptions[scope] ?? scope}</span>
-              </li>
-            {/each}
-          </ul>
-        </div>
+        {#if isFollower && invite.scopes?.length}
+          <!-- Follower: show scope list -->
+          <div>
+            <p class="mb-3 text-sm font-medium">You'll be able to see:</p>
+            <ul class="space-y-2">
+              {#each invite.scopes as scope}
+                {@const Icon = scopeIcons[scope] ?? Eye}
+                <li class="flex items-center gap-3 text-sm">
+                  <div class="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                    <Icon class="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <span>{scopeDescriptions[scope] ?? scope}</span>
+                </li>
+              {/each}
+            </ul>
+            {#if invite.limitTo24Hours}
+              <p class="mt-3 text-xs text-muted-foreground">
+                Access is limited to the most recent 24 hours of data.
+              </p>
+            {/if}
+          </div>
+        {:else if roleInfo}
+          <!-- Non-follower: show role description -->
+          <div class="flex items-start gap-3 rounded-md border bg-muted/50 p-4">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <roleInfo.icon class="h-4 w-4 text-primary" />
+            </div>
+            <p class="text-sm">
+              As a <span class="font-medium capitalize">{invite.role}</span>, {roleInfo.text}.
+            </p>
+          </div>
+        {/if}
 
         {#if formError}
           <div class="flex items-start gap-3 rounded-md border border-destructive/20 bg-destructive/5 p-3">
@@ -409,7 +455,7 @@
         {/if}
 
         <p class="text-center text-xs text-muted-foreground">
-          This invite expires on {new Date(invite.expiresAt).toLocaleDateString()}
+          This invite expires on {invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString() : "unknown"}
         </p>
       </Card.Content>
     {/if}

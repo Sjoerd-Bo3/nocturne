@@ -70,13 +70,14 @@ public partial class TenantService : ITenantService
         await using var context = await _factory.CreateDbContextAsync(ct);
         var tenant = await context.Tenants.AsNoTracking()
             .Include(t => t.Members)
+                .ThenInclude(m => m.Subject)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
         if (tenant == null) return null;
 
         return new TenantDetailDto(
             tenant.Id, tenant.Slug, tenant.DisplayName, tenant.IsActive, tenant.IsDefault, tenant.SysCreatedAt,
-            tenant.Members.Select(m => new TenantMemberDto(m.SubjectId, m.Role, m.SysCreatedAt)).ToList());
+            tenant.Members.Select(m => new TenantMemberDto(m.SubjectId, m.Subject?.Name, m.Role, m.SysCreatedAt)).ToList());
     }
 
     public async Task<TenantDto> UpdateAsync(

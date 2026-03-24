@@ -91,7 +91,7 @@ public class DirectGrantTokenHandler : IAuthHandler
             SubjectId = grant.SubjectId,
             Scopes = grant.Scopes,
             TokenId = grant.Id,
-            LimitTo24Hours = grant.LimitTo24Hours,
+            LimitTo24Hours = false, // Direct grants defer to MemberScopeMiddleware for 24-hour limits
         });
     }
 

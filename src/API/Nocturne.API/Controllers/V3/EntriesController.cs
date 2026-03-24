@@ -630,9 +630,8 @@ public class EntriesController : BaseV3Controller<Entry>
 
     private string GetUserId()
     {
-        // Use effective subject ID (supports follower access via X-Acting-As header)
         var authContext = HttpContext.GetAuthContext();
-        return authContext?.EffectiveSubjectId?.ToString()
+        return authContext?.SubjectId?.ToString()
             ?? HttpContext.GetSubjectIdString()
             ?? "00000000-0000-0000-0000-000000000001";
     }

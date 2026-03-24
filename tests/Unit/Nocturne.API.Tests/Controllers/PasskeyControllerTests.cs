@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,10 +8,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nocturne.API.Controllers;
+using Nocturne.API.Services.Auth;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Configuration;
+using Subject = Nocturne.Core.Models.Authorization.Subject;
 using Nocturne.Infrastructure.Data;
+using Nocturne.Infrastructure.Data.Entities;
 using Xunit;
 
 namespace Nocturne.API.Tests.Controllers;
@@ -212,4 +216,235 @@ public class PasskeyControllerTests : IDisposable
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
+
+    #region Setup Flow — Admin Role Assignment
+
+    [Fact]
+    public async Task SetupOptions_WhenSetupRequired_CreatesSubjectAndAssignsAdminRole()
+    {
+        // Arrange — seed a default tenant
+        var defaultTenant = new TenantEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Slug = "default",
+            DisplayName = "Default",
+            IsDefault = true,
+        };
+        _dbContext.Tenants.Add(defaultTenant);
+        await _dbContext.SaveChangesAsync();
+
+        var state = new RecoveryModeState { IsSetupRequired = true };
+
+        _passkeyService
+            .Setup(s => s.GenerateRegistrationOptionsAsync(
+                It.IsAny<Guid>(), "admin", defaultTenant.Id))
+            .ReturnsAsync(new PasskeyRegistrationOptions("{\"challenge\":\"setup\"}", "setup-token"));
+
+        _subjectService
+            .Setup(s => s.AssignRoleAsync(It.IsAny<Guid>(), "admin", null))
+            .ReturnsAsync(true);
+
+        var request = new SetupOptionsRequest
+        {
+            Username = "admin",
+            DisplayName = "Administrator",
+        };
+
+        // Act
+        var result = await _controller.SetupOptions(request, state);
+
+        // Assert — response is OK with passkey options
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<PasskeyOptionsResponse>(okResult.Value);
+        response.ChallengeToken.Should().Be("setup-token");
+        response.Options.Should().Contain("challenge");
+
+        // Assert — admin role was assigned
+        _subjectService.Verify(
+            s => s.AssignRoleAsync(It.IsAny<Guid>(), "admin", null),
+            Times.Once);
+
+        // Assert — subject was persisted in the database
+        var subjects = await _dbContext.Subjects
+            .IgnoreQueryFilters()
+            .Where(s => !s.IsSystemSubject)
+            .ToListAsync();
+        subjects.Should().HaveCount(1);
+        subjects[0].Username.Should().Be("admin");
+        subjects[0].Name.Should().Be("Administrator");
+        subjects[0].IsActive.Should().BeTrue();
+
+        // Assert — tenant membership was created as Owner
+        var members = await _dbContext.TenantMembers
+            .IgnoreQueryFilters()
+            .Where(tm => tm.TenantId == defaultTenant.Id)
+            .ToListAsync();
+        members.Should().HaveCount(1);
+        members[0].Role.Should().Be(TenantRole.Owner);
+        members[0].SubjectId.Should().Be(subjects[0].Id);
+    }
+
+    [Fact]
+    public async Task SetupOptions_WhenSetupNotRequired_ReturnsForbidden()
+    {
+        var state = new RecoveryModeState { IsSetupRequired = false };
+        var request = new SetupOptionsRequest
+        {
+            Username = "admin",
+            DisplayName = "Administrator",
+        };
+
+        var result = await _controller.SetupOptions(request, state);
+
+        var objectResult = Assert.IsType<ObjectResult>(result.Result);
+        objectResult.StatusCode.Should().Be(403);
+    }
+
+    [Fact]
+    public async Task SetupOptions_MissingUsername_ReturnsBadRequest()
+    {
+        var state = new RecoveryModeState { IsSetupRequired = true };
+        var request = new SetupOptionsRequest
+        {
+            Username = "",
+            DisplayName = "Administrator",
+        };
+
+        var result = await _controller.SetupOptions(request, state);
+
+        var objectResult = Assert.IsType<ObjectResult>(result.Result);
+        objectResult.StatusCode.Should().Be(400);
+    }
+
+    [Fact]
+    public async Task SetupComplete_IssuesSessionWithAdminRoleAndWildcardPermission()
+    {
+        // Arrange — seed a default tenant
+        var defaultTenant = new TenantEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Slug = "default",
+            DisplayName = "Default",
+            IsDefault = true,
+        };
+        _dbContext.Tenants.Add(defaultTenant);
+        await _dbContext.SaveChangesAsync();
+
+        var state = new RecoveryModeState { IsSetupRequired = true };
+        var subjectId = Guid.CreateVersion7();
+
+        _passkeyService
+            .Setup(s => s.CompleteRegistrationAsync("{}", "challenge-token", defaultTenant.Id))
+            .ReturnsAsync(new PasskeyCredentialResult(Guid.CreateVersion7(), subjectId));
+
+        _recoveryCodeService
+            .Setup(s => s.GenerateCodesAsync(subjectId))
+            .ReturnsAsync(new List<string> { "CODE1", "CODE2", "CODE3" });
+
+        _subjectService
+            .Setup(s => s.GetSubjectByIdAsync(subjectId))
+            .ReturnsAsync(new Subject
+            {
+                Id = subjectId,
+                Name = "Administrator",
+                Email = null,
+            });
+
+        _subjectService
+            .Setup(s => s.GetSubjectRolesAsync(subjectId))
+            .ReturnsAsync(new List<string> { "admin" });
+
+        _subjectService
+            .Setup(s => s.GetSubjectPermissionsAsync(subjectId))
+            .ReturnsAsync(new List<string> { "*" });
+
+        _jwtService
+            .Setup(s => s.GenerateAccessToken(
+                It.Is<SubjectInfo>(si => si.Id == subjectId && si.Name == "Administrator"),
+                It.Is<IEnumerable<string>>(p => p.Contains("*")),
+                It.Is<IEnumerable<string>>(r => r.Contains("admin")),
+                null))
+            .Returns("jwt-access-token");
+
+        _jwtService
+            .Setup(s => s.GetAccessTokenLifetime())
+            .Returns(TimeSpan.FromMinutes(15));
+
+        _refreshTokenService
+            .Setup(s => s.CreateRefreshTokenAsync(
+                subjectId,
+                null,
+                "Setup Passkey",
+                It.IsAny<string?>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync("refresh-token-value");
+
+        var request = new SetupCompleteRequest
+        {
+            AttestationResponseJson = "{}",
+            ChallengeToken = "challenge-token",
+        };
+
+        // Act
+        var result = await _controller.SetupComplete(request, state);
+
+        // Assert — response is OK with session tokens
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<SetupCompleteResponse>(okResult.Value);
+        response.Success.Should().BeTrue();
+        response.AccessToken.Should().Be("jwt-access-token");
+        response.RefreshToken.Should().Be("refresh-token-value");
+        response.RecoveryCodes.Should().HaveCount(3);
+        response.ExpiresIn.Should().Be(900);
+
+        // Assert — setup mode was deactivated
+        state.IsSetupRequired.Should().BeFalse();
+
+        // Assert — JWT was generated with admin role and wildcard permission
+        _jwtService.Verify(
+            s => s.GenerateAccessToken(
+                It.Is<SubjectInfo>(si => si.Id == subjectId),
+                It.Is<IEnumerable<string>>(p => p.Contains("*")),
+                It.Is<IEnumerable<string>>(r => r.Contains("admin")),
+                null),
+            Times.Once);
+
+        // Assert — roles and permissions were fetched for the subject
+        _subjectService.Verify(s => s.GetSubjectRolesAsync(subjectId), Times.Once);
+        _subjectService.Verify(s => s.GetSubjectPermissionsAsync(subjectId), Times.Once);
+    }
+
+    [Fact]
+    public async Task SetupComplete_WhenSetupNotRequired_ReturnsForbidden()
+    {
+        var state = new RecoveryModeState { IsSetupRequired = false };
+        var request = new SetupCompleteRequest
+        {
+            AttestationResponseJson = "{}",
+            ChallengeToken = "token",
+        };
+
+        var result = await _controller.SetupComplete(request, state);
+
+        var objectResult = Assert.IsType<ObjectResult>(result.Result);
+        objectResult.StatusCode.Should().Be(403);
+    }
+
+    [Fact]
+    public async Task SetupComplete_MissingChallengeToken_ReturnsBadRequest()
+    {
+        var state = new RecoveryModeState { IsSetupRequired = true };
+        var request = new SetupCompleteRequest
+        {
+            AttestationResponseJson = "{}",
+            ChallengeToken = "",
+        };
+
+        var result = await _controller.SetupComplete(request, state);
+
+        var objectResult = Assert.IsType<ObjectResult>(result.Result);
+        objectResult.StatusCode.Should().Be(400);
+    }
+
+    #endregion
 }

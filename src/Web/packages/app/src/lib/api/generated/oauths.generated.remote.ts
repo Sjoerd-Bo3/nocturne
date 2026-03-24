@@ -5,8 +5,8 @@
 import { getRequestEvent, query, command } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { UpdateGrantRequestSchema, CreateFollowerGrantRequestSchema, CreateInviteRequestSchema } from '$lib/api/generated/schemas';
-import { type UpdateGrantRequest, type CreateFollowerGrantRequest, type CreateInviteRequest } from '$api';
+import { UpdateGrantRequestSchema } from '$lib/api/generated/schemas';
+import { type UpdateGrantRequest } from '$api';
 
 /** List all active grants for the authenticated user. */
 export const getGrants = query(async () => {
@@ -58,94 +58,5 @@ export const deleteGrant = command(z.string(), async (grantId) => {
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in oAuth.deleteGrant:', err);
     throw error(500, 'Failed to delete grant');
-  }
-});
-
-/** Create a follower grant (share data with another user by email). */
-export const createFollowerGrant = command(CreateFollowerGrantRequestSchema, async (request) => {
-  const { locals } = getRequestEvent();
-  const { apiClient } = locals;
-  try {
-    const result = await apiClient.oAuth.createFollowerGrant(request as CreateFollowerGrantRequest);
-    await Promise.all([
-      getGrants(undefined).refresh()
-    ]);
-    return result;
-  } catch (err) {
-    const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
-    if (status === 403) throw error(403, 'Forbidden');
-    console.error('Error in oAuth.createFollowerGrant:', err);
-    throw error(500, 'Failed to create follower grant');
-  }
-});
-
-/** List data owners that the authenticated user can view as a follower.
-Used by the frontend to populate the "Viewing data for:" selector. */
-export const getFollowerTargets = query(async () => {
-  const { locals } = getRequestEvent();
-  const { apiClient } = locals;
-  try {
-    return await apiClient.oAuth.getFollowerTargets();
-  } catch (err) {
-    const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
-    if (status === 403) throw error(403, 'Forbidden');
-    console.error('Error in oAuth.getFollowerTargets:', err);
-    throw error(500, 'Failed to get follower targets');
-  }
-});
-
-/** List invites created by the authenticated user. */
-export const listInvites = query(async () => {
-  const { locals } = getRequestEvent();
-  const { apiClient } = locals;
-  try {
-    return await apiClient.oAuth.listInvites();
-  } catch (err) {
-    const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
-    if (status === 403) throw error(403, 'Forbidden');
-    console.error('Error in oAuth.listInvites:', err);
-    throw error(500, 'Failed to list invites');
-  }
-});
-
-/** Create a follower invite link.
-The link can be shared with someone who doesn't have an account yet. */
-export const createInvite = command(CreateInviteRequestSchema, async (request) => {
-  const { locals } = getRequestEvent();
-  const { apiClient } = locals;
-  try {
-    const result = await apiClient.oAuth.createInvite(request as CreateInviteRequest);
-    await Promise.all([
-      listInvites(undefined).refresh()
-    ]);
-    return result;
-  } catch (err) {
-    const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
-    if (status === 403) throw error(403, 'Forbidden');
-    console.error('Error in oAuth.createInvite:', err);
-    throw error(500, 'Failed to create invite');
-  }
-});
-
-/** Revoke an invite so it can no longer be used. */
-export const revokeInvite = command(z.string(), async (inviteId) => {
-  const { locals } = getRequestEvent();
-  const { apiClient } = locals;
-  try {
-    await apiClient.oAuth.revokeInvite(inviteId);
-    await Promise.all([
-      listInvites(undefined).refresh()
-    ]);
-    return { success: true };
-  } catch (err) {
-    const status = (err as any)?.status;
-    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
-    if (status === 403) throw error(403, 'Forbidden');
-    console.error('Error in oAuth.revokeInvite:', err);
-    throw error(500, 'Failed to revoke invite');
   }
 });

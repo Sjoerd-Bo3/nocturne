@@ -49,1054 +49,6 @@ export class Client {
     }
 }
 
-export class AnalyticsClient {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * Get the current analytics configuration and status
-     * @return Analytics configuration and collection status
-     */
-    getAnalyticsStatus(signal?: AbortSignal): Promise<FileResponse> {
-        let url_ = this.baseUrl + "/api/Analytics/status";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/octet-stream"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetAnalyticsStatus(_response);
-        });
-    }
-
-    protected processGetAnalyticsStatus(response: Response): Promise<FileResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
-            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
-            if (fileName) {
-                fileName = decodeURIComponent(fileName);
-            } else {
-                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            }
-            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<FileResponse>(null as any);
-    }
-
-    /**
-     * Get current performance metrics
-     * @return System performance metrics
-     */
-    getPerformanceMetrics(signal?: AbortSignal): Promise<PerformanceMetrics> {
-        let url_ = this.baseUrl + "/api/Analytics/metrics/performance";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetPerformanceMetrics(_response);
-        });
-    }
-
-    protected processGetPerformanceMetrics(response: Response): Promise<PerformanceMetrics> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PerformanceMetrics;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PerformanceMetrics>(null as any);
-    }
-
-    /**
-     * Get current usage statistics
-     * @return Usage statistics
-     */
-    getUsageStatistics(signal?: AbortSignal): Promise<UsageStatistics> {
-        let url_ = this.baseUrl + "/api/Analytics/metrics/usage";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetUsageStatistics(_response);
-        });
-    }
-
-    protected processGetUsageStatistics(response: Response): Promise<UsageStatistics> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as UsageStatistics;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<UsageStatistics>(null as any);
-    }
-
-    /**
-     * Get pending analytics data that would be transmitted (for transparency)
-     * @return Pending analytics data or null if none
-     */
-    getPendingAnalyticsData(signal?: AbortSignal): Promise<AnalyticsBatch> {
-        let url_ = this.baseUrl + "/api/Analytics/data/pending";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetPendingAnalyticsData(_response);
-        });
-    }
-
-    protected processGetPendingAnalyticsData(response: Response): Promise<AnalyticsBatch> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AnalyticsBatch;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<AnalyticsBatch>(null as any);
-    }
-
-    /**
-     * Update analytics collection configuration
-     * @param config New analytics configuration
-     * @return Updated configuration
-     */
-    updateAnalyticsConfig(config: AnalyticsCollectionConfig, signal?: AbortSignal): Promise<AnalyticsCollectionConfig> {
-        let url_ = this.baseUrl + "/api/Analytics/config";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(config);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "PUT",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processUpdateAnalyticsConfig(_response);
-        });
-    }
-
-    protected processUpdateAnalyticsConfig(response: Response): Promise<AnalyticsCollectionConfig> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AnalyticsCollectionConfig;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<AnalyticsCollectionConfig>(null as any);
-    }
-
-    /**
-     * Clear all stored analytics data
-     * @return Confirmation message
-     */
-    clearAnalyticsData(signal?: AbortSignal): Promise<FileResponse> {
-        let url_ = this.baseUrl + "/api/Analytics/data";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "DELETE",
-            signal,
-            headers: {
-                "Accept": "application/octet-stream"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processClearAnalyticsData(_response);
-        });
-    }
-
-    protected processClearAnalyticsData(response: Response): Promise<FileResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
-            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
-            if (fileName) {
-                fileName = decodeURIComponent(fileName);
-            } else {
-                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            }
-            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<FileResponse>(null as any);
-    }
-
-    /**
-     * Get information about what data is collected and privacy policy
-     * @return Privacy and data collection information
-     */
-    getPrivacyInformation(signal?: AbortSignal): Promise<FileResponse> {
-        let url_ = this.baseUrl + "/api/Analytics/privacy";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/octet-stream"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetPrivacyInformation(_response);
-        });
-    }
-
-    protected processGetPrivacyInformation(response: Response): Promise<FileResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
-            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
-            if (fileName) {
-                fileName = decodeURIComponent(fileName);
-            } else {
-                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            }
-            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<FileResponse>(null as any);
-    }
-
-    /**
-     * Track a custom analytics event (for testing or manual tracking)
-     * @param eventData Custom event data
-     * @return Confirmation message
-     */
-    trackCustomEvent(eventData: AnalyticsEvent, signal?: AbortSignal): Promise<FileResponse> {
-        let url_ = this.baseUrl + "/api/Analytics/events";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(eventData);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/octet-stream"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processTrackCustomEvent(_response);
-        });
-    }
-
-    protected processTrackCustomEvent(response: Response): Promise<FileResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
-            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
-            if (fileName) {
-                fileName = decodeURIComponent(fileName);
-            } else {
-                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            }
-            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<FileResponse>(null as any);
-    }
-}
-
-export class AuthenticationClient {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * Verify authentication status and permissions for the current request
-    This endpoint provides 1:1 compatibility with Nightscout's /api/v1/verifyauth endpoint
-     * @return Authentication status and permission information
-     */
-    verifyAuthentication(signal?: AbortSignal): Promise<VerifyAuthResponse> {
-        let url_ = this.baseUrl + "/api/v1/verifyauth";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processVerifyAuthentication(_response);
-        });
-    }
-
-    protected processVerifyAuthentication(response: Response): Promise<VerifyAuthResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as VerifyAuthResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<VerifyAuthResponse>(null as any);
-    }
-}
-
-export class AuthorizationClient {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * Generate JWT token from access token
-     * @param accessToken Access token to exchange for JWT
-     * @return JWT token response
-     */
-    generateJwtFromAccessToken(accessToken: string, signal?: AbortSignal): Promise<AuthorizationResponse> {
-        let url_ = this.baseUrl + "/api/v2/authorization/request/{accessToken}";
-        if (accessToken === undefined || accessToken === null)
-            throw new globalThis.Error("The parameter 'accessToken' must be defined.");
-        url_ = url_.replace("{accessToken}", encodeURIComponent("" + accessToken));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGenerateJwtFromAccessToken(_response);
-        });
-    }
-
-    protected processGenerateJwtFromAccessToken(response: Response): Promise<AuthorizationResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AuthorizationResponse;
-            return result200;
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<AuthorizationResponse>(null as any);
-    }
-
-    /**
-     * Get all permissions that have been seen by the system
-     * @return List of permissions with usage statistics
-     */
-    getAllPermissions(signal?: AbortSignal): Promise<PermissionsResponse> {
-        let url_ = this.baseUrl + "/api/v2/authorization/permissions";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetAllPermissions(_response);
-        });
-    }
-
-    protected processGetAllPermissions(response: Response): Promise<PermissionsResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PermissionsResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PermissionsResponse>(null as any);
-    }
-
-    /**
-     * Get permission hierarchy structure as a trie
-     * @return Permission trie structure
-     */
-    getPermissionTrie(signal?: AbortSignal): Promise<PermissionTrieResponse> {
-        let url_ = this.baseUrl + "/api/v2/authorization/permissions/trie";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetPermissionTrie(_response);
-        });
-    }
-
-    protected processGetPermissionTrie(response: Response): Promise<PermissionTrieResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PermissionTrieResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PermissionTrieResponse>(null as any);
-    }
-
-    /**
-     * Get all subjects (users/devices)
-     * @return List of all subjects
-     */
-    getAllSubjects(signal?: AbortSignal): Promise<Subject[]> {
-        let url_ = this.baseUrl + "/api/v2/authorization/subjects";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetAllSubjects(_response);
-        });
-    }
-
-    protected processGetAllSubjects(response: Response): Promise<Subject[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Subject[];
-            return result200;
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            });
-        } else if (status === 403) {
-            return response.text().then((_responseText) => {
-            let result403: any = null;
-            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Subject[]>(null as any);
-    }
-
-    /**
-     * Create a new subject
-     * @param subject Subject to create
-     * @return Created subject
-     */
-    createSubject(subject: Subject, signal?: AbortSignal): Promise<Subject> {
-        let url_ = this.baseUrl + "/api/v2/authorization/subjects";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(subject);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCreateSubject(_response);
-        });
-    }
-
-    protected processCreateSubject(response: Response): Promise<Subject> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 201) {
-            return response.text().then((_responseText) => {
-            let result201: any = null;
-            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Subject;
-            return result201;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            });
-        } else if (status === 403) {
-            return response.text().then((_responseText) => {
-            let result403: any = null;
-            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Subject>(null as any);
-    }
-
-    /**
-     * Update an existing subject
-     * @param subject Subject to update
-     * @return Updated subject
-     */
-    updateSubject(subject: Subject, signal?: AbortSignal): Promise<Subject> {
-        let url_ = this.baseUrl + "/api/v2/authorization/subjects";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(subject);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "PUT",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processUpdateSubject(_response);
-        });
-    }
-
-    protected processUpdateSubject(response: Response): Promise<Subject> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Subject;
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            });
-        } else if (status === 403) {
-            return response.text().then((_responseText) => {
-            let result403: any = null;
-            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Subject>(null as any);
-    }
-
-    /**
-     * Delete a subject by ID
-     * @param id Subject ID to delete
-     * @return Success response
-     */
-    deleteSubject(id: string, signal?: AbortSignal): Promise<void> {
-        let url_ = this.baseUrl + "/api/v2/authorization/subjects/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "DELETE",
-            signal,
-            headers: {
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processDeleteSubject(_response);
-        });
-    }
-
-    protected processDeleteSubject(response: Response): Promise<void> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 204) {
-            return response.text().then((_responseText) => {
-            return;
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            });
-        } else if (status === 403) {
-            return response.text().then((_responseText) => {
-            let result403: any = null;
-            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<void>(null as any);
-    }
-
-    /**
-     * Get all roles
-     * @return List of all roles
-     */
-    getAllRoles(signal?: AbortSignal): Promise<Role[]> {
-        let url_ = this.baseUrl + "/api/v2/authorization/roles";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetAllRoles(_response);
-        });
-    }
-
-    protected processGetAllRoles(response: Response): Promise<Role[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Role[];
-            return result200;
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            });
-        } else if (status === 403) {
-            return response.text().then((_responseText) => {
-            let result403: any = null;
-            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Role[]>(null as any);
-    }
-
-    /**
-     * Create a new role
-     * @param role Role to create
-     * @return Created role
-     */
-    createRole(role: Role, signal?: AbortSignal): Promise<Role> {
-        let url_ = this.baseUrl + "/api/v2/authorization/roles";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(role);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCreateRole(_response);
-        });
-    }
-
-    protected processCreateRole(response: Response): Promise<Role> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 201) {
-            return response.text().then((_responseText) => {
-            let result201: any = null;
-            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Role;
-            return result201;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            });
-        } else if (status === 403) {
-            return response.text().then((_responseText) => {
-            let result403: any = null;
-            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Role>(null as any);
-    }
-
-    /**
-     * Update an existing role
-     * @param role Role to update
-     * @return Updated role
-     */
-    updateRole(role: Role, signal?: AbortSignal): Promise<Role> {
-        let url_ = this.baseUrl + "/api/v2/authorization/roles";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(role);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "PUT",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processUpdateRole(_response);
-        });
-    }
-
-    protected processUpdateRole(response: Response): Promise<Role> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Role;
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            });
-        } else if (status === 403) {
-            return response.text().then((_responseText) => {
-            let result403: any = null;
-            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Role>(null as any);
-    }
-
-    /**
-     * Delete a role by ID
-     * @param id Role ID to delete
-     * @return Success response
-     */
-    deleteRole(id: string, signal?: AbortSignal): Promise<void> {
-        let url_ = this.baseUrl + "/api/v2/authorization/roles/{id}";
-        if (id === undefined || id === null)
-            throw new globalThis.Error("The parameter 'id' must be defined.");
-        url_ = url_.replace("{id}", encodeURIComponent("" + id));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "DELETE",
-            signal,
-            headers: {
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processDeleteRole(_response);
-        });
-    }
-
-    protected processDeleteRole(response: Response): Promise<void> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 204) {
-            return response.text().then((_responseText) => {
-            return;
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            let result401: any = null;
-            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
-            });
-        } else if (status === 403) {
-            return response.text().then((_responseText) => {
-            let result403: any = null;
-            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<void>(null as any);
-    }
-}
-
-export class ConnectorStatusClient {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * Gets the current status and metrics for all registered connectors
-     */
-    getStatus(signal?: AbortSignal): Promise<ConnectorStatusDto[]> {
-        let url_ = this.baseUrl + "/api/v1/connectors/status";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetStatus(_response);
-        });
-    }
-
-    protected processGetStatus(response: Response): Promise<ConnectorStatusDto[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ConnectorStatusDto[];
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ConnectorStatusDto[]>(null as any);
-    }
-}
-
 export class DirectGrantClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -2166,313 +1118,6 @@ export class OAuthClient {
     }
 
     /**
-     * Create a follower grant (share data with another user by email).
-     */
-    createFollowerGrant(request: CreateFollowerGrantRequest, signal?: AbortSignal): Promise<OAuthGrantDto> {
-        let url_ = this.baseUrl + "/api/oauth/grants/follower";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCreateFollowerGrant(_response);
-        });
-    }
-
-    protected processCreateFollowerGrant(response: Response): Promise<OAuthGrantDto> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 201) {
-            return response.text().then((_responseText) => {
-            let result201: any = null;
-            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OAuthGrantDto;
-            return result201;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OAuthError;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<OAuthGrantDto>(null as any);
-    }
-
-    /**
-     * List data owners that the authenticated user can view as a follower.
-    Used by the frontend to populate the "Viewing data for:" selector.
-     */
-    getFollowerTargets(signal?: AbortSignal): Promise<FollowerTargetListResponse> {
-        let url_ = this.baseUrl + "/api/oauth/follower-targets";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetFollowerTargets(_response);
-        });
-    }
-
-    protected processGetFollowerTargets(response: Response): Promise<FollowerTargetListResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as FollowerTargetListResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<FollowerTargetListResponse>(null as any);
-    }
-
-    /**
-     * Create a follower invite link.
-    The link can be shared with someone who doesn't have an account yet.
-     */
-    createInvite(request: CreateInviteRequest, signal?: AbortSignal): Promise<CreateInviteResponse> {
-        let url_ = this.baseUrl + "/api/oauth/invites";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCreateInvite(_response);
-        });
-    }
-
-    protected processCreateInvite(response: Response): Promise<CreateInviteResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 201) {
-            return response.text().then((_responseText) => {
-            let result201: any = null;
-            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as CreateInviteResponse;
-            return result201;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OAuthError;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<CreateInviteResponse>(null as any);
-    }
-
-    /**
-     * List invites created by the authenticated user.
-     */
-    listInvites(signal?: AbortSignal): Promise<InviteListResponse> {
-        let url_ = this.baseUrl + "/api/oauth/invites";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processListInvites(_response);
-        });
-    }
-
-    protected processListInvites(response: Response): Promise<InviteListResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as InviteListResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<InviteListResponse>(null as any);
-    }
-
-    /**
-     * Revoke an invite so it can no longer be used.
-     */
-    revokeInvite(inviteId: string, signal?: AbortSignal): Promise<void> {
-        let url_ = this.baseUrl + "/api/oauth/invites/{inviteId}";
-        if (inviteId === undefined || inviteId === null)
-            throw new globalThis.Error("The parameter 'inviteId' must be defined.");
-        url_ = url_.replace("{inviteId}", encodeURIComponent("" + inviteId));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "DELETE",
-            signal,
-            headers: {
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processRevokeInvite(_response);
-        });
-    }
-
-    protected processRevokeInvite(response: Response): Promise<void> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 204) {
-            return response.text().then((_responseText) => {
-            return;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<void>(null as any);
-    }
-
-    /**
-     * Get invite details by token (for the accept page).
-    This is a public endpoint so invitees can see what they're accepting.
-     */
-    getInviteInfo(token: string, signal?: AbortSignal): Promise<InviteInfoResponse> {
-        let url_ = this.baseUrl + "/api/oauth/invites/{token}/info";
-        if (token === undefined || token === null)
-            throw new globalThis.Error("The parameter 'token' must be defined.");
-        url_ = url_.replace("{token}", encodeURIComponent("" + token));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetInviteInfo(_response);
-        });
-    }
-
-    protected processGetInviteInfo(response: Response): Promise<InviteInfoResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as InviteInfoResponse;
-            return result200;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            let result404: any = null;
-            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<InviteInfoResponse>(null as any);
-    }
-
-    /**
-     * Accept an invite and create the follower grant.
-    Requires authentication - the invitee must be logged in.
-     */
-    acceptInvite(token: string, signal?: AbortSignal): Promise<AcceptInviteResponse> {
-        let url_ = this.baseUrl + "/api/oauth/invites/{token}/accept";
-        if (token === undefined || token === null)
-            throw new globalThis.Error("The parameter 'token' must be defined.");
-        url_ = url_.replace("{token}", encodeURIComponent("" + token));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "POST",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAcceptInvite(_response);
-        });
-    }
-
-    protected processAcceptInvite(response: Response): Promise<AcceptInviteResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AcceptInviteResponse;
-            return result200;
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OAuthError;
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<AcceptInviteResponse>(null as any);
-    }
-
-    /**
      * Token introspection endpoint (RFC 7662).
     Returns metadata about a token including its active status, scopes, and subject.
     Per RFC 7662, always returns 200 OK; invalid tokens get active=false.
@@ -3485,1290 +2130,6 @@ export class PasskeyClient {
             });
         }
         return Promise.resolve<SetupCompleteResponse>(null as any);
-    }
-}
-
-export class PebbleClient {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * Get pebble-formatted data for smartwatch apps and CGM monitors
-    Returns current glucose, trend, delta, battery, IOB, and COB information
-     * @param units (optional) Units for glucose display (mg/dl or mmol)
-     * @param count (optional) Number of glucose readings to return (default: 1)
-     * @return Pebble-formatted response with bgs, cals, and status
-     */
-    getPebbleData(units?: string | null | undefined, count?: number | undefined, signal?: AbortSignal): Promise<PebbleResponse> {
-        let url_ = this.baseUrl + "/pebble?";
-        if (units !== undefined && units !== null)
-            url_ += "units=" + encodeURIComponent("" + units) + "&";
-        if (count === null)
-            throw new globalThis.Error("The parameter 'count' cannot be null.");
-        else if (count !== undefined)
-            url_ += "count=" + encodeURIComponent("" + count) + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetPebbleData(_response);
-        });
-    }
-
-    protected processGetPebbleData(response: Response): Promise<PebbleResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PebbleResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<PebbleResponse>(null as any);
-    }
-}
-
-export class StatisticsClient {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * Calculate basic glucose statistics from provided glucose values
-     * @param values Array of glucose values in mg/dL
-     * @return Basic glucose statistics including mean, median, percentiles, etc.
-     */
-    calculateBasicStats(values: number[], signal?: AbortSignal): Promise<BasicGlucoseStats> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/basic-stats";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(values);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateBasicStats(_response);
-        });
-    }
-
-    protected processCalculateBasicStats(response: Response): Promise<BasicGlucoseStats> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as BasicGlucoseStats;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<BasicGlucoseStats>(null as any);
-    }
-
-    /**
-     * Calculate comprehensive glycemic variability metrics
-     * @param request Request containing glucose values and entries
-     * @return Comprehensive glycemic variability metrics
-     */
-    calculateGlycemicVariability(request: GlycemicVariabilityRequest, signal?: AbortSignal): Promise<GlycemicVariability> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/glycemic-variability";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateGlycemicVariability(_response);
-        });
-    }
-
-    protected processCalculateGlycemicVariability(response: Response): Promise<GlycemicVariability> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as GlycemicVariability;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<GlycemicVariability>(null as any);
-    }
-
-    /**
-     * Calculate time in range metrics
-     * @param request Request containing entries and optional thresholds
-     * @return Time in range metrics including percentages, durations, and episodes
-     */
-    calculateTimeInRange(request: TimeInRangeRequest, signal?: AbortSignal): Promise<TimeInRangeMetrics> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/time-in-range";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateTimeInRange(_response);
-        });
-    }
-
-    protected processCalculateTimeInRange(response: Response): Promise<TimeInRangeMetrics> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TimeInRangeMetrics;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<TimeInRangeMetrics>(null as any);
-    }
-
-    /**
-     * Calculate glucose distribution across configurable bins
-     * @param request Request containing entries and optional bins
-     * @return Collection of distribution data points
-     */
-    calculateGlucoseDistribution(request: GlucoseDistributionRequest, signal?: AbortSignal): Promise<DistributionDataPoint[]> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/glucose-distribution";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateGlucoseDistribution(_response);
-        });
-    }
-
-    protected processCalculateGlucoseDistribution(response: Response): Promise<DistributionDataPoint[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DistributionDataPoint[];
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<DistributionDataPoint[]>(null as any);
-    }
-
-    /**
-     * Calculate averaged statistics for each hour of the day (0-23)
-     * @param entries Array of sensor glucose readings
-     * @return Collection of averaged statistics for each hour
-     */
-    calculateAveragedStats(entries: SensorGlucose[], signal?: AbortSignal): Promise<AveragedStats[]> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/averaged-stats";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(entries);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateAveragedStats(_response);
-        });
-    }
-
-    protected processCalculateAveragedStats(response: Response): Promise<AveragedStats[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AveragedStats[];
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<AveragedStats[]>(null as any);
-    }
-
-    /**
-     * Calculate treatment summary for a collection of boluses and carb intakes
-     * @param request Request containing boluses and carb intakes
-     * @return Treatment summary with totals and counts
-     */
-    calculateTreatmentSummary(request: TreatmentSummaryRequest, signal?: AbortSignal): Promise<TreatmentSummary> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/treatment-summary";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateTreatmentSummary(_response);
-        });
-    }
-
-    protected processCalculateTreatmentSummary(response: Response): Promise<TreatmentSummary> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TreatmentSummary;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<TreatmentSummary>(null as any);
-    }
-
-    /**
-     * Calculate overall averages across multiple days
-     * @param dailyDataPoints Array of daily data points
-     * @return Overall averages or null if no data
-     */
-    calculateOverallAverages(dailyDataPoints: DayData[], signal?: AbortSignal): Promise<OverallAverages> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/overall-averages";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(dailyDataPoints);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateOverallAverages(_response);
-        });
-    }
-
-    protected processCalculateOverallAverages(response: Response): Promise<OverallAverages> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OverallAverages;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<OverallAverages>(null as any);
-    }
-
-    /**
-     * Master glucose analytics function that calculates comprehensive metrics
-     * @param request Request containing sensor glucose readings, boluses, carb intakes, and configuration
-     * @return Comprehensive glucose analytics
-     */
-    analyzeGlucoseData(request: GlucoseAnalyticsRequest, signal?: AbortSignal): Promise<GlucoseAnalytics> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/comprehensive-analytics";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAnalyzeGlucoseData(_response);
-        });
-    }
-
-    protected processAnalyzeGlucoseData(response: Response): Promise<GlucoseAnalytics> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as GlucoseAnalytics;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<GlucoseAnalytics>(null as any);
-    }
-
-    /**
-     * Extended glucose analytics including GMI, GRI, and clinical target assessment
-     * @param request Request containing sensor glucose readings, boluses, carb intakes, population type, and configuration
-     * @return Extended glucose analytics with modern clinical metrics
-     */
-    analyzeGlucoseDataExtended(request: ExtendedGlucoseAnalyticsRequest, signal?: AbortSignal): Promise<ExtendedGlucoseAnalytics> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/extended-analytics";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAnalyzeGlucoseDataExtended(_response);
-        });
-    }
-
-    protected processAnalyzeGlucoseDataExtended(response: Response): Promise<ExtendedGlucoseAnalytics> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ExtendedGlucoseAnalytics;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ExtendedGlucoseAnalytics>(null as any);
-    }
-
-    /**
-     * Calculate Glucose Management Indicator (GMI)
-     * @param meanGlucose Mean glucose in mg/dL
-     * @return GMI with value and interpretation
-     */
-    calculateGMI(meanGlucose: number, signal?: AbortSignal): Promise<GlucoseManagementIndicator> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/gmi/{meanGlucose}";
-        if (meanGlucose === undefined || meanGlucose === null)
-            throw new globalThis.Error("The parameter 'meanGlucose' must be defined.");
-        url_ = url_.replace("{meanGlucose}", encodeURIComponent("" + meanGlucose));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateGMI(_response);
-        });
-    }
-
-    protected processCalculateGMI(response: Response): Promise<GlucoseManagementIndicator> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as GlucoseManagementIndicator;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<GlucoseManagementIndicator>(null as any);
-    }
-
-    /**
-     * Calculate Glycemic Risk Index (GRI) from time in range metrics
-     * @param timeInRange Time in range metrics
-     * @return GRI with score, zone, and interpretation
-     */
-    calculateGRI(timeInRange: TimeInRangeMetrics, signal?: AbortSignal): Promise<GlycemicRiskIndex> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/gri";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(timeInRange);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateGRI(_response);
-        });
-    }
-
-    protected processCalculateGRI(response: Response): Promise<GlycemicRiskIndex> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as GlycemicRiskIndex;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<GlycemicRiskIndex>(null as any);
-    }
-
-    /**
-     * Assess glucose data against clinical targets for a specific population
-     * @param request Request containing analytics and population type
-     * @return Clinical target assessment with actionable insights
-     */
-    assessAgainstTargets(request: ClinicalAssessmentRequest, signal?: AbortSignal): Promise<ClinicalTargetAssessment> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/clinical-assessment";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAssessAgainstTargets(_response);
-        });
-    }
-
-    protected processAssessAgainstTargets(response: Response): Promise<ClinicalTargetAssessment> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ClinicalTargetAssessment;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ClinicalTargetAssessment>(null as any);
-    }
-
-    /**
-     * Assess data sufficiency for a valid clinical report
-     * @param request Request containing entries and optional period settings
-     * @return Data sufficiency assessment
-     */
-    assessDataSufficiency(request: DataSufficiencyRequest, signal?: AbortSignal): Promise<DataSufficiencyAssessment> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/data-sufficiency";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processAssessDataSufficiency(_response);
-        });
-    }
-
-    protected processAssessDataSufficiency(response: Response): Promise<DataSufficiencyAssessment> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DataSufficiencyAssessment;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<DataSufficiencyAssessment>(null as any);
-    }
-
-    /**
-     * Get clinical targets for a specific diabetes population
-     * @param population Population type (Type1Adult, Type2Adult, Elderly, Pregnancy, etc.)
-     * @return Clinical targets for the specified population
-     */
-    getClinicalTargets(population: DiabetesPopulation, signal?: AbortSignal): Promise<ClinicalTargets> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/clinical-targets/{population}";
-        if (population === undefined || population === null)
-            throw new globalThis.Error("The parameter 'population' must be defined.");
-        url_ = url_.replace("{population}", encodeURIComponent("" + population));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetClinicalTargets(_response);
-        });
-    }
-
-    protected processGetClinicalTargets(response: Response): Promise<ClinicalTargets> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ClinicalTargets;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<ClinicalTargets>(null as any);
-    }
-
-    /**
-     * Calculate estimated A1C from average glucose
-     * @param averageGlucose Average glucose in mg/dL
-     * @return Estimated A1C percentage
-     */
-    calculateEstimatedA1C(averageGlucose: number, signal?: AbortSignal): Promise<number> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/estimated-a1c/{averageGlucose}";
-        if (averageGlucose === undefined || averageGlucose === null)
-            throw new globalThis.Error("The parameter 'averageGlucose' must be defined.");
-        url_ = url_.replace("{averageGlucose}", encodeURIComponent("" + averageGlucose));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateEstimatedA1C(_response);
-        });
-    }
-
-    protected processCalculateEstimatedA1C(response: Response): Promise<number> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as number;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<number>(null as any);
-    }
-
-    /**
-     * Convert mg/dL to mmol/L
-     * @param mgdl Glucose value in mg/dL
-     * @return Glucose value in mmol/L
-     */
-    mgdlToMMOL(mgdl: number, signal?: AbortSignal): Promise<number> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/convert/mgdl-to-mmol/{mgdl}";
-        if (mgdl === undefined || mgdl === null)
-            throw new globalThis.Error("The parameter 'mgdl' must be defined.");
-        url_ = url_.replace("{mgdl}", encodeURIComponent("" + mgdl));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processMgdlToMMOL(_response);
-        });
-    }
-
-    protected processMgdlToMMOL(response: Response): Promise<number> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as number;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<number>(null as any);
-    }
-
-    /**
-     * Convert mmol/L to mg/dL
-     * @param mmol Glucose value in mmol/L
-     * @return Glucose value in mg/dL
-     */
-    mmolToMGDL(mmol: number, signal?: AbortSignal): Promise<number> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/convert/mmol-to-mgdl/{mmol}";
-        if (mmol === undefined || mmol === null)
-            throw new globalThis.Error("The parameter 'mmol' must be defined.");
-        url_ = url_.replace("{mmol}", encodeURIComponent("" + mmol));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processMmolToMGDL(_response);
-        });
-    }
-
-    protected processMmolToMGDL(response: Response): Promise<number> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as number;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<number>(null as any);
-    }
-
-    /**
-     * Format insulin value for display
-     * @param value Insulin value
-     * @return Formatted insulin string
-     */
-    formatInsulinDisplay(value: number, signal?: AbortSignal): Promise<string> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/format/insulin/{value}";
-        if (value === undefined || value === null)
-            throw new globalThis.Error("The parameter 'value' must be defined.");
-        url_ = url_.replace("{value}", encodeURIComponent("" + value));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processFormatInsulinDisplay(_response);
-        });
-    }
-
-    protected processFormatInsulinDisplay(response: Response): Promise<string> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<string>(null as any);
-    }
-
-    /**
-     * Format carb value for display
-     * @param value Carb value
-     * @return Formatted carb string
-     */
-    formatCarbDisplay(value: number, signal?: AbortSignal): Promise<string> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/format/carb/{value}";
-        if (value === undefined || value === null)
-            throw new globalThis.Error("The parameter 'value' must be defined.");
-        url_ = url_.replace("{value}", encodeURIComponent("" + value));
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processFormatCarbDisplay(_response);
-        });
-    }
-
-    protected processFormatCarbDisplay(response: Response): Promise<string> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<string>(null as any);
-    }
-
-    /**
-     * Validate treatment data for completeness and consistency
-     * @param treatment Treatment to validate
-     * @return True if treatment data is valid
-     */
-    validateTreatmentData(treatment: Treatment, signal?: AbortSignal): Promise<boolean> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/validate/treatment";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(treatment);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processValidateTreatmentData(_response);
-        });
-    }
-
-    protected processValidateTreatmentData(response: Response): Promise<boolean> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as boolean;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<boolean>(null as any);
-    }
-
-    /**
-     * Clean and filter treatment data
-     * @param treatments Array of treatments to clean
-     * @return Cleaned collection of treatments
-     */
-    cleanTreatmentData(treatments: Treatment[], signal?: AbortSignal): Promise<Treatment[]> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/clean/treatments";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(treatments);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCleanTreatmentData(_response);
-        });
-    }
-
-    protected processCleanTreatmentData(response: Response): Promise<Treatment[]> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Treatment[];
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<Treatment[]>(null as any);
-    }
-
-    /**
-     * Get comprehensive statistics for multiple time periods (1, 3, 7, 30, 90 days)
-    Uses in-memory cache for performance with daily expiration
-     * @return Multi-period statistics with comprehensive analytics for each time period
-     */
-    getMultiPeriodStatistics(signal?: AbortSignal): Promise<MultiPeriodStatistics> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/periods";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetMultiPeriodStatistics(_response);
-        });
-    }
-
-    protected processGetMultiPeriodStatistics(response: Response): Promise<MultiPeriodStatistics> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as MultiPeriodStatistics;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<MultiPeriodStatistics>(null as any);
-    }
-
-    /**
-     * Analyze glucose patterns around site changes to identify impact of site age on control
-     * @param request Request containing sensor glucose readings, device events, and analysis parameters
-     * @return Site change impact analysis with averaged glucose patterns
-     */
-    calculateSiteChangeImpact(request: SiteChangeImpactRequest, signal?: AbortSignal): Promise<SiteChangeImpactAnalysis> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/site-change-impact";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(request);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processCalculateSiteChangeImpact(_response);
-        });
-    }
-
-    protected processCalculateSiteChangeImpact(response: Response): Promise<SiteChangeImpactAnalysis> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as SiteChangeImpactAnalysis;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SiteChangeImpactAnalysis>(null as any);
-    }
-
-    /**
-     * Calculate daily basal/bolus ratio statistics for a date range
-     * @param startDate (optional) Start date of the analysis period
-     * @param endDate (optional) End date of the analysis period
-     * @return Daily basal/bolus ratio breakdown with averages
-     */
-    getDailyBasalBolusRatios(startDate?: Date | undefined, endDate?: Date | undefined, signal?: AbortSignal): Promise<DailyBasalBolusRatioResponse> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/daily-basal-bolus-ratios?";
-        if (startDate === null)
-            throw new globalThis.Error("The parameter 'startDate' cannot be null.");
-        else if (startDate !== undefined)
-            url_ += "startDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
-        if (endDate === null)
-            throw new globalThis.Error("The parameter 'endDate' cannot be null.");
-        else if (endDate !== undefined)
-            url_ += "endDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetDailyBasalBolusRatios(_response);
-        });
-    }
-
-    protected processGetDailyBasalBolusRatios(response: Response): Promise<DailyBasalBolusRatioResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DailyBasalBolusRatioResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<DailyBasalBolusRatioResponse>(null as any);
-    }
-
-    /**
-     * Calculate comprehensive insulin delivery statistics for a date range
-     * @param startDate (optional) Start date of the analysis period
-     * @param endDate (optional) End date of the analysis period
-     * @return Comprehensive insulin delivery statistics
-     */
-    getInsulinDeliveryStatistics(startDate?: Date | undefined, endDate?: Date | undefined, signal?: AbortSignal): Promise<InsulinDeliveryStatistics> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/insulin-delivery-stats?";
-        if (startDate === null)
-            throw new globalThis.Error("The parameter 'startDate' cannot be null.");
-        else if (startDate !== undefined)
-            url_ += "startDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
-        if (endDate === null)
-            throw new globalThis.Error("The parameter 'endDate' cannot be null.");
-        else if (endDate !== undefined)
-            url_ += "endDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetInsulinDeliveryStatistics(_response);
-        });
-    }
-
-    protected processGetInsulinDeliveryStatistics(response: Response): Promise<InsulinDeliveryStatistics> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as InsulinDeliveryStatistics;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<InsulinDeliveryStatistics>(null as any);
-    }
-
-    /**
-     * Calculate comprehensive basal analysis statistics for a date range
-     * @param startDate (optional) Start date of the analysis period
-     * @param endDate (optional) End date of the analysis period
-     * @return Comprehensive basal analysis with stats, temp basal info, and hourly percentiles
-     */
-    getBasalAnalysis(startDate?: Date | null | undefined, endDate?: Date | null | undefined, signal?: AbortSignal): Promise<BasalAnalysisResponse> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/basal-analysis?";
-        if (startDate !== undefined && startDate !== null)
-            url_ += "startDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
-        if (endDate !== undefined && endDate !== null)
-            url_ += "endDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetBasalAnalysis(_response);
-        });
-    }
-
-    protected processGetBasalAnalysis(response: Response): Promise<BasalAnalysisResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as BasalAnalysisResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<BasalAnalysisResponse>(null as any);
-    }
-
-    /**
-     * Calculate AID (Automated Insulin Delivery) system metrics for a date range.
-    Uses patient device data to segment the period and compute time-weighted metrics.
-     * @param startDate (optional) 
-     * @param endDate (optional) 
-     */
-    getAidSystemMetrics(startDate?: Date | undefined, endDate?: Date | undefined, signal?: AbortSignal): Promise<AidSystemMetrics> {
-        let url_ = this.baseUrl + "/api/v1/Statistics/aid-system-metrics?";
-        if (startDate === null)
-            throw new globalThis.Error("The parameter 'startDate' cannot be null.");
-        else if (startDate !== undefined)
-            url_ += "startDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
-        if (endDate === null)
-            throw new globalThis.Error("The parameter 'endDate' cannot be null.");
-        else if (endDate !== undefined)
-            url_ += "endDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetAidSystemMetrics(_response);
-        });
-    }
-
-    protected processGetAidSystemMetrics(response: Response): Promise<AidSystemMetrics> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AidSystemMetrics;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<AidSystemMetrics>(null as any);
-    }
-}
-
-export class VersionsClient {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * Get the list of supported API versions
-     * @return List of supported API versions
-     */
-    getVersions(signal?: AbortSignal): Promise<VersionsResponse> {
-        let url_ = this.baseUrl + "/api/Versions";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processGetVersions(_response);
-        });
-    }
-
-    protected processGetVersions(response: Response): Promise<VersionsResponse> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as VersionsResponse;
-            return result200;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<VersionsResponse>(null as any);
     }
 }
 
@@ -5986,6 +3347,351 @@ export class AlertsClient {
             });
         }
         return Promise.resolve<PendingDeliveryResponse[]>(null as any);
+    }
+}
+
+export class AnalyticsClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Get the current analytics configuration and status
+     * @return Analytics configuration and collection status
+     */
+    getAnalyticsStatus(signal?: AbortSignal): Promise<FileResponse> {
+        let url_ = this.baseUrl + "/api/v4/Analytics/status";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAnalyticsStatus(_response);
+        });
+    }
+
+    protected processGetAnalyticsStatus(response: Response): Promise<FileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse>(null as any);
+    }
+
+    /**
+     * Get current performance metrics
+     * @return System performance metrics
+     */
+    getPerformanceMetrics(signal?: AbortSignal): Promise<PerformanceMetrics> {
+        let url_ = this.baseUrl + "/api/v4/Analytics/metrics/performance";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetPerformanceMetrics(_response);
+        });
+    }
+
+    protected processGetPerformanceMetrics(response: Response): Promise<PerformanceMetrics> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PerformanceMetrics;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PerformanceMetrics>(null as any);
+    }
+
+    /**
+     * Get current usage statistics
+     * @return Usage statistics
+     */
+    getUsageStatistics(signal?: AbortSignal): Promise<UsageStatistics> {
+        let url_ = this.baseUrl + "/api/v4/Analytics/metrics/usage";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetUsageStatistics(_response);
+        });
+    }
+
+    protected processGetUsageStatistics(response: Response): Promise<UsageStatistics> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as UsageStatistics;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<UsageStatistics>(null as any);
+    }
+
+    /**
+     * Get pending analytics data that would be transmitted (for transparency)
+     * @return Pending analytics data or null if none
+     */
+    getPendingAnalyticsData(signal?: AbortSignal): Promise<AnalyticsBatch> {
+        let url_ = this.baseUrl + "/api/v4/Analytics/data/pending";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetPendingAnalyticsData(_response);
+        });
+    }
+
+    protected processGetPendingAnalyticsData(response: Response): Promise<AnalyticsBatch> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AnalyticsBatch;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AnalyticsBatch>(null as any);
+    }
+
+    /**
+     * Update analytics collection configuration
+     * @param config New analytics configuration
+     * @return Updated configuration
+     */
+    updateAnalyticsConfig(config: AnalyticsCollectionConfig, signal?: AbortSignal): Promise<AnalyticsCollectionConfig> {
+        let url_ = this.baseUrl + "/api/v4/Analytics/config";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(config);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateAnalyticsConfig(_response);
+        });
+    }
+
+    protected processUpdateAnalyticsConfig(response: Response): Promise<AnalyticsCollectionConfig> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AnalyticsCollectionConfig;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AnalyticsCollectionConfig>(null as any);
+    }
+
+    /**
+     * Clear all stored analytics data
+     * @return Confirmation message
+     */
+    clearAnalyticsData(signal?: AbortSignal): Promise<FileResponse> {
+        let url_ = this.baseUrl + "/api/v4/Analytics/data";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processClearAnalyticsData(_response);
+        });
+    }
+
+    protected processClearAnalyticsData(response: Response): Promise<FileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse>(null as any);
+    }
+
+    /**
+     * Get information about what data is collected and privacy policy
+     * @return Privacy and data collection information
+     */
+    getPrivacyInformation(signal?: AbortSignal): Promise<FileResponse> {
+        let url_ = this.baseUrl + "/api/v4/Analytics/privacy";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetPrivacyInformation(_response);
+        });
+    }
+
+    protected processGetPrivacyInformation(response: Response): Promise<FileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse>(null as any);
+    }
+
+    /**
+     * Track a custom analytics event (for testing or manual tracking)
+     * @param eventData Custom event data
+     * @return Confirmation message
+     */
+    trackCustomEvent(eventData: AnalyticsEvent, signal?: AbortSignal): Promise<FileResponse> {
+        let url_ = this.baseUrl + "/api/v4/Analytics/events";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(eventData);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/octet-stream"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processTrackCustomEvent(_response);
+        });
+    }
+
+    protected processTrackCustomEvent(response: Response): Promise<FileResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return response.blob().then(blob => { return { fileName: fileName, data: blob, status: status, headers: _headers }; });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<FileResponse>(null as any);
     }
 }
 
@@ -11198,6 +8904,183 @@ export class MealMatchingClient {
             });
         }
         return Promise.resolve<void>(null as any);
+    }
+}
+
+export class MemberInviteClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Get invite info for the accept page (anonymous).
+     */
+    getInviteInfo(token: string, signal?: AbortSignal): Promise<MemberInviteInfo> {
+        let url_ = this.baseUrl + "/api/v4/member-invites/{token}/info";
+        if (token === undefined || token === null)
+            throw new globalThis.Error("The parameter 'token' must be defined.");
+        url_ = url_.replace("{token}", encodeURIComponent("" + token));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetInviteInfo(_response);
+        });
+    }
+
+    protected processGetInviteInfo(response: Response): Promise<MemberInviteInfo> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as MemberInviteInfo;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MemberInviteInfo>(null as any);
+    }
+
+    /**
+     * Accept an invite and join the tenant.
+     */
+    acceptInvite(token: string, signal?: AbortSignal): Promise<AcceptMemberInviteResult> {
+        let url_ = this.baseUrl + "/api/v4/member-invites/{token}/accept";
+        if (token === undefined || token === null)
+            throw new globalThis.Error("The parameter 'token' must be defined.");
+        url_ = url_.replace("{token}", encodeURIComponent("" + token));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAcceptInvite(_response);
+        });
+    }
+
+    protected processAcceptInvite(response: Response): Promise<AcceptMemberInviteResult> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AcceptMemberInviteResult;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AcceptMemberInviteResult>(null as any);
+    }
+
+    /**
+     * List all members of the current tenant.
+     */
+    getMembers(signal?: AbortSignal): Promise<TenantMemberDto[]> {
+        let url_ = this.baseUrl + "/api/v4/member-invites/members";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMembers(_response);
+        });
+    }
+
+    protected processGetMembers(response: Response): Promise<TenantMemberDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TenantMemberDto[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TenantMemberDto[]>(null as any);
+    }
+
+    /**
+     * List followers of the current tenant (members with follower role).
+     */
+    getFollowers(signal?: AbortSignal): Promise<TenantMemberDto[]> {
+        let url_ = this.baseUrl + "/api/v4/member-invites/members/followers";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetFollowers(_response);
+        });
+    }
+
+    protected processGetFollowers(response: Response): Promise<TenantMemberDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TenantMemberDto[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TenantMemberDto[]>(null as any);
     }
 }
 
@@ -23592,6 +21475,611 @@ export class VersionClient {
     }
 }
 
+export class AuthorizationClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Generate JWT token from access token
+     * @param accessToken Access token to exchange for JWT
+     * @return JWT token response
+     */
+    generateJwtFromAccessToken(accessToken: string, signal?: AbortSignal): Promise<AuthorizationResponse> {
+        let url_ = this.baseUrl + "/api/v2/authorization/request/{accessToken}";
+        if (accessToken === undefined || accessToken === null)
+            throw new globalThis.Error("The parameter 'accessToken' must be defined.");
+        url_ = url_.replace("{accessToken}", encodeURIComponent("" + accessToken));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGenerateJwtFromAccessToken(_response);
+        });
+    }
+
+    protected processGenerateJwtFromAccessToken(response: Response): Promise<AuthorizationResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AuthorizationResponse;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AuthorizationResponse>(null as any);
+    }
+
+    /**
+     * Get all permissions that have been seen by the system
+     * @return List of permissions with usage statistics
+     */
+    getAllPermissions(signal?: AbortSignal): Promise<PermissionsResponse> {
+        let url_ = this.baseUrl + "/api/v2/authorization/permissions";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAllPermissions(_response);
+        });
+    }
+
+    protected processGetAllPermissions(response: Response): Promise<PermissionsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PermissionsResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PermissionsResponse>(null as any);
+    }
+
+    /**
+     * Get permission hierarchy structure as a trie
+     * @return Permission trie structure
+     */
+    getPermissionTrie(signal?: AbortSignal): Promise<PermissionTrieResponse> {
+        let url_ = this.baseUrl + "/api/v2/authorization/permissions/trie";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetPermissionTrie(_response);
+        });
+    }
+
+    protected processGetPermissionTrie(response: Response): Promise<PermissionTrieResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PermissionTrieResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PermissionTrieResponse>(null as any);
+    }
+
+    /**
+     * Get all subjects (users/devices)
+     * @return List of all subjects
+     */
+    getAllSubjects(signal?: AbortSignal): Promise<Subject[]> {
+        let url_ = this.baseUrl + "/api/v2/authorization/subjects";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAllSubjects(_response);
+        });
+    }
+
+    protected processGetAllSubjects(response: Response): Promise<Subject[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Subject[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Subject[]>(null as any);
+    }
+
+    /**
+     * Create a new subject
+     * @param subject Subject to create
+     * @return Created subject
+     */
+    createSubject(subject: Subject, signal?: AbortSignal): Promise<Subject> {
+        let url_ = this.baseUrl + "/api/v2/authorization/subjects";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(subject);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateSubject(_response);
+        });
+    }
+
+    protected processCreateSubject(response: Response): Promise<Subject> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Subject;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Subject>(null as any);
+    }
+
+    /**
+     * Update an existing subject
+     * @param subject Subject to update
+     * @return Updated subject
+     */
+    updateSubject(subject: Subject, signal?: AbortSignal): Promise<Subject> {
+        let url_ = this.baseUrl + "/api/v2/authorization/subjects";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(subject);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateSubject(_response);
+        });
+    }
+
+    protected processUpdateSubject(response: Response): Promise<Subject> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Subject;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Subject>(null as any);
+    }
+
+    /**
+     * Delete a subject by ID
+     * @param id Subject ID to delete
+     * @return Success response
+     */
+    deleteSubject(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v2/authorization/subjects/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteSubject(_response);
+        });
+    }
+
+    protected processDeleteSubject(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Get all roles
+     * @return List of all roles
+     */
+    getAllRoles(signal?: AbortSignal): Promise<Role[]> {
+        let url_ = this.baseUrl + "/api/v2/authorization/roles";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAllRoles(_response);
+        });
+    }
+
+    protected processGetAllRoles(response: Response): Promise<Role[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Role[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Role[]>(null as any);
+    }
+
+    /**
+     * Create a new role
+     * @param role Role to create
+     * @return Created role
+     */
+    createRole(role: Role, signal?: AbortSignal): Promise<Role> {
+        let url_ = this.baseUrl + "/api/v2/authorization/roles";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(role);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateRole(_response);
+        });
+    }
+
+    protected processCreateRole(response: Response): Promise<Role> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Role;
+            return result201;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Role>(null as any);
+    }
+
+    /**
+     * Update an existing role
+     * @param role Role to update
+     * @return Updated role
+     */
+    updateRole(role: Role, signal?: AbortSignal): Promise<Role> {
+        let url_ = this.baseUrl + "/api/v2/authorization/roles";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(role);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateRole(_response);
+        });
+    }
+
+    protected processUpdateRole(response: Response): Promise<Role> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Role;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Role>(null as any);
+    }
+
+    /**
+     * Delete a role by ID
+     * @param id Role ID to delete
+     * @return Success response
+     */
+    deleteRole(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v2/authorization/roles/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteRole(_response);
+        });
+    }
+
+    protected processDeleteRole(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+}
+
 export class DDataClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -24381,6 +22869,104 @@ export class AlexaClient {
     }
 }
 
+export class AuthenticationClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Verify authentication status and permissions for the current request
+    This endpoint provides 1:1 compatibility with Nightscout's /api/v1/verifyauth endpoint
+     * @return Authentication status and permission information
+     */
+    verifyAuthentication(signal?: AbortSignal): Promise<VerifyAuthResponse> {
+        let url_ = this.baseUrl + "/api/v1/verifyauth";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processVerifyAuthentication(_response);
+        });
+    }
+
+    protected processVerifyAuthentication(response: Response): Promise<VerifyAuthResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as VerifyAuthResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<VerifyAuthResponse>(null as any);
+    }
+}
+
+export class ConnectorStatusClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Gets the current status and metrics for all registered connectors
+     */
+    getStatus(signal?: AbortSignal): Promise<ConnectorStatusDto[]> {
+        let url_ = this.baseUrl + "/api/v1/connectors/status";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetStatus(_response);
+        });
+    }
+
+    protected processGetStatus(response: Response): Promise<ConnectorStatusDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ConnectorStatusDto[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ConnectorStatusDto[]>(null as any);
+    }
+}
+
 export class CountClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -24776,6 +23362,1241 @@ export class IobClient {
             });
         }
         return Promise.resolve<HourlyIobResponse>(null as any);
+    }
+}
+
+export class PebbleClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Get pebble-formatted data for smartwatch apps and CGM monitors
+    Returns current glucose, trend, delta, battery, IOB, and COB information
+     * @param units (optional) Units for glucose display (mg/dl or mmol)
+     * @param count (optional) Number of glucose readings to return (default: 1)
+     * @return Pebble-formatted response with bgs, cals, and status
+     */
+    getPebbleData(units?: string | null | undefined, count?: number | undefined, signal?: AbortSignal): Promise<PebbleResponse> {
+        let url_ = this.baseUrl + "/pebble?";
+        if (units !== undefined && units !== null)
+            url_ += "units=" + encodeURIComponent("" + units) + "&";
+        if (count === null)
+            throw new globalThis.Error("The parameter 'count' cannot be null.");
+        else if (count !== undefined)
+            url_ += "count=" + encodeURIComponent("" + count) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetPebbleData(_response);
+        });
+    }
+
+    protected processGetPebbleData(response: Response): Promise<PebbleResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PebbleResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PebbleResponse>(null as any);
+    }
+}
+
+export class StatisticsClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Calculate basic glucose statistics from provided glucose values
+     * @param values Array of glucose values in mg/dL
+     * @return Basic glucose statistics including mean, median, percentiles, etc.
+     */
+    calculateBasicStats(values: number[], signal?: AbortSignal): Promise<BasicGlucoseStats> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/basic-stats";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(values);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateBasicStats(_response);
+        });
+    }
+
+    protected processCalculateBasicStats(response: Response): Promise<BasicGlucoseStats> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as BasicGlucoseStats;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<BasicGlucoseStats>(null as any);
+    }
+
+    /**
+     * Calculate comprehensive glycemic variability metrics
+     * @param request Request containing glucose values and entries
+     * @return Comprehensive glycemic variability metrics
+     */
+    calculateGlycemicVariability(request: GlycemicVariabilityRequest, signal?: AbortSignal): Promise<GlycemicVariability> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/glycemic-variability";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateGlycemicVariability(_response);
+        });
+    }
+
+    protected processCalculateGlycemicVariability(response: Response): Promise<GlycemicVariability> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as GlycemicVariability;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<GlycemicVariability>(null as any);
+    }
+
+    /**
+     * Calculate time in range metrics
+     * @param request Request containing entries and optional thresholds
+     * @return Time in range metrics including percentages, durations, and episodes
+     */
+    calculateTimeInRange(request: TimeInRangeRequest, signal?: AbortSignal): Promise<TimeInRangeMetrics> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/time-in-range";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateTimeInRange(_response);
+        });
+    }
+
+    protected processCalculateTimeInRange(response: Response): Promise<TimeInRangeMetrics> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TimeInRangeMetrics;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TimeInRangeMetrics>(null as any);
+    }
+
+    /**
+     * Calculate glucose distribution across configurable bins
+     * @param request Request containing entries and optional bins
+     * @return Collection of distribution data points
+     */
+    calculateGlucoseDistribution(request: GlucoseDistributionRequest, signal?: AbortSignal): Promise<DistributionDataPoint[]> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/glucose-distribution";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateGlucoseDistribution(_response);
+        });
+    }
+
+    protected processCalculateGlucoseDistribution(response: Response): Promise<DistributionDataPoint[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DistributionDataPoint[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<DistributionDataPoint[]>(null as any);
+    }
+
+    /**
+     * Calculate averaged statistics for each hour of the day (0-23)
+     * @param entries Array of sensor glucose readings
+     * @return Collection of averaged statistics for each hour
+     */
+    calculateAveragedStats(entries: SensorGlucose[], signal?: AbortSignal): Promise<AveragedStats[]> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/averaged-stats";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(entries);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateAveragedStats(_response);
+        });
+    }
+
+    protected processCalculateAveragedStats(response: Response): Promise<AveragedStats[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AveragedStats[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AveragedStats[]>(null as any);
+    }
+
+    /**
+     * Calculate treatment summary for a collection of boluses and carb intakes
+     * @param request Request containing boluses and carb intakes
+     * @return Treatment summary with totals and counts
+     */
+    calculateTreatmentSummary(request: TreatmentSummaryRequest, signal?: AbortSignal): Promise<TreatmentSummary> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/treatment-summary";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateTreatmentSummary(_response);
+        });
+    }
+
+    protected processCalculateTreatmentSummary(response: Response): Promise<TreatmentSummary> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TreatmentSummary;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TreatmentSummary>(null as any);
+    }
+
+    /**
+     * Calculate overall averages across multiple days
+     * @param dailyDataPoints Array of daily data points
+     * @return Overall averages or null if no data
+     */
+    calculateOverallAverages(dailyDataPoints: DayData[], signal?: AbortSignal): Promise<OverallAverages> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/overall-averages";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dailyDataPoints);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateOverallAverages(_response);
+        });
+    }
+
+    protected processCalculateOverallAverages(response: Response): Promise<OverallAverages> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OverallAverages;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<OverallAverages>(null as any);
+    }
+
+    /**
+     * Master glucose analytics function that calculates comprehensive metrics
+     * @param request Request containing sensor glucose readings, boluses, carb intakes, and configuration
+     * @return Comprehensive glucose analytics
+     */
+    analyzeGlucoseData(request: GlucoseAnalyticsRequest, signal?: AbortSignal): Promise<GlucoseAnalytics> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/comprehensive-analytics";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAnalyzeGlucoseData(_response);
+        });
+    }
+
+    protected processAnalyzeGlucoseData(response: Response): Promise<GlucoseAnalytics> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as GlucoseAnalytics;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<GlucoseAnalytics>(null as any);
+    }
+
+    /**
+     * Extended glucose analytics including GMI, GRI, and clinical target assessment
+     * @param request Request containing sensor glucose readings, boluses, carb intakes, population type, and configuration
+     * @return Extended glucose analytics with modern clinical metrics
+     */
+    analyzeGlucoseDataExtended(request: ExtendedGlucoseAnalyticsRequest, signal?: AbortSignal): Promise<ExtendedGlucoseAnalytics> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/extended-analytics";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAnalyzeGlucoseDataExtended(_response);
+        });
+    }
+
+    protected processAnalyzeGlucoseDataExtended(response: Response): Promise<ExtendedGlucoseAnalytics> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ExtendedGlucoseAnalytics;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ExtendedGlucoseAnalytics>(null as any);
+    }
+
+    /**
+     * Calculate Glucose Management Indicator (GMI)
+     * @param meanGlucose Mean glucose in mg/dL
+     * @return GMI with value and interpretation
+     */
+    calculateGMI(meanGlucose: number, signal?: AbortSignal): Promise<GlucoseManagementIndicator> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/gmi/{meanGlucose}";
+        if (meanGlucose === undefined || meanGlucose === null)
+            throw new globalThis.Error("The parameter 'meanGlucose' must be defined.");
+        url_ = url_.replace("{meanGlucose}", encodeURIComponent("" + meanGlucose));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateGMI(_response);
+        });
+    }
+
+    protected processCalculateGMI(response: Response): Promise<GlucoseManagementIndicator> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as GlucoseManagementIndicator;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<GlucoseManagementIndicator>(null as any);
+    }
+
+    /**
+     * Calculate Glycemic Risk Index (GRI) from time in range metrics
+     * @param timeInRange Time in range metrics
+     * @return GRI with score, zone, and interpretation
+     */
+    calculateGRI(timeInRange: TimeInRangeMetrics, signal?: AbortSignal): Promise<GlycemicRiskIndex> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/gri";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(timeInRange);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateGRI(_response);
+        });
+    }
+
+    protected processCalculateGRI(response: Response): Promise<GlycemicRiskIndex> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as GlycemicRiskIndex;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<GlycemicRiskIndex>(null as any);
+    }
+
+    /**
+     * Assess glucose data against clinical targets for a specific population
+     * @param request Request containing analytics and population type
+     * @return Clinical target assessment with actionable insights
+     */
+    assessAgainstTargets(request: ClinicalAssessmentRequest, signal?: AbortSignal): Promise<ClinicalTargetAssessment> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/clinical-assessment";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAssessAgainstTargets(_response);
+        });
+    }
+
+    protected processAssessAgainstTargets(response: Response): Promise<ClinicalTargetAssessment> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ClinicalTargetAssessment;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ClinicalTargetAssessment>(null as any);
+    }
+
+    /**
+     * Assess data sufficiency for a valid clinical report
+     * @param request Request containing entries and optional period settings
+     * @return Data sufficiency assessment
+     */
+    assessDataSufficiency(request: DataSufficiencyRequest, signal?: AbortSignal): Promise<DataSufficiencyAssessment> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/data-sufficiency";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAssessDataSufficiency(_response);
+        });
+    }
+
+    protected processAssessDataSufficiency(response: Response): Promise<DataSufficiencyAssessment> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DataSufficiencyAssessment;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<DataSufficiencyAssessment>(null as any);
+    }
+
+    /**
+     * Get clinical targets for a specific diabetes population
+     * @param population Population type (Type1Adult, Type2Adult, Elderly, Pregnancy, etc.)
+     * @return Clinical targets for the specified population
+     */
+    getClinicalTargets(population: DiabetesPopulation, signal?: AbortSignal): Promise<ClinicalTargets> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/clinical-targets/{population}";
+        if (population === undefined || population === null)
+            throw new globalThis.Error("The parameter 'population' must be defined.");
+        url_ = url_.replace("{population}", encodeURIComponent("" + population));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetClinicalTargets(_response);
+        });
+    }
+
+    protected processGetClinicalTargets(response: Response): Promise<ClinicalTargets> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ClinicalTargets;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<ClinicalTargets>(null as any);
+    }
+
+    /**
+     * Calculate estimated A1C from average glucose
+     * @param averageGlucose Average glucose in mg/dL
+     * @return Estimated A1C percentage
+     */
+    calculateEstimatedA1C(averageGlucose: number, signal?: AbortSignal): Promise<number> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/estimated-a1c/{averageGlucose}";
+        if (averageGlucose === undefined || averageGlucose === null)
+            throw new globalThis.Error("The parameter 'averageGlucose' must be defined.");
+        url_ = url_.replace("{averageGlucose}", encodeURIComponent("" + averageGlucose));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateEstimatedA1C(_response);
+        });
+    }
+
+    protected processCalculateEstimatedA1C(response: Response): Promise<number> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as number;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<number>(null as any);
+    }
+
+    /**
+     * Convert mg/dL to mmol/L
+     * @param mgdl Glucose value in mg/dL
+     * @return Glucose value in mmol/L
+     */
+    mgdlToMMOL(mgdl: number, signal?: AbortSignal): Promise<number> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/convert/mgdl-to-mmol/{mgdl}";
+        if (mgdl === undefined || mgdl === null)
+            throw new globalThis.Error("The parameter 'mgdl' must be defined.");
+        url_ = url_.replace("{mgdl}", encodeURIComponent("" + mgdl));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMgdlToMMOL(_response);
+        });
+    }
+
+    protected processMgdlToMMOL(response: Response): Promise<number> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as number;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<number>(null as any);
+    }
+
+    /**
+     * Convert mmol/L to mg/dL
+     * @param mmol Glucose value in mmol/L
+     * @return Glucose value in mg/dL
+     */
+    mmolToMGDL(mmol: number, signal?: AbortSignal): Promise<number> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/convert/mmol-to-mgdl/{mmol}";
+        if (mmol === undefined || mmol === null)
+            throw new globalThis.Error("The parameter 'mmol' must be defined.");
+        url_ = url_.replace("{mmol}", encodeURIComponent("" + mmol));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processMmolToMGDL(_response);
+        });
+    }
+
+    protected processMmolToMGDL(response: Response): Promise<number> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as number;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<number>(null as any);
+    }
+
+    /**
+     * Format insulin value for display
+     * @param value Insulin value
+     * @return Formatted insulin string
+     */
+    formatInsulinDisplay(value: number, signal?: AbortSignal): Promise<string> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/format/insulin/{value}";
+        if (value === undefined || value === null)
+            throw new globalThis.Error("The parameter 'value' must be defined.");
+        url_ = url_.replace("{value}", encodeURIComponent("" + value));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processFormatInsulinDisplay(_response);
+        });
+    }
+
+    protected processFormatInsulinDisplay(response: Response): Promise<string> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string>(null as any);
+    }
+
+    /**
+     * Format carb value for display
+     * @param value Carb value
+     * @return Formatted carb string
+     */
+    formatCarbDisplay(value: number, signal?: AbortSignal): Promise<string> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/format/carb/{value}";
+        if (value === undefined || value === null)
+            throw new globalThis.Error("The parameter 'value' must be defined.");
+        url_ = url_.replace("{value}", encodeURIComponent("" + value));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processFormatCarbDisplay(_response);
+        });
+    }
+
+    protected processFormatCarbDisplay(response: Response): Promise<string> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string>(null as any);
+    }
+
+    /**
+     * Validate treatment data for completeness and consistency
+     * @param treatment Treatment to validate
+     * @return True if treatment data is valid
+     */
+    validateTreatmentData(treatment: Treatment, signal?: AbortSignal): Promise<boolean> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/validate/treatment";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(treatment);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processValidateTreatmentData(_response);
+        });
+    }
+
+    protected processValidateTreatmentData(response: Response): Promise<boolean> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as boolean;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<boolean>(null as any);
+    }
+
+    /**
+     * Clean and filter treatment data
+     * @param treatments Array of treatments to clean
+     * @return Cleaned collection of treatments
+     */
+    cleanTreatmentData(treatments: Treatment[], signal?: AbortSignal): Promise<Treatment[]> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/clean/treatments";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(treatments);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCleanTreatmentData(_response);
+        });
+    }
+
+    protected processCleanTreatmentData(response: Response): Promise<Treatment[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as Treatment[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<Treatment[]>(null as any);
+    }
+
+    /**
+     * Get comprehensive statistics for multiple time periods (1, 3, 7, 30, 90 days)
+    Uses in-memory cache for performance with daily expiration
+     * @return Multi-period statistics with comprehensive analytics for each time period
+     */
+    getMultiPeriodStatistics(signal?: AbortSignal): Promise<MultiPeriodStatistics> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/periods";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMultiPeriodStatistics(_response);
+        });
+    }
+
+    protected processGetMultiPeriodStatistics(response: Response): Promise<MultiPeriodStatistics> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as MultiPeriodStatistics;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MultiPeriodStatistics>(null as any);
+    }
+
+    /**
+     * Analyze glucose patterns around site changes to identify impact of site age on control
+     * @param request Request containing sensor glucose readings, device events, and analysis parameters
+     * @return Site change impact analysis with averaged glucose patterns
+     */
+    calculateSiteChangeImpact(request: SiteChangeImpactRequest, signal?: AbortSignal): Promise<SiteChangeImpactAnalysis> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/site-change-impact";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCalculateSiteChangeImpact(_response);
+        });
+    }
+
+    protected processCalculateSiteChangeImpact(response: Response): Promise<SiteChangeImpactAnalysis> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as SiteChangeImpactAnalysis;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SiteChangeImpactAnalysis>(null as any);
+    }
+
+    /**
+     * Calculate daily basal/bolus ratio statistics for a date range
+     * @param startDate (optional) Start date of the analysis period
+     * @param endDate (optional) End date of the analysis period
+     * @return Daily basal/bolus ratio breakdown with averages
+     */
+    getDailyBasalBolusRatios(startDate?: Date | undefined, endDate?: Date | undefined, signal?: AbortSignal): Promise<DailyBasalBolusRatioResponse> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/daily-basal-bolus-ratios?";
+        if (startDate === null)
+            throw new globalThis.Error("The parameter 'startDate' cannot be null.");
+        else if (startDate !== undefined)
+            url_ += "startDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
+        if (endDate === null)
+            throw new globalThis.Error("The parameter 'endDate' cannot be null.");
+        else if (endDate !== undefined)
+            url_ += "endDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetDailyBasalBolusRatios(_response);
+        });
+    }
+
+    protected processGetDailyBasalBolusRatios(response: Response): Promise<DailyBasalBolusRatioResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DailyBasalBolusRatioResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<DailyBasalBolusRatioResponse>(null as any);
+    }
+
+    /**
+     * Calculate comprehensive insulin delivery statistics for a date range
+     * @param startDate (optional) Start date of the analysis period
+     * @param endDate (optional) End date of the analysis period
+     * @return Comprehensive insulin delivery statistics
+     */
+    getInsulinDeliveryStatistics(startDate?: Date | undefined, endDate?: Date | undefined, signal?: AbortSignal): Promise<InsulinDeliveryStatistics> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/insulin-delivery-stats?";
+        if (startDate === null)
+            throw new globalThis.Error("The parameter 'startDate' cannot be null.");
+        else if (startDate !== undefined)
+            url_ += "startDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
+        if (endDate === null)
+            throw new globalThis.Error("The parameter 'endDate' cannot be null.");
+        else if (endDate !== undefined)
+            url_ += "endDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetInsulinDeliveryStatistics(_response);
+        });
+    }
+
+    protected processGetInsulinDeliveryStatistics(response: Response): Promise<InsulinDeliveryStatistics> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as InsulinDeliveryStatistics;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<InsulinDeliveryStatistics>(null as any);
+    }
+
+    /**
+     * Calculate comprehensive basal analysis statistics for a date range
+     * @param startDate (optional) Start date of the analysis period
+     * @param endDate (optional) End date of the analysis period
+     * @return Comprehensive basal analysis with stats, temp basal info, and hourly percentiles
+     */
+    getBasalAnalysis(startDate?: Date | null | undefined, endDate?: Date | null | undefined, signal?: AbortSignal): Promise<BasalAnalysisResponse> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/basal-analysis?";
+        if (startDate !== undefined && startDate !== null)
+            url_ += "startDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
+        if (endDate !== undefined && endDate !== null)
+            url_ += "endDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetBasalAnalysis(_response);
+        });
+    }
+
+    protected processGetBasalAnalysis(response: Response): Promise<BasalAnalysisResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as BasalAnalysisResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<BasalAnalysisResponse>(null as any);
+    }
+
+    /**
+     * Calculate AID (Automated Insulin Delivery) system metrics for a date range.
+    Uses patient device data to segment the period and compute time-weighted metrics.
+     * @param startDate (optional) 
+     * @param endDate (optional) 
+     */
+    getAidSystemMetrics(startDate?: Date | undefined, endDate?: Date | undefined, signal?: AbortSignal): Promise<AidSystemMetrics> {
+        let url_ = this.baseUrl + "/api/v1/Statistics/aid-system-metrics?";
+        if (startDate === null)
+            throw new globalThis.Error("The parameter 'startDate' cannot be null.");
+        else if (startDate !== undefined)
+            url_ += "startDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
+        if (endDate === null)
+            throw new globalThis.Error("The parameter 'endDate' cannot be null.");
+        else if (endDate !== undefined)
+            url_ += "endDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAidSystemMetrics(_response);
+        });
+    }
+
+    protected processGetAidSystemMetrics(response: Response): Promise<AidSystemMetrics> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AidSystemMetrics;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AidSystemMetrics>(null as any);
     }
 }
 
@@ -25387,6 +25208,55 @@ export class TimeQueryClient {
     }
 }
 
+export class VersionsClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Get the list of supported API versions
+     * @return List of supported API versions
+     */
+    getVersions(signal?: AbortSignal): Promise<VersionsResponse> {
+        let url_ = this.baseUrl + "/api/Versions";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetVersions(_response);
+        });
+    }
+
+    protected processGetVersions(response: Response): Promise<VersionsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as VersionsResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<VersionsResponse>(null as any);
+    }
+}
+
 export class TenantClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -25637,6 +25507,145 @@ export class TenantClient {
             let result403: any = null;
             result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
             return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    createInvite(id: string, request: CreateMemberInviteRequest, signal?: AbortSignal): Promise<MemberInviteResult> {
+        let url_ = this.baseUrl + "/api/admin/tenants/{id}/invites";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateInvite(_response);
+        });
+    }
+
+    protected processCreateInvite(response: Response): Promise<MemberInviteResult> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as MemberInviteResult;
+            return result201;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MemberInviteResult>(null as any);
+    }
+
+    listInvites(id: string, signal?: AbortSignal): Promise<MemberInviteInfo[]> {
+        let url_ = this.baseUrl + "/api/admin/tenants/{id}/invites";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processListInvites(_response);
+        });
+    }
+
+    protected processListInvites(response: Response): Promise<MemberInviteInfo[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as MemberInviteInfo[];
+            return result200;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<MemberInviteInfo[]>(null as any);
+    }
+
+    revokeInvite(id: string, inviteId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/admin/tenants/{id}/invites/{inviteId}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        if (inviteId === undefined || inviteId === null)
+            throw new globalThis.Error("The parameter 'inviteId' must be defined.");
+        url_ = url_.replace("{inviteId}", encodeURIComponent("" + inviteId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRevokeInvite(_response);
+        });
+    }
+
+    protected processRevokeInvite(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -26029,74 +26038,13 @@ export class ConfigurationClient {
     }
 }
 
-export interface PerformanceMetrics {
-    averageResponseTime?: number;
-    totalRequests?: number;
-    errorCount?: number;
-    memoryUsageMB?: number;
-    uptimeHours?: number;
-    topEndpoints?: { [key: string]: number; };
-}
-
-export interface UsageStatistics {
-    uniqueSessions?: number;
-    popularFeatures?: { [key: string]: number; };
-    averageSessionDuration?: number;
-    deviceTypes?: { [key: string]: number; };
-}
-
-export interface AnalyticsBatch {
-    installationId?: string;
-    events?: AnalyticsEvent[];
-    systemInfo?: SystemInfo | undefined;
-    batchTimestamp?: number;
-    schemaVersion?: string;
-}
-
-export interface AnalyticsEvent {
-    sessionId?: string;
-    eventType?: string;
-    category?: string;
-    action?: string;
-    label?: string;
-    value?: number | undefined;
-    timestamp?: number;
-    metadata?: { [key: string]: any; };
-}
-
-export interface SystemInfo {
-    platform?: string;
-    runtimeVersion?: string;
-    nocturneVersion?: string;
-    deploymentType?: string;
-    demoModeEnabled?: boolean;
-    enabledConnectors?: string[];
-    enabledFeatures?: string[];
-    databaseType?: string;
-    cacheEnabled?: boolean;
-}
-
-export interface AnalyticsCollectionConfig {
-    collectApiUsage?: boolean;
-    collectUiUsage?: boolean;
-    collectPerformanceMetrics?: boolean;
-    collectHealthMetrics?: boolean;
-    collectFeatureUsage?: boolean;
-    excludedEndpoints?: string[];
-    maxLocalEvents?: number;
-}
-
-/** Response for the /api/v1/verifyauth endpoint */
-export interface VerifyAuthResponse {
-    /** Authentication message - can be either a string or an object */
-    message?: any;
-}
-
-export interface AuthorizationResponse {
+/** Response containing the newly created direct grant and plaintext token */
+export interface CreateDirectGrantResponse {
+    id?: string;
     token?: string;
-    exp?: number;
-    sub?: string;
-    iat?: number;
+    label?: string;
+    scopes?: string[];
+    createdAt?: Date;
 }
 
 export interface ProblemDetails {
@@ -26107,83 +26055,6 @@ export interface ProblemDetails {
     instance?: string | undefined;
 
     [key: string]: any;
-}
-
-export interface PermissionsResponse {
-    permissions?: Permission[];
-}
-
-export interface Permission {
-    name?: string;
-    count?: number;
-    firstSeen?: Date;
-    lastSeen?: Date;
-}
-
-export interface PermissionTrieResponse {
-    root?: PermissionTrieNode;
-    count?: number;
-}
-
-export interface PermissionTrieNode {
-    name?: string;
-    isLeaf?: boolean;
-    children?: { [key: string]: PermissionTrieNode; };
-}
-
-export interface Subject {
-    id?: string | undefined;
-    _id?: string | undefined;
-    name: string;
-    roles?: string[];
-    accessToken?: string;
-    notes?: string | undefined;
-    created?: Date;
-    modified?: Date;
-}
-
-export interface Role {
-    id?: string | undefined;
-    _id?: string | undefined;
-    name: string;
-    permissions?: string[];
-    notes?: string | undefined;
-    autoGenerated?: boolean;
-    created?: Date;
-    modified?: Date;
-}
-
-export interface ConnectorStatusDto {
-    id?: string;
-    name?: string;
-    status?: string;
-    totalEntries?: number;
-    lastEntryTime?: Date | undefined;
-    entriesLast24Hours?: number;
-    state?: string;
-    stateMessage?: string | undefined;
-    isHealthy?: boolean;
-    /** When the connector last attempted to sync */
-    lastSyncAttempt?: Date | undefined;
-    /** When the connector last successfully completed a sync */
-    lastSuccessfulSync?: Date | undefined;
-    /** When the last error occurred */
-    lastErrorAt?: Date | undefined;
-    /** Breakdown of total items processed by data type
-Keys are data type names (e.g., "Glucose", "Treatments", "Food") */
-    totalItemsBreakdown?: { [key: string]: number; } | undefined;
-    /** Breakdown of items processed in the last 24 hours by data type
-Keys are data type names (e.g., "Glucose", "Treatments", "Food") */
-    itemsLast24HoursBreakdown?: { [key: string]: number; } | undefined;
-}
-
-/** Response containing the newly created direct grant and plaintext token */
-export interface CreateDirectGrantResponse {
-    id?: string;
-    token?: string;
-    label?: string;
-    scopes?: string[];
-    createdAt?: Date;
 }
 
 /** Request to create a new direct grant */
@@ -26650,116 +26521,17 @@ export interface OAuthGrantDto {
     clientId?: string | undefined;
     clientDisplayName?: string | undefined;
     isKnownClient?: boolean;
-    followerSubjectId?: string | undefined;
-    followerName?: string | undefined;
-    followerEmail?: string | undefined;
     scopes?: string[];
     label?: string | undefined;
     createdAt?: Date;
     lastUsedAt?: Date | undefined;
     lastUsedUserAgent?: string | undefined;
-    /** When true, this grant only allows access to data from the last 24 hours
-(rolling window from each request time). */
-    limitTo24Hours?: boolean;
-}
-
-/** Request to create a follower grant (share data with another user) */
-export interface CreateFollowerGrantRequest {
-    followerEmail?: string;
-    scopes?: string[];
-    label?: string | undefined;
-    followerDisplayName?: string | undefined;
 }
 
 /** Request to update an existing grant's label and/or scopes */
 export interface UpdateGrantRequest {
     label?: string | undefined;
     scopes?: string[] | undefined;
-}
-
-/** Response containing a list of follower targets */
-export interface FollowerTargetListResponse {
-    targets?: FollowerTargetDto[];
-}
-
-/** DTO for a data owner that the current user can view as a follower */
-export interface FollowerTargetDto {
-    subjectId?: string;
-    displayName?: string | undefined;
-    email?: string | undefined;
-    scopes?: string[];
-    label?: string | undefined;
-}
-
-/** Response after creating an invite */
-export interface CreateInviteResponse {
-    id?: string;
-    token?: string;
-    inviteUrl?: string;
-    expiresAt?: Date;
-}
-
-/** Request to create a follower invite link */
-export interface CreateInviteRequest {
-    /** Scopes to grant when the invite is accepted */
-    scopes?: string[];
-    /** Optional label for the grant (e.g., "Mom", "Endocrinologist") */
-    label?: string | undefined;
-    /** Days until the invite expires (default: 7) */
-    expiresInDays?: number | undefined;
-    /** Maximum number of times the invite can be used (null = unlimited) */
-    maxUses?: number | undefined;
-    /** When true, grants created from this invite will only allow access to
-the last 24 hours of data (rolling window from each request time). */
-    limitTo24Hours?: boolean;
-}
-
-/** Response containing a list of invites */
-export interface InviteListResponse {
-    invites?: InviteDto[];
-}
-
-/** DTO for an invite in list responses */
-export interface InviteDto {
-    id?: string;
-    scopes?: string[];
-    label?: string | undefined;
-    expiresAt?: Date;
-    maxUses?: number | undefined;
-    useCount?: number;
-    createdAt?: Date;
-    isValid?: boolean;
-    isExpired?: boolean;
-    isRevoked?: boolean;
-    limitTo24Hours?: boolean;
-    usedBy?: InviteUsageDto[];
-}
-
-/** DTO for invite usage information */
-export interface InviteUsageDto {
-    followerSubjectId?: string;
-    followerName?: string | undefined;
-    followerEmail?: string | undefined;
-    usedAt?: Date;
-}
-
-/** Response for invite info (for the accept page) */
-export interface InviteInfoResponse {
-    ownerName?: string | undefined;
-    ownerEmail?: string | undefined;
-    scopes?: string[];
-    label?: string | undefined;
-    expiresAt?: Date;
-    isValid?: boolean;
-    isExpired?: boolean;
-    isRevoked?: boolean;
-    limitTo24Hours?: boolean;
-}
-
-/** Response after accepting an invite */
-export interface AcceptInviteResponse {
-    success?: boolean;
-    grantId?: string | undefined;
 }
 
 /** Token introspection response (RFC 7662) */
@@ -26945,1020 +26717,6 @@ export interface SetupCompleteResponse {
 export interface SetupCompleteRequest {
     attestationResponseJson?: string;
     challengeToken?: string;
-}
-
-/** Pebble response model for 1:1 Nightscout compatibility */
-export interface PebbleResponse {
-    /** Status array containing current timestamp */
-    status?: PebbleStatus[];
-    /** Blood glucose readings array */
-    bgs?: PebbleBg[];
-    /** Calibration readings array */
-    cals?: PebbleCal[];
-}
-
-/** Pebble status entry */
-export interface PebbleStatus {
-    /** Current timestamp in milliseconds since epoch */
-    now?: number;
-}
-
-/** Pebble blood glucose entry */
-export interface PebbleBg {
-    /** Sensor glucose value (formatted as string for legacy compatibility) */
-    sgv?: string;
-    /** Numeric trend indicator (1-9) */
-    trend?: number;
-    /** Direction string (Flat, SingleUp, etc.) */
-    direction?: string;
-    /** Timestamp in milliseconds since epoch */
-    datetime?: number;
-    /** Delta from previous reading (formatted string) */
-    bgdelta?: string | undefined;
-    /** Battery percentage (formatted string) */
-    battery?: string | undefined;
-    /** Insulin on board (formatted string) */
-    iob?: string | undefined;
-    /** Bolus wizard preview (formatted string) */
-    bwp?: string | undefined;
-    /** Bolus wizard preview outcome */
-    bwpo?: number | undefined;
-    /** Carbs on board */
-    cob?: number | undefined;
-}
-
-/** Pebble calibration entry */
-export interface PebbleCal {
-    /** Calibration slope */
-    slope?: number | undefined;
-    /** Calibration intercept */
-    intercept?: number | undefined;
-    /** Calibration scale */
-    scale?: number | undefined;
-}
-
-export interface BasicGlucoseStats {
-    count?: number;
-    mean?: number;
-    median?: number;
-    min?: number;
-    max?: number;
-    standardDeviation?: number;
-    percentiles?: GlucosePercentiles;
-}
-
-export interface GlucosePercentiles {
-    p5?: number;
-    p10?: number;
-    p25?: number;
-    p50?: number;
-    p75?: number;
-    p90?: number;
-    p95?: number;
-}
-
-export interface GlycemicVariability {
-    coefficientOfVariation?: number;
-    standardDeviation?: number;
-    meanAmplitudeGlycemicExcursions?: number;
-    continuousOverlappingNetGlycemicAction?: number;
-    averageDailyRiskRange?: number;
-    labilityIndex?: number;
-    jIndex?: number;
-    highBloodGlucoseIndex?: number;
-    lowBloodGlucoseIndex?: number;
-    glycemicVariabilityIndex?: number;
-    patientGlycemicStatus?: number;
-    estimatedA1c?: number;
-    gmi?: GlucoseManagementIndicator | undefined;
-    meanTotalDailyChange?: number;
-    timeInFluctuation?: number;
-}
-
-export interface GlucoseManagementIndicator {
-    value?: number;
-    meanGlucose?: number;
-    interpretation?: GlucoseManagementIndicatorLevel;
-    reliability?: StatisticReliability | undefined;
-}
-
-export enum GlucoseManagementIndicatorLevel {
-    NonDiabetic = "NonDiabetic",
-    Prediabetes = "Prediabetes",
-    WellControlled = "WellControlled",
-    ModerateControl = "ModerateControl",
-    SuboptimalControl = "SuboptimalControl",
-    PoorControl = "PoorControl",
-}
-
-/** Request model for glycemic variability calculation */
-export interface GlycemicVariabilityRequest {
-    /** Collection of glucose values in mg/dL */
-    values?: number[];
-    /** Collection of sensor glucose readings with timestamps */
-    entries?: SensorGlucose[];
-}
-
-export interface SensorGlucose {
-    id?: string;
-    timestamp?: Date;
-    mills?: number;
-    utcOffset?: number | undefined;
-    device?: string | undefined;
-    app?: string | undefined;
-    dataSource?: string | undefined;
-    correlationId?: string | undefined;
-    legacyId?: string | undefined;
-    createdAt?: Date;
-    modifiedAt?: Date;
-    mgdl?: number;
-    mmol?: number;
-    direction?: GlucoseDirection | undefined;
-    trend?: GlucoseTrend | undefined;
-    trendRate?: number | undefined;
-    noise?: number | undefined;
-    additionalProperties?: { [key: string]: any; } | undefined;
-}
-
-export enum GlucoseDirection {
-    None = "None",
-    DoubleUp = "DoubleUp",
-    SingleUp = "SingleUp",
-    FortyFiveUp = "FortyFiveUp",
-    Flat = "Flat",
-    FortyFiveDown = "FortyFiveDown",
-    SingleDown = "SingleDown",
-    DoubleDown = "DoubleDown",
-    NotComputable = "NotComputable",
-    RateOutOfRange = "RateOutOfRange",
-}
-
-export enum GlucoseTrend {
-    None = "None",
-    DoubleUp = "DoubleUp",
-    SingleUp = "SingleUp",
-    FortyFiveUp = "FortyFiveUp",
-    Flat = "Flat",
-    FortyFiveDown = "FortyFiveDown",
-    SingleDown = "SingleDown",
-    DoubleDown = "DoubleDown",
-    NotComputable = "NotComputable",
-    RateOutOfRange = "RateOutOfRange",
-}
-
-export interface TimeInRangeMetrics {
-    percentages?: TimeInRangePercentages;
-    durations?: TimeInRangeDurations;
-    episodes?: TimeInRangeEpisodes;
-    rangeStats?: TimeInRangeDetailedStats;
-}
-
-export interface TimeInRangePercentages {
-    veryLow?: number;
-    low?: number;
-    target?: number;
-    tightTarget?: number;
-    high?: number;
-    veryHigh?: number;
-}
-
-export interface TimeInRangeDurations {
-    veryLow?: number;
-    low?: number;
-    target?: number;
-    tightTarget?: number;
-    high?: number;
-    veryHigh?: number;
-}
-
-export interface TimeInRangeEpisodes {
-    veryLow?: number;
-    low?: number;
-    high?: number;
-    veryHigh?: number;
-}
-
-export interface TimeInRangeDetailedStats {
-    low?: PeriodMetrics;
-    target?: PeriodMetrics;
-    high?: PeriodMetrics;
-}
-
-export interface PeriodMetrics {
-    periodName?: string;
-    startHour?: number;
-    endHour?: number;
-    readingCount?: number;
-    mean?: number;
-    median?: number;
-    standardDeviation?: number;
-    coefficientOfVariation?: number;
-    timeInRange?: number;
-    timeBelowRange?: number;
-    timeVeryLow?: number;
-    timeAboveRange?: number;
-    timeVeryHigh?: number;
-    hypoglycemiaEvents?: number;
-    hyperglycemiaEvents?: number;
-    min?: number;
-    max?: number;
-}
-
-/** Request model for time in range calculation */
-export interface TimeInRangeRequest {
-    /** Collection of sensor glucose readings */
-    entries?: SensorGlucose[];
-    /** Optional glycemic thresholds */
-    thresholds?: GlycemicThresholds | undefined;
-}
-
-export interface GlycemicThresholds {
-    veryLow?: number;
-    low?: number;
-    targetBottom?: number;
-    targetTop?: number;
-    tightTargetBottom?: number;
-    tightTargetTop?: number;
-    high?: number;
-    veryHigh?: number;
-}
-
-export interface DistributionDataPoint {
-    range?: string;
-    count?: number;
-    percent?: number;
-}
-
-/** Request model for glucose distribution calculation */
-export interface GlucoseDistributionRequest {
-    /** Collection of sensor glucose readings */
-    entries?: SensorGlucose[];
-    /** Optional distribution bins */
-    bins?: DistributionBin[] | undefined;
-}
-
-export interface DistributionBin {
-    range?: string;
-    min?: number;
-    max?: number;
-}
-
-export interface AveragedStats extends BasicGlucoseStats {
-    hour?: number;
-    timeInRange?: ExtendedTimeInRangePercentages;
-}
-
-export function isAveragedStats(object: any): object is AveragedStats {
-    return object && object[''] === 'AveragedStats';
-}
-
-export interface ExtendedTimeInRangePercentages {
-    veryLow?: number;
-    low?: number;
-    normal?: number;
-    aboveTarget?: number;
-    high?: number;
-    veryHigh?: number;
-}
-
-export interface TreatmentSummary {
-    totals?: TreatmentTotals;
-    treatmentCount?: number;
-    carbToInsulinRatio?: number;
-}
-
-export interface TreatmentTotals {
-    food?: FoodTotals;
-    insulin?: InsulinTotals;
-}
-
-export interface FoodTotals {
-    carbs?: number;
-    protein?: number;
-    fat?: number;
-}
-
-export interface InsulinTotals {
-    bolus?: number;
-    basal?: number;
-    scheduledBasal?: number;
-    additionalBasal?: number;
-}
-
-/** Request model for treatment summary calculation */
-export interface TreatmentSummaryRequest {
-    /** Optional collection of bolus deliveries */
-    boluses?: Bolus[] | undefined;
-    /** Optional collection of carb intakes */
-    carbIntakes?: CarbIntake[] | undefined;
-}
-
-export interface Bolus {
-    id?: string;
-    timestamp?: Date;
-    mills?: number;
-    utcOffset?: number | undefined;
-    device?: string | undefined;
-    app?: string | undefined;
-    dataSource?: string | undefined;
-    correlationId?: string | undefined;
-    legacyId?: string | undefined;
-    createdAt?: Date;
-    modifiedAt?: Date;
-    insulin?: number;
-    programmed?: number | undefined;
-    delivered?: number | undefined;
-    bolusType?: BolusType | undefined;
-    automatic?: boolean;
-    kind?: BolusKind;
-    duration?: number | undefined;
-    syncIdentifier?: string | undefined;
-    insulinType?: string | undefined;
-    unabsorbed?: number | undefined;
-    deviceId?: string | undefined;
-    pumpRecordId?: string | undefined;
-    bolusCalculationId?: string | undefined;
-    apsSnapshotId?: string | undefined;
-    additionalProperties?: { [key: string]: any; } | undefined;
-}
-
-export enum BolusType {
-    Normal = "Normal",
-    Square = "Square",
-    Dual = "Dual",
-}
-
-export enum BolusKind {
-    Manual = "Manual",
-    Algorithm = "Algorithm",
-}
-
-export interface CarbIntake {
-    id?: string;
-    timestamp?: Date;
-    mills?: number;
-    utcOffset?: number | undefined;
-    device?: string | undefined;
-    app?: string | undefined;
-    dataSource?: string | undefined;
-    correlationId?: string | undefined;
-    legacyId?: string | undefined;
-    createdAt?: Date;
-    modifiedAt?: Date;
-    carbs?: number;
-    syncIdentifier?: string | undefined;
-    carbTime?: number | undefined;
-    absorptionTime?: number | undefined;
-    bolusId?: string | undefined;
-    additionalProperties?: { [key: string]: any; } | undefined;
-}
-
-export interface OverallAverages {
-    avgTotalDaily?: number;
-    avgBolus?: number;
-    avgBasal?: number;
-    bolusPercentage?: number;
-    basalPercentage?: number;
-    avgCarbs?: number;
-    avgProtein?: number;
-    avgFat?: number;
-    avgTimeInRange?: number;
-    avgTightTimeInRange?: number;
-}
-
-export interface DayData {
-    date?: string;
-    treatments?: Treatment[];
-    treatmentSummary?: TreatmentSummary;
-    timeInRanges?: TimeInRangeMetrics;
-}
-
-export interface ProcessableDocumentBase {
-    id?: string | undefined;
-    createdAt?: string | undefined;
-    mills?: number;
-    utcOffset?: number | undefined;
-}
-
-export interface Treatment extends ProcessableDocumentBase {
-    _id?: string | undefined;
-    identifier?: string | undefined;
-    srvModified?: number | undefined;
-    srvCreated?: number | undefined;
-    eventType?: string | undefined;
-    reason?: string | undefined;
-    glucose?: number | undefined;
-    glucoseType?: string | undefined;
-    carbs?: number | undefined;
-    insulin?: number | undefined;
-    protein?: number | undefined;
-    fat?: number | undefined;
-    foodType?: string | undefined;
-    units?: string | undefined;
-    mills?: number;
-    created_at?: string | undefined;
-    duration?: number | undefined;
-    percent?: number | undefined;
-    absolute?: number | undefined;
-    notes?: string | undefined;
-    enteredBy?: string | undefined;
-    targetTop?: number | undefined;
-    targetBottom?: number | undefined;
-    profile?: string | undefined;
-    split?: string | undefined;
-    date?: number | undefined;
-    carbTime?: number | undefined;
-    boluscalc?: { [key: string]: any; } | undefined;
-    utcOffset?: number | undefined;
-    timestamp?: string | undefined;
-    cuttedby?: string | undefined;
-    cutting?: string | undefined;
-    eventTime?: string | undefined;
-    preBolus?: number | undefined;
-    rate?: number | undefined;
-    mgdl?: number | undefined;
-    mmol?: number | undefined;
-    endmills?: number | undefined;
-    durationType?: string | undefined;
-    isAnnouncement?: boolean | undefined;
-    profileJson?: string | undefined;
-    endprofile?: string | undefined;
-    insulinNeedsScaleFactor?: number | undefined;
-    absorptionTime?: number | undefined;
-    enteredinsulin?: number | undefined;
-    splitNow?: number | undefined;
-    splitExt?: number | undefined;
-    status?: string | undefined;
-    relative?: number | undefined;
-    CR?: number | undefined;
-    NSCLIENT_ID?: string | undefined;
-    first?: boolean | undefined;
-    end?: boolean | undefined;
-    CircadianPercentageProfile?: boolean | undefined;
-    percentage?: number | undefined;
-    timeshift?: number | undefined;
-    transmitterId?: string | undefined;
-    remoteCarbs?: number | undefined;
-    remoteAbsorption?: number | undefined;
-    remoteBolus?: number | undefined;
-    reasonDisplay?: string | undefined;
-    otp?: string | undefined;
-    syncIdentifier?: string | undefined;
-    insulinType?: string | undefined;
-    automatic?: boolean | undefined;
-    temp?: string | undefined;
-    amount?: number | undefined;
-    programmed?: number | undefined;
-    unabsorbed?: number | undefined;
-    type?: string | undefined;
-    bolusType?: string | undefined;
-    data_source?: string | undefined;
-    insulinRecommendationForCarbs?: number | undefined;
-    insulinRecommendationForCorrection?: number | undefined;
-    insulinProgrammed?: number | undefined;
-    insulinDelivered?: number | undefined;
-    insulinOnBoard?: number | undefined;
-    bloodGlucoseInput?: number | undefined;
-    bloodGlucoseInputSource?: string | undefined;
-    calculationType?: CalculationType | undefined;
-    durationInMilliseconds?: number | undefined;
-    pumpId?: number | undefined;
-    pumpSerial?: string | undefined;
-    pumpType?: string | undefined;
-    endId?: number | undefined;
-    isValid?: boolean | undefined;
-    isReadOnly?: boolean | undefined;
-    isBasalInsulin?: boolean | undefined;
-    bolusCalculatorResult?: string | undefined;
-    originalDuration?: number | undefined;
-    originalProfileName?: string | undefined;
-    originalPercentage?: number | undefined;
-    originalTimeshift?: number | undefined;
-    originalCustomizedName?: string | undefined;
-    originalEnd?: number | undefined;
-    additional_properties?: { [key: string]: any; } | undefined;
-    canonicalId?: string | undefined;
-    dbId?: string | undefined;
-    sources?: string[] | undefined;
-    insulinContext?: TreatmentInsulinContext | undefined;
-}
-
-export function isTreatment(object: any): object is Treatment {
-    return object && object[''] === 'Treatment';
-}
-
-export enum CalculationType {
-    Suggested = "Suggested",
-    Manual = "Manual",
-    Automatic = "Automatic",
-}
-
-export interface TreatmentInsulinContext {
-    patientInsulinId?: string;
-    insulinName?: string;
-    dia?: number;
-    peak?: number;
-    curve?: string;
-    concentration?: number;
-}
-
-export interface GlucoseAnalytics {
-    basicStats?: BasicGlucoseStats;
-    timeInRange?: TimeInRangeMetrics;
-    glycemicVariability?: GlycemicVariability;
-    dataQuality?: DataQuality;
-    reliability?: StatisticReliability | undefined;
-    time?: AnalysisTime;
-    clinicalAssessment?: ClinicalTargetAssessment | undefined;
-}
-
-export interface DataQuality {
-    totalReadings?: number;
-    missingReadings?: number;
-    dataCompleteness?: number;
-    cgmActivePercent?: number;
-    gapAnalysis?: GapAnalysis;
-    noiseLevel?: number;
-    calibrationEvents?: number;
-    sensorWarmups?: number;
-}
-
-export interface GapAnalysis {
-    gaps?: DataGap[];
-    longestGap?: number;
-    averageGap?: number;
-}
-
-export interface DataGap {
-    start?: number;
-    end?: number;
-    duration?: number;
-}
-
-export interface AnalysisTime {
-    start?: number;
-    end?: number;
-    timeOfAnalysis?: number;
-}
-
-export interface ClinicalTargetAssessment {
-    population?: DiabetesPopulation;
-    targets?: ClinicalTargets;
-    tirAssessment?: TargetAssessment;
-    tbrAssessment?: TargetAssessment;
-    veryLowAssessment?: TargetAssessment;
-    tarAssessment?: TargetAssessment;
-    veryHighAssessment?: TargetAssessment;
-    cvAssessment?: TargetAssessment;
-    targetsMet?: number;
-    totalTargets?: number;
-    overallAssessment?: ClinicalAssessmentLevel;
-    actionableInsights?: LocalizedInsight[];
-    priorityAreas?: LocalizedInsight[];
-    strengths?: LocalizedInsight[];
-}
-
-export enum DiabetesPopulation {
-    Type1Adult = 0,
-    Type2Adult = 1,
-    Type1Pediatric = 2,
-    Elderly = 3,
-    Pregnancy = 4,
-    PregnancyType1 = 5,
-}
-
-export interface ClinicalTargets {
-    targetTIR?: number;
-    maxTBR?: number;
-    maxTBRVeryLow?: number;
-    maxTAR?: number;
-    maxTARVeryHigh?: number;
-    targetCV?: number;
-    targetLow?: number;
-    targetHigh?: number;
-}
-
-export interface TargetAssessment {
-    metricName?: string;
-    currentValue?: number;
-    targetValue?: number;
-    isMaximumTarget?: boolean;
-    status?: TargetStatus;
-    differenceFromTarget?: number;
-    progressPercentage?: number;
-}
-
-export enum TargetStatus {
-    Met = 0,
-    Close = 1,
-    NotMet = 2,
-}
-
-export enum ClinicalAssessmentLevel {
-    Excellent = "Excellent",
-    Good = "Good",
-    NeedsAttention = "NeedsAttention",
-    NeedsSignificantImprovement = "NeedsSignificantImprovement",
-}
-
-export interface LocalizedInsight {
-    key?: InsightKey;
-    context?: { [key: string]: number; };
-}
-
-export enum InsightKey {
-    TimeInRangeExcellent = "TimeInRangeExcellent",
-    NoSevereHypoglycemia = "NoSevereHypoglycemia",
-    VariabilityControlled = "VariabilityControlled",
-    AllTargetsMet = "AllTargetsMet",
-    ReduceSevereHypoglycemia = "ReduceSevereHypoglycemia",
-    ReduceHypoglycemia = "ReduceHypoglycemia",
-    IncreaseTIR = "IncreaseTIR",
-    ReduceSevereHyperglycemia = "ReduceSevereHyperglycemia",
-    ReduceVariability = "ReduceVariability",
-    TimeVeryLow = "TimeVeryLow",
-    TimeBelowRange = "TimeBelowRange",
-    TimeInRange = "TimeInRange",
-    TimeVeryHigh = "TimeVeryHigh",
-    Variability = "Variability",
-    AllTargetsAchieved = "AllTargetsAchieved",
-}
-
-/** Request model for comprehensive glucose analytics */
-export interface GlucoseAnalyticsRequest {
-    /** Collection of sensor glucose readings */
-    entries?: SensorGlucose[];
-    /** Optional collection of bolus deliveries */
-    boluses?: Bolus[] | undefined;
-    /** Optional collection of carb intakes */
-    carbIntakes?: CarbIntake[] | undefined;
-    /** Optional extended analysis configuration */
-    config?: ExtendedAnalysisConfig | undefined;
-}
-
-export interface ExtendedAnalysisConfig {
-    thresholds?: GlycemicThresholds;
-    sensorType?: string;
-    includeLoopingMetrics?: boolean;
-    units?: string;
-}
-
-export interface ExtendedGlucoseAnalytics extends GlucoseAnalytics {
-    gmi?: GlucoseManagementIndicator;
-    gri?: GlycemicRiskIndex;
-    timeOfDayPatterns?: TimeOfDayAnalysis;
-    dayOfWeekPatterns?: DayOfWeekAnalysis;
-    hypoglycemiaAnalysis?: HypoglycemiaAnalysis;
-    hyperglycemiaAnalysis?: HyperglycemiaAnalysis;
-    clinicalAssessment?: ClinicalTargetAssessment;
-    dataSufficiency?: DataSufficiencyAssessment;
-    treatmentSummary?: TreatmentSummary | undefined;
-}
-
-export function isExtendedGlucoseAnalytics(object: any): object is ExtendedGlucoseAnalytics {
-    return object && object[''] === 'ExtendedGlucoseAnalytics';
-}
-
-export interface GlycemicRiskIndex {
-    score?: number;
-    hypoglycemiaComponent?: number;
-    hyperglycemiaComponent?: number;
-    zone?: GRIZone;
-    interpretation?: GlycomicRiskInterpretation;
-}
-
-export enum GRIZone {
-    A = 0,
-    B = 1,
-    C = 2,
-    D = 3,
-    E = 4,
-}
-
-export enum GlycomicRiskInterpretation {
-    Excellent = "Excellent",
-    Good = "Good",
-    Moderate = "Moderate",
-    Suboptimal = "Suboptimal",
-    Poor = "Poor",
-    Unknown = "Unknown",
-}
-
-export interface TimeOfDayAnalysis {
-    overnight?: PeriodMetrics;
-    morning?: PeriodMetrics;
-    afternoon?: PeriodMetrics;
-    evening?: PeriodMetrics;
-    dawnPhenomenonDetected?: boolean;
-    dawnPhenomenonMagnitude?: number;
-    highestVariabilityPeriod?: string;
-    lowestTIRPeriod?: string;
-    mostHypoglycemiaPeriod?: string;
-}
-
-export interface DayOfWeekAnalysis {
-    dayMetrics?: { [key in keyof typeof DayOfWeek]?: DayMetrics; };
-    weekdayAverage?: PeriodMetrics;
-    weekendAverage?: PeriodMetrics;
-    highestVariabilityDay?: DayOfWeek | undefined;
-    lowestTIRDay?: DayOfWeek | undefined;
-    weekdayWeekendDifference?: boolean;
-    patternDescription?: string;
-}
-
-export enum DayOfWeek {
-    Sunday = 0,
-    Monday = 1,
-    Tuesday = 2,
-    Wednesday = 3,
-    Thursday = 4,
-    Friday = 5,
-    Saturday = 6,
-}
-
-export interface DayMetrics extends PeriodMetrics {
-    dayOfWeek?: DayOfWeek;
-}
-
-export function isDayMetrics(object: any): object is DayMetrics {
-    return object && object[''] === 'DayMetrics';
-}
-
-export interface HypoglycemiaAnalysis {
-    totalEpisodes?: number;
-    severeEpisodes?: number;
-    episodesPerDay?: number;
-    averageDurationMinutes?: number;
-    averageNadir?: number;
-    lowestGlucose?: number;
-    averageRecoveryTimeMinutes?: number;
-    hourlyDistribution?: { [key: string]: number; };
-    dayOfWeekDistribution?: { [key in keyof typeof DayOfWeek]?: number; };
-    peakHour?: number | undefined;
-    peakDay?: DayOfWeek | undefined;
-    hasRecurringPattern?: boolean;
-    patternDescription?: string;
-    episodes?: HypoglycemiaEpisode[];
-    nocturnalEpisodes?: number;
-    nocturnalPercentage?: number;
-    riskAssessment?: string;
-}
-
-export interface HypoglycemiaEpisode {
-    startTime?: number;
-    endTime?: number;
-    durationMinutes?: number;
-    nadirValue?: number;
-    nadirTime?: number;
-    isSevere?: boolean;
-    hourOfDay?: number;
-    dayOfWeek?: DayOfWeek;
-    recoveryTimeMinutes?: number;
-    preEpisodeGlucose?: number | undefined;
-}
-
-export interface HyperglycemiaAnalysis {
-    totalEpisodes?: number;
-    severeEpisodes?: number;
-    prolongedEpisodes?: number;
-    episodesPerDay?: number;
-    averageDurationMinutes?: number;
-    averagePeak?: number;
-    highestGlucose?: number;
-    averageTimeToTargetMinutes?: number;
-    hourlyDistribution?: { [key: string]: number; };
-    dayOfWeekDistribution?: { [key in keyof typeof DayOfWeek]?: number; };
-    peakHour?: number | undefined;
-    peakDay?: DayOfWeek | undefined;
-    hasPostMealPattern?: boolean;
-    patternDescription?: string;
-    episodes?: HyperglycemiaEpisode[];
-    nocturnalEpisodes?: number;
-    nocturnalPercentage?: number;
-}
-
-export interface HyperglycemiaEpisode {
-    startTime?: number;
-    endTime?: number;
-    durationMinutes?: number;
-    peakValue?: number;
-    peakTime?: number;
-    isSevere?: boolean;
-    isProlonged?: boolean;
-    hourOfDay?: number;
-    dayOfWeek?: DayOfWeek;
-    timeToTargetMinutes?: number;
-    averageGlucose?: number;
-}
-
-export interface DataSufficiencyAssessment {
-    isSufficient?: boolean;
-    totalDays?: number;
-    daysWithData?: number;
-    expectedReadings?: number;
-    actualReadings?: number;
-    completenessPercentage?: number;
-    minimumRequiredCompleteness?: number;
-    averageReadingsPerDay?: number;
-    longestGapHours?: number;
-    status?: DataSufficiencyStatus;
-    warningMessage?: string;
-    recommendation?: string;
-}
-
-export enum DataSufficiencyStatus {
-    Sufficient = "Sufficient",
-    InsufficientCoverage = "InsufficientCoverage",
-    LargeGaps = "LargeGaps",
-}
-
-/** Request model for extended glucose analytics with GMI, GRI, and clinical assessment */
-export interface ExtendedGlucoseAnalyticsRequest {
-    /** Collection of sensor glucose readings */
-    entries?: SensorGlucose[];
-    /** Optional collection of bolus deliveries */
-    boluses?: Bolus[] | undefined;
-    /** Optional collection of carb intakes */
-    carbIntakes?: CarbIntake[] | undefined;
-    /** Diabetes population type for clinical target assessment */
-    population?: DiabetesPopulation;
-    /** Optional extended analysis configuration */
-    config?: ExtendedAnalysisConfig | undefined;
-}
-
-/** Request model for clinical assessment */
-export interface ClinicalAssessmentRequest {
-    /** Glucose analytics to assess */
-    analytics?: GlucoseAnalytics;
-    /** Diabetes population type for clinical target assessment */
-    population?: DiabetesPopulation;
-}
-
-/** Request model for data sufficiency assessment */
-export interface DataSufficiencyRequest {
-    /** Collection of sensor glucose readings */
-    entries?: SensorGlucose[];
-    /** Number of days to assess (default: 14) */
-    days?: number;
-    /** Expected readings per day based on sensor type (default: 288 for 5-minute intervals) */
-    expectedReadingsPerDay?: number;
-}
-
-export interface MultiPeriodStatistics {
-    lastDay?: PeriodStatistics;
-    last3Days?: PeriodStatistics;
-    lastWeek?: PeriodStatistics;
-    lastMonth?: PeriodStatistics;
-    last90Days?: PeriodStatistics;
-    lastUpdated?: Date;
-}
-
-export interface PeriodStatistics {
-    periodDays?: number;
-    startDate?: Date;
-    endDate?: Date;
-    analytics?: GlucoseAnalytics | undefined;
-    treatmentSummary?: TreatmentSummary | undefined;
-    insulinDelivery?: InsulinDeliveryStatistics | undefined;
-    hasSufficientData?: boolean;
-    gmi?: GlucoseManagementIndicator | undefined;
-    reliability?: StatisticReliability | undefined;
-    entryCount?: number;
-    treatmentCount?: number;
-}
-
-export interface SiteChangeImpactAnalysis {
-    siteChangeCount?: number;
-    dataPoints?: SiteChangeImpactDataPoint[];
-    summary?: SiteChangeImpactSummary;
-    hoursBeforeChange?: number;
-    hoursAfterChange?: number;
-    bucketSizeMinutes?: number;
-    hasSufficientData?: boolean;
-}
-
-export interface SiteChangeImpactDataPoint {
-    minutesFromChange?: number;
-    averageGlucose?: number;
-    medianGlucose?: number;
-    stdDev?: number;
-    count?: number;
-    percentile10?: number;
-    percentile25?: number;
-    percentile75?: number;
-    percentile90?: number;
-}
-
-export interface SiteChangeImpactSummary {
-    avgGlucoseBeforeChange?: number;
-    avgGlucoseAfterChange?: number;
-    percentImprovement?: number;
-    timeInRangeBeforeChange?: number;
-    timeInRangeAfterChange?: number;
-    cvBeforeChange?: number;
-    cvAfterChange?: number;
-}
-
-/** Request model for site change impact analysis */
-export interface SiteChangeImpactRequest {
-    /** Collection of sensor glucose readings */
-    entries?: SensorGlucose[];
-    /** Collection of device events (must include site changes) */
-    deviceEvents?: DeviceEvent[];
-    /** Hours before site change to analyze (default: 12) */
-    hoursBeforeChange?: number;
-    /** Hours after site change to analyze (default: 24) */
-    hoursAfterChange?: number;
-    /** Time bucket size for averaging in minutes (default: 30) */
-    bucketSizeMinutes?: number;
-}
-
-export interface DeviceEvent {
-    id?: string;
-    timestamp?: Date;
-    mills?: number;
-    utcOffset?: number | undefined;
-    device?: string | undefined;
-    app?: string | undefined;
-    dataSource?: string | undefined;
-    correlationId?: string | undefined;
-    legacyId?: string | undefined;
-    createdAt?: Date;
-    modifiedAt?: Date;
-    eventType?: DeviceEventType;
-    notes?: string | undefined;
-    syncIdentifier?: string | undefined;
-    additionalProperties?: { [key: string]: any; } | undefined;
-}
-
-export enum DeviceEventType {
-    SensorStart = "SensorStart",
-    SensorChange = "SensorChange",
-    SensorStop = "SensorStop",
-    SiteChange = "SiteChange",
-    InsulinChange = "InsulinChange",
-    PumpBatteryChange = "PumpBatteryChange",
-    PodChange = "PodChange",
-    ReservoirChange = "ReservoirChange",
-    CannulaChange = "CannulaChange",
-    TransmitterSensorInsert = "TransmitterSensorInsert",
-    PodActivated = "PodActivated",
-    PodDeactivated = "PodDeactivated",
-    PumpSuspend = "PumpSuspend",
-    PumpResume = "PumpResume",
-    Priming = "Priming",
-    TubePriming = "TubePriming",
-    NeedlePriming = "NeedlePriming",
-    Rewind = "Rewind",
-    DateChanged = "DateChanged",
-    TimeChanged = "TimeChanged",
-    BolusMaxChanged = "BolusMaxChanged",
-    BasalMaxChanged = "BasalMaxChanged",
-    ProfileSwitch = "ProfileSwitch",
-}
-
-export interface AidSystemMetrics {
-    cgmUsePercent?: number | undefined;
-    pumpUsePercent?: number | undefined;
-    aidActivePercent?: number | undefined;
-    cgmActivePercent?: number | undefined;
-    targetLow?: number | undefined;
-    targetHigh?: number | undefined;
-    siteChangeCount?: number | undefined;
-    segments?: AidTimeSegment[];
-}
-
-export interface AidTimeSegment {
-    algorithm?: AidAlgorithm;
-    startDate?: Date;
-    endDate?: Date;
-    durationHours?: number;
-    metrics?: AidSegmentMetrics;
-}
-
-export enum AidAlgorithm {
-    OpenAps = "OpenAps",
-    AndroidAps = "AndroidAps",
-    Loop = "Loop",
-    Trio = "Trio",
-    IAPS = "IAPS",
-    ControlIQ = "ControlIQ",
-    CamAPSFX = "CamAPSFX",
-    Omnipod5Algorithm = "Omnipod5Algorithm",
-    MedtronicSmartGuard = "MedtronicSmartGuard",
-    None = "None",
-    Unknown = "Unknown",
-}
-
-export interface AidSegmentMetrics {
-    aidActivePercent?: number | undefined;
-    pumpUsePercent?: number | undefined;
-    loopCycleCount?: number | undefined;
-    enactedCount?: number | undefined;
-}
-
-export interface VersionsResponse {
-    versions?: string[];
 }
 
 /** OpenID Connect Discovery Document See: https://openid.net/specs/openid-connect-discovery-1_0.html */
@@ -28208,6 +26966,63 @@ export interface PendingDeliveryResponse {
     retryCount?: number;
 }
 
+export interface PerformanceMetrics {
+    averageResponseTime?: number;
+    totalRequests?: number;
+    errorCount?: number;
+    memoryUsageMB?: number;
+    uptimeHours?: number;
+    topEndpoints?: { [key: string]: number; };
+}
+
+export interface UsageStatistics {
+    uniqueSessions?: number;
+    popularFeatures?: { [key: string]: number; };
+    averageSessionDuration?: number;
+    deviceTypes?: { [key: string]: number; };
+}
+
+export interface AnalyticsBatch {
+    installationId?: string;
+    events?: AnalyticsEvent[];
+    systemInfo?: SystemInfo | undefined;
+    batchTimestamp?: number;
+    schemaVersion?: string;
+}
+
+export interface AnalyticsEvent {
+    sessionId?: string;
+    eventType?: string;
+    category?: string;
+    action?: string;
+    label?: string;
+    value?: number | undefined;
+    timestamp?: number;
+    metadata?: { [key: string]: any; };
+}
+
+export interface SystemInfo {
+    platform?: string;
+    runtimeVersion?: string;
+    nocturneVersion?: string;
+    deploymentType?: string;
+    demoModeEnabled?: boolean;
+    enabledConnectors?: string[];
+    enabledFeatures?: string[];
+    databaseType?: string;
+    cacheEnabled?: boolean;
+}
+
+export interface AnalyticsCollectionConfig {
+    collectApiUsage?: boolean;
+    collectUiUsage?: boolean;
+    collectPerformanceMetrics?: boolean;
+    collectHealthMetrics?: boolean;
+    collectFeatureUsage?: boolean;
+    excludedEndpoints?: string[];
+    maxLocalEvents?: number;
+}
+
 export interface PaginatedResponseOfApsSnapshot {
     data?: ApsSnapshot[];
     pagination?: PaginationInfo;
@@ -28249,6 +27064,20 @@ export interface ApsSnapshot {
     predictedStartTimestamp?: Date | undefined;
     predictedStartMills?: number | undefined;
     additionalProperties?: { [key: string]: any; } | undefined;
+}
+
+export enum AidAlgorithm {
+    OpenAps = "OpenAps",
+    AndroidAps = "AndroidAps",
+    Loop = "Loop",
+    Trio = "Trio",
+    IAPS = "IAPS",
+    ControlIQ = "ControlIQ",
+    CamAPSFX = "CamAPSFX",
+    Omnipod5Algorithm = "Omnipod5Algorithm",
+    MedtronicSmartGuard = "MedtronicSmartGuard",
+    None = "None",
+    Unknown = "Unknown",
 }
 
 export interface PaginationInfo {
@@ -28411,7 +27240,7 @@ export interface BolusCalculation {
     insulinOnBoard?: number | undefined;
     insulinRecommendation?: number | undefined;
     carbRatio?: number | undefined;
-    calculationType?: CalculationType2 | undefined;
+    calculationType?: CalculationType | undefined;
     insulinRecommendationForCarbs?: number | undefined;
     insulinProgrammed?: number | undefined;
     enteredInsulin?: number | undefined;
@@ -28421,7 +27250,7 @@ export interface BolusCalculation {
     additionalProperties?: { [key: string]: any; } | undefined;
 }
 
-export enum CalculationType2 {
+export enum CalculationType {
     Suggested = "Suggested",
     Manual = "Manual",
     Automatic = "Automatic",
@@ -28439,7 +27268,7 @@ export interface UpsertBolusCalculationRequest {
     insulinOnBoard?: number | undefined;
     insulinRecommendation?: number | undefined;
     carbRatio?: number | undefined;
-    calculationType?: CalculationType2 | undefined;
+    calculationType?: CalculationType | undefined;
     insulinRecommendationForCarbs?: number | undefined;
     insulinProgrammed?: number | undefined;
     enteredInsulin?: number | undefined;
@@ -28456,6 +27285,46 @@ export interface PaginatedResponseOfBolusCalculation {
 export interface PaginatedResponseOfBolus {
     data?: Bolus[];
     pagination?: PaginationInfo;
+}
+
+export interface Bolus {
+    id?: string;
+    timestamp?: Date;
+    mills?: number;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    correlationId?: string | undefined;
+    legacyId?: string | undefined;
+    createdAt?: Date;
+    modifiedAt?: Date;
+    insulin?: number;
+    programmed?: number | undefined;
+    delivered?: number | undefined;
+    bolusType?: BolusType | undefined;
+    automatic?: boolean;
+    kind?: BolusKind;
+    duration?: number | undefined;
+    syncIdentifier?: string | undefined;
+    insulinType?: string | undefined;
+    unabsorbed?: number | undefined;
+    deviceId?: string | undefined;
+    pumpRecordId?: string | undefined;
+    bolusCalculationId?: string | undefined;
+    apsSnapshotId?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
+}
+
+export enum BolusType {
+    Normal = "Normal",
+    Square = "Square",
+    Dual = "Dual",
+}
+
+export enum BolusKind {
+    Manual = "Manual",
+    Algorithm = "Algorithm",
 }
 
 export interface CreateBolusRequest {
@@ -28659,6 +27528,32 @@ export interface DeviceEventMarkerDto {
     notes?: string | undefined;
     treatmentId?: string | undefined;
     color?: ChartColor;
+}
+
+export enum DeviceEventType {
+    SensorStart = "SensorStart",
+    SensorChange = "SensorChange",
+    SensorStop = "SensorStop",
+    SiteChange = "SiteChange",
+    InsulinChange = "InsulinChange",
+    PumpBatteryChange = "PumpBatteryChange",
+    PodChange = "PodChange",
+    ReservoirChange = "ReservoirChange",
+    CannulaChange = "CannulaChange",
+    TransmitterSensorInsert = "TransmitterSensorInsert",
+    PodActivated = "PodActivated",
+    PodDeactivated = "PodDeactivated",
+    PumpSuspend = "PumpSuspend",
+    PumpResume = "PumpResume",
+    Priming = "Priming",
+    TubePriming = "TubePriming",
+    NeedlePriming = "NeedlePriming",
+    Rewind = "Rewind",
+    DateChanged = "DateChanged",
+    TimeChanged = "TimeChanged",
+    BolusMaxChanged = "BolusMaxChanged",
+    BasalMaxChanged = "BasalMaxChanged",
+    ProfileSwitch = "ProfileSwitch",
 }
 
 export interface BgCheckMarkerDto {
@@ -29034,6 +27929,13 @@ export interface CompressionLowSuggestionWithEntries {
     treatments?: Treatment[];
 }
 
+export interface ProcessableDocumentBase {
+    id?: string | undefined;
+    createdAt?: string | undefined;
+    mills?: number;
+    utcOffset?: number | undefined;
+}
+
 export interface Entry extends ProcessableDocumentBase {
     _id?: string | undefined;
     mills?: number;
@@ -29078,6 +27980,128 @@ export interface Entry extends ProcessableDocumentBase {
 
 export function isEntry(object: any): object is Entry {
     return object && object[''] === 'Entry';
+}
+
+export interface Treatment extends ProcessableDocumentBase {
+    _id?: string | undefined;
+    identifier?: string | undefined;
+    srvModified?: number | undefined;
+    srvCreated?: number | undefined;
+    eventType?: string | undefined;
+    reason?: string | undefined;
+    glucose?: number | undefined;
+    glucoseType?: string | undefined;
+    carbs?: number | undefined;
+    insulin?: number | undefined;
+    protein?: number | undefined;
+    fat?: number | undefined;
+    foodType?: string | undefined;
+    units?: string | undefined;
+    mills?: number;
+    created_at?: string | undefined;
+    duration?: number | undefined;
+    percent?: number | undefined;
+    absolute?: number | undefined;
+    notes?: string | undefined;
+    enteredBy?: string | undefined;
+    targetTop?: number | undefined;
+    targetBottom?: number | undefined;
+    profile?: string | undefined;
+    split?: string | undefined;
+    date?: number | undefined;
+    carbTime?: number | undefined;
+    boluscalc?: { [key: string]: any; } | undefined;
+    utcOffset?: number | undefined;
+    timestamp?: string | undefined;
+    cuttedby?: string | undefined;
+    cutting?: string | undefined;
+    eventTime?: string | undefined;
+    preBolus?: number | undefined;
+    rate?: number | undefined;
+    mgdl?: number | undefined;
+    mmol?: number | undefined;
+    endmills?: number | undefined;
+    durationType?: string | undefined;
+    isAnnouncement?: boolean | undefined;
+    profileJson?: string | undefined;
+    endprofile?: string | undefined;
+    insulinNeedsScaleFactor?: number | undefined;
+    absorptionTime?: number | undefined;
+    enteredinsulin?: number | undefined;
+    splitNow?: number | undefined;
+    splitExt?: number | undefined;
+    status?: string | undefined;
+    relative?: number | undefined;
+    CR?: number | undefined;
+    NSCLIENT_ID?: string | undefined;
+    first?: boolean | undefined;
+    end?: boolean | undefined;
+    CircadianPercentageProfile?: boolean | undefined;
+    percentage?: number | undefined;
+    timeshift?: number | undefined;
+    transmitterId?: string | undefined;
+    remoteCarbs?: number | undefined;
+    remoteAbsorption?: number | undefined;
+    remoteBolus?: number | undefined;
+    reasonDisplay?: string | undefined;
+    otp?: string | undefined;
+    syncIdentifier?: string | undefined;
+    insulinType?: string | undefined;
+    automatic?: boolean | undefined;
+    temp?: string | undefined;
+    amount?: number | undefined;
+    programmed?: number | undefined;
+    unabsorbed?: number | undefined;
+    type?: string | undefined;
+    bolusType?: string | undefined;
+    data_source?: string | undefined;
+    insulinRecommendationForCarbs?: number | undefined;
+    insulinRecommendationForCorrection?: number | undefined;
+    insulinProgrammed?: number | undefined;
+    insulinDelivered?: number | undefined;
+    insulinOnBoard?: number | undefined;
+    bloodGlucoseInput?: number | undefined;
+    bloodGlucoseInputSource?: string | undefined;
+    calculationType?: CalculationType2 | undefined;
+    durationInMilliseconds?: number | undefined;
+    pumpId?: number | undefined;
+    pumpSerial?: string | undefined;
+    pumpType?: string | undefined;
+    endId?: number | undefined;
+    isValid?: boolean | undefined;
+    isReadOnly?: boolean | undefined;
+    isBasalInsulin?: boolean | undefined;
+    bolusCalculatorResult?: string | undefined;
+    originalDuration?: number | undefined;
+    originalProfileName?: string | undefined;
+    originalPercentage?: number | undefined;
+    originalTimeshift?: number | undefined;
+    originalCustomizedName?: string | undefined;
+    originalEnd?: number | undefined;
+    additional_properties?: { [key: string]: any; } | undefined;
+    canonicalId?: string | undefined;
+    dbId?: string | undefined;
+    sources?: string[] | undefined;
+    insulinContext?: TreatmentInsulinContext | undefined;
+}
+
+export function isTreatment(object: any): object is Treatment {
+    return object && object[''] === 'Treatment';
+}
+
+export enum CalculationType2 {
+    Suggested = "Suggested",
+    Manual = "Manual",
+    Automatic = "Automatic",
+}
+
+export interface TreatmentInsulinContext {
+    patientInsulinId?: string;
+    insulinName?: string;
+    dia?: number;
+    peak?: number;
+    curve?: string;
+    concentration?: number;
 }
 
 export interface StateSpan {
@@ -29240,6 +28264,31 @@ export interface GriTimelinePeriod {
     totalDailyDose?: number | undefined;
     averageDailyCarbs?: number | undefined;
     readingCount?: number;
+}
+
+export interface GlycemicRiskIndex {
+    score?: number;
+    hypoglycemiaComponent?: number;
+    hyperglycemiaComponent?: number;
+    zone?: GRIZone;
+    interpretation?: GlycomicRiskInterpretation;
+}
+
+export enum GRIZone {
+    A = 0,
+    B = 1,
+    C = 2,
+    D = 3,
+    E = 4,
+}
+
+export enum GlycomicRiskInterpretation {
+    Excellent = "Excellent",
+    Good = "Good",
+    Moderate = "Moderate",
+    Suboptimal = "Suboptimal",
+    Poor = "Poor",
+    Unknown = "Unknown",
 }
 
 export interface InAppNotificationDto {
@@ -29432,6 +28481,24 @@ export interface SensorAgeInfo {
     min?: string;
 }
 
+export interface DeviceEvent {
+    id?: string;
+    timestamp?: Date;
+    mills?: number;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    correlationId?: string | undefined;
+    legacyId?: string | undefined;
+    createdAt?: Date;
+    modifiedAt?: Date;
+    eventType?: DeviceEventType;
+    notes?: string | undefined;
+    syncIdentifier?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
+}
+
 export interface UpsertDeviceEventRequest {
     timestamp?: Date;
     utcOffset?: number | undefined;
@@ -29554,6 +28621,45 @@ export interface AcceptMatchRequest {
 /** Request to dismiss a meal match */
 export interface DismissMatchRequest {
     foodEntryId?: string;
+}
+
+export interface MemberInviteInfo {
+    id?: string;
+    tenantId?: string;
+    tenantName?: string;
+    createdByName?: string;
+    role?: string;
+    scopes?: string[] | undefined;
+    label?: string | undefined;
+    limitTo24Hours?: boolean;
+    expiresAt?: Date;
+    maxUses?: number | undefined;
+    useCount?: number;
+    isValid?: boolean;
+    isExpired?: boolean;
+    isRevoked?: boolean;
+    createdAt?: Date;
+    usedBy?: InviteUsageInfo[];
+}
+
+export interface InviteUsageInfo {
+    subjectId?: string;
+    name?: string | undefined;
+    joinedAt?: Date;
+}
+
+export interface AcceptMemberInviteResult {
+    success?: boolean;
+    errorCode?: string | undefined;
+    errorDescription?: string | undefined;
+    membershipId?: string | undefined;
+}
+
+export interface TenantMemberDto {
+    subjectId?: string;
+    name?: string | undefined;
+    role?: string;
+    sysCreatedAt?: Date;
 }
 
 export interface PaginatedResponseOfMeterGlucose {
@@ -29777,6 +28883,26 @@ export interface PaginatedResponseOfNote {
 export interface PaginatedResponseOfCarbIntake {
     data?: CarbIntake[];
     pagination?: PaginationInfo;
+}
+
+export interface CarbIntake {
+    id?: string;
+    timestamp?: Date;
+    mills?: number;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    correlationId?: string | undefined;
+    legacyId?: string | undefined;
+    createdAt?: Date;
+    modifiedAt?: Date;
+    carbs?: number;
+    syncIdentifier?: string | undefined;
+    carbTime?: number | undefined;
+    absorptionTime?: number | undefined;
+    bolusId?: string | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
 }
 
 export interface TreatmentFoodBreakdown {
@@ -30263,6 +29389,53 @@ export interface BasalDataPoint {
 export interface PaginatedResponseOfSensorGlucose {
     data?: SensorGlucose[];
     pagination?: PaginationInfo;
+}
+
+export interface SensorGlucose {
+    id?: string;
+    timestamp?: Date;
+    mills?: number;
+    utcOffset?: number | undefined;
+    device?: string | undefined;
+    app?: string | undefined;
+    dataSource?: string | undefined;
+    correlationId?: string | undefined;
+    legacyId?: string | undefined;
+    createdAt?: Date;
+    modifiedAt?: Date;
+    mgdl?: number;
+    mmol?: number;
+    direction?: GlucoseDirection | undefined;
+    trend?: GlucoseTrend | undefined;
+    trendRate?: number | undefined;
+    noise?: number | undefined;
+    additionalProperties?: { [key: string]: any; } | undefined;
+}
+
+export enum GlucoseDirection {
+    None = "None",
+    DoubleUp = "DoubleUp",
+    SingleUp = "SingleUp",
+    FortyFiveUp = "FortyFiveUp",
+    Flat = "Flat",
+    FortyFiveDown = "FortyFiveDown",
+    SingleDown = "SingleDown",
+    DoubleDown = "DoubleDown",
+    NotComputable = "NotComputable",
+    RateOutOfRange = "RateOutOfRange",
+}
+
+export enum GlucoseTrend {
+    None = "None",
+    DoubleUp = "DoubleUp",
+    SingleUp = "SingleUp",
+    FortyFiveUp = "FortyFiveUp",
+    Flat = "Flat",
+    FortyFiveDown = "FortyFiveDown",
+    SingleDown = "SingleDown",
+    DoubleDown = "DoubleDown",
+    NotComputable = "NotComputable",
+    RateOutOfRange = "RateOutOfRange",
 }
 
 export interface UpsertSensorGlucoseRequest {
@@ -31552,6 +30725,57 @@ export interface VersionResponse {
     apiCompatibility?: string;
 }
 
+export interface AuthorizationResponse {
+    token?: string;
+    exp?: number;
+    sub?: string;
+    iat?: number;
+}
+
+export interface PermissionsResponse {
+    permissions?: Permission[];
+}
+
+export interface Permission {
+    name?: string;
+    count?: number;
+    firstSeen?: Date;
+    lastSeen?: Date;
+}
+
+export interface PermissionTrieResponse {
+    root?: PermissionTrieNode;
+    count?: number;
+}
+
+export interface PermissionTrieNode {
+    name?: string;
+    isLeaf?: boolean;
+    children?: { [key: string]: PermissionTrieNode; };
+}
+
+export interface Subject {
+    id?: string | undefined;
+    _id?: string | undefined;
+    name: string;
+    roles?: string[];
+    accessToken?: string;
+    notes?: string | undefined;
+    created?: Date;
+    modified?: Date;
+}
+
+export interface Role {
+    id?: string | undefined;
+    _id?: string | undefined;
+    name: string;
+    permissions?: string[];
+    notes?: string | undefined;
+    autoGenerated?: boolean;
+    created?: Date;
+    modified?: Date;
+}
+
 export interface DDataResponse {
     devicestatus?: DeviceStatus[];
     sgvs?: Entry[];
@@ -31806,6 +31030,36 @@ export interface AlexaSlot {
     value?: string;
 }
 
+/** Response for the /api/v1/verifyauth endpoint */
+export interface VerifyAuthResponse {
+    /** Authentication message - can be either a string or an object */
+    message?: any;
+}
+
+export interface ConnectorStatusDto {
+    id?: string;
+    name?: string;
+    status?: string;
+    totalEntries?: number;
+    lastEntryTime?: Date | undefined;
+    entriesLast24Hours?: number;
+    state?: string;
+    stateMessage?: string | undefined;
+    isHealthy?: boolean;
+    /** When the connector last attempted to sync */
+    lastSyncAttempt?: Date | undefined;
+    /** When the connector last successfully completed a sync */
+    lastSuccessfulSync?: Date | undefined;
+    /** When the last error occurred */
+    lastErrorAt?: Date | undefined;
+    /** Breakdown of total items processed by data type
+Keys are data type names (e.g., "Glucose", "Treatments", "Food") */
+    totalItemsBreakdown?: { [key: string]: number; } | undefined;
+    /** Breakdown of items processed in the last 24 hours by data type
+Keys are data type names (e.g., "Glucose", "Treatments", "Food") */
+    itemsLast24HoursBreakdown?: { [key: string]: number; } | undefined;
+}
+
 /** Response object for count endpoints */
 export interface CountResponse {
     /** Number of records matching the query criteria */
@@ -31907,6 +31161,697 @@ export interface PushoverNotificationRequest {
     expire?: number | undefined;
 }
 
+/** Pebble response model for 1:1 Nightscout compatibility */
+export interface PebbleResponse {
+    /** Status array containing current timestamp */
+    status?: PebbleStatus[];
+    /** Blood glucose readings array */
+    bgs?: PebbleBg[];
+    /** Calibration readings array */
+    cals?: PebbleCal[];
+}
+
+/** Pebble status entry */
+export interface PebbleStatus {
+    /** Current timestamp in milliseconds since epoch */
+    now?: number;
+}
+
+/** Pebble blood glucose entry */
+export interface PebbleBg {
+    /** Sensor glucose value (formatted as string for legacy compatibility) */
+    sgv?: string;
+    /** Numeric trend indicator (1-9) */
+    trend?: number;
+    /** Direction string (Flat, SingleUp, etc.) */
+    direction?: string;
+    /** Timestamp in milliseconds since epoch */
+    datetime?: number;
+    /** Delta from previous reading (formatted string) */
+    bgdelta?: string | undefined;
+    /** Battery percentage (formatted string) */
+    battery?: string | undefined;
+    /** Insulin on board (formatted string) */
+    iob?: string | undefined;
+    /** Bolus wizard preview (formatted string) */
+    bwp?: string | undefined;
+    /** Bolus wizard preview outcome */
+    bwpo?: number | undefined;
+    /** Carbs on board */
+    cob?: number | undefined;
+}
+
+/** Pebble calibration entry */
+export interface PebbleCal {
+    /** Calibration slope */
+    slope?: number | undefined;
+    /** Calibration intercept */
+    intercept?: number | undefined;
+    /** Calibration scale */
+    scale?: number | undefined;
+}
+
+export interface BasicGlucoseStats {
+    count?: number;
+    mean?: number;
+    median?: number;
+    min?: number;
+    max?: number;
+    standardDeviation?: number;
+    percentiles?: GlucosePercentiles;
+}
+
+export interface GlucosePercentiles {
+    p5?: number;
+    p10?: number;
+    p25?: number;
+    p50?: number;
+    p75?: number;
+    p90?: number;
+    p95?: number;
+}
+
+export interface GlycemicVariability {
+    coefficientOfVariation?: number;
+    standardDeviation?: number;
+    meanAmplitudeGlycemicExcursions?: number;
+    continuousOverlappingNetGlycemicAction?: number;
+    averageDailyRiskRange?: number;
+    labilityIndex?: number;
+    jIndex?: number;
+    highBloodGlucoseIndex?: number;
+    lowBloodGlucoseIndex?: number;
+    glycemicVariabilityIndex?: number;
+    patientGlycemicStatus?: number;
+    estimatedA1c?: number;
+    gmi?: GlucoseManagementIndicator | undefined;
+    meanTotalDailyChange?: number;
+    timeInFluctuation?: number;
+}
+
+export interface GlucoseManagementIndicator {
+    value?: number;
+    meanGlucose?: number;
+    interpretation?: GlucoseManagementIndicatorLevel;
+    reliability?: StatisticReliability | undefined;
+}
+
+export enum GlucoseManagementIndicatorLevel {
+    NonDiabetic = "NonDiabetic",
+    Prediabetes = "Prediabetes",
+    WellControlled = "WellControlled",
+    ModerateControl = "ModerateControl",
+    SuboptimalControl = "SuboptimalControl",
+    PoorControl = "PoorControl",
+}
+
+/** Request model for glycemic variability calculation */
+export interface GlycemicVariabilityRequest {
+    /** Collection of glucose values in mg/dL */
+    values?: number[];
+    /** Collection of sensor glucose readings with timestamps */
+    entries?: SensorGlucose[];
+}
+
+export interface TimeInRangeMetrics {
+    percentages?: TimeInRangePercentages;
+    durations?: TimeInRangeDurations;
+    episodes?: TimeInRangeEpisodes;
+    rangeStats?: TimeInRangeDetailedStats;
+}
+
+export interface TimeInRangePercentages {
+    veryLow?: number;
+    low?: number;
+    target?: number;
+    tightTarget?: number;
+    high?: number;
+    veryHigh?: number;
+}
+
+export interface TimeInRangeDurations {
+    veryLow?: number;
+    low?: number;
+    target?: number;
+    tightTarget?: number;
+    high?: number;
+    veryHigh?: number;
+}
+
+export interface TimeInRangeEpisodes {
+    veryLow?: number;
+    low?: number;
+    high?: number;
+    veryHigh?: number;
+}
+
+export interface TimeInRangeDetailedStats {
+    low?: PeriodMetrics;
+    target?: PeriodMetrics;
+    high?: PeriodMetrics;
+}
+
+export interface PeriodMetrics {
+    periodName?: string;
+    startHour?: number;
+    endHour?: number;
+    readingCount?: number;
+    mean?: number;
+    median?: number;
+    standardDeviation?: number;
+    coefficientOfVariation?: number;
+    timeInRange?: number;
+    timeBelowRange?: number;
+    timeVeryLow?: number;
+    timeAboveRange?: number;
+    timeVeryHigh?: number;
+    hypoglycemiaEvents?: number;
+    hyperglycemiaEvents?: number;
+    min?: number;
+    max?: number;
+}
+
+/** Request model for time in range calculation */
+export interface TimeInRangeRequest {
+    /** Collection of sensor glucose readings */
+    entries?: SensorGlucose[];
+    /** Optional glycemic thresholds */
+    thresholds?: GlycemicThresholds | undefined;
+}
+
+export interface GlycemicThresholds {
+    veryLow?: number;
+    low?: number;
+    targetBottom?: number;
+    targetTop?: number;
+    tightTargetBottom?: number;
+    tightTargetTop?: number;
+    high?: number;
+    veryHigh?: number;
+}
+
+export interface DistributionDataPoint {
+    range?: string;
+    count?: number;
+    percent?: number;
+}
+
+/** Request model for glucose distribution calculation */
+export interface GlucoseDistributionRequest {
+    /** Collection of sensor glucose readings */
+    entries?: SensorGlucose[];
+    /** Optional distribution bins */
+    bins?: DistributionBin[] | undefined;
+}
+
+export interface DistributionBin {
+    range?: string;
+    min?: number;
+    max?: number;
+}
+
+export interface AveragedStats extends BasicGlucoseStats {
+    hour?: number;
+    timeInRange?: ExtendedTimeInRangePercentages;
+}
+
+export function isAveragedStats(object: any): object is AveragedStats {
+    return object && object[''] === 'AveragedStats';
+}
+
+export interface ExtendedTimeInRangePercentages {
+    veryLow?: number;
+    low?: number;
+    normal?: number;
+    aboveTarget?: number;
+    high?: number;
+    veryHigh?: number;
+}
+
+export interface TreatmentSummary {
+    totals?: TreatmentTotals;
+    treatmentCount?: number;
+    carbToInsulinRatio?: number;
+}
+
+export interface TreatmentTotals {
+    food?: FoodTotals;
+    insulin?: InsulinTotals;
+}
+
+export interface FoodTotals {
+    carbs?: number;
+    protein?: number;
+    fat?: number;
+}
+
+export interface InsulinTotals {
+    bolus?: number;
+    basal?: number;
+    scheduledBasal?: number;
+    additionalBasal?: number;
+}
+
+/** Request model for treatment summary calculation */
+export interface TreatmentSummaryRequest {
+    /** Optional collection of bolus deliveries */
+    boluses?: Bolus[] | undefined;
+    /** Optional collection of carb intakes */
+    carbIntakes?: CarbIntake[] | undefined;
+}
+
+export interface OverallAverages {
+    avgTotalDaily?: number;
+    avgBolus?: number;
+    avgBasal?: number;
+    bolusPercentage?: number;
+    basalPercentage?: number;
+    avgCarbs?: number;
+    avgProtein?: number;
+    avgFat?: number;
+    avgTimeInRange?: number;
+    avgTightTimeInRange?: number;
+}
+
+export interface DayData {
+    date?: string;
+    treatments?: Treatment[];
+    treatmentSummary?: TreatmentSummary;
+    timeInRanges?: TimeInRangeMetrics;
+}
+
+export interface GlucoseAnalytics {
+    basicStats?: BasicGlucoseStats;
+    timeInRange?: TimeInRangeMetrics;
+    glycemicVariability?: GlycemicVariability;
+    dataQuality?: DataQuality;
+    reliability?: StatisticReliability | undefined;
+    time?: AnalysisTime;
+    clinicalAssessment?: ClinicalTargetAssessment | undefined;
+}
+
+export interface DataQuality {
+    totalReadings?: number;
+    missingReadings?: number;
+    dataCompleteness?: number;
+    cgmActivePercent?: number;
+    gapAnalysis?: GapAnalysis;
+    noiseLevel?: number;
+    calibrationEvents?: number;
+    sensorWarmups?: number;
+}
+
+export interface GapAnalysis {
+    gaps?: DataGap[];
+    longestGap?: number;
+    averageGap?: number;
+}
+
+export interface DataGap {
+    start?: number;
+    end?: number;
+    duration?: number;
+}
+
+export interface AnalysisTime {
+    start?: number;
+    end?: number;
+    timeOfAnalysis?: number;
+}
+
+export interface ClinicalTargetAssessment {
+    population?: DiabetesPopulation;
+    targets?: ClinicalTargets;
+    tirAssessment?: TargetAssessment;
+    tbrAssessment?: TargetAssessment;
+    veryLowAssessment?: TargetAssessment;
+    tarAssessment?: TargetAssessment;
+    veryHighAssessment?: TargetAssessment;
+    cvAssessment?: TargetAssessment;
+    targetsMet?: number;
+    totalTargets?: number;
+    overallAssessment?: ClinicalAssessmentLevel;
+    actionableInsights?: LocalizedInsight[];
+    priorityAreas?: LocalizedInsight[];
+    strengths?: LocalizedInsight[];
+}
+
+export enum DiabetesPopulation {
+    Type1Adult = 0,
+    Type2Adult = 1,
+    Type1Pediatric = 2,
+    Elderly = 3,
+    Pregnancy = 4,
+    PregnancyType1 = 5,
+}
+
+export interface ClinicalTargets {
+    targetTIR?: number;
+    maxTBR?: number;
+    maxTBRVeryLow?: number;
+    maxTAR?: number;
+    maxTARVeryHigh?: number;
+    targetCV?: number;
+    targetLow?: number;
+    targetHigh?: number;
+}
+
+export interface TargetAssessment {
+    metricName?: string;
+    currentValue?: number;
+    targetValue?: number;
+    isMaximumTarget?: boolean;
+    status?: TargetStatus;
+    differenceFromTarget?: number;
+    progressPercentage?: number;
+}
+
+export enum TargetStatus {
+    Met = 0,
+    Close = 1,
+    NotMet = 2,
+}
+
+export enum ClinicalAssessmentLevel {
+    Excellent = "Excellent",
+    Good = "Good",
+    NeedsAttention = "NeedsAttention",
+    NeedsSignificantImprovement = "NeedsSignificantImprovement",
+}
+
+export interface LocalizedInsight {
+    key?: InsightKey;
+    context?: { [key: string]: number; };
+}
+
+export enum InsightKey {
+    TimeInRangeExcellent = "TimeInRangeExcellent",
+    NoSevereHypoglycemia = "NoSevereHypoglycemia",
+    VariabilityControlled = "VariabilityControlled",
+    AllTargetsMet = "AllTargetsMet",
+    ReduceSevereHypoglycemia = "ReduceSevereHypoglycemia",
+    ReduceHypoglycemia = "ReduceHypoglycemia",
+    IncreaseTIR = "IncreaseTIR",
+    ReduceSevereHyperglycemia = "ReduceSevereHyperglycemia",
+    ReduceVariability = "ReduceVariability",
+    TimeVeryLow = "TimeVeryLow",
+    TimeBelowRange = "TimeBelowRange",
+    TimeInRange = "TimeInRange",
+    TimeVeryHigh = "TimeVeryHigh",
+    Variability = "Variability",
+    AllTargetsAchieved = "AllTargetsAchieved",
+}
+
+/** Request model for comprehensive glucose analytics */
+export interface GlucoseAnalyticsRequest {
+    /** Collection of sensor glucose readings */
+    entries?: SensorGlucose[];
+    /** Optional collection of bolus deliveries */
+    boluses?: Bolus[] | undefined;
+    /** Optional collection of carb intakes */
+    carbIntakes?: CarbIntake[] | undefined;
+    /** Optional extended analysis configuration */
+    config?: ExtendedAnalysisConfig | undefined;
+}
+
+export interface ExtendedAnalysisConfig {
+    thresholds?: GlycemicThresholds;
+    sensorType?: string;
+    includeLoopingMetrics?: boolean;
+    units?: string;
+}
+
+export interface ExtendedGlucoseAnalytics extends GlucoseAnalytics {
+    gmi?: GlucoseManagementIndicator;
+    gri?: GlycemicRiskIndex;
+    timeOfDayPatterns?: TimeOfDayAnalysis;
+    dayOfWeekPatterns?: DayOfWeekAnalysis;
+    hypoglycemiaAnalysis?: HypoglycemiaAnalysis;
+    hyperglycemiaAnalysis?: HyperglycemiaAnalysis;
+    clinicalAssessment?: ClinicalTargetAssessment;
+    dataSufficiency?: DataSufficiencyAssessment;
+    treatmentSummary?: TreatmentSummary | undefined;
+}
+
+export function isExtendedGlucoseAnalytics(object: any): object is ExtendedGlucoseAnalytics {
+    return object && object[''] === 'ExtendedGlucoseAnalytics';
+}
+
+export interface TimeOfDayAnalysis {
+    overnight?: PeriodMetrics;
+    morning?: PeriodMetrics;
+    afternoon?: PeriodMetrics;
+    evening?: PeriodMetrics;
+    dawnPhenomenonDetected?: boolean;
+    dawnPhenomenonMagnitude?: number;
+    highestVariabilityPeriod?: string;
+    lowestTIRPeriod?: string;
+    mostHypoglycemiaPeriod?: string;
+}
+
+export interface DayOfWeekAnalysis {
+    dayMetrics?: { [key in keyof typeof DayOfWeek]?: DayMetrics; };
+    weekdayAverage?: PeriodMetrics;
+    weekendAverage?: PeriodMetrics;
+    highestVariabilityDay?: DayOfWeek | undefined;
+    lowestTIRDay?: DayOfWeek | undefined;
+    weekdayWeekendDifference?: boolean;
+    patternDescription?: string;
+}
+
+export enum DayOfWeek {
+    Sunday = 0,
+    Monday = 1,
+    Tuesday = 2,
+    Wednesday = 3,
+    Thursday = 4,
+    Friday = 5,
+    Saturday = 6,
+}
+
+export interface DayMetrics extends PeriodMetrics {
+    dayOfWeek?: DayOfWeek;
+}
+
+export function isDayMetrics(object: any): object is DayMetrics {
+    return object && object[''] === 'DayMetrics';
+}
+
+export interface HypoglycemiaAnalysis {
+    totalEpisodes?: number;
+    severeEpisodes?: number;
+    episodesPerDay?: number;
+    averageDurationMinutes?: number;
+    averageNadir?: number;
+    lowestGlucose?: number;
+    averageRecoveryTimeMinutes?: number;
+    hourlyDistribution?: { [key: string]: number; };
+    dayOfWeekDistribution?: { [key in keyof typeof DayOfWeek]?: number; };
+    peakHour?: number | undefined;
+    peakDay?: DayOfWeek | undefined;
+    hasRecurringPattern?: boolean;
+    patternDescription?: string;
+    episodes?: HypoglycemiaEpisode[];
+    nocturnalEpisodes?: number;
+    nocturnalPercentage?: number;
+    riskAssessment?: string;
+}
+
+export interface HypoglycemiaEpisode {
+    startTime?: number;
+    endTime?: number;
+    durationMinutes?: number;
+    nadirValue?: number;
+    nadirTime?: number;
+    isSevere?: boolean;
+    hourOfDay?: number;
+    dayOfWeek?: DayOfWeek;
+    recoveryTimeMinutes?: number;
+    preEpisodeGlucose?: number | undefined;
+}
+
+export interface HyperglycemiaAnalysis {
+    totalEpisodes?: number;
+    severeEpisodes?: number;
+    prolongedEpisodes?: number;
+    episodesPerDay?: number;
+    averageDurationMinutes?: number;
+    averagePeak?: number;
+    highestGlucose?: number;
+    averageTimeToTargetMinutes?: number;
+    hourlyDistribution?: { [key: string]: number; };
+    dayOfWeekDistribution?: { [key in keyof typeof DayOfWeek]?: number; };
+    peakHour?: number | undefined;
+    peakDay?: DayOfWeek | undefined;
+    hasPostMealPattern?: boolean;
+    patternDescription?: string;
+    episodes?: HyperglycemiaEpisode[];
+    nocturnalEpisodes?: number;
+    nocturnalPercentage?: number;
+}
+
+export interface HyperglycemiaEpisode {
+    startTime?: number;
+    endTime?: number;
+    durationMinutes?: number;
+    peakValue?: number;
+    peakTime?: number;
+    isSevere?: boolean;
+    isProlonged?: boolean;
+    hourOfDay?: number;
+    dayOfWeek?: DayOfWeek;
+    timeToTargetMinutes?: number;
+    averageGlucose?: number;
+}
+
+export interface DataSufficiencyAssessment {
+    isSufficient?: boolean;
+    totalDays?: number;
+    daysWithData?: number;
+    expectedReadings?: number;
+    actualReadings?: number;
+    completenessPercentage?: number;
+    minimumRequiredCompleteness?: number;
+    averageReadingsPerDay?: number;
+    longestGapHours?: number;
+    status?: DataSufficiencyStatus;
+    warningMessage?: string;
+    recommendation?: string;
+}
+
+export enum DataSufficiencyStatus {
+    Sufficient = "Sufficient",
+    InsufficientCoverage = "InsufficientCoverage",
+    LargeGaps = "LargeGaps",
+}
+
+/** Request model for extended glucose analytics with GMI, GRI, and clinical assessment */
+export interface ExtendedGlucoseAnalyticsRequest {
+    /** Collection of sensor glucose readings */
+    entries?: SensorGlucose[];
+    /** Optional collection of bolus deliveries */
+    boluses?: Bolus[] | undefined;
+    /** Optional collection of carb intakes */
+    carbIntakes?: CarbIntake[] | undefined;
+    /** Diabetes population type for clinical target assessment */
+    population?: DiabetesPopulation;
+    /** Optional extended analysis configuration */
+    config?: ExtendedAnalysisConfig | undefined;
+}
+
+/** Request model for clinical assessment */
+export interface ClinicalAssessmentRequest {
+    /** Glucose analytics to assess */
+    analytics?: GlucoseAnalytics;
+    /** Diabetes population type for clinical target assessment */
+    population?: DiabetesPopulation;
+}
+
+/** Request model for data sufficiency assessment */
+export interface DataSufficiencyRequest {
+    /** Collection of sensor glucose readings */
+    entries?: SensorGlucose[];
+    /** Number of days to assess (default: 14) */
+    days?: number;
+    /** Expected readings per day based on sensor type (default: 288 for 5-minute intervals) */
+    expectedReadingsPerDay?: number;
+}
+
+export interface MultiPeriodStatistics {
+    lastDay?: PeriodStatistics;
+    last3Days?: PeriodStatistics;
+    lastWeek?: PeriodStatistics;
+    lastMonth?: PeriodStatistics;
+    last90Days?: PeriodStatistics;
+    lastUpdated?: Date;
+}
+
+export interface PeriodStatistics {
+    periodDays?: number;
+    startDate?: Date;
+    endDate?: Date;
+    analytics?: GlucoseAnalytics | undefined;
+    treatmentSummary?: TreatmentSummary | undefined;
+    insulinDelivery?: InsulinDeliveryStatistics | undefined;
+    hasSufficientData?: boolean;
+    gmi?: GlucoseManagementIndicator | undefined;
+    reliability?: StatisticReliability | undefined;
+    entryCount?: number;
+    treatmentCount?: number;
+}
+
+export interface SiteChangeImpactAnalysis {
+    siteChangeCount?: number;
+    dataPoints?: SiteChangeImpactDataPoint[];
+    summary?: SiteChangeImpactSummary;
+    hoursBeforeChange?: number;
+    hoursAfterChange?: number;
+    bucketSizeMinutes?: number;
+    hasSufficientData?: boolean;
+}
+
+export interface SiteChangeImpactDataPoint {
+    minutesFromChange?: number;
+    averageGlucose?: number;
+    medianGlucose?: number;
+    stdDev?: number;
+    count?: number;
+    percentile10?: number;
+    percentile25?: number;
+    percentile75?: number;
+    percentile90?: number;
+}
+
+export interface SiteChangeImpactSummary {
+    avgGlucoseBeforeChange?: number;
+    avgGlucoseAfterChange?: number;
+    percentImprovement?: number;
+    timeInRangeBeforeChange?: number;
+    timeInRangeAfterChange?: number;
+    cvBeforeChange?: number;
+    cvAfterChange?: number;
+}
+
+/** Request model for site change impact analysis */
+export interface SiteChangeImpactRequest {
+    /** Collection of sensor glucose readings */
+    entries?: SensorGlucose[];
+    /** Collection of device events (must include site changes) */
+    deviceEvents?: DeviceEvent[];
+    /** Hours before site change to analyze (default: 12) */
+    hoursBeforeChange?: number;
+    /** Hours after site change to analyze (default: 24) */
+    hoursAfterChange?: number;
+    /** Time bucket size for averaging in minutes (default: 30) */
+    bucketSizeMinutes?: number;
+}
+
+export interface AidSystemMetrics {
+    cgmUsePercent?: number | undefined;
+    pumpUsePercent?: number | undefined;
+    aidActivePercent?: number | undefined;
+    cgmActivePercent?: number | undefined;
+    targetLow?: number | undefined;
+    targetHigh?: number | undefined;
+    siteChangeCount?: number | undefined;
+    segments?: AidTimeSegment[];
+}
+
+export interface AidTimeSegment {
+    algorithm?: AidAlgorithm;
+    startDate?: Date;
+    endDate?: Date;
+    durationHours?: number;
+    metrics?: AidSegmentMetrics;
+}
+
+export interface AidSegmentMetrics {
+    aidActivePercent?: number | undefined;
+    pumpUsePercent?: number | undefined;
+    loopCycleCount?: number | undefined;
+    enactedCount?: number | undefined;
+}
+
 export interface TimeQueryEcho {
     req?: TimeQueryRequest;
     pattern?: string[];
@@ -31918,6 +31863,10 @@ export interface TimeQueryRequest {
     query?: { [key: string]: any; };
 }
 
+export interface VersionsResponse {
+    versions?: string[];
+}
+
 export interface TenantDetailDto {
     id?: string;
     slug?: string;
@@ -31926,12 +31875,6 @@ export interface TenantDetailDto {
     isDefault?: boolean;
     sysCreatedAt?: Date;
     members?: TenantMemberDto[];
-}
-
-export interface TenantMemberDto {
-    subjectId?: string;
-    role?: string;
-    sysCreatedAt?: Date;
 }
 
 export interface CreateTenantRequest {
@@ -31948,6 +31891,22 @@ export interface UpdateTenantRequest {
 export interface AddMemberRequest {
     subjectId?: string;
     role?: string;
+}
+
+export interface MemberInviteResult {
+    id?: string;
+    token?: string;
+    inviteUrl?: string;
+    expiresAt?: Date;
+}
+
+export interface CreateMemberInviteRequest {
+    role?: string;
+    scopes?: string[] | undefined;
+    label?: string | undefined;
+    expiresInDays?: number;
+    maxUses?: number | undefined;
+    limitTo24Hours?: boolean;
 }
 
 export interface ConnectorConfigurationResponse {

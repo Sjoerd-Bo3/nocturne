@@ -47,6 +47,7 @@ import {
   LastModifiedClient,
   LoopClient,
   MealMatchingClient,
+  MemberInviteClient,
   MetadataClient,
   MeterGlucoseClient,
   MigrationClient,
@@ -140,6 +141,7 @@ export class ApiClient {
   public readonly lastModified: LastModifiedClient;
   public readonly loopNotifications: LoopClient;
   public readonly mealMatching: MealMatchingClient;
+  public readonly memberInvites: MemberInviteClient;
   public readonly metadata: MetadataClient;
   public readonly meterGlucose: MeterGlucoseClient;
   public readonly migration: MigrationClient;
@@ -233,6 +235,7 @@ export class ApiClient {
     this.lastModified = new LastModifiedClient(apiBaseUrl, http);
     this.loopNotifications = new LoopClient(apiBaseUrl, http);
     this.mealMatching = new MealMatchingClient(apiBaseUrl, http);
+    this.memberInvites = new MemberInviteClient(apiBaseUrl, http);
     this.metadata = new MetadataClient(apiBaseUrl, http);
     this.meterGlucose = new MeterGlucoseClient(apiBaseUrl, http);
     this.migration = new MigrationClient(apiBaseUrl, http);

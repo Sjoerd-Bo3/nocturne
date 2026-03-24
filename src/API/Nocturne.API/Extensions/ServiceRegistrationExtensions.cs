@@ -132,7 +132,7 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<IOAuthGrantService, OAuthGrantService>();
         services.AddScoped<IOAuthTokenService, OAuthTokenService>();
         services.AddScoped<IOAuthDeviceCodeService, OAuthDeviceCodeService>();
-        services.AddScoped<IFollowerInviteService, FollowerInviteService>();
+        services.AddScoped<IMemberInviteService, MemberInviteService>();
         services.AddSingleton<IOAuthTokenRevocationCache, OAuthTokenRevocationCache>();
         services.AddHostedService<OAuthCodeCleanupService>();
 

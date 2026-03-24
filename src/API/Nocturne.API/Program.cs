@@ -240,8 +240,8 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 // Add Nightscout authentication middleware
 app.UseMiddleware<AuthenticationMiddleware>();
 
-// Add follower access middleware (handles X-Acting-As header for data sharing)
-app.UseMiddleware<FollowerAccessMiddleware>();
+// Add member scope middleware (resolves membership role and restricts follower scopes)
+app.UseMiddleware<MemberScopeMiddleware>();
 
 // Add site security middleware (enforces authentication when site lockdown is enabled)
 app.UseMiddleware<SiteSecurityMiddleware>();

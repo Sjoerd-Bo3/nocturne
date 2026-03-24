@@ -5,8 +5,8 @@
 import { getRequestEvent, query, command } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { CreateTenantRequestSchema, UpdateTenantRequestSchema, AddMemberRequestSchema } from '$lib/api/generated/schemas';
-import { type CreateTenantRequest, type UpdateTenantRequest, type AddMemberRequest } from '$api';
+import { CreateTenantRequestSchema, UpdateTenantRequestSchema, AddMemberRequestSchema, CreateMemberInviteRequestSchema } from '$lib/api/generated/schemas';
+import { type CreateTenantRequest, type UpdateTenantRequest, type AddMemberRequest, type CreateMemberInviteRequest } from '$api';
 
 export const getAll = query(async () => {
   const { locals } = getRequestEvent();
@@ -106,5 +106,55 @@ export const removeMember = command(z.object({ id: z.string(), subjectId: z.stri
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in tenant.removeMember:', err);
     throw error(500, 'Failed to remove member');
+  }
+});
+
+export const listInvites = query(z.string(), async (id) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    return await apiClient.tenant.listInvites(id);
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in tenant.listInvites:', err);
+    throw error(500, 'Failed to list invites');
+  }
+});
+
+export const createInvite = command(z.object({ id: z.string(), request: CreateMemberInviteRequestSchema }), async ({ id, request }) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    const result = await apiClient.tenant.createInvite(id, request as CreateMemberInviteRequest);
+    await Promise.all([
+      getById(id).refresh()
+    ]);
+    return result;
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in tenant.createInvite:', err);
+    throw error(500, 'Failed to create invite');
+  }
+});
+
+export const revokeInvite = command(z.object({ id: z.string(), inviteId: z.string() }), async ({ id, inviteId }) => {
+  const { locals } = getRequestEvent();
+  const { apiClient } = locals;
+  try {
+    await apiClient.tenant.revokeInvite(id, inviteId);
+    await Promise.all([
+      getById(id).refresh()
+    ]);
+    return { success: true };
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in tenant.revokeInvite:', err);
+    throw error(500, 'Failed to revoke invite');
   }
 });
