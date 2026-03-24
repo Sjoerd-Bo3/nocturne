@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.API.Middleware.Handlers;
 using Nocturne.API.Models;
@@ -40,6 +41,7 @@ public class DirectGrantController : ControllerBase
     /// Create a new direct grant token. The plaintext token is returned once and cannot be retrieved again.
     /// </summary>
     [HttpPost]
+    [RemoteCommand(Invalidates = ["List"])]
     [ProducesResponseType(typeof(CreateDirectGrantResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
@@ -49,27 +51,6 @@ public class DirectGrantController : ControllerBase
         if (auth == null || !auth.IsAuthenticated || auth.SubjectId == null)
         {
             return Unauthorized(new ErrorResponse { Error = "unauthorized", Message = "Authentication required" });
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Label))
-        {
-            return BadRequest(new ErrorResponse { Error = "invalid_request", Message = "Label is required" });
-        }
-
-        if (request.Scopes == null || request.Scopes.Count == 0)
-        {
-            return BadRequest(new ErrorResponse { Error = "invalid_request", Message = "At least one scope is required" });
-        }
-
-        // Validate scopes
-        var invalidScopes = request.Scopes.Where(s => !OAuthScopes.IsValid(s)).ToList();
-        if (invalidScopes.Count > 0)
-        {
-            return BadRequest(new ErrorResponse
-            {
-                Error = "invalid_scopes",
-                Message = $"Invalid scopes: {string.Join(", ", invalidScopes)}",
-            });
         }
 
         // Generate opaque token
@@ -120,6 +101,7 @@ public class DirectGrantController : ControllerBase
     /// Never returns the token itself.
     /// </summary>
     [HttpGet]
+    [RemoteQuery]
     [ProducesResponseType(typeof(List<DirectGrantDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<List<DirectGrantDto>>> List()
@@ -153,6 +135,7 @@ public class DirectGrantController : ControllerBase
     /// Revoke a direct grant by setting its RevokedAt timestamp
     /// </summary>
     [HttpDelete("{id:guid}")]
+    [RemoteCommand(Invalidates = ["List"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]

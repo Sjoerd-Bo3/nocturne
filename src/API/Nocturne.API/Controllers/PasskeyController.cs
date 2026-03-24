@@ -70,11 +70,6 @@ public class PasskeyController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyOptionsResponse>> RegisterOptions([FromBody] PasskeyRegisterOptionsRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Username))
-        {
-            return BadRequest(new ErrorResponse { Error = "invalid_request", Message = "Username is required" });
-        }
-
         var tenantId = _tenantAccessor.TenantId;
         var result = await _passkeyService.GenerateRegistrationOptionsAsync(
             request.SubjectId, request.Username, tenantId);
@@ -151,11 +146,6 @@ public class PasskeyController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyOptionsResponse>> LoginOptions([FromBody] PasskeyLoginOptionsRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Username))
-        {
-            return BadRequest(new ErrorResponse { Error = "invalid_request", Message = "Username is required" });
-        }
-
         var tenantId = _tenantAccessor.TenantId;
         var result = await _passkeyService.GenerateAssertionOptionsAsync(request.Username, tenantId);
 
@@ -244,11 +234,6 @@ public class PasskeyController : ControllerBase
     public async Task<ActionResult<RecoveryVerifyResponse>> RecoveryVerify(
         [FromBody] RecoveryVerifyRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Code))
-        {
-            return BadRequest(new ErrorResponse { Error = "invalid_request", Message = "Username and recovery code are required" });
-        }
-
         var tenantId = _tenantAccessor.TenantId;
 
         // Look up subject by username within the current tenant
