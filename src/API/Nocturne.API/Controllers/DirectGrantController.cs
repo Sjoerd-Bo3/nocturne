@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.API.Middleware.Handlers;
-using Nocturne.API.Models;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -43,8 +42,8 @@ public class DirectGrantController : ControllerBase
     [HttpPost]
     [RemoteCommand(Invalidates = ["List"])]
     [ProducesResponseType(typeof(CreateDirectGrantResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CreateDirectGrantResponse>> Create([FromBody] CreateDirectGrantRequest request)
     {
         var auth = HttpContext.GetAuthContext();
@@ -103,7 +102,7 @@ public class DirectGrantController : ControllerBase
     [HttpGet]
     [RemoteQuery]
     [ProducesResponseType(typeof(List<DirectGrantDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<List<DirectGrantDto>>> List()
     {
         var auth = HttpContext.GetAuthContext();
@@ -137,8 +136,8 @@ public class DirectGrantController : ControllerBase
     [HttpDelete("{id:guid}")]
     [RemoteCommand(Invalidates = ["List"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Revoke(Guid id)
     {
         var auth = HttpContext.GetAuthContext();

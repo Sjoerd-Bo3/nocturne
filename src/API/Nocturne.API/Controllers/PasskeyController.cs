@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
-using Nocturne.API.Models;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Configuration;
@@ -67,7 +66,7 @@ public class PasskeyController : ControllerBase
     [AllowAnonymous]
     [RemoteCommand]
     [ProducesResponseType(typeof(PasskeyOptionsResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyOptionsResponse>> RegisterOptions([FromBody] PasskeyRegisterOptionsRequest request)
     {
         var tenantId = _tenantAccessor.TenantId;
@@ -88,7 +87,7 @@ public class PasskeyController : ControllerBase
     [AllowAnonymous]
     [RemoteCommand(Invalidates = ["ListCredentials"])]
     [ProducesResponseType(typeof(PasskeyRegisterCompleteResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyRegisterCompleteResponse>> RegisterComplete(
         [FromBody] PasskeyRegisterCompleteRequest request)
     {
@@ -143,7 +142,7 @@ public class PasskeyController : ControllerBase
     [AllowAnonymous]
     [RemoteCommand]
     [ProducesResponseType(typeof(PasskeyOptionsResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyOptionsResponse>> LoginOptions([FromBody] PasskeyLoginOptionsRequest request)
     {
         var tenantId = _tenantAccessor.TenantId;
@@ -163,7 +162,7 @@ public class PasskeyController : ControllerBase
     [AllowAnonymous]
     [RemoteCommand]
     [ProducesResponseType(typeof(PasskeyLoginCompleteResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyLoginCompleteResponse>> LoginComplete(
         [FromBody] PasskeyLoginCompleteRequest request)
     {
@@ -230,7 +229,7 @@ public class PasskeyController : ControllerBase
     [AllowAnonymous]
     [RemoteCommand]
     [ProducesResponseType(typeof(RecoveryVerifyResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<RecoveryVerifyResponse>> RecoveryVerify(
         [FromBody] RecoveryVerifyRequest request)
     {
@@ -294,7 +293,7 @@ public class PasskeyController : ControllerBase
     [HttpGet("credentials")]
     [RemoteQuery]
     [ProducesResponseType(typeof(PasskeyCredentialListResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<PasskeyCredentialListResponse>> ListCredentials()
     {
         var auth = HttpContext.GetAuthContext();
@@ -326,9 +325,9 @@ public class PasskeyController : ControllerBase
     [HttpDelete("credentials/{id:guid}")]
     [RemoteCommand(Invalidates = ["ListCredentials"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveCredential(Guid id)
     {
         var auth = HttpContext.GetAuthContext();
@@ -366,7 +365,7 @@ public class PasskeyController : ControllerBase
     [HttpPost("recovery/regenerate")]
     [RemoteCommand(Invalidates = ["GetRecoveryStatus"])]
     [ProducesResponseType(typeof(RecoveryRegenerateResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<RecoveryRegenerateResponse>> RegenerateRecoveryCodes()
     {
         var auth = HttpContext.GetAuthContext();
@@ -389,7 +388,7 @@ public class PasskeyController : ControllerBase
     [HttpGet("recovery/status")]
     [RemoteQuery]
     [ProducesResponseType(typeof(RecoveryStatusResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<RecoveryStatusResponse>> GetRecoveryStatus()
     {
         var auth = HttpContext.GetAuthContext();
