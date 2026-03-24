@@ -13,5 +13,6 @@ public class UpsertNoteRequestValidator : AbstractValidator<UpsertNoteRequest>
         RuleFor(x => x.DataSource).MaximumLength(500).When(x => x.DataSource is not null);
         RuleFor(x => x.Text).MaximumLength(10000).When(x => x.Text is not null);
         RuleFor(x => x.EventType).MaximumLength(200).When(x => x.EventType is not null);
+        RuleFor(x => x.SyncIdentifier).MaximumLength(500).When(x => x.SyncIdentifier is not null);
     }
 }

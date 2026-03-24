@@ -10,4 +10,5 @@ public class UpsertNoteRequest
     public string? Text { get; set; }
     public string? EventType { get; set; }
     public bool IsAnnouncement { get; set; }
+    public string? SyncIdentifier { get; set; }
 }

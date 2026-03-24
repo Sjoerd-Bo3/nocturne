@@ -27,6 +27,7 @@ public class DeviceEventController(IDeviceEventRepository repo)
         DataSource = request.DataSource,
         EventType = request.EventType,
         Notes = request.Notes,
+        SyncIdentifier = request.SyncIdentifier,
     };
 
     protected override DeviceEvent MapUpdateToModel(Guid id, UpsertDeviceEventRequest request, DeviceEvent existing) => new()

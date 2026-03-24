@@ -28,6 +28,7 @@ public class NoteController(INoteRepository repo)
         Text = request.Text ?? string.Empty,
         EventType = request.EventType,
         IsAnnouncement = request.IsAnnouncement,
+        SyncIdentifier = request.SyncIdentifier,
     };
 
     protected override Note MapUpdateToModel(Guid id, UpsertNoteRequest request, Note existing) => new()

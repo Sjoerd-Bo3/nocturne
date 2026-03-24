@@ -12,5 +12,6 @@ public class UpsertBGCheckRequestValidator : AbstractValidator<UpsertBGCheckRequ
         RuleFor(x => x.App).MaximumLength(500).When(x => x.App is not null);
         RuleFor(x => x.DataSource).MaximumLength(500).When(x => x.DataSource is not null);
         RuleFor(x => x.Glucose).InclusiveBetween(0, 10000).WithMessage("Glucose must be between 0 and 10000");
+        RuleFor(x => x.SyncIdentifier).MaximumLength(500).When(x => x.SyncIdentifier is not null);
     }
 }

@@ -28,6 +28,7 @@ public class BGCheckController(IBGCheckRepository repo)
         Glucose = request.Glucose,
         Units = request.Units,
         GlucoseType = request.GlucoseType,
+        SyncIdentifier = request.SyncIdentifier,
     };
 
     protected override BGCheck MapUpdateToModel(Guid id, UpsertBGCheckRequest request, BGCheck existing) => new()

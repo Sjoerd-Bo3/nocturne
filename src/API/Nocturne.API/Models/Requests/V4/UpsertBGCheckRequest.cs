@@ -12,4 +12,5 @@ public class UpsertBGCheckRequest
     public double Glucose { get; set; }
     public GlucoseUnit? Units { get; set; }
     public GlucoseType? GlucoseType { get; set; }
+    public string? SyncIdentifier { get; set; }
 }

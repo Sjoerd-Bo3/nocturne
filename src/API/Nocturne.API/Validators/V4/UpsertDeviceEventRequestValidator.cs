@@ -13,5 +13,6 @@ public class UpsertDeviceEventRequestValidator : AbstractValidator<UpsertDeviceE
         RuleFor(x => x.DataSource).MaximumLength(500).When(x => x.DataSource is not null);
         RuleFor(x => x.EventType).IsInEnum().WithMessage("EventType must be a valid device event type");
         RuleFor(x => x.Notes).MaximumLength(10000).When(x => x.Notes is not null);
+        RuleFor(x => x.SyncIdentifier).MaximumLength(500).When(x => x.SyncIdentifier is not null);
     }
 }

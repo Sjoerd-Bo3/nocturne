@@ -11,4 +11,5 @@ public class UpsertDeviceEventRequest
     public string? DataSource { get; set; }
     public DeviceEventType EventType { get; set; }
     public string? Notes { get; set; }
+    public string? SyncIdentifier { get; set; }
 }
