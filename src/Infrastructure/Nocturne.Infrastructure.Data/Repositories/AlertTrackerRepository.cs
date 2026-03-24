@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 
 namespace Nocturne.Infrastructure.Data.Repositories;
@@ -7,7 +9,7 @@ namespace Nocturne.Infrastructure.Data.Repositories;
 /// Repository for alert tracker state and excursion persistence.
 /// Methods are virtual to allow mocking with CallBase in tests.
 /// </summary>
-public class AlertTrackerRepository
+public class AlertTrackerRepository : IAlertTrackerRepository
 {
     private readonly NocturneDbContext _context;
 
@@ -19,19 +21,21 @@ public class AlertTrackerRepository
     /// <summary>
     /// Get the tracker state for a specific alert rule.
     /// </summary>
-    public virtual async Task<AlertTrackerStateEntity?> GetTrackerStateAsync(
+    public virtual async Task<AlertTrackerState?> GetTrackerStateAsync(
         Guid alertRuleId,
         CancellationToken ct = default)
     {
-        return await _context.AlertTrackerState
+        var entity = await _context.AlertTrackerState
             .FirstOrDefaultAsync(s => s.AlertRuleId == alertRuleId, ct);
+
+        return entity == null ? null : MapTrackerState(entity);
     }
 
     /// <summary>
     /// Insert or update the tracker state for a rule.
     /// </summary>
     public virtual async Task UpsertTrackerStateAsync(
-        AlertTrackerStateEntity state,
+        AlertTrackerState state,
         CancellationToken ct = default)
     {
         var existing = await _context.AlertTrackerState
@@ -39,7 +43,14 @@ public class AlertTrackerRepository
 
         if (existing == null)
         {
-            _context.AlertTrackerState.Add(state);
+            _context.AlertTrackerState.Add(new AlertTrackerStateEntity
+            {
+                AlertRuleId = state.AlertRuleId,
+                State = state.State,
+                ConfirmationCount = state.ConfirmationCount,
+                ActiveExcursionId = state.ActiveExcursionId,
+                UpdatedAt = state.UpdatedAt,
+            });
         }
         else
         {
@@ -55,18 +66,20 @@ public class AlertTrackerRepository
     /// <summary>
     /// Get the alert rule configuration.
     /// </summary>
-    public virtual async Task<AlertRuleEntity?> GetRuleAsync(
+    public virtual async Task<AlertRule?> GetRuleAsync(
         Guid alertRuleId,
         CancellationToken ct = default)
     {
-        return await _context.AlertRules
+        var entity = await _context.AlertRules
             .FirstOrDefaultAsync(r => r.Id == alertRuleId, ct);
+
+        return entity == null ? null : MapAlertRule(entity);
     }
 
     /// <summary>
     /// Create a new excursion record and return it.
     /// </summary>
-    public virtual async Task<AlertExcursionEntity> CreateExcursionAsync(
+    public virtual async Task<AlertExcursion> CreateExcursionAsync(
         Guid alertRuleId,
         DateTime startedAt,
         CancellationToken ct = default)
@@ -80,7 +93,7 @@ public class AlertTrackerRepository
 
         _context.AlertExcursions.Add(excursion);
         await _context.SaveChangesAsync(ct);
-        return excursion;
+        return MapAlertExcursion(excursion);
     }
 
     /// <summary>
@@ -135,4 +148,41 @@ public class AlertTrackerRepository
             await _context.SaveChangesAsync(ct);
         }
     }
+
+    private static AlertTrackerState MapTrackerState(AlertTrackerStateEntity entity) => new()
+    {
+        AlertRuleId = entity.AlertRuleId,
+        State = entity.State,
+        ConfirmationCount = entity.ConfirmationCount,
+        ActiveExcursionId = entity.ActiveExcursionId,
+        UpdatedAt = entity.UpdatedAt,
+    };
+
+    private static AlertRule MapAlertRule(AlertRuleEntity entity) => new()
+    {
+        Id = entity.Id,
+        Name = entity.Name,
+        Description = entity.Description,
+        ConditionType = entity.ConditionType,
+        ConditionParams = entity.ConditionParams,
+        HysteresisMinutes = entity.HysteresisMinutes,
+        ConfirmationReadings = entity.ConfirmationReadings,
+        Severity = entity.Severity,
+        ClientConfiguration = entity.ClientConfiguration,
+        IsEnabled = entity.IsEnabled,
+        SortOrder = entity.SortOrder,
+        CreatedAt = entity.CreatedAt,
+        UpdatedAt = entity.UpdatedAt,
+    };
+
+    private static AlertExcursion MapAlertExcursion(AlertExcursionEntity entity) => new()
+    {
+        Id = entity.Id,
+        AlertRuleId = entity.AlertRuleId,
+        StartedAt = entity.StartedAt,
+        EndedAt = entity.EndedAt,
+        AcknowledgedAt = entity.AcknowledgedAt,
+        AcknowledgedBy = entity.AcknowledgedBy,
+        HysteresisStartedAt = entity.HysteresisStartedAt,
+    };
 }

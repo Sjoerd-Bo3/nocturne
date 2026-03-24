@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts.Alerts;
-using Nocturne.Infrastructure.Data.Entities;
-using Nocturne.Infrastructure.Data.Repositories;
+using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services.Alerts;
 
@@ -18,7 +18,7 @@ namespace Nocturne.API.Services.Alerts;
 ///   5. Return a transition describing what happened.
 /// </summary>
 public class ExcursionTracker(
-    AlertTrackerRepository repository,
+    IAlertTrackerRepository repository,
     TimeProvider timeProvider,
     ILogger<ExcursionTracker> logger)
     : IExcursionTracker
@@ -41,7 +41,7 @@ public class ExcursionTracker(
         }
 
         var state = await repository.GetTrackerStateAsync(alertRuleId, ct)
-                    ?? new AlertTrackerStateEntity
+                    ?? new AlertTrackerState
                     {
                         AlertRuleId = alertRuleId,
                         State = StateIdle,
@@ -65,8 +65,8 @@ public class ExcursionTracker(
     }
 
     private async Task<ExcursionTransition> HandleIdle(
-        AlertTrackerStateEntity state,
-        AlertRuleEntity rule,
+        AlertTrackerState state,
+        AlertRule rule,
         bool conditionMet,
         DateTime now,
         CancellationToken ct)
@@ -87,8 +87,8 @@ public class ExcursionTracker(
     }
 
     private async Task<ExcursionTransition> HandleConfirming(
-        AlertTrackerStateEntity state,
-        AlertRuleEntity rule,
+        AlertTrackerState state,
+        AlertRule rule,
         bool conditionMet,
         DateTime now,
         CancellationToken ct)
@@ -113,8 +113,8 @@ public class ExcursionTracker(
     }
 
     private async Task<ExcursionTransition> HandleActive(
-        AlertTrackerStateEntity state,
-        AlertRuleEntity rule,
+        AlertTrackerState state,
+        AlertRule rule,
         bool conditionMet,
         DateTime now,
         CancellationToken ct)
@@ -140,8 +140,8 @@ public class ExcursionTracker(
     }
 
     private async Task<ExcursionTransition> HandleHysteresis(
-        AlertTrackerStateEntity state,
-        AlertRuleEntity rule,
+        AlertTrackerState state,
+        AlertRule rule,
         bool conditionMet,
         DateTime now,
         CancellationToken ct)
@@ -197,8 +197,8 @@ public class ExcursionTracker(
     }
 
     private async Task<ExcursionTransition> OpenExcursion(
-        AlertTrackerStateEntity state,
-        AlertRuleEntity rule,
+        AlertTrackerState state,
+        AlertRule rule,
         DateTime now,
         CancellationToken ct)
     {

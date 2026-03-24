@@ -4,9 +4,8 @@ using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Nocturne.API.Services.Alerts;
 using Nocturne.Core.Contracts.Alerts;
-using Nocturne.Infrastructure.Data;
-using Nocturne.Infrastructure.Data.Entities;
-using Nocturne.Infrastructure.Data.Repositories;
+using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Models;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services.Alerts;
@@ -14,25 +13,23 @@ namespace Nocturne.API.Tests.Services.Alerts;
 [Trait("Category", "Unit")]
 public class ExcursionTrackerTests
 {
-    private readonly NocturneDbContext _db;
-    private readonly Mock<AlertTrackerRepository> _mockRepo;
+    private readonly Mock<IAlertTrackerRepository> _mockRepo;
     private readonly FakeTimeProvider _timeProvider;
     private readonly ExcursionTracker _tracker;
     private readonly Guid _ruleId = Guid.NewGuid();
 
     // Default rule with confirmation=3, hysteresis=5 min
-    private readonly AlertRuleEntity _defaultRule;
+    private readonly AlertRule _defaultRule;
 
     public ExcursionTrackerTests()
     {
-        _db = Nocturne.Tests.Shared.Infrastructure.TestDbContextFactory.CreateInMemoryContext();
-        _mockRepo = new Mock<AlertTrackerRepository>(_db) { CallBase = true };
+        _mockRepo = new Mock<IAlertTrackerRepository>();
         _timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 3, 22, 12, 0, 0, TimeSpan.Zero));
 
         var logger = new Mock<ILogger<ExcursionTracker>>();
         _tracker = new ExcursionTracker(_mockRepo.Object, _timeProvider, logger.Object);
 
-        _defaultRule = new AlertRuleEntity
+        _defaultRule = new AlertRule
         {
             Id = _ruleId,
             Name = "Test Rule",
@@ -41,26 +38,17 @@ public class ExcursionTrackerTests
         };
     }
 
-    private void SetupRule(AlertRuleEntity? rule = null)
+    private void SetupRule(AlertRule? rule = null)
     {
         var r = rule ?? _defaultRule;
         _mockRepo.Setup(x => x.GetRuleAsync(r.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(r);
     }
 
-    private void SetupTrackerState(AlertTrackerStateEntity? state)
+    private void SetupTrackerState(AlertTrackerState? state)
     {
         _mockRepo.Setup(x => x.GetTrackerStateAsync(_ruleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(state);
-    }
-
-    private AlertTrackerStateEntity CaptureUpsertedState()
-    {
-        AlertTrackerStateEntity? captured = null;
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) => captured = s)
-            .Returns(Task.CompletedTask);
-        return null!; // We use the mock verification instead
     }
 
     #region IDLE state transitions
@@ -70,7 +58,7 @@ public class ExcursionTrackerTests
     {
         SetupRule();
         SetupTrackerState(null); // No existing state -> idle
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var result = await _tracker.ProcessEvaluationAsync(_ruleId, false, CancellationToken.None);
@@ -84,9 +72,9 @@ public class ExcursionTrackerTests
     {
         SetupRule();
         SetupTrackerState(null);
-        AlertTrackerStateEntity? savedState = null;
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) => savedState = s)
+        AlertTrackerState? savedState = null;
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
+            .Callback<AlertTrackerState, CancellationToken>((s, _) => savedState = s)
             .Returns(Task.CompletedTask);
 
         var result = await _tracker.ProcessEvaluationAsync(_ruleId, true, CancellationToken.None);
@@ -100,7 +88,7 @@ public class ExcursionTrackerTests
     [Fact]
     public async Task Idle_TrueEvaluation_WithConfirmation1_GoesDirectlyToActive()
     {
-        var rule = new AlertRuleEntity
+        var rule = new AlertRule
         {
             Id = _ruleId,
             Name = "Immediate Rule",
@@ -113,11 +101,11 @@ public class ExcursionTrackerTests
 
         var excursionId = Guid.NewGuid();
         _mockRepo.Setup(x => x.CreateExcursionAsync(_ruleId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AlertExcursionEntity { Id = excursionId, AlertRuleId = _ruleId });
+            .ReturnsAsync(new AlertExcursion { Id = excursionId, AlertRuleId = _ruleId });
 
-        AlertTrackerStateEntity? savedState = null;
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) => savedState = s)
+        AlertTrackerState? savedState = null;
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
+            .Callback<AlertTrackerState, CancellationToken>((s, _) => savedState = s)
             .Returns(Task.CompletedTask);
 
         var result = await _tracker.ProcessEvaluationAsync(_ruleId, true, CancellationToken.None);
@@ -136,16 +124,16 @@ public class ExcursionTrackerTests
     public async Task Confirming_FalseEvaluation_ResetsToIdle()
     {
         SetupRule();
-        SetupTrackerState(new AlertTrackerStateEntity
+        SetupTrackerState(new AlertTrackerState
         {
             AlertRuleId = _ruleId,
             State = "confirming",
             ConfirmationCount = 2,
         });
 
-        AlertTrackerStateEntity? savedState = null;
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) => savedState = s)
+        AlertTrackerState? savedState = null;
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
+            .Callback<AlertTrackerState, CancellationToken>((s, _) => savedState = s)
             .Returns(Task.CompletedTask);
 
         var result = await _tracker.ProcessEvaluationAsync(_ruleId, false, CancellationToken.None);
@@ -159,16 +147,16 @@ public class ExcursionTrackerTests
     public async Task Confirming_TrueEvaluation_IncreasesCounter()
     {
         SetupRule(); // confirmation_readings = 3
-        SetupTrackerState(new AlertTrackerStateEntity
+        SetupTrackerState(new AlertTrackerState
         {
             AlertRuleId = _ruleId,
             State = "confirming",
             ConfirmationCount = 1,
         });
 
-        AlertTrackerStateEntity? savedState = null;
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) => savedState = s)
+        AlertTrackerState? savedState = null;
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
+            .Callback<AlertTrackerState, CancellationToken>((s, _) => savedState = s)
             .Returns(Task.CompletedTask);
 
         var result = await _tracker.ProcessEvaluationAsync(_ruleId, true, CancellationToken.None);
@@ -182,7 +170,7 @@ public class ExcursionTrackerTests
     public async Task Confirming_ReachesThreshold_OpensExcursion()
     {
         SetupRule(); // confirmation_readings = 3
-        SetupTrackerState(new AlertTrackerStateEntity
+        SetupTrackerState(new AlertTrackerState
         {
             AlertRuleId = _ruleId,
             State = "confirming",
@@ -191,11 +179,11 @@ public class ExcursionTrackerTests
 
         var excursionId = Guid.NewGuid();
         _mockRepo.Setup(x => x.CreateExcursionAsync(_ruleId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AlertExcursionEntity { Id = excursionId, AlertRuleId = _ruleId });
+            .ReturnsAsync(new AlertExcursion { Id = excursionId, AlertRuleId = _ruleId });
 
-        AlertTrackerStateEntity? savedState = null;
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) => savedState = s)
+        AlertTrackerState? savedState = null;
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
+            .Callback<AlertTrackerState, CancellationToken>((s, _) => savedState = s)
             .Returns(Task.CompletedTask);
 
         var result = await _tracker.ProcessEvaluationAsync(_ruleId, true, CancellationToken.None);
@@ -213,11 +201,11 @@ public class ExcursionTrackerTests
         SetupTrackerState(null);
 
         // Track saved states across calls
-        var savedStates = new List<AlertTrackerStateEntity>();
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) =>
+        var savedStates = new List<AlertTrackerState>();
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
+            .Callback<AlertTrackerState, CancellationToken>((s, _) =>
             {
-                savedStates.Add(new AlertTrackerStateEntity
+                savedStates.Add(new AlertTrackerState
                 {
                     AlertRuleId = s.AlertRuleId,
                     State = s.State,
@@ -233,7 +221,7 @@ public class ExcursionTrackerTests
 
         var excursionId = Guid.NewGuid();
         _mockRepo.Setup(x => x.CreateExcursionAsync(_ruleId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AlertExcursionEntity { Id = excursionId, AlertRuleId = _ruleId });
+            .ReturnsAsync(new AlertExcursion { Id = excursionId, AlertRuleId = _ruleId });
 
         // Call 1: idle -> confirming (count=1)
         var r1 = await _tracker.ProcessEvaluationAsync(_ruleId, true, CancellationToken.None);
@@ -260,13 +248,13 @@ public class ExcursionTrackerTests
     {
         SetupRule();
         var excursionId = Guid.NewGuid();
-        SetupTrackerState(new AlertTrackerStateEntity
+        SetupTrackerState(new AlertTrackerState
         {
             AlertRuleId = _ruleId,
             State = "active",
             ActiveExcursionId = excursionId,
         });
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var result = await _tracker.ProcessEvaluationAsync(_ruleId, true, CancellationToken.None);
@@ -280,16 +268,16 @@ public class ExcursionTrackerTests
     {
         SetupRule();
         var excursionId = Guid.NewGuid();
-        SetupTrackerState(new AlertTrackerStateEntity
+        SetupTrackerState(new AlertTrackerState
         {
             AlertRuleId = _ruleId,
             State = "active",
             ActiveExcursionId = excursionId,
         });
 
-        AlertTrackerStateEntity? savedState = null;
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) => savedState = s)
+        AlertTrackerState? savedState = null;
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
+            .Callback<AlertTrackerState, CancellationToken>((s, _) => savedState = s)
             .Returns(Task.CompletedTask);
 
         var result = await _tracker.ProcessEvaluationAsync(_ruleId, false, CancellationToken.None);
@@ -314,7 +302,7 @@ public class ExcursionTrackerTests
         var excursionId = Guid.NewGuid();
         var hysteresisStart = _timeProvider.GetUtcNow().UtcDateTime;
 
-        SetupTrackerState(new AlertTrackerStateEntity
+        SetupTrackerState(new AlertTrackerState
         {
             AlertRuleId = _ruleId,
             State = "hysteresis",
@@ -322,9 +310,9 @@ public class ExcursionTrackerTests
             UpdatedAt = hysteresisStart,
         });
 
-        AlertTrackerStateEntity? savedState = null;
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) => savedState = s)
+        AlertTrackerState? savedState = null;
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
+            .Callback<AlertTrackerState, CancellationToken>((s, _) => savedState = s)
             .Returns(Task.CompletedTask);
 
         // Advance time by 2 minutes (within 5 min hysteresis)
@@ -348,14 +336,14 @@ public class ExcursionTrackerTests
         var excursionId = Guid.NewGuid();
         var hysteresisStart = _timeProvider.GetUtcNow().UtcDateTime;
 
-        SetupTrackerState(new AlertTrackerStateEntity
+        SetupTrackerState(new AlertTrackerState
         {
             AlertRuleId = _ruleId,
             State = "hysteresis",
             ActiveExcursionId = excursionId,
             UpdatedAt = hysteresisStart,
         });
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Advance 3 minutes (still within 5 min hysteresis)
@@ -373,7 +361,7 @@ public class ExcursionTrackerTests
         var excursionId = Guid.NewGuid();
         var hysteresisStart = _timeProvider.GetUtcNow().UtcDateTime;
 
-        SetupTrackerState(new AlertTrackerStateEntity
+        SetupTrackerState(new AlertTrackerState
         {
             AlertRuleId = _ruleId,
             State = "hysteresis",
@@ -381,9 +369,9 @@ public class ExcursionTrackerTests
             UpdatedAt = hysteresisStart,
         });
 
-        AlertTrackerStateEntity? savedState = null;
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) => savedState = s)
+        AlertTrackerState? savedState = null;
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
+            .Callback<AlertTrackerState, CancellationToken>((s, _) => savedState = s)
             .Returns(Task.CompletedTask);
 
         // Advance past hysteresis expiry
@@ -410,7 +398,7 @@ public class ExcursionTrackerTests
     public async Task MissingRule_ReturnsNone()
     {
         _mockRepo.Setup(x => x.GetRuleAsync(_ruleId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AlertRuleEntity?)null);
+            .ReturnsAsync((AlertRule?)null);
 
         var result = await _tracker.ProcessEvaluationAsync(_ruleId, true, CancellationToken.None);
 
@@ -420,7 +408,7 @@ public class ExcursionTrackerTests
     [Fact]
     public async Task ExcursionOpened_ReturnsNewExcursionId()
     {
-        var rule = new AlertRuleEntity
+        var rule = new AlertRule
         {
             Id = _ruleId,
             Name = "Quick Rule",
@@ -433,8 +421,8 @@ public class ExcursionTrackerTests
 
         var newExcursionId = Guid.NewGuid();
         _mockRepo.Setup(x => x.CreateExcursionAsync(_ruleId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AlertExcursionEntity { Id = newExcursionId, AlertRuleId = _ruleId });
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AlertExcursion { Id = newExcursionId, AlertRuleId = _ruleId });
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var result = await _tracker.ProcessEvaluationAsync(_ruleId, true, CancellationToken.None);
@@ -450,14 +438,14 @@ public class ExcursionTrackerTests
         var excursionId = Guid.NewGuid();
         var hysteresisStart = _timeProvider.GetUtcNow().UtcDateTime;
 
-        SetupTrackerState(new AlertTrackerStateEntity
+        SetupTrackerState(new AlertTrackerState
         {
             AlertRuleId = _ruleId,
             State = "hysteresis",
             ActiveExcursionId = excursionId,
             UpdatedAt = hysteresisStart,
         });
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _mockRepo.Setup(x => x.CloseExcursionAsync(excursionId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -473,7 +461,7 @@ public class ExcursionTrackerTests
     [Fact]
     public async Task FullLifecycle_IdleToActiveToClosedViaHysteresis()
     {
-        var rule = new AlertRuleEntity
+        var rule = new AlertRule
         {
             Id = _ruleId,
             Name = "Lifecycle Rule",
@@ -485,9 +473,9 @@ public class ExcursionTrackerTests
         SetupTrackerState(null);
 
         // Track state across calls
-        AlertTrackerStateEntity? currentState = null;
-        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerStateEntity>(), It.IsAny<CancellationToken>()))
-            .Callback<AlertTrackerStateEntity, CancellationToken>((s, _) =>
+        AlertTrackerState? currentState = null;
+        _mockRepo.Setup(x => x.UpsertTrackerStateAsync(It.IsAny<AlertTrackerState>(), It.IsAny<CancellationToken>()))
+            .Callback<AlertTrackerState, CancellationToken>((s, _) =>
             {
                 currentState = s;
                 _mockRepo.Setup(x => x.GetTrackerStateAsync(_ruleId, It.IsAny<CancellationToken>()))
@@ -497,7 +485,7 @@ public class ExcursionTrackerTests
 
         var excursionId = Guid.NewGuid();
         _mockRepo.Setup(x => x.CreateExcursionAsync(_ruleId, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AlertExcursionEntity { Id = excursionId, AlertRuleId = _ruleId });
+            .ReturnsAsync(new AlertExcursion { Id = excursionId, AlertRuleId = _ruleId });
 
         // 1. idle -> confirming (first true)
         var r1 = await _tracker.ProcessEvaluationAsync(_ruleId, true, CancellationToken.None);

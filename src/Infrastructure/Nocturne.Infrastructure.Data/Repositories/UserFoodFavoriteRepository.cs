@@ -1,12 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
+using Nocturne.Infrastructure.Data.Mappers;
 
 namespace Nocturne.Infrastructure.Data.Repositories;
 
 /// <summary>
 /// PostgreSQL repository for user food favorites.
 /// </summary>
-public class UserFoodFavoriteRepository
+public class UserFoodFavoriteRepository : IUserFoodFavoriteRepository
 {
     private readonly NocturneDbContext _context;
 
@@ -22,12 +25,12 @@ public class UserFoodFavoriteRepository
     /// <summary>
     /// Get favorite food entities for a user.
     /// </summary>
-    public async Task<IReadOnlyList<FoodEntity>> GetFavoriteFoodsAsync(
+    public async Task<IReadOnlyList<Food>> GetFavoriteFoodsAsync(
         string userId,
         CancellationToken cancellationToken = default
     )
     {
-        return await _context
+        var entities = await _context
             .Set<UserFoodFavoriteEntity>()
             .AsNoTracking()
             .Where(f => f.UserId == userId)
@@ -35,6 +38,8 @@ public class UserFoodFavoriteRepository
             .OrderBy(f => f.Food!.Name)
             .Select(f => f.Food!)
             .ToListAsync(cancellationToken);
+
+        return entities.Select(FoodMapper.ToDomainModel).ToList();
     }
 
     /// <summary>
@@ -55,7 +60,7 @@ public class UserFoodFavoriteRepository
     /// <summary>
     /// Add a favorite entry for a user.
     /// </summary>
-    public async Task<UserFoodFavoriteEntity?> AddFavoriteAsync(
+    public async Task<UserFoodFavorite?> AddFavoriteAsync(
         string userId,
         Guid foodId,
         CancellationToken cancellationToken = default
@@ -71,7 +76,12 @@ public class UserFoodFavoriteRepository
 
         _context.Set<UserFoodFavoriteEntity>().Add(entity);
         await _context.SaveChangesAsync(cancellationToken);
-        return entity;
+        return new UserFoodFavorite
+        {
+            Id = entity.Id,
+            UserId = entity.UserId,
+            FoodId = entity.FoodId,
+        };
     }
 
     /// <summary>

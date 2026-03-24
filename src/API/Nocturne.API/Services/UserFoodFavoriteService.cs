@@ -1,7 +1,6 @@
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Mappers;
-using Nocturne.Infrastructure.Data.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -10,13 +9,13 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class UserFoodFavoriteService : IUserFoodFavoriteService
 {
-    private readonly UserFoodFavoriteRepository _favoriteRepository;
-    private readonly TreatmentFoodRepository _treatmentFoodRepository;
+    private readonly IUserFoodFavoriteRepository _favoriteRepository;
+    private readonly ITreatmentFoodRepository _treatmentFoodRepository;
     private readonly ILogger<UserFoodFavoriteService> _logger;
 
     public UserFoodFavoriteService(
-        UserFoodFavoriteRepository favoriteRepository,
-        TreatmentFoodRepository treatmentFoodRepository,
+        IUserFoodFavoriteRepository favoriteRepository,
+        ITreatmentFoodRepository treatmentFoodRepository,
         ILogger<UserFoodFavoriteService> logger
     )
     {
@@ -31,8 +30,7 @@ public class UserFoodFavoriteService : IUserFoodFavoriteService
         CancellationToken cancellationToken = default
     )
     {
-        var entities = await _favoriteRepository.GetFavoriteFoodsAsync(userId, cancellationToken);
-        return entities.Select(FoodMapper.ToDomainModel);
+        return await _favoriteRepository.GetFavoriteFoodsAsync(userId, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -100,7 +98,6 @@ public class UserFoodFavoriteService : IUserFoodFavoriteService
         var recents = recentCandidates
             .Where(food => !favoriteIds.Contains(food.Id))
             .Take(limit)
-            .Select(FoodMapper.ToDomainModel)
             .ToList();
 
         return recents;

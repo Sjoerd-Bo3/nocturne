@@ -2,6 +2,7 @@ using System.Text.Json;
 using Nocturne.API.Controllers.V4;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Repositories;
 
@@ -12,8 +13,8 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class TrackerSuggestionService : ITrackerSuggestionService
 {
-    private readonly TrackerRepository _trackerRepository;
-    private readonly InAppNotificationRepository _notificationRepository;
+    private readonly ITrackerRepository _trackerRepository;
+    private readonly IInAppNotificationRepository _notificationRepository;
     private readonly ISignalRBroadcastService _broadcastService;
     private readonly ILogger<TrackerSuggestionService> _logger;
 
@@ -33,8 +34,8 @@ public class TrackerSuggestionService : ITrackerSuggestionService
     private const int SuggestionCooldownHours = 1;
 
     public TrackerSuggestionService(
-        TrackerRepository trackerRepository,
-        InAppNotificationRepository notificationRepository,
+        ITrackerRepository trackerRepository,
+        IInAppNotificationRepository notificationRepository,
         ISignalRBroadcastService broadcastService,
         ILogger<TrackerSuggestionService> logger
     )

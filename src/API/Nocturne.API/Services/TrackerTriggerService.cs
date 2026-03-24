@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Repositories;
+using Nocturne.Infrastructure.Data.Abstractions;
 
 namespace Nocturne.API.Services;
 
@@ -30,12 +30,12 @@ public interface ITrackerTriggerService
 
 public class TrackerTriggerService : ITrackerTriggerService
 {
-    private readonly TrackerRepository _trackerRepository;
+    private readonly ITrackerRepository _trackerRepository;
     private readonly ISignalRBroadcastService _broadcast;
     private readonly ILogger<TrackerTriggerService> _logger;
 
     public TrackerTriggerService(
-        TrackerRepository trackerRepository,
+        ITrackerRepository trackerRepository,
         ISignalRBroadcastService broadcast,
         ILogger<TrackerTriggerService> logger
     )

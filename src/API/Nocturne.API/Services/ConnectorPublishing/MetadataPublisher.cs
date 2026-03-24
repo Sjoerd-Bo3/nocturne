@@ -3,7 +3,7 @@ using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
-using Nocturne.Infrastructure.Data.Repositories;
+using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Services.ConnectorPublishing;
 
@@ -16,7 +16,7 @@ internal sealed class MetadataPublisher : IMetadataPublisher
     private readonly IConnectorFoodEntryService _connectorFoodEntryService;
     private readonly IActivityService _activityService;
     private readonly IStateSpanService _stateSpanService;
-    private readonly SystemEventRepository _systemEventRepository;
+    private readonly ISystemEventRepository _systemEventRepository;
     private readonly INoteRepository _noteRepository;
     private readonly ILogger<MetadataPublisher> _logger;
 
@@ -26,7 +26,7 @@ internal sealed class MetadataPublisher : IMetadataPublisher
         IConnectorFoodEntryService connectorFoodEntryService,
         IActivityService activityService,
         IStateSpanService stateSpanService,
-        SystemEventRepository systemEventRepository,
+        ISystemEventRepository systemEventRepository,
         INoteRepository noteRepository,
         ILogger<MetadataPublisher> logger)
     {

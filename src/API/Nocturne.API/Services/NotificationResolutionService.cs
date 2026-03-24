@@ -3,6 +3,7 @@ using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Repositories;
 
 namespace Nocturne.API.Services;
@@ -102,7 +103,7 @@ public class NotificationResolutionService : BackgroundService
     /// </summary>
     private async Task EvaluatePendingNotificationsAsync(IServiceProvider scopedProvider, CancellationToken cancellationToken)
     {
-        var repository = scopedProvider.GetRequiredService<InAppNotificationRepository>();
+        var repository = scopedProvider.GetRequiredService<IInAppNotificationRepository>();
         var broadcastService = scopedProvider.GetRequiredService<ISignalRBroadcastService>();
 
         // Get all notifications with pending resolution conditions

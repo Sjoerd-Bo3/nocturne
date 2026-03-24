@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Repositories;
 
 namespace Nocturne.API.Controllers.V4;
 
@@ -13,9 +13,9 @@ namespace Nocturne.API.Controllers.V4;
 [Authorize]
 public class SystemEventsController : ControllerBase
 {
-    private readonly SystemEventRepository _repository;
+    private readonly ISystemEventRepository _repository;
 
-    public SystemEventsController(SystemEventRepository repository)
+    public SystemEventsController(ISystemEventRepository repository)
     {
         _repository = repository;
     }

@@ -4,20 +4,6 @@
 import { getRequestEvent, command } from "$app/server";
 import { z } from "zod";
 
-/**
- * Update user preferences request
- */
-interface UpdateUserPreferencesRequest {
-  preferredLanguage?: string;
-}
-
-/**
- * User preferences response
- */
-interface UserPreferencesResponse {
-  preferredLanguage?: string;
-}
-
 const updateLanguageSchema = z.object({
   preferredLanguage: z.string(),
 });
@@ -28,7 +14,7 @@ const updateLanguageSchema = z.object({
  */
 export const updateLanguagePreference = command(
   updateLanguageSchema,
-  async ({ preferredLanguage }): Promise<UserPreferencesResponse | null> => {
+  async ({ preferredLanguage }) => {
     const { locals } = getRequestEvent();
 
     // Only update if user is authenticated
@@ -38,22 +24,9 @@ export const updateLanguagePreference = command(
     }
 
     try {
-      // Call the API directly since NSwag client may not have the endpoint yet
-      const response = await fetch("/api/v4/user/preferences", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ preferredLanguage } satisfies UpdateUserPreferencesRequest),
+      return await locals.apiClient.userPreferences.updatePreferences({
+        preferredLanguage,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Failed to update language preference:", errorData);
-        return null;
-      }
-
-      return (await response.json()) as UserPreferencesResponse;
     } catch (err) {
       console.error("Error updating language preference:", err);
       // Don't throw - failing to save preference shouldn't break the UI

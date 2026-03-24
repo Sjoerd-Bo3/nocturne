@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 
@@ -7,7 +8,7 @@ namespace Nocturne.Infrastructure.Data.Repositories;
 /// <summary>
 /// PostgreSQL repository for Tracker operations (definitions, instances, presets)
 /// </summary>
-public class TrackerRepository
+public class TrackerRepository : ITrackerRepository
 {
     private readonly NocturneDbContext _context;
 

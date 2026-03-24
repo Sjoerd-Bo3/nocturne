@@ -1,4 +1,5 @@
 using Nocturne.Core.Models;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Repositories;
 using Nocturne.API.Models.Compatibility;
 
@@ -52,7 +53,7 @@ public interface IDiscrepancyPersistenceService
 /// </summary>
 public class DiscrepancyPersistenceService : IDiscrepancyPersistenceService
 {
-    private readonly DiscrepancyAnalysisRepository _repository;
+    private readonly IDiscrepancyAnalysisRepository _repository;
     private readonly IDiscrepancyForwardingService _forwardingService;
     private readonly ILogger<DiscrepancyPersistenceService> _logger;
 
@@ -63,7 +64,7 @@ public class DiscrepancyPersistenceService : IDiscrepancyPersistenceService
     /// <param name="forwardingService">Service for forwarding discrepancies to remote endpoints</param>
     /// <param name="logger">Logger instance for this service</param>
     public DiscrepancyPersistenceService(
-        DiscrepancyAnalysisRepository repository,
+        IDiscrepancyAnalysisRepository repository,
         IDiscrepancyForwardingService forwardingService,
         ILogger<DiscrepancyPersistenceService> logger
     )

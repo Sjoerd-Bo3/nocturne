@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Services.Compatibility;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Repositories;
+using Nocturne.Infrastructure.Data.Abstractions;
 
 namespace Nocturne.API.Controllers.V4;
 
@@ -15,12 +15,12 @@ namespace Nocturne.API.Controllers.V4;
 [Tags("V4 Discrepancy")]
 public class DiscrepancyController : ControllerBase
 {
-    private readonly DiscrepancyAnalysisRepository _discrepancyRepository;
+    private readonly IDiscrepancyAnalysisRepository _discrepancyRepository;
 
     private readonly ILogger<DiscrepancyController> _logger;
 
     public DiscrepancyController(
-        DiscrepancyAnalysisRepository discrepancyRepository,
+        IDiscrepancyAnalysisRepository discrepancyRepository,
         ILogger<DiscrepancyController> logger
     )
     {

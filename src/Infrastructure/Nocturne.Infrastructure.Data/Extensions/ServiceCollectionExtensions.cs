@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Configuration;
 using Nocturne.Infrastructure.Data.Interceptors;
 using Nocturne.Infrastructure.Data.Repositories;
@@ -297,7 +298,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services
     )
     {
-        services.AddScoped<DiscrepancyAnalysisRepository>();
+        services.AddScoped<IDiscrepancyAnalysisRepository, DiscrepancyAnalysisRepository>();
         return services;
     }
 
@@ -308,12 +309,12 @@ public static class ServiceCollectionExtensions
     /// <returns>Service collection for chaining</returns>
     public static IServiceCollection AddAlertRepositories(this IServiceCollection services)
     {
-        services.AddScoped<AlertTrackerRepository>();
-        services.AddScoped<TrackerRepository>();
-        services.AddScoped<StateSpanRepository>();
-        services.AddScoped<SystemEventRepository>();
-        services.AddScoped<TreatmentFoodRepository>();
-        services.AddScoped<UserFoodFavoriteRepository>();
+        services.AddScoped<IAlertTrackerRepository, AlertTrackerRepository>();
+        services.AddScoped<ITrackerRepository, TrackerRepository>();
+        services.AddScoped<IStateSpanRepository, StateSpanRepository>();
+        services.AddScoped<ISystemEventRepository, SystemEventRepository>();
+        services.AddScoped<ITreatmentFoodRepository, TreatmentFoodRepository>();
+        services.AddScoped<IUserFoodFavoriteRepository, UserFoodFavoriteRepository>();
         services.AddScoped<EntryRepository>();
         services.AddScoped<TreatmentRepository>();
         return services;

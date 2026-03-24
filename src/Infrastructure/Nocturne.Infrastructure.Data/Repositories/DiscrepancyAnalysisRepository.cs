@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 
@@ -7,7 +8,7 @@ namespace Nocturne.Infrastructure.Data.Repositories;
 /// <summary>
 /// Repository for discrepancy analysis operations
 /// </summary>
-public class DiscrepancyAnalysisRepository
+public class DiscrepancyAnalysisRepository : IDiscrepancyAnalysisRepository
 {
     private readonly NocturneDbContext _context;
 

@@ -26,6 +26,7 @@ using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Configuration;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Repositories;
 using Nocturne.Infrastructure.Data.Repositories.V4;
 using Nocturne.Infrastructure.Data.Services;
@@ -443,7 +444,7 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<IPumpAlertService, PumpAlertService>();
 
         // In-app notifications
-        services.AddScoped<InAppNotificationRepository>();
+        services.AddScoped<IInAppNotificationRepository, InAppNotificationRepository>();
         services.AddScoped<IInAppNotificationService, InAppNotificationService>();
         services.AddHostedService<NotificationResolutionService>();
 

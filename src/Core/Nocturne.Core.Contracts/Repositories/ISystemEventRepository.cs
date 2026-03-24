@@ -1,0 +1,57 @@
+using Nocturne.Core.Models;
+
+namespace Nocturne.Core.Contracts.Repositories;
+
+/// <summary>
+/// Repository port for SystemEvent operations.
+/// </summary>
+public interface ISystemEventRepository
+{
+    /// <summary>
+    /// Get system events with optional filtering.
+    /// </summary>
+    Task<IEnumerable<SystemEvent>> GetSystemEventsAsync(
+        SystemEventType? eventType = null,
+        SystemEventCategory? category = null,
+        long? from = null,
+        long? to = null,
+        string? source = null,
+        int count = 100,
+        int skip = 0,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get a specific system event by ID.
+    /// </summary>
+    Task<SystemEvent?> GetSystemEventByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Create or update a system event (upsert by originalId).
+    /// </summary>
+    Task<SystemEvent> UpsertSystemEventAsync(
+        SystemEvent systemEvent,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Bulk upsert system events (for connector imports).
+    /// </summary>
+    Task<int> BulkUpsertAsync(
+        IEnumerable<SystemEvent> events,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Delete a system event.
+    /// </summary>
+    Task<bool> DeleteSystemEventAsync(
+        string id,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Delete all system events with the specified data source.
+    /// </summary>
+    Task<long> DeleteBySourceAsync(
+        string source,
+        CancellationToken cancellationToken = default);
+}

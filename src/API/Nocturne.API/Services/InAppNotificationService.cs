@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Repositories;
 
@@ -11,7 +12,7 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class InAppNotificationService : IInAppNotificationService
 {
-    private readonly InAppNotificationRepository _repository;
+    private readonly IInAppNotificationRepository _repository;
     private readonly ISignalRBroadcastService _broadcastService;
     private readonly IConnectorFoodEntryRepository _foodEntryRepository;
     private readonly IServiceProvider _serviceProvider;
@@ -26,7 +27,7 @@ public class InAppNotificationService : IInAppNotificationService
     /// <param name="serviceProvider">Service provider for lazy resolution of domain services (avoids circular dependency)</param>
     /// <param name="logger">The logger</param>
     public InAppNotificationService(
-        InAppNotificationRepository repository,
+        IInAppNotificationRepository repository,
         ISignalRBroadcastService broadcastService,
         IConnectorFoodEntryRepository foodEntryRepository,
         IServiceProvider serviceProvider,

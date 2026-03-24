@@ -7,7 +7,7 @@ using Nocturne.API.Extensions;
 using Nocturne.API.Services;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
-using Nocturne.Infrastructure.Data.Repositories;
+using Nocturne.Infrastructure.Data.Abstractions;
 
 namespace Nocturne.API.Controllers.V4;
 
@@ -19,12 +19,12 @@ namespace Nocturne.API.Controllers.V4;
 [Tags("V4 Trackers")]
 public class TrackersController : ControllerBase
 {
-    private readonly TrackerRepository _repository;
+    private readonly ITrackerRepository _repository;
     private readonly ISignalRBroadcastService _broadcast;
     private readonly ILogger<TrackersController> _logger;
 
     public TrackersController(
-        TrackerRepository repository,
+        ITrackerRepository repository,
         ISignalRBroadcastService broadcast,
         ILogger<TrackersController> logger
     )

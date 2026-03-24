@@ -1,7 +1,7 @@
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Mappers;
-using Nocturne.Infrastructure.Data.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -10,11 +10,11 @@ namespace Nocturne.API.Services;
 /// </summary>
 public class StateSpanService : IStateSpanService
 {
-    private readonly StateSpanRepository _repository;
+    private readonly IStateSpanRepository _repository;
     private readonly ILogger<StateSpanService> _logger;
 
     public StateSpanService(
-        StateSpanRepository repository,
+        IStateSpanRepository repository,
         ILogger<StateSpanService> logger)
     {
         _repository = repository;

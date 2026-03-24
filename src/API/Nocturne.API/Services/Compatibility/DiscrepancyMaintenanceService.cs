@@ -1,5 +1,5 @@
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Repositories;
+using Nocturne.Infrastructure.Data.Abstractions;
 
 namespace Nocturne.API.Services.Compatibility;
 
@@ -61,7 +61,7 @@ public class DiscrepancyMaintenanceService : BackgroundService
     private async Task PerformMaintenanceAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
-        var repository = scope.ServiceProvider.GetRequiredService<DiscrepancyAnalysisRepository>();
+        var repository = scope.ServiceProvider.GetRequiredService<IDiscrepancyAnalysisRepository>();
 
         _logger.LogInformation("Starting discrepancy data maintenance");
 

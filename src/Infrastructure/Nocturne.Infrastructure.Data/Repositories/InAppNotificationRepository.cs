@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 
@@ -8,7 +9,7 @@ namespace Nocturne.Infrastructure.Data.Repositories;
 /// <summary>
 /// PostgreSQL repository for in-app notification operations
 /// </summary>
-public class InAppNotificationRepository
+public class InAppNotificationRepository : IInAppNotificationRepository
 {
     private readonly NocturneDbContext _context;
 

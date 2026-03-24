@@ -7,8 +7,9 @@ using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
+using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Entities;
-using Nocturne.Infrastructure.Data.Repositories;
 using Nocturne.Infrastructure.Data.Repositories.V4;
 
 namespace Nocturne.API.Tests.Services.ChartData.Stages;
@@ -27,19 +28,18 @@ public class DataFetchStageTests
     private readonly Mock<IBGCheckRepository> _mockBgCheckRepo = new();
     private readonly Mock<IDeviceEventRepository> _mockDeviceEventRepo = new();
     private readonly Mock<ITempBasalRepository> _mockTempBasalRepo = new();
-    private readonly Mock<StateSpanRepository> _mockStateSpanRepo;
-    private readonly Mock<SystemEventRepository> _mockSystemEventRepo;
-    private readonly Mock<TrackerRepository> _mockTrackerRepo;
+    private readonly Mock<IStateSpanRepository> _mockStateSpanRepo;
+    private readonly Mock<ISystemEventRepository> _mockSystemEventRepo;
+    private readonly Mock<ITrackerRepository> _mockTrackerRepo;
     private readonly Mock<IDeviceStatusService> _mockDeviceStatusService = new();
 
     private readonly DataFetchStage _stage;
 
     public DataFetchStageTests()
     {
-        // Concrete repositories need MockBehavior.Loose and suppressed constructor args
-        _mockStateSpanRepo = new Mock<StateSpanRepository>(MockBehavior.Loose, null!, null!, null!);
-        _mockSystemEventRepo = new Mock<SystemEventRepository>(MockBehavior.Loose, null!);
-        _mockTrackerRepo = new Mock<TrackerRepository>(MockBehavior.Loose, null!);
+        _mockStateSpanRepo = new Mock<IStateSpanRepository>();
+        _mockSystemEventRepo = new Mock<ISystemEventRepository>();
+        _mockTrackerRepo = new Mock<ITrackerRepository>();
 
         SetupDefaultMocks();
 

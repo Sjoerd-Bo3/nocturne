@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.Infrastructure.Data;
 
@@ -36,6 +37,7 @@ public class UserPreferencesController : ControllerBase
     /// </summary>
     /// <returns>User preferences</returns>
     [HttpGet]
+    [RemoteQuery]
     [ProducesResponseType(typeof(UserPreferencesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserPreferencesResponse>> GetPreferences()
@@ -67,6 +69,7 @@ public class UserPreferencesController : ControllerBase
     /// <param name="request">The preferences to update</param>
     /// <returns>Updated preferences</returns>
     [HttpPatch]
+    [RemoteCommand]
     [ProducesResponseType(typeof(UserPreferencesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

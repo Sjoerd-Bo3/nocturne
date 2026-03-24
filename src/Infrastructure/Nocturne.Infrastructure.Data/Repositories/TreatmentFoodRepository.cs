@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Mappers;
@@ -8,7 +9,7 @@ namespace Nocturne.Infrastructure.Data.Repositories;
 /// <summary>
 /// PostgreSQL repository for food breakdown operations linked to carb intake records.
 /// </summary>
-public class TreatmentFoodRepository
+public class TreatmentFoodRepository : ITreatmentFoodRepository
 {
     private readonly NocturneDbContext _context;
 
@@ -186,7 +187,7 @@ public class TreatmentFoodRepository
     /// <summary>
     /// Get recently used foods ordered by last usage.
     /// </summary>
-    public async Task<IReadOnlyList<FoodEntity>> GetRecentFoodsAsync(
+    public async Task<IReadOnlyList<Food>> GetRecentFoodsAsync(
         int limit,
         CancellationToken cancellationToken = default
     )
@@ -211,7 +212,7 @@ public class TreatmentFoodRepository
         var foodLookup = foods.ToDictionary(f => f.Id);
         return recentFoodIds
             .Where(x => foodLookup.ContainsKey(x.FoodId))
-            .Select(x => foodLookup[x.FoodId])
+            .Select(x => FoodMapper.ToDomainModel(foodLookup[x.FoodId]))
             .ToList();
     }
 }

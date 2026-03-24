@@ -5,10 +5,8 @@ using Moq;
 using Nocturne.API.Services.ConnectorPublishing;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
-using Microsoft.EntityFrameworkCore;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data;
-using Nocturne.Infrastructure.Data.Repositories;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services.ConnectorPublishing;
@@ -22,6 +20,7 @@ public class MetadataPublisherTests
     private readonly Mock<IActivityService> _mockActivityService;
     private readonly Mock<IStateSpanService> _mockStateSpanService;
     private readonly Mock<INoteRepository> _mockNoteRepository;
+    private readonly Mock<ISystemEventRepository> _mockSystemEventRepository;
 
     public MetadataPublisherTests()
     {
@@ -31,24 +30,18 @@ public class MetadataPublisherTests
         _mockActivityService = new Mock<IActivityService>();
         _mockStateSpanService = new Mock<IStateSpanService>();
         _mockNoteRepository = new Mock<INoteRepository>();
+        _mockSystemEventRepository = new Mock<ISystemEventRepository>();
     }
 
     private MetadataPublisher CreatePublisher()
     {
-        // SystemEventRepository is a concrete class with non-virtual methods.
-        // We create a real instance with a SQLite in-memory DbContext (won't be called in these tests).
-        var options = new DbContextOptionsBuilder<NocturneDbContext>()
-            .UseSqlite("DataSource=:memory:")
-            .Options;
-        var dbContext = new NocturneDbContext(options);
-        var systemEventRepository = new SystemEventRepository(dbContext);
         return new MetadataPublisher(
             _mockProfileDataService.Object,
             _mockFoodService.Object,
             _mockConnectorFoodEntryService.Object,
             _mockActivityService.Object,
             _mockStateSpanService.Object,
-            systemEventRepository,
+            _mockSystemEventRepository.Object,
             _mockNoteRepository.Object,
             NullLogger<MetadataPublisher>.Instance
         );

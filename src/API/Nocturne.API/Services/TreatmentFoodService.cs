@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities.V4;
-using Nocturne.Infrastructure.Data.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -13,12 +13,12 @@ namespace Nocturne.API.Services;
 public class TreatmentFoodService : ITreatmentFoodService
 {
     private readonly NocturneDbContext _context;
-    private readonly TreatmentFoodRepository _treatmentFoodRepository;
+    private readonly ITreatmentFoodRepository _treatmentFoodRepository;
     private readonly ILogger<TreatmentFoodService> _logger;
 
     public TreatmentFoodService(
         NocturneDbContext context,
-        TreatmentFoodRepository treatmentFoodRepository,
+        ITreatmentFoodRepository treatmentFoodRepository,
         ILogger<TreatmentFoodService> logger
     )
     {

@@ -1,6 +1,6 @@
 using Nocturne.Core.Models;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Entities;
-using Nocturne.Infrastructure.Data.Repositories;
 
 namespace Nocturne.API.Services;
 
@@ -48,11 +48,11 @@ public interface ITrackerAlertService
 
 public class TrackerAlertService : ITrackerAlertService
 {
-    private readonly TrackerRepository _repository;
+    private readonly ITrackerRepository _repository;
     private readonly ILogger<TrackerAlertService> _logger;
 
     public TrackerAlertService(
-        TrackerRepository repository,
+        ITrackerRepository repository,
         ILogger<TrackerAlertService> logger)
     {
         _repository = repository;

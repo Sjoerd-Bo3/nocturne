@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
+using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Repositories;
 using Nocturne.API.Configuration;
 using Nocturne.API.Services.Compatibility;
@@ -39,7 +40,7 @@ public static class CompatibilityProxyServiceExtensions
         services.AddScoped<IResponseComparisonService, ResponseComparisonService>();
         services.AddScoped<IResponseCacheService, ResponseCacheService>();
 
-        services.AddScoped<DiscrepancyAnalysisRepository>();
+        services.AddScoped<IDiscrepancyAnalysisRepository, DiscrepancyAnalysisRepository>();
         services.AddScoped<IDiscrepancyForwardingService, DiscrepancyForwardingService>();
         services.AddScoped<IDiscrepancyPersistenceService, DiscrepancyPersistenceService>();
 

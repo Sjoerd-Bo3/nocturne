@@ -30,6 +30,55 @@ public record ConditionNode(
 // Excursion tracker states
 public enum TrackerState { Idle, Confirming, Active, Hysteresis }
 
+// ----- Domain models for alert tracker persistence -----
+
+/// <summary>
+/// Per-rule state machine tracker. Maps 1:1 with an alert rule.
+/// States: idle -> confirming -> active -> hysteresis -> idle.
+/// </summary>
+public class AlertTrackerState
+{
+    public Guid AlertRuleId { get; set; }
+    public string State { get; set; } = "idle";
+    public int ConfirmationCount { get; set; }
+    public Guid? ActiveExcursionId { get; set; }
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// A composable alert rule with condition tree, hysteresis, and confirmation settings.
+/// </summary>
+public class AlertRule
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string ConditionType { get; set; } = string.Empty;
+    public string ConditionParams { get; set; } = "{}";
+    public int HysteresisMinutes { get; set; }
+    public int ConfirmationReadings { get; set; } = 1;
+    public string Severity { get; set; } = "normal";
+    public string ClientConfiguration { get; set; } = "{}";
+    public bool IsEnabled { get; set; } = true;
+    public int SortOrder { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// A single continuous excursion (out-of-range episode) for a rule.
+/// </summary>
+public class AlertExcursion
+{
+    public Guid Id { get; set; }
+    public Guid AlertRuleId { get; set; }
+    public DateTime StartedAt { get; set; }
+    public DateTime? EndedAt { get; set; }
+    public DateTime? AcknowledgedAt { get; set; }
+    public string? AcknowledgedBy { get; set; }
+    public DateTime? HysteresisStartedAt { get; set; }
+}
+
 // Alert payload — what delivery providers receive (structured data, not pre-rendered text)
 public record AlertPayload
 {

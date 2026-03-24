@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using Nocturne.API.Configuration;
 using Nocturne.API.Services.Compatibility;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Repositories;
+using Nocturne.Infrastructure.Data.Abstractions;
 
 namespace Nocturne.API.Controllers.V4;
 
@@ -15,7 +15,7 @@ namespace Nocturne.API.Controllers.V4;
 public class CompatibilityController : ControllerBase
 {
     private readonly IDiscrepancyPersistenceService _persistenceService;
-    private readonly DiscrepancyAnalysisRepository _repository;
+    private readonly IDiscrepancyAnalysisRepository _repository;
 
     private readonly CompatibilityProxyConfiguration _configuration;
     private readonly ILogger<CompatibilityController> _logger;
@@ -25,7 +25,7 @@ public class CompatibilityController : ControllerBase
     /// </summary>
     public CompatibilityController(
         IDiscrepancyPersistenceService persistenceService,
-        DiscrepancyAnalysisRepository repository,
+        IDiscrepancyAnalysisRepository repository,
         IOptions<CompatibilityProxyConfiguration> configuration,
         ILogger<CompatibilityController> logger
     )

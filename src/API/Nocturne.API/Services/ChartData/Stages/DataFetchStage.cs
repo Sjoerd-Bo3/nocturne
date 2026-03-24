@@ -3,7 +3,8 @@ using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
-using Nocturne.Infrastructure.Data.Repositories;
+using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Infrastructure.Data.Abstractions;
 
 namespace Nocturne.API.Services.ChartData.Stages;
 
@@ -18,9 +19,9 @@ internal sealed class DataFetchStage(
     IBGCheckRepository bgCheckRepository,
     IDeviceEventRepository deviceEventRepository,
     ITempBasalRepository tempBasalRepository,
-    StateSpanRepository stateSpanRepository,
-    SystemEventRepository systemEventRepository,
-    TrackerRepository trackerRepository,
+    IStateSpanRepository stateSpanRepository,
+    ISystemEventRepository systemEventRepository,
+    ITrackerRepository trackerRepository,
     IDeviceStatusService deviceStatusService,
     ILogger<DataFetchStage> logger
 ) : IChartDataStage
