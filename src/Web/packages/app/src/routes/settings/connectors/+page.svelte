@@ -73,6 +73,7 @@
   import DataSourceRow from "$lib/components/settings/DataSourceRow.svelte";
   import type { DataSourceStatus } from "$lib/components/settings/DataSourceRow.svelte";
   import ConnectedApps from "$lib/components/settings/ConnectedApps.svelte";
+  import ApiTokens from "$lib/components/settings/ApiTokens.svelte";
   import Apple from "lucide-svelte/icons/apple";
   import TabletSmartphone from "lucide-svelte/icons/tablet-smartphone";
   import { getApiClient } from "$lib/api";
@@ -1464,6 +1465,9 @@
 
     <!-- Connected Apps Section -->
     <ConnectedApps />
+
+    <!-- API Tokens Section -->
+    <ApiTokens />
   {/if}
 </div>
 

@@ -18,6 +18,7 @@
     followerTargets,
     type ActingAsTarget,
   } from "$lib/stores/acting-as";
+  import { getFollowerTargets } from "$lib/api/generated/oauths.generated.remote";
   import {
     Home,
     BarChart3,
@@ -55,8 +56,6 @@
     ListChecks,
     Shield,
     Eye,
-    Fingerprint,
-    KeyRound,
   } from "lucide-svelte";
   import type { AuthUser } from "$lib/stores/auth-store.svelte";
 
@@ -75,22 +74,24 @@
   let selectedValue = $state<string>("__self__");
 
   /**
-   * Fetch available follower targets from the API. Gracefully handles 404 or
-   * errors (endpoint may not exist yet).
+   * Fetch available follower targets from the API. Gracefully handles errors.
    */
   async function loadFollowerTargets() {
     try {
-      const response = await fetch("/api/oauth/follower-targets", {
-        credentials: "include",
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const fetched: ActingAsTarget[] = data.targets ?? [];
-        targets = fetched;
-        followerTargets.set(fetched);
-      }
+      const data = await getFollowerTargets();
+      const fetched: ActingAsTarget[] = (data?.targets ?? [])
+        .filter((t): t is typeof t & { subjectId: string } => !!t.subjectId)
+        .map((t) => ({
+          subjectId: t.subjectId,
+          displayName: t.displayName ?? null,
+          email: t.email ?? null,
+          scopes: t.scopes ?? [],
+          label: t.label ?? null,
+        }));
+      targets = fetched;
+      followerTargets.set(fetched);
     } catch {
-      // Silently fail - endpoint may not exist yet
+      // Silently fail
     }
   }
 
@@ -295,8 +296,6 @@
         },
         { title: "Connectors & Apps", href: "/settings/connectors", icon: Plug },
         { title: "Followers & Sharing", href: "/settings/sharing", icon: Shield },
-        { title: "Security", href: "/settings/security", icon: Fingerprint },
-        { title: "API Access", href: "/settings/api-access", icon: KeyRound },
         {
           title: "Support & Community",
           href: "/settings/support",
