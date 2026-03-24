@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Controllers.V4;
+using Nocturne.API.Models.Requests.V4;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models.V4;
@@ -37,16 +38,16 @@ public class SensorGlucoseControllerTests
     public async Task Create_Returns201_WhenSuccessful()
     {
         // Arrange
-        var input = new SensorGlucose
+        var input = new UpsertSensorGlucoseRequest
         {
-            Timestamp = DateTime.UtcNow,
+            Timestamp = DateTimeOffset.UtcNow,
             Mgdl = 120
         };
 
         var created = new SensorGlucose
         {
             Id = Guid.NewGuid(),
-            Timestamp = input.Timestamp,
+            Timestamp = input.Timestamp.UtcDateTime,
             Mgdl = 120
         };
 

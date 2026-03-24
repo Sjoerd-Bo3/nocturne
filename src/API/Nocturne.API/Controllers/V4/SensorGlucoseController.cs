@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Controllers.V4.Base;
+using Nocturne.API.Models.Requests.V4;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
@@ -20,7 +21,7 @@ public class SensorGlucoseController(
     ISensorGlucoseRepository repo,
     IAlertOrchestrator alertOrchestrator,
     ILogger<SensorGlucoseController> logger)
-    : V4CrudControllerBase<SensorGlucose, ISensorGlucoseRepository>(repo)
+    : V4CrudControllerBase<SensorGlucose, UpsertSensorGlucoseRequest, UpsertSensorGlucoseRequest, ISensorGlucoseRepository>(repo)
 {
     [ResponseCache(Duration = 90, VaryByQueryKeys = new[] { "*" })]
     public override Task<ActionResult<PaginatedResponse<SensorGlucose>>> GetAll(
@@ -30,6 +31,37 @@ public class SensorGlucoseController(
         [FromQuery] string? device = null, [FromQuery] string? source = null,
         CancellationToken ct = default)
         => base.GetAll(from, to, limit, offset, sort, device, source, ct);
+
+    protected override SensorGlucose MapCreateToModel(UpsertSensorGlucoseRequest request) => new()
+    {
+        Timestamp = request.Timestamp.UtcDateTime,
+        UtcOffset = request.UtcOffset,
+        Device = request.Device,
+        App = request.App,
+        DataSource = request.DataSource,
+        Mgdl = request.Mgdl,
+        Direction = request.Direction,
+        TrendRate = request.TrendRate,
+        Noise = request.Noise,
+    };
+
+    protected override SensorGlucose MapUpdateToModel(Guid id, UpsertSensorGlucoseRequest request, SensorGlucose existing) => new()
+    {
+        Id = id,
+        Timestamp = request.Timestamp.UtcDateTime,
+        UtcOffset = request.UtcOffset,
+        Device = request.Device,
+        App = request.App,
+        DataSource = request.DataSource,
+        Mgdl = request.Mgdl,
+        Direction = request.Direction,
+        TrendRate = request.TrendRate,
+        Noise = request.Noise,
+        CorrelationId = existing.CorrelationId,
+        LegacyId = existing.LegacyId,
+        CreatedAt = existing.CreatedAt,
+        AdditionalProperties = existing.AdditionalProperties,
+    };
 
     protected override async Task<SensorGlucose> OnAfterCreateAsync(SensorGlucose created, CancellationToken ct)
     {

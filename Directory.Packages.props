@@ -16,6 +16,7 @@
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.9.0" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Rust" Version="9.9.0" />
     <PackageVersion Include="Fido2.AspNet" Version="4.0.0" />
+    <PackageVersion Include="FluentValidation" Version="11.11.0" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.1" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.0.0" />

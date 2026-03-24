@@ -27,12 +27,41 @@ public class TestRecord : IV4Record
     public Dictionary<string, object?>? AdditionalProperties { get; set; }
 }
 
+public class TestCreateRequest
+{
+    public DateTime Timestamp { get; set; }
+    public string? Device { get; set; }
+}
+
+public class TestUpdateRequest
+{
+    public DateTime Timestamp { get; set; }
+    public string? Device { get; set; }
+}
+
 public interface ITestRecordRepository : IV4Repository<TestRecord>;
 
 [ApiController]
 [Route("api/v4/test")]
 public class TestCrudController(ITestRecordRepository repository)
-    : V4CrudControllerBase<TestRecord, ITestRecordRepository>(repository);
+    : V4CrudControllerBase<TestRecord, TestCreateRequest, TestUpdateRequest, ITestRecordRepository>(repository)
+{
+    protected override TestRecord MapCreateToModel(TestCreateRequest request) => new()
+    {
+        Timestamp = request.Timestamp,
+        Device = request.Device,
+    };
+
+    protected override TestRecord MapUpdateToModel(Guid id, TestUpdateRequest request, TestRecord existing) => new()
+    {
+        Id = id,
+        Timestamp = request.Timestamp,
+        Device = request.Device,
+        CorrelationId = existing.CorrelationId,
+        LegacyId = existing.LegacyId,
+        CreatedAt = existing.CreatedAt,
+    };
+}
 
 #endregion
 
@@ -122,11 +151,12 @@ public class V4CrudControllerBaseTests
     [Fact]
     public async Task Create_Valid_Returns201()
     {
-        var model = new TestRecord { Id = Guid.NewGuid(), Timestamp = DateTime.UtcNow };
-        _repo.Setup(r => r.CreateAsync(model, It.IsAny<CancellationToken>()))
+        var request = new TestCreateRequest { Timestamp = DateTime.UtcNow, Device = "test" };
+        var model = new TestRecord { Id = Guid.NewGuid(), Timestamp = request.Timestamp, Device = request.Device };
+        _repo.Setup(r => r.CreateAsync(It.IsAny<TestRecord>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(model);
 
-        var result = await _controller.Create(model);
+        var result = await _controller.Create(request);
 
         var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
         createdResult.StatusCode.Should().Be(201);
@@ -137,9 +167,9 @@ public class V4CrudControllerBaseTests
     [Fact]
     public async Task Create_DefaultTimestamp_ReturnsBadRequest()
     {
-        var model = new TestRecord { Id = Guid.NewGuid(), Timestamp = default };
+        var request = new TestCreateRequest { Timestamp = default };
 
-        var result = await _controller.Create(model);
+        var result = await _controller.Create(request);
 
         result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
@@ -148,25 +178,30 @@ public class V4CrudControllerBaseTests
     public async Task Update_Valid_ReturnsOk()
     {
         var id = Guid.NewGuid();
-        var model = new TestRecord { Id = id, Timestamp = DateTime.UtcNow };
-        _repo.Setup(r => r.UpdateAsync(id, model, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(model);
+        var existing = new TestRecord { Id = id, Timestamp = DateTime.UtcNow };
+        var request = new TestUpdateRequest { Timestamp = DateTime.UtcNow, Device = "updated" };
+        var updated = new TestRecord { Id = id, Timestamp = request.Timestamp, Device = request.Device };
 
-        var result = await _controller.Update(id, model);
+        _repo.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _repo.Setup(r => r.UpdateAsync(id, It.IsAny<TestRecord>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updated);
+
+        var result = await _controller.Update(id, request);
 
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        okResult.Value.Should().Be(model);
+        okResult.Value.Should().Be(updated);
     }
 
     [Fact]
     public async Task Update_NotFound_Returns404()
     {
         var id = Guid.NewGuid();
-        var model = new TestRecord { Id = id, Timestamp = DateTime.UtcNow };
-        _repo.Setup(r => r.UpdateAsync(id, model, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new KeyNotFoundException());
+        var request = new TestUpdateRequest { Timestamp = DateTime.UtcNow };
+        _repo.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TestRecord?)null);
 
-        var result = await _controller.Update(id, model);
+        var result = await _controller.Update(id, request);
 
         result.Result.Should().BeOfType<NotFoundResult>();
     }
@@ -175,9 +210,12 @@ public class V4CrudControllerBaseTests
     public async Task Update_DefaultTimestamp_ReturnsBadRequest()
     {
         var id = Guid.NewGuid();
-        var model = new TestRecord { Id = id, Timestamp = default };
+        var existing = new TestRecord { Id = id, Timestamp = DateTime.UtcNow };
+        var request = new TestUpdateRequest { Timestamp = default };
+        _repo.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
 
-        var result = await _controller.Update(id, model);
+        var result = await _controller.Update(id, request);
 
         result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
