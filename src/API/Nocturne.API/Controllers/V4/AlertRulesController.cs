@@ -111,10 +111,6 @@ public class AlertRulesController : ControllerBase
 
         if (request.Schedules is { Count: > 0 })
         {
-            var hasDefault = request.Schedules.Any(s => s.IsDefault);
-            if (!hasDefault)
-                return BadRequest(new { error = "At least one schedule must be marked as default" });
-
             foreach (var schedReq in request.Schedules)
             {
                 var schedule = CreateScheduleEntity(schedReq, rule.Id, tenantId);
@@ -193,10 +189,6 @@ public class AlertRulesController : ControllerBase
 
         if (request.Schedules is not null)
         {
-            var hasDefault = request.Schedules.Any(s => s.IsDefault);
-            if (!hasDefault)
-                return BadRequest(new { error = "At least one schedule must be marked as default" });
-
             // Remove old schedules (cascade deletes steps and channels)
             db.AlertSchedules.RemoveRange(rule.Schedules);
 

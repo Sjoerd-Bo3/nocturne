@@ -239,19 +239,6 @@ public class AlertsController : ControllerBase
         using var doc = JsonDocument.Parse(rule?.ClientConfiguration ?? "{}");
         var snoozeSection = doc.RootElement.TryGetProperty("snooze", out var snooze) ? snooze : default;
 
-        if (snoozeSection.ValueKind != JsonValueKind.Undefined
-            && snoozeSection.TryGetProperty("options", out var optionsElement)
-            && optionsElement.ValueKind == JsonValueKind.Array)
-        {
-            var validOptions = optionsElement.EnumerateArray()
-                .Where(e => e.ValueKind == JsonValueKind.Number)
-                .Select(e => e.GetInt32())
-                .ToList();
-
-            if (!validOptions.Contains(request.Minutes))
-                return BadRequest(new { error = "Invalid snooze duration" });
-        }
-
         var maxCount = 5;
         if (snoozeSection.ValueKind != JsonValueKind.Undefined
             && snoozeSection.TryGetProperty("maxCount", out var maxCountElement)
