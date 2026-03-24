@@ -5,9 +5,9 @@
  * These use Zod for validation and the API client for backend communication.
  *
  * Password-based auth has been removed in favor of passkey authentication.
- * Passkey WebAuthn flows use client-side fetch through the /api proxy
- * (see passkey-client.ts) because the challenge cookie must round-trip
- * between the browser and the backend.
+ * Passkey WebAuthn ceremony functions are in the generated remote functions
+ * (passkeys.generated.remote.ts). The WebAuthn browser API calls
+ * (startRegistration/startAuthentication) run client-side in the components.
  */
 
 import { z } from "zod";

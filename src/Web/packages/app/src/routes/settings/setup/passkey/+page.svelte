@@ -11,7 +11,11 @@
     AlertTriangle,
     ShieldCheck,
   } from "lucide-svelte";
-  import { registerPasskey } from "$lib/auth/passkey-client";
+  import { startRegistration } from "@simplewebauthn/browser";
+  import {
+    registerOptions,
+    registerComplete,
+  } from "$lib/api/generated/passkeys.generated.remote";
   import { getAuthState } from "$routes/auth/auth.remote";
 
   const authState = getAuthState();
@@ -44,19 +48,21 @@
     errorMessage = null;
 
     try {
-      const result = await registerPasskey(
-        subjectId,
-        username.trim(),
-        `${displayName.trim()}'s passkey`
-      );
+      const response = await registerOptions({ subjectId, username: username.trim() });
+      const options = JSON.parse(response.options);
+      const challengeToken = response.challengeToken;
 
-      if (!result.success) {
-        errorMessage = result.error || "Failed to register passkey";
-        return;
-      }
+      const attestation = await startRegistration({ optionsJSON: options });
+
+      await registerComplete({
+        attestationResponseJson: JSON.stringify(attestation),
+        challengeToken,
+        label: `${displayName.trim()}'s passkey`,
+      });
 
       registrationComplete = true;
-      recoveryCodes = result.recoveryCodes ?? [];
+      // Recovery codes are generated separately, not returned from registration
+      recoveryCodes = [];
     } catch (err) {
       errorMessage =
         err instanceof Error ? err.message : "Failed to register passkey";

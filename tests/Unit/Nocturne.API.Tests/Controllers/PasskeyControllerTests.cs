@@ -99,16 +99,16 @@ public class PasskeyControllerTests : IDisposable
 
         var result = await _controller.RegisterOptions(request);
 
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.IsType<BadRequestObjectResult>(result.Result);
     }
 
     [Fact]
-    public async Task RegisterOptions_ValidRequest_CallsServiceAndReturnsJson()
+    public async Task RegisterOptions_ValidRequest_CallsServiceAndReturnsOptionsWithToken()
     {
         var subjectId = Guid.CreateVersion7();
         _passkeyService
             .Setup(s => s.GenerateRegistrationOptionsAsync(subjectId, "testuser", _tenantId))
-            .ReturnsAsync(new PasskeyRegistrationOptions("{\"challenge\":\"abc\"}", "cookie-data"));
+            .ReturnsAsync(new PasskeyRegistrationOptions("{\"challenge\":\"abc\"}", "token-data"));
 
         var request = new PasskeyRegisterOptionsRequest
         {
@@ -118,19 +118,20 @@ public class PasskeyControllerTests : IDisposable
 
         var result = await _controller.RegisterOptions(request);
 
-        Assert.IsType<ContentResult>(result);
-        var content = (ContentResult)result;
-        Assert.Equal("application/json", content.ContentType);
-        Assert.Contains("challenge", content.Content);
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<PasskeyOptionsResponse>(okResult.Value);
+        Assert.Contains("challenge", response.Options);
+        Assert.Equal("token-data", response.ChallengeToken);
         _passkeyService.Verify(s => s.GenerateRegistrationOptionsAsync(subjectId, "testuser", _tenantId), Times.Once);
     }
 
     [Fact]
-    public async Task RegisterComplete_NoCookie_ReturnsBadRequest()
+    public async Task RegisterComplete_NoChallengeToken_ReturnsBadRequest()
     {
         var request = new PasskeyRegisterCompleteRequest
         {
             AttestationResponseJson = "{}",
+            ChallengeToken = "",
         };
 
         var result = await _controller.RegisterComplete(request);
@@ -145,41 +146,47 @@ public class PasskeyControllerTests : IDisposable
 
         var result = await _controller.LoginOptions(request);
 
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.IsType<BadRequestObjectResult>(result.Result);
     }
 
     [Fact]
-    public async Task LoginOptions_ValidRequest_CallsService()
+    public async Task LoginOptions_ValidRequest_CallsServiceAndReturnsOptionsWithToken()
     {
         _passkeyService
             .Setup(s => s.GenerateAssertionOptionsAsync("testuser", _tenantId))
-            .ReturnsAsync(new PasskeyAssertionOptions("{\"challenge\":\"xyz\"}", "assertion-cookie"));
+            .ReturnsAsync(new PasskeyAssertionOptions("{\"challenge\":\"xyz\"}", "assertion-token"));
 
         var request = new PasskeyLoginOptionsRequest { Username = "testuser" };
 
         var result = await _controller.LoginOptions(request);
 
-        Assert.IsType<ContentResult>(result);
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<PasskeyOptionsResponse>(okResult.Value);
+        Assert.Contains("challenge", response.Options);
+        Assert.Equal("assertion-token", response.ChallengeToken);
         _passkeyService.Verify(s => s.GenerateAssertionOptionsAsync("testuser", _tenantId), Times.Once);
     }
 
     [Fact]
-    public async Task DiscoverableLoginOptions_CallsService()
+    public async Task DiscoverableLoginOptions_CallsServiceAndReturnsOptionsWithToken()
     {
         _passkeyService
             .Setup(s => s.GenerateDiscoverableAssertionOptionsAsync(_tenantId))
-            .ReturnsAsync(new PasskeyAssertionOptions("{\"challenge\":\"disc\"}", "disc-cookie"));
+            .ReturnsAsync(new PasskeyAssertionOptions("{\"challenge\":\"disc\"}", "disc-token"));
 
         var result = await _controller.DiscoverableLoginOptions();
 
-        Assert.IsType<ContentResult>(result);
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<PasskeyOptionsResponse>(okResult.Value);
+        Assert.Contains("challenge", response.Options);
+        Assert.Equal("disc-token", response.ChallengeToken);
         _passkeyService.Verify(s => s.GenerateDiscoverableAssertionOptionsAsync(_tenantId), Times.Once);
     }
 
     [Fact]
-    public async Task LoginComplete_NoCookie_ReturnsBadRequest()
+    public async Task LoginComplete_NoChallengeToken_ReturnsBadRequest()
     {
-        var request = new PasskeyLoginCompleteRequest { AssertionResponseJson = "{}" };
+        var request = new PasskeyLoginCompleteRequest { AssertionResponseJson = "{}", ChallengeToken = "" };
 
         var result = await _controller.LoginComplete(request);
 

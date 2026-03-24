@@ -23,8 +23,12 @@
     Copy,
     ShieldCheck,
   } from "lucide-svelte";
+  import { startRegistration } from "@simplewebauthn/browser";
   import { getOidcProviders } from "$routes/auth/auth.remote";
-  import { acceptInviteWithPasskey } from "$lib/auth/passkey-client";
+  import {
+    registerOptions,
+    registerComplete,
+  } from "$lib/api/generated/passkeys.generated.remote";
 
   const { data, form } = $props();
 
@@ -79,20 +83,36 @@
     errorMessage = null;
 
     try {
-      const result = await acceptInviteWithPasskey(
-        data.token,
-        username.trim(),
-        displayName.trim(),
-        `${displayName.trim()}'s passkey`
-      );
+      // Step 1: Accept the invite and create the user account
+      const acceptResponse = await fetch(`/api/auth/passkey/invite/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: data.token, username: username.trim(), displayName: displayName.trim() }),
+      });
 
-      if (!result.success) {
-        errorMessage = result.error || "Failed to register";
+      if (!acceptResponse.ok) {
+        const body = await acceptResponse.text();
+        errorMessage = body || "Failed to accept invite";
         return;
       }
 
+      const acceptResult: { subjectId: string } = await acceptResponse.json();
+
+      // Step 2: Register a passkey for the new user via generated remote functions
+      const response = await registerOptions({ subjectId: acceptResult.subjectId, username: username.trim() });
+      const options = JSON.parse(response.options);
+      const challengeToken = response.challengeToken;
+
+      const attestation = await startRegistration({ optionsJSON: options });
+
+      await registerComplete({
+        attestationResponseJson: JSON.stringify(attestation),
+        challengeToken,
+        label: `${displayName.trim()}'s passkey`,
+      });
+
       registrationComplete = true;
-      recoveryCodes = result.recoveryCodes ?? [];
+      recoveryCodes = [];
     } catch (err) {
       errorMessage =
         err instanceof Error ? err.message : "Registration failed";

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.API.Models;
 using Nocturne.Core.Contracts;
@@ -22,7 +23,6 @@ namespace Nocturne.API.Controllers;
 [Tags("Passkey")]
 public class PasskeyController : ControllerBase
 {
-    private const string ChallengeCookieName = ".Nocturne.PasskeyChallenge";
     private const string RecoveryCookieName = ".Nocturne.RecoverySession";
 
     private readonly IPasskeyService _passkeyService;
@@ -65,9 +65,10 @@ public class PasskeyController : ControllerBase
     /// </summary>
     [HttpPost("register/options")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [RemoteCommand]
+    [ProducesResponseType(typeof(PasskeyOptionsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RegisterOptions([FromBody] PasskeyRegisterOptionsRequest request)
+    public async Task<ActionResult<PasskeyOptionsResponse>> RegisterOptions([FromBody] PasskeyRegisterOptionsRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Username))
         {
@@ -78,9 +79,11 @@ public class PasskeyController : ControllerBase
         var result = await _passkeyService.GenerateRegistrationOptionsAsync(
             request.SubjectId, request.Username, tenantId);
 
-        SetChallengeCookie(result.ChallengeCookie);
-
-        return Content(result.OptionsJson, "application/json");
+        return Ok(new PasskeyOptionsResponse
+        {
+            Options = result.OptionsJson,
+            ChallengeToken = result.ChallengeToken,
+        });
     }
 
     /// <summary>
@@ -88,15 +91,15 @@ public class PasskeyController : ControllerBase
     /// </summary>
     [HttpPost("register/complete")]
     [AllowAnonymous]
+    [RemoteCommand(Invalidates = ["ListCredentials"])]
     [ProducesResponseType(typeof(PasskeyRegisterCompleteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyRegisterCompleteResponse>> RegisterComplete(
         [FromBody] PasskeyRegisterCompleteRequest request)
     {
-        var challengeCookie = Request.Cookies[ChallengeCookieName];
-        if (string.IsNullOrEmpty(challengeCookie))
+        if (string.IsNullOrEmpty(request.ChallengeToken))
         {
-            return BadRequest(new ErrorResponse { Error = "invalid_state", Message = "Challenge cookie not found or expired" });
+            return BadRequest(new ErrorResponse { Error = "invalid_state", Message = "Challenge token not found or expired" });
         }
 
         var tenantId = _tenantAccessor.TenantId;
@@ -104,9 +107,7 @@ public class PasskeyController : ControllerBase
         try
         {
             var result = await _passkeyService.CompleteRegistrationAsync(
-                request.AttestationResponseJson, challengeCookie, tenantId);
-
-            ClearChallengeCookie();
+                request.AttestationResponseJson, request.ChallengeToken, tenantId);
 
             return Ok(new PasskeyRegisterCompleteResponse
             {
@@ -126,15 +127,18 @@ public class PasskeyController : ControllerBase
     /// </summary>
     [HttpPost("login/discoverable/options")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> DiscoverableLoginOptions()
+    [RemoteCommand]
+    [ProducesResponseType(typeof(PasskeyOptionsResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PasskeyOptionsResponse>> DiscoverableLoginOptions()
     {
         var tenantId = _tenantAccessor.TenantId;
         var result = await _passkeyService.GenerateDiscoverableAssertionOptionsAsync(tenantId);
 
-        SetChallengeCookie(result.ChallengeCookie);
-
-        return Content(result.OptionsJson, "application/json");
+        return Ok(new PasskeyOptionsResponse
+        {
+            Options = result.OptionsJson,
+            ChallengeToken = result.ChallengeToken,
+        });
     }
 
     /// <summary>
@@ -142,9 +146,10 @@ public class PasskeyController : ControllerBase
     /// </summary>
     [HttpPost("login/options")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [RemoteCommand]
+    [ProducesResponseType(typeof(PasskeyOptionsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> LoginOptions([FromBody] PasskeyLoginOptionsRequest request)
+    public async Task<ActionResult<PasskeyOptionsResponse>> LoginOptions([FromBody] PasskeyLoginOptionsRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Username))
         {
@@ -154,9 +159,11 @@ public class PasskeyController : ControllerBase
         var tenantId = _tenantAccessor.TenantId;
         var result = await _passkeyService.GenerateAssertionOptionsAsync(request.Username, tenantId);
 
-        SetChallengeCookie(result.ChallengeCookie);
-
-        return Content(result.OptionsJson, "application/json");
+        return Ok(new PasskeyOptionsResponse
+        {
+            Options = result.OptionsJson,
+            ChallengeToken = result.ChallengeToken,
+        });
     }
 
     /// <summary>
@@ -164,15 +171,15 @@ public class PasskeyController : ControllerBase
     /// </summary>
     [HttpPost("login/complete")]
     [AllowAnonymous]
+    [RemoteCommand]
     [ProducesResponseType(typeof(PasskeyLoginCompleteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyLoginCompleteResponse>> LoginComplete(
         [FromBody] PasskeyLoginCompleteRequest request)
     {
-        var challengeCookie = Request.Cookies[ChallengeCookieName];
-        if (string.IsNullOrEmpty(challengeCookie))
+        if (string.IsNullOrEmpty(request.ChallengeToken))
         {
-            return BadRequest(new ErrorResponse { Error = "invalid_state", Message = "Challenge cookie not found or expired" });
+            return BadRequest(new ErrorResponse { Error = "invalid_state", Message = "Challenge token not found or expired" });
         }
 
         var tenantId = _tenantAccessor.TenantId;
@@ -180,9 +187,7 @@ public class PasskeyController : ControllerBase
         try
         {
             var assertionResult = await _passkeyService.CompleteAssertionAsync(
-                request.AssertionResponseJson, challengeCookie, tenantId);
-
-            ClearChallengeCookie();
+                request.AssertionResponseJson, request.ChallengeToken, tenantId);
 
             // Get subject details for token generation
             var subject = await _subjectService.GetSubjectByIdAsync(assertionResult.SubjectId);
@@ -233,6 +238,7 @@ public class PasskeyController : ControllerBase
     /// </summary>
     [HttpPost("recovery/verify")]
     [AllowAnonymous]
+    [RemoteCommand]
     [ProducesResponseType(typeof(RecoveryVerifyResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<RecoveryVerifyResponse>> RecoveryVerify(
@@ -301,6 +307,7 @@ public class PasskeyController : ControllerBase
     /// List all passkey credentials for the authenticated user
     /// </summary>
     [HttpGet("credentials")]
+    [RemoteQuery]
     [ProducesResponseType(typeof(PasskeyCredentialListResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<PasskeyCredentialListResponse>> ListCredentials()
@@ -332,6 +339,7 @@ public class PasskeyController : ControllerBase
     /// Remove a passkey credential. Cannot remove the last credential if user has no OIDC link.
     /// </summary>
     [HttpDelete("credentials/{id:guid}")]
+    [RemoteCommand(Invalidates = ["ListCredentials"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -375,6 +383,7 @@ public class PasskeyController : ControllerBase
     /// Regenerate recovery codes for the authenticated user. Invalidates all existing codes.
     /// </summary>
     [HttpPost("recovery/regenerate")]
+    [RemoteCommand(Invalidates = ["GetRecoveryStatus"])]
     [ProducesResponseType(typeof(RecoveryRegenerateResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<RecoveryRegenerateResponse>> RegenerateRecoveryCodes()
@@ -397,6 +406,7 @@ public class PasskeyController : ControllerBase
     /// Get the count of remaining recovery codes for the authenticated user
     /// </summary>
     [HttpGet("recovery/status")]
+    [RemoteQuery]
     [ProducesResponseType(typeof(RecoveryStatusResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<RecoveryStatusResponse>> GetRecoveryStatus()
@@ -425,6 +435,7 @@ public class PasskeyController : ControllerBase
     /// </summary>
     [HttpGet("recovery-mode-status")]
     [AllowAnonymous]
+    [RemoteQuery]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetRecoveryModeStatus([FromServices] RecoveryModeState state)
     {
@@ -432,27 +443,6 @@ public class PasskeyController : ControllerBase
     }
 
     #region Private Helpers
-
-    private void SetChallengeCookie(string challengeData)
-    {
-        Response.Cookies.Append(ChallengeCookieName, challengeData, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict,
-            MaxAge = TimeSpan.FromMinutes(5),
-            Path = "/api/auth/passkey",
-            IsEssential = true,
-        });
-    }
-
-    private void ClearChallengeCookie()
-    {
-        Response.Cookies.Delete(ChallengeCookieName, new CookieOptions
-        {
-            Path = "/api/auth/passkey",
-        });
-    }
 
     private void SetSessionCookies(string accessToken, string refreshToken)
     {
@@ -500,6 +490,15 @@ public class PasskeyController : ControllerBase
 #region Request/Response DTOs
 
 /// <summary>
+/// Response containing WebAuthn options and the encrypted challenge token
+/// </summary>
+public class PasskeyOptionsResponse
+{
+    public string Options { get; set; } = string.Empty;
+    public string ChallengeToken { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Request for passkey registration options
 /// </summary>
 public class PasskeyRegisterOptionsRequest
@@ -514,6 +513,7 @@ public class PasskeyRegisterOptionsRequest
 public class PasskeyRegisterCompleteRequest
 {
     public string AttestationResponseJson { get; set; } = string.Empty;
+    public string ChallengeToken { get; set; } = string.Empty;
     public string? Label { get; set; }
 }
 
@@ -540,6 +540,7 @@ public class PasskeyLoginOptionsRequest
 public class PasskeyLoginCompleteRequest
 {
     public string AssertionResponseJson { get; set; } = string.Empty;
+    public string ChallengeToken { get; set; } = string.Empty;
 }
 
 /// <summary>

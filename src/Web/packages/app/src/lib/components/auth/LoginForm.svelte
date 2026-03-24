@@ -10,12 +10,14 @@
     KeyRound,
     AlertTriangle,
   } from "lucide-svelte";
+  import { startAuthentication } from "@simplewebauthn/browser";
   import { getOidcProviders, setAuthCookies } from "$routes/auth/auth.remote";
   import {
-    discoverableLogin,
-    usernameLogin,
-    verifyRecoveryCode,
-  } from "$lib/auth/passkey-client";
+    discoverableLoginOptions,
+    loginOptions,
+    loginComplete,
+    recoveryVerify,
+  } from "$lib/api/generated/passkeys.generated.remote";
   import { goto, invalidateAll } from "$app/navigation";
 
   interface Props {
@@ -40,7 +42,7 @@
   let recoveryCode = $state("");
 
   async function handleAuthResult(result: {
-    success: boolean;
+    success?: boolean;
     accessToken?: string;
     refreshToken?: string;
     expiresIn?: number;
@@ -76,7 +78,16 @@
     errorMessage = null;
 
     try {
-      const result = await discoverableLogin();
+      const response = await discoverableLoginOptions();
+      const options = JSON.parse(response.options);
+      const challengeToken = response.challengeToken;
+
+      const assertion = await startAuthentication({ optionsJSON: options });
+
+      const result = await loginComplete({
+        assertionResponseJson: JSON.stringify(assertion),
+        challengeToken,
+      });
       await handleAuthResult(result);
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : "Authentication failed";
@@ -95,7 +106,16 @@
     errorMessage = null;
 
     try {
-      const result = await usernameLogin(username.trim());
+      const response = await loginOptions({ username: username.trim() });
+      const options = JSON.parse(response.options);
+      const challengeToken = response.challengeToken;
+
+      const assertion = await startAuthentication({ optionsJSON: options });
+
+      const result = await loginComplete({
+        assertionResponseJson: JSON.stringify(assertion),
+        challengeToken,
+      });
       await handleAuthResult(result);
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : "Authentication failed";
@@ -114,7 +134,7 @@
     errorMessage = null;
 
     try {
-      const result = await verifyRecoveryCode(username.trim(), recoveryCode.trim());
+      const result = await recoveryVerify({ username: username.trim(), code: recoveryCode.trim() });
       await handleAuthResult(result);
     } catch (err) {
       errorMessage = err instanceof Error ? err.message : "Recovery code verification failed";

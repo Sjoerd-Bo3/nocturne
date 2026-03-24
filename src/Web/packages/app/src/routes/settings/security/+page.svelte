@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
   import * as Dialog from "$lib/components/ui/dialog";
@@ -21,40 +20,25 @@
     Info,
     Server,
   } from "lucide-svelte";
+  import { startRegistration } from "@simplewebauthn/browser";
   import { formatDate } from "$lib/utils/formatting";
-  import { registerPasskey } from "$lib/auth/passkey-client";
+  import {
+    registerOptions,
+    registerComplete,
+    listCredentials,
+    removeCredential,
+    getRecoveryStatus,
+    regenerateRecoveryCodes,
+  } from "$lib/api/generated/passkeys.generated.remote";
   import { page } from "$app/state";
-
-  // ============================================================================
-  // Types
-  // ============================================================================
-
-  interface PasskeyCredential {
-    id: string;
-    label: string | null;
-    createdAt: string;
-    lastUsedAt: string | null;
-  }
-
-  interface CredentialListResponse {
-    credentials: PasskeyCredential[];
-    hasOidcLink: boolean;
-  }
-
-  interface RecoveryStatus {
-    remainingCodes: number;
-    hasCodes: boolean;
-    totalCodes: number;
-  }
 
   // ============================================================================
   // State
   // ============================================================================
 
-  let credentials = $state<PasskeyCredential[]>([]);
-  let hasOidcLink = $state(false);
-  let recoveryStatus = $state<RecoveryStatus | null>(null);
-  let isLoading = $state(true);
+  const credentialsQuery = listCredentials();
+  const recoveryQuery = getRecoveryStatus();
+
   let errorMessage = $state<string | null>(null);
   let successMessage = $state<string | null>(null);
 
@@ -66,7 +50,7 @@
   // Passkey remove flow
   let isRemoving = $state<string | null>(null);
   let showRemoveDialog = $state(false);
-  let removeTarget = $state<PasskeyCredential | null>(null);
+  let removeTarget = $state<{ id?: string; label?: string | null } | null>(null);
 
   // Recovery codes
   let showRegenerateDialog = $state(false);
@@ -76,40 +60,12 @@
   let copiedCodes = $state(false);
 
   const user = $derived(page.data?.user);
+  const credentials = $derived(credentialsQuery.current?.credentials ?? []);
+  const hasOidcLink = $derived(credentialsQuery.current?.hasOidcLink ?? false);
+  const recoveryStatus = $derived(recoveryQuery.current);
+  const isLoading = $derived(credentialsQuery.loading);
   const canRemovePasskey = $derived(credentials.length > 1 || hasOidcLink);
   const maxPasskeys = 20;
-
-  // ============================================================================
-  // Data fetching
-  // ============================================================================
-
-  async function loadCredentials() {
-    try {
-      const response = await fetch("/api/auth/passkey/credentials");
-      if (!response.ok) throw new Error("Failed to load credentials");
-      const data: CredentialListResponse = await response.json();
-      credentials = data.credentials;
-      hasOidcLink = data.hasOidcLink;
-    } catch (err) {
-      errorMessage = "Failed to load passkey credentials.";
-    }
-  }
-
-  async function loadRecoveryStatus() {
-    try {
-      const response = await fetch("/api/auth/passkey/recovery/status");
-      if (!response.ok) throw new Error("Failed to load recovery status");
-      recoveryStatus = await response.json();
-    } catch (err) {
-      // Recovery status may not be available for all users
-      recoveryStatus = null;
-    }
-  }
-
-  onMount(async () => {
-    await Promise.all([loadCredentials(), loadRecoveryStatus()]);
-    isLoading = false;
-  });
 
   // ============================================================================
   // Passkey registration
@@ -121,16 +77,21 @@
     errorMessage = null;
 
     try {
-      const result = await registerPasskey(user.subjectId, user.name);
-      if (result.success) {
-        newPasskeyLabel = "";
-        showLabelDialog = true;
-        await loadCredentials();
-      } else {
-        errorMessage = result.error ?? "Passkey registration failed.";
-      }
+      const response = await registerOptions({ subjectId: user.subjectId, username: user.name });
+      const options = JSON.parse(response.options);
+      const challengeToken = response.challengeToken;
+
+      const attestation = await startRegistration({ optionsJSON: options });
+
+      await registerComplete({
+        attestationResponseJson: JSON.stringify(attestation),
+        challengeToken,
+      });
+
+      newPasskeyLabel = "";
+      showLabelDialog = true;
     } catch (err) {
-      errorMessage = "Failed to register passkey.";
+      errorMessage = err instanceof Error ? err.message : "Failed to register passkey.";
     } finally {
       isRegistering = false;
     }
@@ -147,31 +108,21 @@
   // Passkey removal
   // ============================================================================
 
-  function confirmRemovePasskey(credential: PasskeyCredential) {
+  function confirmRemovePasskey(credential: { id?: string; label?: string | null }) {
     removeTarget = credential;
     showRemoveDialog = true;
   }
 
   async function handleRemovePasskey() {
-    if (!removeTarget) return;
+    if (!removeTarget?.id) return;
     isRemoving = removeTarget.id;
     errorMessage = null;
     showRemoveDialog = false;
 
     try {
-      const response = await fetch(
-        `/api/auth/passkey/credentials/${removeTarget.id}`,
-        { method: "DELETE" },
-      );
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(
-          body?.message ?? "Failed to remove passkey.",
-        );
-      }
+      await removeCredential(removeTarget.id);
       successMessage = "Passkey removed.";
       clearMessages();
-      await loadCredentials();
     } catch (err) {
       errorMessage =
         err instanceof Error ? err.message : "Failed to remove passkey.";
@@ -191,15 +142,9 @@
     showRegenerateDialog = false;
 
     try {
-      const response = await fetch("/api/auth/passkey/recovery/regenerate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) throw new Error("Failed to regenerate codes");
-      const data: { codes: string[] } = await response.json();
-      newRecoveryCodes = data.codes;
+      const result = await regenerateRecoveryCodes();
+      newRecoveryCodes = result.codes ?? [];
       showNewCodesDialog = true;
-      await loadRecoveryStatus();
     } catch (err) {
       errorMessage = "Failed to regenerate recovery codes.";
     } finally {
@@ -388,7 +333,7 @@
               </p>
             </div>
             <Badge
-              variant={recoveryStatus.remainingCodes > 2
+              variant={(recoveryStatus.remainingCodes ?? 0) > 2
                 ? "secondary"
                 : "destructive"}
             >

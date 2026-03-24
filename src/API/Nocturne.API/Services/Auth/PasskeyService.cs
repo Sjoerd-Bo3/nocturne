@@ -12,7 +12,7 @@ namespace Nocturne.API.Services.Auth;
 
 /// <summary>
 /// Implements WebAuthn/FIDO2 passkey registration and authentication ceremonies.
-/// Challenge state is persisted in encrypted cookies between options and completion calls.
+/// Challenge state is persisted in encrypted tokens passed via request/response bodies.
 /// </summary>
 public class PasskeyService : IPasskeyService
 {
@@ -20,13 +20,13 @@ public class PasskeyService : IPasskeyService
     private static readonly TimeSpan ChallengeExpiry = TimeSpan.FromMinutes(5);
 
     private readonly NocturneDbContext _dbContext;
-    private readonly Fido2 _fido2;
+    private readonly IFido2 _fido2;
     private readonly IDataProtector _protector;
     private readonly ILogger<PasskeyService> _logger;
 
     public PasskeyService(
         NocturneDbContext dbContext,
-        Fido2 fido2,
+        IFido2 fido2,
         IDataProtectionProvider dataProtectionProvider,
         ILogger<PasskeyService> logger)
     {
@@ -64,15 +64,15 @@ public class PasskeyService : IPasskeyService
         });
 
         var optionsJson = JsonSerializer.Serialize(options, FidoModelSerializerContext.Default.CredentialCreateOptions);
-        var challengeCookie = EncryptChallengeCookie(optionsJson, subjectId);
+        var challengeToken = CreateChallengeToken(optionsJson, subjectId);
 
-        return new PasskeyRegistrationOptions(optionsJson, challengeCookie);
+        return new PasskeyRegistrationOptions(optionsJson, challengeToken);
     }
 
     public async Task<PasskeyCredentialResult> CompleteRegistrationAsync(
-        string attestationResponseJson, string challengeCookie, Guid tenantId)
+        string attestationResponseJson, string challengeToken, Guid tenantId)
     {
-        var cookie = DecryptChallengeCookie(challengeCookie);
+        var cookie = ReadChallengeToken(challengeToken);
 
         var originalOptions = JsonSerializer.Deserialize(
             cookie.OptionsJson,
@@ -139,9 +139,9 @@ public class PasskeyService : IPasskeyService
         });
 
         var optionsJson = JsonSerializer.Serialize(options, FidoModelSerializerContext.Default.AssertionOptions);
-        var challengeCookie = EncryptChallengeCookie(optionsJson, subjectId: null);
+        var challengeToken = CreateChallengeToken(optionsJson, subjectId: null);
 
-        return Task.FromResult(new PasskeyAssertionOptions(optionsJson, challengeCookie));
+        return Task.FromResult(new PasskeyAssertionOptions(optionsJson, challengeToken));
     }
 
     public async Task<PasskeyAssertionOptions> GenerateAssertionOptionsAsync(string username, Guid tenantId)
@@ -166,15 +166,15 @@ public class PasskeyService : IPasskeyService
         });
 
         var optionsJson = JsonSerializer.Serialize(options, FidoModelSerializerContext.Default.AssertionOptions);
-        var challengeCookie = EncryptChallengeCookie(optionsJson, subject.Id);
+        var challengeToken = CreateChallengeToken(optionsJson, subject.Id);
 
-        return new PasskeyAssertionOptions(optionsJson, challengeCookie);
+        return new PasskeyAssertionOptions(optionsJson, challengeToken);
     }
 
     public async Task<PasskeyAssertionResult> CompleteAssertionAsync(
-        string assertionResponseJson, string challengeCookie, Guid tenantId)
+        string assertionResponseJson, string challengeToken, Guid tenantId)
     {
-        var cookie = DecryptChallengeCookie(challengeCookie);
+        var cookie = ReadChallengeToken(challengeToken);
 
         var originalOptions = JsonSerializer.Deserialize(
             cookie.OptionsJson,
@@ -272,7 +272,7 @@ public class PasskeyService : IPasskeyService
             .AnyAsync(s => s.Id == subjectId && s.OidcSubjectId != null);
     }
 
-    private string EncryptChallengeCookie(string optionsJson, Guid? subjectId)
+    private string CreateChallengeToken(string optionsJson, Guid? subjectId)
     {
         var payload = new ChallengeCookiePayload
         {
@@ -285,25 +285,25 @@ public class PasskeyService : IPasskeyService
         return _protector.Protect(json);
     }
 
-    private ChallengeCookiePayload DecryptChallengeCookie(string challengeCookie)
+    private ChallengeCookiePayload ReadChallengeToken(string challengeToken)
     {
         string json;
         try
         {
-            json = _protector.Unprotect(challengeCookie);
+            json = _protector.Unprotect(challengeToken);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to decrypt challenge cookie");
-            throw new InvalidOperationException("Invalid or tampered challenge cookie.", ex);
+            _logger.LogWarning(ex, "Failed to decrypt challenge token");
+            throw new InvalidOperationException("Invalid or tampered challenge token.", ex);
         }
 
         var payload = JsonSerializer.Deserialize<ChallengeCookiePayload>(json)
-            ?? throw new InvalidOperationException("Failed to deserialize challenge cookie payload.");
+            ?? throw new InvalidOperationException("Failed to deserialize challenge token payload.");
 
         if (payload.ExpiresAt < DateTime.UtcNow)
         {
-            throw new InvalidOperationException("Challenge cookie has expired. Please restart the authentication flow.");
+            throw new InvalidOperationException("Challenge token has expired. Please restart the authentication flow.");
         }
 
         return payload;
