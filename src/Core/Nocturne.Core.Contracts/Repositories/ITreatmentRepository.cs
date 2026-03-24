@@ -100,6 +100,25 @@ public interface ITreatmentRepository
     );
 
     /// <summary>
+    /// Get treatments with advanced filtering options including event type filter
+    /// </summary>
+    /// <param name="eventType">Optional filter by event type</param>
+    /// <param name="count">Maximum number of treatments to return</param>
+    /// <param name="skip">Number of treatments to skip</param>
+    /// <param name="findQuery">Optional query filter</param>
+    /// <param name="reverseResults">Whether to reverse the order of results</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Collection of treatments matching the filter</returns>
+    Task<IEnumerable<Treatment>> GetTreatmentsWithAdvancedFilterAsync(
+        string? eventType,
+        int count = 10,
+        int skip = 0,
+        string? findQuery = null,
+        bool reverseResults = false,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
     /// Create a single treatment
     /// </summary>
     /// <param name="treatment">The treatment to create</param>

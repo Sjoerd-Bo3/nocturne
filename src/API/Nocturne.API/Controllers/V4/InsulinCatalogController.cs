@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Nocturne.API.Attributes;
 using Nocturne.Core.Models.V4;
 
 namespace Nocturne.API.Controllers.V4;
@@ -17,6 +18,7 @@ public class InsulinCatalogController : ControllerBase
     /// Get all known insulin formulations.
     /// </summary>
     [HttpGet("catalog")]
+    [RemoteQuery]
     public ActionResult<IReadOnlyList<InsulinFormulation>> GetCatalog()
     {
         return Ok(InsulinCatalog.GetAll());

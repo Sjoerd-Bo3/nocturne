@@ -4,7 +4,7 @@ using Nocturne.API.Attributes;
 using Nocturne.API.Models;
 using Nocturne.API.Services;
 
-namespace Nocturne.API.Controllers;
+namespace Nocturne.API.Controllers.V1;
 
 [Authorize]
 [ApiController]

@@ -31,7 +31,7 @@ internal sealed class ChatBotProvider(
         try
         {
             var client = httpClientFactory.CreateClient("ChatBot");
-            var dispatchUrl = $"{webUrl.TrimEnd('/')}/api/bot/dispatch";
+            var dispatchUrl = $"{webUrl.TrimEnd('/')}/api/v4/bot/dispatch";
 
             var response = await client.PostAsJsonAsync(dispatchUrl, new
             {

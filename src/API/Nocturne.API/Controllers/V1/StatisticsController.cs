@@ -9,7 +9,7 @@ using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Core.Contracts.Repositories;
 
-namespace Nocturne.API.Controllers;
+namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
 /// Controller for comprehensive glucose and treatment statistics

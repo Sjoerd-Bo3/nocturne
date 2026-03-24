@@ -3,7 +3,7 @@ using Nocturne.API.Attributes;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 
-namespace Nocturne.API.Controllers;
+namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
 /// Versions controller that provides 1:1 compatibility with Nightscout versions endpoint

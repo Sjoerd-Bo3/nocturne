@@ -9,14 +9,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const botApiClient: BotApiClient = {
 			sensorGlucose: {
 				async getAll(page?: number, pageSize?: number) {
-					return api.sensorGlucose.getAll(
+					const result = await api.sensorGlucose.getAll(
 						undefined, undefined,
 						pageSize, page !== undefined && pageSize !== undefined ? page * pageSize : undefined
 					);
+					return { items: result.data as { sgv?: number; direction?: string; mills?: number; dateString?: string; delta?: number }[] | undefined };
 				},
 			},
 			alerts: {
-				acknowledgeAlerts: (body) => api.alerts.acknowledgeAlerts(body),
+				acknowledgeAlerts: (body) => api.alerts.acknowledge({ acknowledgedBy: body.acknowledgedBy }),
 			},
 			chatIdentity: {
 				resolve: (platform, platformUserId) => api.chatIdentity.resolve(platform, platformUserId),

@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Nocturne.API.Controllers;
+using Nocturne.API.Controllers.V1;
 using Nocturne.API.Tests.Infrastructure;
 using Xunit;
 

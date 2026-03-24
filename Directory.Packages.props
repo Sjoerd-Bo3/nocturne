@@ -5,14 +5,14 @@
   <ItemGroup>
     <!-- Aspire packages -->
     <!-- Aspire packages -->
-    <PackageVersion Include="Aspire.Hosting.Python" Version="13.1.3" />
-    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.1.3" />
-    <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.1.3" />
+    <PackageVersion Include="Aspire.Hosting.Python" Version="13.2.0" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.2.0" />
+    <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.2.0" />
     <PackageVersion Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
-    <PackageVersion Include="Aspire.Hosting" Version="13.1.3" />
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.1.3" />
-    <PackageVersion Include="Aspire.Hosting.Docker" Version="13.1.3-preview.1.26166.8" />
-    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.3" />
+    <PackageVersion Include="Aspire.Hosting" Version="13.2.0" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.2.0" />
+    <PackageVersion Include="Aspire.Hosting.Docker" Version="13.2.0" />
+    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.2.0" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.9.0" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.Rust" Version="9.9.0" />
     <PackageVersion Include="Fido2.AspNet" Version="4.0.0" />
@@ -31,7 +31,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.5" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.1" />
@@ -107,6 +107,8 @@
     <PackageVersion Include="ShiroTrie" Version="1.0.5" />
     <PackageVersion Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageVersion Include="System.Threading.Tasks.Dataflow" Version="9.0.0" />
+    <!-- Security fix: pin transitive dependency to patch CVE-2026-26127 (Base64Url DoS) -->
+    <PackageVersion Include="Microsoft.Bcl.Memory" Version="9.0.14" />
     <!-- Cryptography packages -->
     <PackageVersion Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
     <!-- ASP.NET Core additional packages -->

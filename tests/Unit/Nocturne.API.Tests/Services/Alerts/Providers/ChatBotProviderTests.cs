@@ -61,7 +61,7 @@ public class ChatBotProviderTests
         // Assert
         handler.CapturedRequest.Should().NotBeNull();
         handler.CapturedRequest!.RequestUri!.ToString()
-            .Should().Be("https://web.example.com/api/bot/dispatch");
+            .Should().Be("https://web.example.com/api/v4/bot/dispatch");
         handler.CapturedRequest.Method.Should().Be(HttpMethod.Post);
     }
 

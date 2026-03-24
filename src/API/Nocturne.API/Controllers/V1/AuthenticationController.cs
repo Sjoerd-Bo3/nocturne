@@ -3,7 +3,7 @@ using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.Core.Models.Authorization;
 
-namespace Nocturne.API.Controllers;
+namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
 /// Authentication controller that provides authentication verification for legacy Nightscout compatibility

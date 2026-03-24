@@ -24,6 +24,11 @@ interface OpenApiSchema {
   };
 }
 
+// Types that are opaque JSON containers in .NET — NSwag generates them
+// with concrete properties (e.g. isDisposable, rootElement) and
+// additionalProperties: false, but they're actually pass-through types.
+const opaqueJsonTypes = new Set(["JsonDocument", "JsonElement"]);
+
 function generateZodSchemas(): void {
   console.log("Generating Zod schemas from OpenAPI spec using z.fromJSONSchema()...");
 
@@ -58,6 +63,15 @@ function generateZodSchemas(): void {
   let fallbackCount = 0;
 
   for (const [name, schema] of Object.entries(schemas)) {
+    // JsonDocument/JsonElement are generic JSON containers, not typed DTOs
+    if (opaqueJsonTypes.has(name)) {
+      lines.push(`export const ${name}Schema = z.record(z.string(), z.unknown());`);
+      lines.push(`export type ${name} = z.output<typeof ${name}Schema>;`);
+      lines.push("");
+      successCount++;
+      continue;
+    }
+
     try {
       // Resolve $refs by inlining referenced schemas, strip x- extensions
       const resolved = resolveSchema(schema, schemas);
@@ -108,6 +122,10 @@ function resolveSchema(
     const match = (obj.$ref as string).match(/#\/components\/schemas\/(\w+)/);
     if (match) {
       const refName = match[1];
+      // Opaque JSON container types — replace with open object schema
+      if (opaqueJsonTypes.has(refName)) {
+        return { type: "object" };
+      }
       if (visited.has(refName)) {
         return {};
       }

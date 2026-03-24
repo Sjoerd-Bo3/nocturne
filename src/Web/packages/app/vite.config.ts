@@ -4,7 +4,6 @@ import commonjs from "vite-plugin-commonjs";
 import lingo from 'vite-plugin-lingo';
 import tailwindcss from "@tailwindcss/vite";
 import { resolve } from "path";
-import fs from "fs";
 import { setupBridge } from "@nocturne/bridge";
 import { wuchale } from '@wuchale/vite-plugin'
 
@@ -70,10 +69,6 @@ export default defineConfig(({ mode }) => {
       },
     ],
     server: {
-      https: process.env.SSL_CRT_FILE && process.env.SSL_KEY_FILE ? {
-        cert: fs.readFileSync(process.env.SSL_CRT_FILE),
-        key: fs.readFileSync(process.env.SSL_KEY_FILE),
-      } : undefined,
       host: "0.0.0.0",
       port: parseInt(process.env.PORT || "1612", 10),
       strictPort: true, // Fail if port is already in use instead of trying another
@@ -82,8 +77,8 @@ export default defineConfig(({ mode }) => {
         usePolling: false,
       },
       proxy: {
-        // Proxy API requests to backend
-        "^/api/.*": {
+        // Proxy API requests to backend (not /api/v4/webhooks or /api/v4/bot, which are SvelteKit routes)
+        "^/api/(?!v4/webhooks|v4/bot)": {
           target: env.PUBLIC_API_URL || "https://localhost:1613",
           changeOrigin: true,
           secure: false,

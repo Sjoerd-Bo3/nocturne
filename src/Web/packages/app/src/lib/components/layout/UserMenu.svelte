@@ -103,7 +103,7 @@
       {/if}
 
       <DropdownMenu.Group>
-        <DropdownMenu.Item onSelect={() => goto("/account")}>
+        <DropdownMenu.Item onSelect={() => goto("/settings/account")}>
           <User class="mr-2 h-4 w-4" />
           <span>Account</span>
         </DropdownMenu.Item>

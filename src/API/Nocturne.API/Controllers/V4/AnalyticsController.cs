@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 
-namespace Nocturne.API.Controllers;
+namespace Nocturne.API.Controllers.V4;
 
 /// <summary>
 /// Controller for managing analytics collection and providing transparency
@@ -11,7 +11,7 @@ namespace Nocturne.API.Controllers;
 /// </summary>
 [Authorize]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v4/[controller]")]
 [Produces("application/json")]
 public class AnalyticsController : ControllerBase
 {

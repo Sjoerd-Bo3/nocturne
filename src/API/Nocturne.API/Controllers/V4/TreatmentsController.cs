@@ -4,8 +4,8 @@ using Nocturne.API.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
-using Nocturne.Infrastructure.Data.Repositories;
 
 namespace Nocturne.API.Controllers.V4;
 
@@ -23,7 +23,7 @@ namespace Nocturne.API.Controllers.V4;
 [Authorize]
 public class TreatmentsController : ControllerBase
 {
-    private readonly TreatmentRepository _repository;
+    private readonly ITreatmentRepository _repository;
     private readonly IDocumentProcessingService _documentProcessingService;
     private readonly ITrackerTriggerService _trackerTriggerService;
     private readonly ITrackerSuggestionService _trackerSuggestionService;
@@ -31,7 +31,7 @@ public class TreatmentsController : ControllerBase
     private readonly ILogger<TreatmentsController> _logger;
 
     public TreatmentsController(
-        TreatmentRepository repository,
+        ITreatmentRepository repository,
         IDocumentProcessingService documentProcessingService,
         ITrackerTriggerService trackerTriggerService,
         ITrackerSuggestionService trackerSuggestionService,

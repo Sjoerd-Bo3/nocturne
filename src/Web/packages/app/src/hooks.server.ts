@@ -231,8 +231,9 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
 
 // Proxy handler for /api requests
 const proxyHandle: Handle = async ({ event, resolve }) => {
-  // Check if the request is for /api
-  if (event.url.pathname.startsWith("/api")) {
+  // Check if the request is for /api (but not SvelteKit-handled routes like webhooks and bot dispatch)
+  const path = event.url.pathname;
+  if (path.startsWith("/api") && !path.startsWith("/api/v4/webhooks") && !path.startsWith("/api/v4/bot")) {
     const apiBaseUrl = getApiBaseUrl();
     if (!apiBaseUrl) {
       throw new Error(

@@ -5,7 +5,7 @@ using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 using IAuthorizationService = Nocturne.Core.Contracts.IAuthorizationService;
 
-namespace Nocturne.API.Controllers;
+namespace Nocturne.API.Controllers.V2;
 
 /// <summary>
 /// Authorization controller that provides 1:1 compatibility with Nightscout authorization endpoints

@@ -14,9 +14,6 @@ class Program
     {
         var builder = DistributedApplication.CreateBuilder(args);
 
-        // Export developer certificate for Vite HTTPS (runs before resources start)
-        builder.AddDeveloperCertificateExport();
-
         // Add Docker Compose publishing support
         // This enables 'aspire publish' to generate docker-compose.yml files
         // Using GitHub Container Registry for nightscout/nocturne
@@ -244,7 +241,6 @@ class Program
         var web = JavaScriptHostingExtensions
             .AddViteApp(builder, ServiceNames.NocturneWeb, webPackagePath)
             .WithPnpm()
-            .WithDeveloperCertificateForVite()
             .WithHttpsEndpoint(env: "PORT", port: 1612)
             .WithHttpsDeveloperCertificate()
             .WithDeveloperCertificateTrust(true)
@@ -293,6 +289,17 @@ class Program
             .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT",
                 Environment.GetEnvironmentVariable("DOTNET_DASHBOARD_OTLP_ENDPOINT_URL") ?? "")
             .WithEnvironment("OTEL_SERVICE_NAME", "nocturne-web")
+            // Chat bot platform tokens (from appsettings ChatBot section)
+            .WithEnvironment("DISCORD_BOT_TOKEN",
+                builder.Configuration["ChatBot:DISCORD_BOT_TOKEN"] ?? "")
+            .WithEnvironment("TELEGRAM_BOT_TOKEN",
+                builder.Configuration["ChatBot:TELEGRAM_BOT_TOKEN"] ?? "")
+            .WithEnvironment("SLACK_BOT_TOKEN",
+                builder.Configuration["ChatBot:SLACK_BOT_TOKEN"] ?? "")
+            .WithEnvironment("SLACK_SIGNING_SECRET",
+                builder.Configuration["ChatBot:SLACK_SIGNING_SECRET"] ?? "")
+            .WithEnvironment("WHATSAPP_ACCESS_TOKEN",
+                builder.Configuration["ChatBot:WHATSAPP_ACCESS_TOKEN"] ?? "")
             .PublishAsDockerComposeService((_, _) => { })
             .WithContainerBuildOptions(options =>
             {

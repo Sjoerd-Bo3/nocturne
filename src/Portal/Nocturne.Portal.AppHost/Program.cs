@@ -3,12 +3,7 @@
 using Aspire.Hosting;
 using Aspire.Hosting.Publishing;
 using Microsoft.Extensions.Configuration;
-using Nocturne.Aspire.Hosting;
-
 var builder = DistributedApplication.CreateBuilder(args);
-
-// Export developer certificate for Vite HTTPS (runs before resources start)
-builder.AddDeveloperCertificateExport();
 
 // Add the Portal API service
 #pragma warning disable ASPIRECERTIFICATES001
@@ -85,7 +80,6 @@ if (demoEnabled)
         .WaitFor(demoApi)
         .WithEnvironment("PUBLIC_API_URL", demoApi.GetEndpoint("demo-api"))
         .WithEnvironment("NOCTURNE_API_URL", demoApi.GetEndpoint("demo-api"))
-        .WithDeveloperCertificateForVite()
         .WithHttpsEndpoint(env: "PORT", port: 1621, name: "https")
         .WithHttpsDeveloperCertificate()
         .WithDeveloperCertificateTrust(true)
@@ -103,7 +97,6 @@ var portalWeb = JavaScriptHostingExtensions
     .WithReference(api)
     .WaitFor(api)
     .WithEnvironment("VITE_PORTAL_API_URL", api.GetEndpoint("https"))
-    .WithDeveloperCertificateForVite()
     .WithHttpsEndpoint(env: "PORT", port: 1611)
     .WithHttpsDeveloperCertificate()
     .WithDeveloperCertificateTrust(true)

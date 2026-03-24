@@ -10,12 +10,12 @@ export function getBot(): Bot {
 	if (!botInstance) {
 		const options: BotOptions = {
 			platforms: {
-				discord: !!env.DISCORD_TOKEN,
+				discord: !!env.DISCORD_BOT_TOKEN,
 				slack: !!env.SLACK_BOT_TOKEN && !!env.SLACK_SIGNING_SECRET,
 				telegram: !!env.TELEGRAM_BOT_TOKEN,
 				whatsapp: !!env.WHATSAPP_ACCESS_TOKEN,
 			},
-			postgresConnectionString: env.ConnectionStrings__nocturne_postgres ?? "",
+			postgresUrl: env.ConnectionStrings__nocturne_postgres ?? "",
 		};
 		botInstance = createBot(options);
 	}

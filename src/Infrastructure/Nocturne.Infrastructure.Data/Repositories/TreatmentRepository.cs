@@ -471,6 +471,22 @@ public class TreatmentRepository : ITreatmentRepository
     }
 
     /// <summary>
+    /// Get treatments with advanced filtering including event type (interface-compatible overload without dateString)
+    /// </summary>
+    async Task<IEnumerable<Treatment>> ITreatmentRepository.GetTreatmentsWithAdvancedFilterAsync(
+        string? eventType,
+        int count,
+        int skip,
+        string? findQuery,
+        bool reverseResults,
+        CancellationToken cancellationToken
+    )
+    {
+        return await GetTreatmentsWithAdvancedFilterAsync(
+            eventType, count, skip, findQuery, null, reverseResults, cancellationToken);
+    }
+
+    /// <summary>
     /// Get the latest treatment timestamp for a specific data source
     /// </summary>
     public async Task<DateTime?> GetLatestTreatmentTimestampBySourceAsync(
