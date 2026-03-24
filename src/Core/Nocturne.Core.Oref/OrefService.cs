@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Nocturne.Core.Oref.Models;
 
 namespace Nocturne.Core.Oref;
@@ -99,28 +100,26 @@ public class OrefService
     /// <summary>
     /// Run the determine-basal algorithm to get dosing recommendations and predictions.
     /// </summary>
-    public static DetermineBasalResult? DetermineBasal(DetermineBasalInputs inputs)
+    public static DetermineBasalResult? DetermineBasal(DetermineBasalInputs inputs, ILogger? logger = null)
     {
         var json = JsonSerializer.Serialize(inputs, JsonOptions);
 
-        // Log input for debugging
-        System.Diagnostics.Debug.WriteLine($"[OrefService.DetermineBasal] Input JSON (first 500 chars): {json[..Math.Min(json.Length, 500)]}");
-        Console.WriteLine($"[OrefService.DetermineBasal] Calling Rust with {json.Length} byte input");
+        logger?.LogDebug("DetermineBasal: Input JSON (first 500 chars): {InputJson}", json[..Math.Min(json.Length, 500)]);
+        logger?.LogDebug("DetermineBasal: Calling Rust with {InputLength} byte input", json.Length);
 
         var result = OrefInterop.DetermineBasal(json);
 
-        // Log result for debugging
-        Console.WriteLine($"[OrefService.DetermineBasal] Rust returned: {(result?.Length > 0 ? result[..Math.Min(result.Length, 500)] : "(empty)")}");
+        logger?.LogDebug("DetermineBasal: Rust returned: {ResultPreview}", result?.Length > 0 ? result[..Math.Min(result.Length, 500)] : "(empty)");
 
         if (string.IsNullOrEmpty(result))
         {
-            Console.WriteLine("[OrefService.DetermineBasal] Result is empty!");
+            logger?.LogWarning("DetermineBasal: Result is empty");
             return null;
         }
 
         if (result.Contains("\"error\""))
         {
-            Console.WriteLine($"[OrefService.DetermineBasal] Rust returned error: {result}");
+            logger?.LogError("DetermineBasal: Rust returned error: {ErrorResult}", result);
             return null;
         }
 

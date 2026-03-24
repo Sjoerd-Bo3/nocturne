@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
+using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts;
 using Nocturne.Infrastructure.Data.Entities;
 
@@ -14,6 +15,17 @@ namespace Nocturne.Infrastructure.Data.Services;
 /// </summary>
 public class QueryParser : IQueryParser
 {
+    private readonly ILogger<QueryParser> _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="QueryParser"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    public QueryParser(ILogger<QueryParser> logger)
+    {
+        _logger = logger;
+    }
+
     private const int MaxQueryDepth = 10;
 
     private static readonly Dictionary<string, Func<string, object>> DefaultEntryConverters = new()
@@ -62,17 +74,17 @@ public class QueryParser : IQueryParser
             return Task.FromResult(queryable);
         }
 
-        Console.WriteLine($"[QueryParser] ApplyQueryAsync called with findQuery: {findQuery}");
+        _logger.LogDebug("ApplyQueryAsync called with findQuery: {FindQuery}", findQuery);
 
         var filter = ParseFilterAsync<T>(findQuery, options, cancellationToken).Result;
         if (filter != null)
         {
-            Console.WriteLine($"[QueryParser] Filter expression created successfully for type {typeof(T).Name}");
+            _logger.LogDebug("Filter expression created successfully for type {EntityType}", typeof(T).Name);
             queryable = queryable.Where(filter);
         }
         else
         {
-            Console.WriteLine($"[QueryParser] WARNING: Filter parsing returned null for query: {findQuery}");
+            _logger.LogWarning("Filter parsing returned null for query: {FindQuery}", findQuery);
         }
 
         return Task.FromResult(queryable);
@@ -134,10 +146,7 @@ public class QueryParser : IQueryParser
         }
         catch (Exception ex)
         {
-            // Log the parsing failure for debugging
-            Console.WriteLine($"[QueryParser] ERROR: Failed to parse filter query: {findQuery}");
-            Console.WriteLine($"[QueryParser] Exception: {ex.Message}");
-            Console.WriteLine($"[QueryParser] Stack: {ex.StackTrace}");
+            _logger.LogError(ex, "Failed to parse filter query: {FindQuery}", findQuery);
             // If parsing fails, return null to avoid breaking queries
             return Task.FromResult<Expression<Func<T, bool>>?>(null);
         }
