@@ -36,7 +36,7 @@ public class EntryEntity : ITenantScoped, ISoftDeletable
     /// <summary>
     /// Date and time as ISO 8601 string
     /// </summary>
-    [Column("dateString")]
+    [Column("date_string")]
     [MaxLength(50)]
     public string? DateString { get; set; }
 
@@ -119,14 +119,14 @@ public class EntryEntity : ITenantScoped, ISoftDeletable
     /// <summary>
     /// System time when entry was processed
     /// </summary>
-    [Column("sysTime")]
+    [Column("sys_time")]
     [MaxLength(50)]
     public string? SysTime { get; set; }
 
     /// <summary>
     /// UTC offset in minutes
     /// </summary>
-    [Column("utcOffset")]
+    [Column("utc_offset")]
     public int? UtcOffset { get; set; }
 
     /// <summary>

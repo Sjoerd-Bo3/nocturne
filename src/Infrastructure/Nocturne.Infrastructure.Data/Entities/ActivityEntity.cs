@@ -35,7 +35,7 @@ public class ActivityEntity : ITenantScoped
     /// <summary>
     /// Date and time as ISO 8601 string
     /// </summary>
-    [Column("dateString")]
+    [Column("date_string")]
     [MaxLength(50)]
     public string? DateString { get; set; }
 
@@ -74,14 +74,14 @@ public class ActivityEntity : ITenantScoped
     /// <summary>
     /// Who entered this activity record
     /// </summary>
-    [Column("enteredBy")]
+    [Column("entered_by")]
     [MaxLength(255)]
     public string? EnteredBy { get; set; }
 
     /// <summary>
     /// UTC offset in minutes
     /// </summary>
-    [Column("utcOffset")]
+    [Column("utc_offset")]
     public int? UtcOffset { get; set; }
 
     /// <summary>

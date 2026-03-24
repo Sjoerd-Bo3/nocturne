@@ -42,7 +42,7 @@ public class DeviceStatusEntity : ITenantScoped
     /// <summary>
     /// UTC offset in minutes
     /// </summary>
-    [Column("utcOffset")]
+    [Column("utc_offset")]
     public int? UtcOffset { get; set; }
 
     /// <summary>
@@ -55,7 +55,7 @@ public class DeviceStatusEntity : ITenantScoped
     /// <summary>
     /// Whether the device is currently charging
     /// </summary>
-    [Column("isCharging")]
+    [Column("is_charging")]
     public bool? IsCharging { get; set; }
 
     /// <summary>
@@ -91,7 +91,7 @@ public class DeviceStatusEntity : ITenantScoped
     /// <summary>
     /// Radio adapter information (stored as JSON)
     /// </summary>
-    [Column("radioAdapter", TypeName = "jsonb")]
+    [Column("radio_adapter", TypeName = "jsonb")]
     public string? RadioAdapterJson { get; set; }
 
     /// <summary>
@@ -121,7 +121,7 @@ public class DeviceStatusEntity : ITenantScoped
     /// <summary>
     /// Insulin pen status information (stored as JSON)
     /// </summary>
-    [Column("insulinPen", TypeName = "jsonb")]
+    [Column("insulin_pen", TypeName = "jsonb")]
     public string? InsulinPenJson { get; set; }
 
     /// <summary>

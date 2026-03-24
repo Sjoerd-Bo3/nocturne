@@ -34,7 +34,7 @@ public class TreatmentEntity : ITenantScoped, ISoftDeletable
     /// <summary>
     /// Event type (e.g., "Meal Bolus", "Correction Bolus")
     /// </summary>
-    [Column("eventType")]
+    [Column("event_type")]
     [MaxLength(255)]
     public string? EventType { get; set; }
 
@@ -92,7 +92,7 @@ public class TreatmentEntity : ITenantScoped, ISoftDeletable
     /// <summary>
     /// UTC offset
     /// </summary>
-    [Column("utcOffset")]
+    [Column("utc_offset")]
     public int? UtcOffset { get; set; }
 
     // === Metadata ===
@@ -106,7 +106,7 @@ public class TreatmentEntity : ITenantScoped, ISoftDeletable
     /// <summary>
     /// Who entered the treatment
     /// </summary>
-    [Column("enteredBy")]
+    [Column("entered_by")]
     [MaxLength(255)]
     public string? EnteredBy { get; set; }
 
@@ -120,13 +120,13 @@ public class TreatmentEntity : ITenantScoped, ISoftDeletable
     /// <summary>
     /// Treatment target top
     /// </summary>
-    [Column("targetTop")]
+    [Column("target_top")]
     public double? TargetTop { get; set; }
 
     /// <summary>
     /// Treatment target bottom
     /// </summary>
-    [Column("targetBottom")]
+    [Column("target_bottom")]
     public double? TargetBottom { get; set; }
 
     /// <summary>
@@ -153,7 +153,7 @@ public class TreatmentEntity : ITenantScoped, ISoftDeletable
     /// <summary>
     /// Nightscout client identifier
     /// </summary>
-    [Column("NSCLIENT_ID")]
+    [Column("nsclient_id")]
     [MaxLength(255)]
     public string? NsClientId { get; set; }
 
@@ -172,21 +172,21 @@ public class TreatmentEntity : ITenantScoped, ISoftDeletable
     /// <summary>
     /// Transmitter ID (used by CGM devices)
     /// </summary>
-    [Column("transmitterId")]
+    [Column("transmitter_id")]
     [MaxLength(255)]
     public string? TransmitterId { get; set; }
 
     /// <summary>
     /// Event time as ISO string (used by Glooko connector)
     /// </summary>
-    [Column("eventTime")]
+    [Column("event_time")]
     [MaxLength(50)]
     public string? EventTime { get; set; }
 
     /// <summary>
     /// Whether this treatment is an announcement
     /// </summary>
-    [Column("isAnnouncement")]
+    [Column("is_announcement")]
     public bool? IsAnnouncement { get; set; }
 
     /// <summary>
