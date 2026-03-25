@@ -2,10 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Nocturne.API.Tests.Integration.Infrastructure;
 using Nocturne.Core.Models;
 using Xunit;
@@ -18,13 +14,13 @@ namespace Nocturne.API.Tests.Integration;
 /// Tests the complete request/response cycle for debugging and preview functionality
 /// </summary>
 [Trait("Category", "Integration")]
-public class EchoInMemoryIntegrationTests : IntegrationTestBase
+public class EchoInMemoryIntegrationTests : AspireIntegrationTestBase
 {
     public EchoInMemoryIntegrationTests(
-        CustomWebApplicationFactory factory,
+        AspireIntegrationTestFixture fixture,
         Xunit.Abstractions.ITestOutputHelper output
     )
-        : base(factory, output) { }
+        : base(fixture, output) { }
 
     [Theory]
     [InlineData("entries")]
@@ -38,8 +34,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
     )
     {
         // Arrange & Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .GetAsync($"/api/v1/echo/{storageType}", CancellationToken.None);
 
         // Assert
@@ -65,8 +60,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
     public async Task EchoQuery_WithInvalidStorageType_ShouldReturnBadRequest()
     {
         // Arrange & Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .GetAsync("/api/v1/echo/invalidtype", CancellationToken.None);
 
         // Assert
@@ -85,8 +79,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
         var queryString = "?count=50&find={\"type\":\"sgv\"}&dateString=2024";
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .GetAsync($"/api/v1/echo/entries{queryString}", CancellationToken.None);
 
         // Assert
@@ -114,8 +107,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
     public async Task EchoQuery_WithModelAndSpec_ShouldIncludeInParameters()
     {
         // Arrange & Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .GetAsync("/api/v1/echo/entries/sgv/current", CancellationToken.None);
 
         // Assert
@@ -143,8 +135,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
         var beforeRequest = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .GetAsync("/api/v1/echo/entries", CancellationToken.None);
 
         // Assert
@@ -173,8 +164,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
         };
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/entries/preview",
                 entry,
@@ -234,8 +224,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
         };
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/entries/preview",
                 entries,
@@ -270,8 +259,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
         };
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/entries/preview",
                 invalidEntry,
@@ -315,8 +303,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
         };
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/entries/preview",
                 entryWithWarnings,
@@ -347,8 +334,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
         var content = new StringContent("null", System.Text.Encoding.UTF8, "application/json");
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsync("/api/v1/entries/preview", content, CancellationToken.None);
 
         // Assert
@@ -368,8 +354,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
         var content = new StringContent(invalidJson, System.Text.Encoding.UTF8, "application/json");
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsync("/api/v1/entries/preview", content, CancellationToken.None);
 
         // Assert
@@ -390,8 +375,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
         var beforeRequest = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/entries/preview",
                 entry,
@@ -443,8 +427,7 @@ public class EchoInMemoryIntegrationTests : IntegrationTestBase
         };
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/entries/preview",
                 mixedEntries,

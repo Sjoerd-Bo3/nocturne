@@ -1,8 +1,7 @@
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.DependencyInjection;
 using Nocturne.API.Tests.Integration.Infrastructure;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 using Xunit;
 using Xunit.Abstractions;
@@ -14,15 +13,15 @@ namespace Nocturne.API.Tests.Integration.SignalR;
 /// Tests real-time communication and legacy compatibility
 /// </summary>
 [Parity]
-public class SignalRWebSocketIntegrationTests : IntegrationTestBase
+public class SignalRWebSocketIntegrationTests : AspireIntegrationTestBase
 {
     public SignalRWebSocketIntegrationTests(
-        CustomWebApplicationFactory factory,
-        Xunit.Abstractions.ITestOutputHelper output
+        AspireIntegrationTestFixture fixture,
+        ITestOutputHelper output
     )
-        : base(factory, output) { }
+        : base(fixture, output) { }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task DataHub_Authorize_ShouldAuthenticateClientSuccessfully()
     {
@@ -43,7 +42,7 @@ public class SignalRWebSocketIntegrationTests : IntegrationTestBase
         Output.WriteLine("DataHub authorization completed successfully");
     }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task DataHub_Subscribe_ShouldSubscribeToStorageCollectionsSuccessfully()
     {
@@ -63,7 +62,7 @@ public class SignalRWebSocketIntegrationTests : IntegrationTestBase
         Output.WriteLine("DataHub subscription completed successfully");
     }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task AlarmHub_Subscribe_ShouldSubscribeToAlarmsSuccessfully()
     {
@@ -88,7 +87,7 @@ public class SignalRWebSocketIntegrationTests : IntegrationTestBase
         Output.WriteLine("AlarmHub subscription completed successfully");
     }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task TreatmentService_CreateTreatment_ShouldBroadcastStorageCreateEvent()
     {
@@ -108,8 +107,7 @@ public class SignalRWebSocketIntegrationTests : IntegrationTestBase
             }
         );
 
-        using var scope = CreateServiceScope();
-        var treatmentService = scope.ServiceProvider.GetRequiredService<ITreatmentService>();
+        var httpClient = CreateAuthenticatedClient();
 
         var treatment = new Treatment
         {
@@ -123,7 +121,7 @@ public class SignalRWebSocketIntegrationTests : IntegrationTestBase
         // Act
         try
         {
-            await treatmentService.CreateTreatmentsAsync(new[] { treatment });
+            await httpClient.PostAsJsonAsync("/api/v1/treatments", new[] { treatment });
             Output.WriteLine("Treatment created successfully");
         }
         catch (Exception ex)
@@ -152,7 +150,7 @@ public class SignalRWebSocketIntegrationTests : IntegrationTestBase
         Assert.Equal(HubConnectionState.Connected, dataConnection.State);
     }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task EntryService_CreateEntry_ShouldBroadcastStorageCreateEvent()
     {
@@ -172,8 +170,7 @@ public class SignalRWebSocketIntegrationTests : IntegrationTestBase
             }
         );
 
-        using var scope = CreateServiceScope();
-        var entryService = scope.ServiceProvider.GetRequiredService<IEntryService>();
+        var httpClient = CreateAuthenticatedClient();
 
         var entry = new Entry
         {
@@ -187,7 +184,7 @@ public class SignalRWebSocketIntegrationTests : IntegrationTestBase
         // Act
         try
         {
-            await entryService.CreateEntriesAsync(new[] { entry });
+            await httpClient.PostAsJsonAsync("/api/v1/entries", new[] { entry });
             Output.WriteLine("Entry created successfully");
         }
         catch (Exception ex)
@@ -216,7 +213,7 @@ public class SignalRWebSocketIntegrationTests : IntegrationTestBase
         Assert.Equal(HubConnectionState.Connected, dataConnection.State);
     }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task AlarmHub_Ack_ShouldProcessAlarmAcknowledgment()
     {

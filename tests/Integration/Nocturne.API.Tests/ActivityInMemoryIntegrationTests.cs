@@ -2,10 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Nocturne.API.Tests.Integration.Infrastructure;
 using Nocturne.Core.Models;
 using Xunit;
@@ -18,20 +14,19 @@ namespace Nocturne.API.Tests.Integration;
 /// Tests the complete request/response cycle with real database operations
 /// </summary>
 [Trait("Category", "Integration")]
-public class ActivityInMemoryIntegrationTests : IntegrationTestBase
+public class ActivityInMemoryIntegrationTests : AspireIntegrationTestBase
 {
     public ActivityInMemoryIntegrationTests(
-        CustomWebApplicationFactory factory,
+        AspireIntegrationTestFixture fixture,
         Xunit.Abstractions.ITestOutputHelper output
     )
-        : base(factory, output) { }
+        : base(fixture, output) { }
 
     [Fact]
     public async Task GetActivities_WhenNoActivitiesExist_ShouldReturnEmptyArray()
     {
         // Arrange & Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .GetAsync("/api/v1/activity", CancellationToken.None);
 
         // Assert
@@ -57,8 +52,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         };
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/activity",
                 newActivity,
@@ -104,8 +98,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         };
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/activity",
                 activities,
@@ -138,8 +131,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
             Duration = 25,
         };
 
-        var createResponse = await Factory
-            .CreateClient()
+        var createResponse = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/activity",
                 newActivity,
@@ -151,8 +143,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         var activityId = createdActivities![0].Id;
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .GetAsync($"/api/v1/activity/{activityId}", CancellationToken.None);
 
         // Assert
@@ -173,8 +164,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         var nonExistentId = Guid.NewGuid().ToString();
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .GetAsync($"/api/v1/activity/{nonExistentId}", CancellationToken.None);
 
         // Assert
@@ -192,8 +182,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
             Duration = 30,
         };
 
-        var createResponse = await Factory
-            .CreateClient()
+        var createResponse = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/activity",
                 originalActivity,
@@ -213,8 +202,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         };
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PutAsJsonAsync(
                 $"/api/v1/activity/{activityId}",
                 updatedActivity,
@@ -242,8 +230,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         var updatedActivity = new Activity { Type = "Exercise", Description = "Test" };
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PutAsJsonAsync(
                 $"/api/v1/activity/{nonExistentId}",
                 updatedActivity,
@@ -265,8 +252,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
             Duration = 20,
         };
 
-        var createResponse = await Factory
-            .CreateClient()
+        var createResponse = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/activity",
                 newActivity,
@@ -278,16 +264,14 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         var activityId = createdActivities![0].Id;
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .DeleteAsync($"/api/v1/activity/{activityId}", CancellationToken.None);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Verify the activity is actually deleted
-        var getResponse = await Factory
-            .CreateClient()
+        var getResponse = await ApiClient
             .GetAsync($"/api/v1/activity/{activityId}", CancellationToken.None);
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -299,8 +283,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         var nonExistentId = Guid.NewGuid().ToString();
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .DeleteAsync($"/api/v1/activity/{nonExistentId}", CancellationToken.None);
 
         // Assert
@@ -321,8 +304,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
             })
             .ToArray();
 
-        await Factory
-            .CreateClient()
+        await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/activity",
                 activities,
@@ -330,8 +312,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
             );
 
         // Act - Get with pagination
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .GetAsync("/api/v1/activity?count=5&skip=5", CancellationToken.None);
 
         // Assert
@@ -348,8 +329,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
     {
         // Arrange - Create activities with different timestamps
         var firstActivity = new Activity { Type = "Exercise", Description = "First activity" };
-        await Factory
-            .CreateClient()
+        await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/activity",
                 firstActivity,
@@ -360,8 +340,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         await Task.Delay(100, CancellationToken.None);
 
         var secondActivity = new Activity { Type = "Walking", Description = "Second activity" };
-        await Factory
-            .CreateClient()
+        await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/activity",
                 secondActivity,
@@ -369,8 +348,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
             );
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .GetAsync("/api/v1/activity", CancellationToken.None);
 
         // Assert
@@ -401,8 +379,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         var content = new StringContent(invalidJson, System.Text.Encoding.UTF8, "application/json");
 
         // Act
-        var response = await Factory
-            .CreateClient()
+        var response = await ApiClient
             .PostAsync("/api/v1/activity", content, CancellationToken.None);
 
         // Assert
@@ -422,8 +399,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         };
 
         // Act 1: Create
-        var createResponse = await Factory
-            .CreateClient()
+        var createResponse = await ApiClient
             .PostAsJsonAsync(
                 "/api/v1/activity",
                 originalActivity,
@@ -436,8 +412,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         var activityId = createdActivities![0].Id;
 
         // Act 2: Read
-        var getResponse = await Factory
-            .CreateClient()
+        var getResponse = await ApiClient
             .GetAsync($"/api/v1/activity/{activityId}", CancellationToken.None);
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var retrievedActivity = await getResponse.Content.ReadFromJsonAsync<Activity>(
@@ -453,8 +428,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
             Duration = 45,
             Intensity = "High",
         };
-        var updateResponse = await Factory
-            .CreateClient()
+        var updateResponse = await ApiClient
             .PutAsJsonAsync(
                 $"/api/v1/activity/{activityId}",
                 updatedActivity,
@@ -463,8 +437,7 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Act 4: Verify Update
-        var getUpdatedResponse = await Factory
-            .CreateClient()
+        var getUpdatedResponse = await ApiClient
             .GetAsync($"/api/v1/activity/{activityId}", CancellationToken.None);
         var updatedRetrievedActivity = await getUpdatedResponse.Content.ReadFromJsonAsync<Activity>(
             cancellationToken: CancellationToken.None
@@ -473,16 +446,13 @@ public class ActivityInMemoryIntegrationTests : IntegrationTestBase
         updatedRetrievedActivity.Type.Should().Be("Walking");
 
         // Act 5: Delete
-        var deleteResponse = await Factory
-            .CreateClient()
+        var deleteResponse = await ApiClient
             .DeleteAsync($"/api/v1/activity/{activityId}", CancellationToken.None);
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Act 6: Verify Delete
-        var getFinalResponse = await Factory
-            .CreateClient()
+        var getFinalResponse = await ApiClient
             .GetAsync($"/api/v1/activity/{activityId}", CancellationToken.None);
         getFinalResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }
-

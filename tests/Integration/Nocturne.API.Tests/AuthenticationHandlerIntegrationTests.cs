@@ -14,25 +14,22 @@ namespace Nocturne.API.Tests.Integration;
 /// Tests legacy API compatibility with api-secret, access tokens, and JWT tokens
 /// </summary>
 [Parity]
-public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
+public class AuthenticationHandlerIntegrationTests : AspireIntegrationTestBase
 {
-    private const string TestApiSecret = "test-secret-for-integration-tests";
-
     public AuthenticationHandlerIntegrationTests(
-        CustomWebApplicationFactory factory,
+        AspireIntegrationTestFixture fixture,
         ITestOutputHelper output
     )
-        : base(factory, output) { }
+        : base(fixture, output) { }
 
     #region API Secret Authentication
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task ApiSecret_ValidSecret_AuthenticatesSuccessfully()
     {
         // Arrange
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Add("api-secret", TestApiSecret);
+        var client = CreateAuthenticatedClient();
 
         // Act
         var response = await client.GetAsync("/api/v1/entries/current");
@@ -42,12 +39,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
         Output.WriteLine($"API Secret auth returned: {response.StatusCode}");
     }
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task ApiSecret_InvalidSecret_ReturnsUnauthorized()
     {
         // Arrange
-        var client = Factory.CreateClient();
+        var client = ApiClient;
         client.DefaultRequestHeaders.Add("api-secret", "wrong-secret");
 
         // Act
@@ -58,12 +55,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
         Output.WriteLine($"Invalid API Secret returned: {response.StatusCode}");
     }
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task ApiSecret_HashedSecretFormat_AuthenticatesSuccessfully()
     {
         // Arrange - Nightscout supports SHA1-hashed secrets
-        var client = Factory.CreateClient();
+        var client = ApiClient;
         var hashedSecret = ComputeSha1Hash(TestApiSecret);
         client.DefaultRequestHeaders.Add("api-secret", hashedSecret);
 
@@ -75,12 +72,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
         Output.WriteLine($"Hashed API Secret auth returned: {response.StatusCode}");
     }
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task ApiSecret_QueryParameter_AuthenticatesSuccessfully()
     {
         // Arrange - Legacy Nightscout supports secret via query parameter
-        var client = Factory.CreateClient();
+        var client = ApiClient;
 
         // Act
         var response = await client.GetAsync($"/api/v1/entries/current?secret={TestApiSecret}");
@@ -94,13 +91,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
 
     #region Access Token Authentication
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task AccessToken_ValidToken_AuthenticatesSuccessfully()
     {
         // Arrange - Create a subject with access token first
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Add("api-secret", TestApiSecret);
+        var client = CreateAuthenticatedClient();
 
         // Create a test subject with an access token
         var newSubject = new
@@ -122,7 +118,7 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
             if (subject?.AccessToken != null)
             {
                 // Use the access token for authentication
-                var tokenClient = Factory.CreateClient();
+                var tokenClient = ApiClient;
                 tokenClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
                     "Bearer",
                     subject.AccessToken
@@ -138,12 +134,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
         Output.WriteLine($"Create subject returned: {createResponse.StatusCode}");
     }
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task AccessToken_InvalidToken_ReturnsUnauthorized()
     {
         // Arrange
-        var client = Factory.CreateClient();
+        var client = ApiClient;
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer",
             "invalid-a1b2c3d4e5f6g7h8"
@@ -157,13 +153,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
         Output.WriteLine($"Invalid access token returned: {response.StatusCode}");
     }
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task AccessToken_TokenQueryParameter_AuthenticatesSuccessfully()
     {
         // Arrange - Some Nightscout clients pass token as query parameter
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Add("api-secret", TestApiSecret);
+        var client = CreateAuthenticatedClient();
 
         // Create a test subject
         var newSubject = new { Name = "test-query-token-subject", Roles = new[] { "readable" } };
@@ -179,7 +174,7 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
 
             if (subject?.AccessToken != null)
             {
-                var tokenClient = Factory.CreateClient();
+                var tokenClient = ApiClient;
                 var response = await tokenClient.GetAsync(
                     $"/api/v1/entries/current?token={subject.AccessToken}"
                 );
@@ -194,13 +189,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
 
     #region JWT Authentication
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task Jwt_ExchangedToken_AuthenticatesSuccessfully()
     {
         // Arrange - First create a subject and get JWT via token exchange
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Add("api-secret", TestApiSecret);
+        var client = CreateAuthenticatedClient();
 
         // Create a test subject
         var newSubject = new
@@ -221,7 +215,7 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
             if (subject?.AccessToken != null)
             {
                 // Exchange access token for JWT
-                var exchangeClient = Factory.CreateClient();
+                var exchangeClient = ApiClient;
                 var exchangeResponse = await exchangeClient.GetAsync(
                     $"/api/v2/authorization/request/{subject.AccessToken}"
                 );
@@ -234,7 +228,7 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
                     if (tokenResponse?.Token != null)
                     {
                         // Use JWT for authentication
-                        var jwtClient = Factory.CreateClient();
+                        var jwtClient = ApiClient;
                         jwtClient.DefaultRequestHeaders.Authorization =
                             new AuthenticationHeaderValue("Bearer", tokenResponse.Token);
 
@@ -248,12 +242,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
         }
     }
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task Jwt_InvalidToken_ReturnsUnauthorized()
     {
         // Arrange
-        var client = Factory.CreateClient();
+        var client = ApiClient;
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer",
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkludmFsaWQiLCJpYXQiOjE1MTYyMzkwMjJ9.InvalidSignature"
@@ -267,12 +261,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
         Output.WriteLine($"Invalid JWT returned: {response.StatusCode}");
     }
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task Jwt_ExpiredToken_ReturnsUnauthorized()
     {
         // Arrange - Craft an expired JWT (would require proper signing in production)
-        var client = Factory.CreateClient();
+        var client = ApiClient;
         // Using a clearly expired token format
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer",
@@ -291,13 +285,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
 
     #region Handler Priority Tests
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task HandlerChain_JwtTakesPrecedenceOverApiSecret()
     {
         // Arrange - When both JWT and api-secret are present, JWT should be validated first
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Add("api-secret", TestApiSecret);
+        var client = CreateAuthenticatedClient();
 
         // Add an invalid JWT - if JWT handler has priority, this should fail
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
@@ -315,12 +308,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
         // or fallback (try next handler). Both are acceptable.
     }
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task HandlerChain_NoAuthentication_ReturnsUnauthorized()
     {
         // Arrange - No authentication credentials provided
-        var client = Factory.CreateClient();
+        var client = ApiClient;
 
         // Act
         var response = await client.GetAsync("/api/v1/entries/current");
@@ -334,13 +327,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
 
     #region Verify Auth Endpoint
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task VerifyAuth_ValidApiSecret_ReturnsSuccess()
     {
         // Arrange
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Add("api-secret", TestApiSecret);
+        var client = CreateAuthenticatedClient();
 
         // Act
         var response = await client.GetAsync("/api/v1/verifyauth");
@@ -350,12 +342,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
         Output.WriteLine($"VerifyAuth with api-secret returned: {response.StatusCode}");
     }
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task VerifyAuth_NoAuth_ReturnsUnauthorized()
     {
         // Arrange
-        var client = Factory.CreateClient();
+        var client = ApiClient;
 
         // Act
         var response = await client.GetAsync("/api/v1/verifyauth");
@@ -369,13 +361,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
 
     #region Permission Tests
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task ApiSecret_HasFullPermissions()
     {
         // Arrange - api-secret should grant admin-level access
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Add("api-secret", TestApiSecret);
+        var client = CreateAuthenticatedClient();
 
         // Act - Try to access admin endpoints
         var rolesResponse = await client.GetAsync("/api/v2/authorization/roles");
@@ -389,13 +380,12 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
         );
     }
 
-    [Fact(Skip = "Integration tests require database setup")]
+    [Fact]
     [Parity]
     public async Task LimitedRoleSubject_CannotAccessAdminEndpoints()
     {
         // Arrange - Create subject with only 'readable' role
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Add("api-secret", TestApiSecret);
+        var client = CreateAuthenticatedClient();
 
         var newSubject = new
         {
@@ -415,7 +405,7 @@ public class AuthenticationHandlerIntegrationTests : IntegrationTestBase
             if (subject?.AccessToken != null)
             {
                 // Use limited subject's token
-                var limitedClient = Factory.CreateClient();
+                var limitedClient = ApiClient;
                 limitedClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
                     "Bearer",
                     subject.AccessToken

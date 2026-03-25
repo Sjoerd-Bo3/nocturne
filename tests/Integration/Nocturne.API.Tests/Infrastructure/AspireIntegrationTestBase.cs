@@ -16,6 +16,8 @@ namespace Nocturne.API.Tests.Integration.Infrastructure;
 [Parity]
 public abstract class AspireIntegrationTestBase : IAsyncLifetime
 {
+    protected const string TestApiSecret = "test-secret-for-integration-tests";
+
     protected readonly AspireIntegrationTestFixture Fixture;
     protected readonly ITestOutputHelper Output;
     protected readonly List<HubConnection> HubConnections = new();
@@ -34,20 +36,17 @@ public abstract class AspireIntegrationTestBase : IAsyncLifetime
         Output = output;
     }
 
-    public virtual Task InitializeAsync()
+    public virtual async Task InitializeAsync()
     {
         using var _ = TestPerformanceTracker.MeasureTest($"{GetType().Name}.Initialize");
 
-        // The fixture handles application initialization.
-        // Override this method to add test-specific setup.
-        return Task.CompletedTask;
+        await Fixture.CleanupDatabaseAsync();
     }
 
     public virtual async Task DisposeAsync()
     {
         using var _ = TestPerformanceTracker.MeasureTest($"{GetType().Name}.Dispose");
 
-        // Clean up SignalR connections
         foreach (var connection in HubConnections)
         {
             if (connection.State == HubConnectionState.Connected)
@@ -57,18 +56,24 @@ public abstract class AspireIntegrationTestBase : IAsyncLifetime
             await connection.DisposeAsync();
         }
         HubConnections.Clear();
-
-        // Note: Database cleanup is managed by the fixture's lifecycle
-        // Individual tests should clean up their own test data if needed
     }
 
     /// <summary>
     /// Creates an HttpClient for a specific Aspire resource
     /// </summary>
-    /// <param name="resourceName">Name of the resource (e.g., ServiceNames.NocturneApi)</param>
     protected HttpClient CreateHttpClient(string resourceName)
     {
         return Fixture.CreateHttpClient(resourceName);
+    }
+
+    /// <summary>
+    /// Creates an HttpClient with the test API secret header set
+    /// </summary>
+    protected HttpClient CreateAuthenticatedClient()
+    {
+        var client = Fixture.CreateHttpClient(ServiceNames.NocturneApi, "api");
+        client.DefaultRequestHeaders.Add("api-secret", TestApiSecret);
+        return client;
     }
 
     /// <summary>
@@ -83,10 +88,7 @@ public abstract class AspireIntegrationTestBase : IAsyncLifetime
         var connection = new HubConnectionBuilder()
             .WithUrl(
                 new Uri(baseAddress, $"hubs/{ServiceNames.DataHub}"),
-                options =>
-                {
-                    // Configure any authentication or headers as needed
-                }
+                options => { }
             )
             .ConfigureLogging(logging =>
             {
@@ -95,7 +97,30 @@ public abstract class AspireIntegrationTestBase : IAsyncLifetime
             .Build();
 
         HubConnections.Add(connection);
-        await connection.StartAsync();
+        return connection;
+    }
+
+    /// <summary>
+    /// Creates a SignalR connection to the Alarm Hub
+    /// </summary>
+    protected async Task<HubConnection> CreateAlarmHubConnectionAsync()
+    {
+        var baseAddress =
+            ApiClient.BaseAddress
+            ?? throw new InvalidOperationException("API client base address is not configured");
+
+        var connection = new HubConnectionBuilder()
+            .WithUrl(
+                new Uri(baseAddress, $"hubs/alarms"),
+                options => { }
+            )
+            .ConfigureLogging(logging =>
+            {
+                logging.SetMinimumLevel(LogLevel.Warning);
+            })
+            .Build();
+
+        HubConnections.Add(connection);
         return connection;
     }
 
@@ -111,10 +136,7 @@ public abstract class AspireIntegrationTestBase : IAsyncLifetime
         var connection = new HubConnectionBuilder()
             .WithUrl(
                 new Uri(baseAddress, $"hubs/{ServiceNames.NotificationHub}"),
-                options =>
-                {
-                    // Configure any authentication or headers as needed
-                }
+                options => { }
             )
             .ConfigureLogging(logging =>
             {
@@ -123,8 +145,65 @@ public abstract class AspireIntegrationTestBase : IAsyncLifetime
             .Build();
 
         HubConnections.Add(connection);
-        await connection.StartAsync();
         return connection;
+    }
+
+    /// <summary>
+    /// Authorizes a SignalR connection with test credentials
+    /// </summary>
+    protected async Task AuthorizeConnectionAsync(HubConnection connection)
+    {
+        var authData = new
+        {
+            client = "test-client",
+            secret = TestApiSecret,
+            history = 24,
+        };
+
+        try
+        {
+            await connection.InvokeAsync("Authorize", authData);
+        }
+        catch (Exception ex)
+        {
+            Log($"Authorization failed (expected in some tests): {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Subscribes to storage collections on a SignalR connection
+    /// </summary>
+    protected async Task SubscribeToCollectionsAsync(HubConnection connection, string[] collections)
+    {
+        var subscribeData = new { collections };
+
+        try
+        {
+            await connection.InvokeAsync("Subscribe", subscribeData);
+        }
+        catch (Exception ex)
+        {
+            Log($"Subscription failed (expected in some tests): {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Waits for a condition with timeout
+    /// </summary>
+    protected async Task<bool> WaitForEventAsync(Func<bool> condition, TimeSpan? timeout = null)
+    {
+        timeout ??= TimeSpan.FromSeconds(5);
+        var start = DateTime.UtcNow;
+
+        while (DateTime.UtcNow - start < timeout)
+        {
+            if (condition())
+                return true;
+
+            await Task.Delay(100);
+        }
+
+        return false;
     }
 
     /// <summary>

@@ -10,15 +10,15 @@ namespace Nocturne.API.Tests.Integration.Hubs;
 /// Tests real-time data updates and client-server communication
 /// </summary>
 [Parity]
-public class DataHubIntegrationTests : IntegrationTestBase
+public class DataHubIntegrationTests : AspireIntegrationTestBase
 {
     public DataHubIntegrationTests(
-        CustomWebApplicationFactory factory,
-        Xunit.Abstractions.ITestOutputHelper output
+        AspireIntegrationTestFixture fixture,
+        ITestOutputHelper output
     )
-        : base(factory, output) { }
+        : base(fixture, output) { }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task DataHub_Connect_ShouldEstablishConnectionSuccessfully()
     {
@@ -33,7 +33,7 @@ public class DataHubIntegrationTests : IntegrationTestBase
         Output.WriteLine($"Connection established successfully to {connection.ConnectionId}");
     }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task DataHub_Authorize_ShouldAuthenticateClientSuccessfully()
     {
@@ -85,7 +85,7 @@ public class DataHubIntegrationTests : IntegrationTestBase
         );
     }
 
-    [Fact(Skip = "Test needs implementation")]
+    [Fact]
     public async Task DataHub_Subscribe_ShouldSubscribeToStorageCollectionsSuccessfully()
     {
         // Arrange

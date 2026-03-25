@@ -3,6 +3,7 @@ using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Core.Constants;
+using Npgsql;
 using Xunit;
 
 namespace Nocturne.API.Tests.Integration.Infrastructure;
@@ -16,6 +17,7 @@ public class AspireIntegrationTestFixture : IAsyncLifetime
 {
     private DistributedApplication? _app;
     private HttpClient? _apiClient;
+    private string? _postgresConnectionString;
 
     /// <summary>
     /// The distributed application instance managed by Aspire
@@ -36,9 +38,6 @@ public class AspireIntegrationTestFixture : IAsyncLifetime
     /// <summary>
     /// Creates an HttpClient for a specific resource in the Aspire application
     /// </summary>
-    /// <param name="resourceName">Name of the resource (from ServiceNames)</param>
-    /// <param name="endpointName">Optional endpoint name (e.g., "api" for the Nocturne API)</param>
-    /// <returns>Configured HttpClient for the resource</returns>
     public HttpClient CreateHttpClient(string resourceName, string? endpointName = null)
     {
         return endpointName != null
@@ -52,33 +51,28 @@ public class AspireIntegrationTestFixture : IAsyncLifetime
             "AspireIntegrationTestFixture.Initialize"
         );
 
-        // Create the Aspire application host using the testing builder
-        // Pass arguments to configure test environment and disable volumes for containers
         var appHost =
             await DistributedApplicationTestingBuilder.CreateAsync<Projects.Nocturne_Aspire_Host>(
                 [
                     "--environment=Testing",
-                    "UseVolumes=false", // Disable persistent volumes for test isolation
-                    "PostgreSql:UseRemoteDatabase=false", // Always use local container for tests
+                    "UseVolumes=false",
+                    "PostgreSql:UseRemoteDatabase=false",
                 ],
                 configureBuilder: (appOptions, hostSettings) =>
                 {
-                    // Disable the dashboard during tests for faster startup
                     appOptions.DisableDashboard = true;
                 }
             );
 
-        // Build and start the distributed application
         _app = await appHost.BuildAsync();
 
         await _app.StartAsync();
 
-        // Wait for the API to be ready before proceeding
         await WaitForResourceHealthyAsync(ServiceNames.NocturneApi, TimeSpan.FromSeconds(60));
 
-        // Create and cache the API client for convenience
-        // The API endpoint is named "api" in the AppHost configuration
         _apiClient = _app.CreateHttpClient(ServiceNames.NocturneApi, "api");
+
+        _postgresConnectionString = await _app.GetConnectionStringAsync(ServiceNames.PostgreSql);
     }
 
     public async Task DisposeAsync()
@@ -97,15 +91,38 @@ public class AspireIntegrationTestFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// Waits for a resource to become healthy/running
+    /// Truncates all data tables to provide a clean slate between tests.
+    /// Uses raw SQL against the Aspire-managed PostgreSQL instance.
     /// </summary>
+    public async Task CleanupDatabaseAsync()
+    {
+        if (string.IsNullOrEmpty(_postgresConnectionString))
+            return;
+
+        await using var conn = new NpgsqlConnection(_postgresConnectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            TRUNCATE TABLE
+                in_app_notifications,
+                profiles,
+                settings,
+                foods,
+                device_statuses,
+                treatments,
+                entries
+            CASCADE;
+            """;
+        await cmd.ExecuteNonQueryAsync();
+    }
+
     private async Task WaitForResourceHealthyAsync(string resourceName, TimeSpan timeout)
     {
         using var cts = new CancellationTokenSource(timeout);
 
         try
         {
-            // Wait for the resource to become healthy using the Aspire 9+ API
             await _app!.ResourceNotifications.WaitForResourceHealthyAsync(
                 resourceName,
                 cts.Token
@@ -124,7 +141,6 @@ public class AspireIntegrationTestFixture : IAsyncLifetime
     /// </summary>
     public async Task<string?> GetConnectionStringAsync(string resourceName)
     {
-        // Use the Aspire 9+ GetConnectionStringAsync extension method
         return await _app!.GetConnectionStringAsync(resourceName);
     }
 }

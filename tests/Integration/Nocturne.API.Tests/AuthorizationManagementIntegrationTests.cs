@@ -11,20 +11,20 @@ namespace Nocturne.API.Tests.Integration;
 /// Integration tests for authorization management endpoints
 /// </summary>
 [Parity]
-public class AuthorizationManagementIntegrationTests : IntegrationTestBase
+public class AuthorizationManagementIntegrationTests : AspireIntegrationTestBase
 {
     public AuthorizationManagementIntegrationTests(
-        CustomWebApplicationFactory factory,
-        Xunit.Abstractions.ITestOutputHelper output
+        AspireIntegrationTestFixture fixture,
+        ITestOutputHelper output
     )
-        : base(factory, output) { }
+        : base(fixture, output) { }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task AuthorizationManagement_FullWorkflow_WorksCorrectly()
     {
         // Arrange
-        var client = Factory.CreateClient();
+        var client = ApiClient;
 
         // Test requires admin authentication
         // This test demonstrates the complete workflow but would require
@@ -84,12 +84,12 @@ public class AuthorizationManagementIntegrationTests : IntegrationTestBase
         Output.WriteLine($"Create subject endpoint returned: {createSubjectResponse.StatusCode}");
     }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task AuthorizationEndpoints_AreProperlySecured()
     {
         // Arrange
-        var client = Factory.CreateClient();
+        var client = ApiClient;
 
         // Verify all admin endpoints return appropriate responses without authentication
         var endpoints = new[] { "/api/v2/authorization/subjects", "/api/v2/authorization/roles" };
@@ -146,12 +146,12 @@ public class AuthorizationManagementIntegrationTests : IntegrationTestBase
         Output.WriteLine($"Delete role returned: {deleteRoleResponse.StatusCode}");
     }
 
-    [Fact(Skip = "Integration tests are non-functional")]
+    [Fact]
     [Parity]
     public async Task AuthorizationEndpoints_ReturnCorrectContentTypes()
     {
         // Arrange
-        var client = Factory.CreateClient();
+        var client = ApiClient;
 
         // Test that endpoints return JSON content type headers
         var response = await client.GetAsync("/api/v2/authorization/subjects");
