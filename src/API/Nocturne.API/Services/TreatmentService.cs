@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
@@ -10,6 +11,7 @@ namespace Nocturne.API.Services;
 public class TreatmentService : ITreatmentService
 {
     private readonly ITreatmentStore _store;
+    private readonly ITreatmentRepository _repository;
     private readonly ITreatmentCache _cache;
     private readonly ITreatmentEventSink _events;
     private readonly IPatientInsulinRepository _insulinRepo;
@@ -31,12 +33,14 @@ public class TreatmentService : ITreatmentService
 
     public TreatmentService(
         ITreatmentStore store,
+        ITreatmentRepository repository,
         ITreatmentCache cache,
         ITreatmentEventSink events,
         IPatientInsulinRepository insulinRepo,
         ILogger<TreatmentService> logger)
     {
         _store = store;
+        _repository = repository;
         _cache = cache;
         _events = events;
         _insulinRepo = insulinRepo;
@@ -125,7 +129,7 @@ public class TreatmentService : ITreatmentService
     public async Task<Treatment?> PatchTreatmentAsync(
         string id, JsonElement patchData, CancellationToken cancellationToken = default)
     {
-        var patched = await _store.PatchAsync(id, patchData, cancellationToken);
+        var patched = await _repository.PatchTreatmentAsync(id, patchData, cancellationToken);
         if (patched is null) return null;
 
         await _cache.InvalidateAsync(cancellationToken);
@@ -153,7 +157,7 @@ public class TreatmentService : ITreatmentService
     public async Task<long> DeleteTreatmentsAsync(
         string? find = null, CancellationToken cancellationToken = default)
     {
-        var count = await _store.BulkDeleteAsync(find, cancellationToken);
+        var count = await _repository.BulkDeleteTreatmentsAsync(find ?? "{}", cancellationToken);
         if (count > 0)
             await _cache.InvalidateAsync(cancellationToken);
         return count;

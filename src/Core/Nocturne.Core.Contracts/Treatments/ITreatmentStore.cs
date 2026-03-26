@@ -1,12 +1,13 @@
-using System.Text.Json;
 using Nocturne.Core.Models;
 
 namespace Nocturne.Core.Contracts.Treatments;
 
 /// <summary>
-/// Driven port for all treatment persistence. Abstracts dual-path storage
+/// Driven port for treatment persistence. Abstracts dual-path storage
 /// (legacy treatments table + V4 granular tables) behind a single interface.
-/// The adapter handles write routing, read-time merging, decomposition, and projection.
+/// The adapter handles write routing for operations that need dual-path awareness
+/// (create, update, delete), plus read-time merging, decomposition, and projection.
+/// Pure pass-through writes (patch, bulk delete) go directly to ITreatmentRepository.
 /// </summary>
 public interface ITreatmentStore
 {
@@ -15,7 +16,5 @@ public interface ITreatmentStore
     Task<IReadOnlyList<Treatment>> GetModifiedSinceAsync(long lastModifiedMills, int limit, CancellationToken ct = default);
     Task<IReadOnlyList<Treatment>> CreateAsync(IReadOnlyList<Treatment> treatments, CancellationToken ct = default);
     Task<Treatment?> UpdateAsync(string id, Treatment treatment, CancellationToken ct = default);
-    Task<Treatment?> PatchAsync(string id, JsonElement patchData, CancellationToken ct = default);
     Task<bool> DeleteAsync(string id, CancellationToken ct = default);
-    Task<long> BulkDeleteAsync(string? find, CancellationToken ct = default);
 }

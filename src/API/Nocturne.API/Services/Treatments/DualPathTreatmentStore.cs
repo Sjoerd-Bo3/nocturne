@@ -9,6 +9,12 @@ using Nocturne.Infrastructure.Data.Mappers;
 
 namespace Nocturne.API.Services.Treatments;
 
+/// <summary>
+/// Dual-path treatment store that handles reads with merged legacy + V4 data,
+/// and writes that need dual-path awareness (create, update, delete).
+/// Pure pass-through writes (patch, bulk delete) bypass this store entirely
+/// and go directly to ITreatmentRepository via TreatmentService.
+/// </summary>
 public class DualPathTreatmentStore : ITreatmentStore
 {
     private readonly ITreatmentRepository _treatmentRepository;
@@ -175,11 +181,6 @@ public class DualPathTreatmentStore : ITreatmentStore
         return updated;
     }
 
-    public async Task<Treatment?> PatchAsync(string id, JsonElement patchData, CancellationToken ct)
-    {
-        return await _treatmentRepository.PatchTreatmentAsync(id, patchData, ct);
-    }
-
     public async Task<bool> DeleteAsync(string id, CancellationToken ct)
     {
         await _pipeline.DeleteByLegacyIdAsync<Treatment>(id, ct);
@@ -203,11 +204,6 @@ public class DualPathTreatmentStore : ITreatmentStore
         }
 
         return await _treatmentRepository.DeleteTreatmentAsync(id, ct);
-    }
-
-    public async Task<long> BulkDeleteAsync(string? find, CancellationToken ct)
-    {
-        return await _treatmentRepository.BulkDeleteTreatmentsAsync(find ?? "{}", ct);
     }
 
     private async Task<IReadOnlyList<Treatment>> MergeWithTempBasalsAsync(

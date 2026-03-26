@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
@@ -16,6 +17,7 @@ namespace Nocturne.API.Tests.Services;
 public class TreatmentServiceTests
 {
     private readonly Mock<ITreatmentStore> _mockStore;
+    private readonly Mock<ITreatmentRepository> _mockRepo;
     private readonly Mock<ITreatmentCache> _mockCache;
     private readonly Mock<ITreatmentEventSink> _mockEvents;
     private readonly Mock<IPatientInsulinRepository> _mockInsulinRepo;
@@ -25,12 +27,13 @@ public class TreatmentServiceTests
     public TreatmentServiceTests()
     {
         _mockStore = new Mock<ITreatmentStore>();
+        _mockRepo = new Mock<ITreatmentRepository>();
         _mockCache = new Mock<ITreatmentCache>();
         _mockEvents = new Mock<ITreatmentEventSink>();
         _mockInsulinRepo = new Mock<IPatientInsulinRepository>();
         _mockLogger = new Mock<ILogger<TreatmentService>>();
         _treatmentService = new TreatmentService(
-            _mockStore.Object, _mockCache.Object, _mockEvents.Object,
+            _mockStore.Object, _mockRepo.Object, _mockCache.Object, _mockEvents.Object,
             _mockInsulinRepo.Object, _mockLogger.Object);
     }
 
@@ -101,7 +104,7 @@ public class TreatmentServiceTests
     [Fact]
     public async Task DeleteTreatmentsAsync_ShouldInvalidateCacheWhenDeleted()
     {
-        _mockStore.Setup(x => x.BulkDeleteAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(5);
+        _mockRepo.Setup(x => x.BulkDeleteTreatmentsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(5);
         var result = await _treatmentService.DeleteTreatmentsAsync("q", CancellationToken.None);
         result.Should().Be(5);
         _mockCache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -110,7 +113,7 @@ public class TreatmentServiceTests
     [Fact]
     public async Task DeleteTreatmentsAsync_WhenNoneDeleted_ShouldNotInvalidateCache()
     {
-        _mockStore.Setup(x => x.BulkDeleteAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
+        _mockRepo.Setup(x => x.BulkDeleteTreatmentsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
         var result = await _treatmentService.DeleteTreatmentsAsync("q", CancellationToken.None);
         result.Should().Be(0);
         _mockCache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Never);
