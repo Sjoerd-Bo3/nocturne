@@ -1,5 +1,6 @@
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Entries;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services;
@@ -10,17 +11,20 @@ namespace Nocturne.API.Services;
 public class EntryService : IEntryService
 {
     private readonly IEntryStore _store;
+    private readonly IEntryRepository _repository;
     private readonly IEntryCache _cache;
     private readonly IEntryEventSink _events;
     private readonly ILogger<EntryService> _logger;
 
     public EntryService(
         IEntryStore store,
+        IEntryRepository repository,
         IEntryCache cache,
         IEntryEventSink events,
         ILogger<EntryService> logger)
     {
         _store = store;
+        _repository = repository;
         _cache = cache;
         _events = events;
         _logger = logger;
@@ -143,7 +147,7 @@ public class EntryService : IEntryService
         IEnumerable<Entry> entries,
         CancellationToken cancellationToken = default)
     {
-        var created = await _store.CreateAsync(entries.ToList(), cancellationToken);
+        var created = (await _repository.CreateEntriesAsync(entries.ToList(), cancellationToken)).ToList();
 
         await _cache.InvalidateAsync(cancellationToken);
         await _events.OnCreatedAsync(created, cancellationToken);
@@ -157,7 +161,7 @@ public class EntryService : IEntryService
         Entry entry,
         CancellationToken cancellationToken = default)
     {
-        var updated = await _store.UpdateAsync(id, entry, cancellationToken);
+        var updated = await _repository.UpdateEntryAsync(id, entry, cancellationToken);
         if (updated is null) return null;
 
         await _cache.InvalidateAsync(cancellationToken);
@@ -174,7 +178,7 @@ public class EntryService : IEntryService
         await _events.BeforeDeleteAsync(id, cancellationToken);
 
         var entryToDelete = await _store.GetByIdAsync(id, cancellationToken);
-        var deleted = await _store.DeleteAsync(id, cancellationToken);
+        var deleted = await _repository.DeleteEntryAsync(id, cancellationToken);
 
         if (deleted)
         {
@@ -190,7 +194,7 @@ public class EntryService : IEntryService
         string? find = null,
         CancellationToken cancellationToken = default)
     {
-        var deletedCount = await _store.BulkDeleteAsync(find, cancellationToken);
+        var deletedCount = await _repository.BulkDeleteEntriesAsync(find ?? "{}", cancellationToken);
 
         await _cache.InvalidateAsync(cancellationToken);
         await _events.OnBulkDeletedAsync(deletedCount, cancellationToken);

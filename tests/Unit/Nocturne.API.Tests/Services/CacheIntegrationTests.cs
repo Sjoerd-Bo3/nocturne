@@ -26,6 +26,7 @@ namespace Nocturne.API.Tests.Services;
 public class CacheIntegrationTests
 {
     private readonly Mock<IEntryStore> _mockEntryStore;
+    private readonly Mock<IEntryRepository> _mockEntryRepository;
     private readonly Mock<IEntryCache> _mockEntryCache;
     private readonly Mock<IEntryEventSink> _mockEntryEvents;
     private readonly Mock<ICacheService> _mockCacheService;
@@ -37,6 +38,7 @@ public class CacheIntegrationTests
     public CacheIntegrationTests()
     {
         _mockEntryStore = new Mock<IEntryStore>();
+        _mockEntryRepository = new Mock<IEntryRepository>();
         _mockEntryCache = new Mock<IEntryCache>();
         _mockEntryEvents = new Mock<IEntryEventSink>();
         _mockCacheService = new Mock<ICacheService>();
@@ -70,6 +72,7 @@ public class CacheIntegrationTests
 
         var entryService = new EntryService(
             _mockEntryStore.Object,
+            _mockEntryRepository.Object,
             _mockEntryCache.Object,
             _mockEntryEvents.Object,
             _mockEntryLogger.Object
@@ -125,6 +128,7 @@ public class CacheIntegrationTests
 
         var entryService = new EntryService(
             _mockEntryStore.Object,
+            _mockEntryRepository.Object,
             _mockEntryCache.Object,
             _mockEntryEvents.Object,
             _mockEntryLogger.Object
@@ -162,12 +166,13 @@ public class CacheIntegrationTests
             },
         };
 
-        _mockEntryStore
-            .Setup(x => x.CreateAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()))
+        _mockEntryRepository
+            .Setup(x => x.CreateEntriesAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(newEntries);
 
         var entryService = new EntryService(
             _mockEntryStore.Object,
+            _mockEntryRepository.Object,
             _mockEntryCache.Object,
             _mockEntryEvents.Object,
             _mockEntryLogger.Object

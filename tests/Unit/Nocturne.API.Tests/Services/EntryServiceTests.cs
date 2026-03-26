@@ -3,6 +3,7 @@ using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Entries;
+using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 using Xunit;
 
@@ -15,6 +16,7 @@ namespace Nocturne.API.Tests.Services;
 public class EntryServiceTests
 {
     private readonly Mock<IEntryStore> _store = new();
+    private readonly Mock<IEntryRepository> _repository = new();
     private readonly Mock<IEntryCache> _cache = new();
     private readonly Mock<IEntryEventSink> _events = new();
     private readonly EntryService _sut;
@@ -23,6 +25,7 @@ public class EntryServiceTests
     {
         _sut = new EntryService(
             _store.Object,
+            _repository.Object,
             _cache.Object,
             _events.Object,
             Mock.Of<ILogger<EntryService>>());
@@ -344,8 +347,8 @@ public class EntryServiceTests
             Id = Guid.NewGuid().ToString(), Type = e.Type, Sgv = e.Sgv, Mills = e.Mills
         }).ToList();
 
-        _store
-            .Setup(x => x.CreateAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(x => x.CreateEntriesAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdEntries);
 
         // Act
@@ -353,8 +356,8 @@ public class EntryServiceTests
 
         // Assert
         Assert.Equal(2, result.Count());
-        _store.Verify(
-            x => x.CreateAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()),
+        _repository.Verify(
+            x => x.CreateEntriesAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Once);
         _events.Verify(
@@ -373,8 +376,8 @@ public class EntryServiceTests
             new() { Type = "sgv", Sgv = 120, Mills = 1234567890 },
         };
 
-        _store
-            .Setup(x => x.CreateAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(x => x.CreateEntriesAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
@@ -401,8 +404,8 @@ public class EntryServiceTests
         var entry = new Entry { Id = entryId, Type = "sgv", Sgv = 120, Mills = 1234567890 };
         var updatedEntry = new Entry { Id = entryId, Type = "sgv", Sgv = 125, Mills = 1234567890 };
 
-        _store
-            .Setup(x => x.UpdateAsync(entryId, entry, It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(x => x.UpdateEntryAsync(entryId, entry, It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedEntry);
 
         // Act
@@ -425,8 +428,8 @@ public class EntryServiceTests
         // Arrange
         var entry = new Entry { Type = "sgv", Sgv = 120, Mills = 1234567890 };
 
-        _store
-            .Setup(x => x.UpdateAsync("invalidid", entry, It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(x => x.UpdateEntryAsync("invalidid", entry, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Entry?)null);
 
         // Act
@@ -456,8 +459,8 @@ public class EntryServiceTests
         _store
             .Setup(x => x.GetByIdAsync(entryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entryToDelete);
-        _store
-            .Setup(x => x.DeleteAsync(entryId, It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(x => x.DeleteEntryAsync(entryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -468,7 +471,7 @@ public class EntryServiceTests
         _events.Verify(
             x => x.BeforeDeleteAsync(entryId, It.IsAny<CancellationToken>()),
             Times.Once);
-        _store.Verify(x => x.DeleteAsync(entryId, It.IsAny<CancellationToken>()), Times.Once);
+        _repository.Verify(x => x.DeleteEntryAsync(entryId, It.IsAny<CancellationToken>()), Times.Once);
         _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Once);
         _events.Verify(
             x => x.OnDeletedAsync(It.IsAny<Entry?>(), It.IsAny<CancellationToken>()),
@@ -483,8 +486,8 @@ public class EntryServiceTests
         // Arrange
         var entryId = "invalidid";
 
-        _store
-            .Setup(x => x.DeleteAsync(entryId, It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(x => x.DeleteEntryAsync(entryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -513,8 +516,8 @@ public class EntryServiceTests
         // Arrange
         var find = "{\"type\":\"sgv\"}";
 
-        _store
-            .Setup(x => x.BulkDeleteAsync(find, It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(x => x.BulkDeleteEntriesAsync(find, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5L);
 
         // Act
@@ -522,7 +525,7 @@ public class EntryServiceTests
 
         // Assert
         Assert.Equal(5, result);
-        _store.Verify(x => x.BulkDeleteAsync(find, It.IsAny<CancellationToken>()), Times.Once);
+        _repository.Verify(x => x.BulkDeleteEntriesAsync(find, It.IsAny<CancellationToken>()), Times.Once);
         _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Once);
         _events.Verify(
             x => x.OnBulkDeletedAsync(5, It.IsAny<CancellationToken>()),
@@ -537,8 +540,8 @@ public class EntryServiceTests
         // Arrange
         var find = "{\"type\":\"nonexistent\"}";
 
-        _store
-            .Setup(x => x.BulkDeleteAsync(find, It.IsAny<CancellationToken>()))
+        _repository
+            .Setup(x => x.BulkDeleteEntriesAsync(find, It.IsAny<CancellationToken>()))
             .ReturnsAsync(0L);
 
         // Act
@@ -550,6 +553,23 @@ public class EntryServiceTests
         _events.Verify(
             x => x.OnBulkDeletedAsync(0, It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task DeleteEntriesAsync_WithNullFind_DefaultsToEmptyQuery()
+    {
+        // Arrange
+        _repository
+            .Setup(x => x.BulkDeleteEntriesAsync("{}", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(3L);
+
+        // Act
+        var result = await _sut.DeleteEntriesAsync(null, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(3, result);
+        _repository.Verify(x => x.BulkDeleteEntriesAsync("{}", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion

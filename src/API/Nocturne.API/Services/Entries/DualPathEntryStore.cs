@@ -7,8 +7,8 @@ using Nocturne.Core.Models.Entries;
 namespace Nocturne.API.Services.Entries;
 
 /// <summary>
-/// Dual-path entry store that merges legacy entries with V4-projected entries.
-/// Handles demo mode filtering, dual-path merge, and projection decisions.
+/// Read-only entry store that merges legacy entries with V4-projected entries.
+/// Handles demo mode filtering, dual-path merge, and projection decisions for reads.
 /// </summary>
 public class DualPathEntryStore : IEntryStore
 {
@@ -95,26 +95,5 @@ public class DualPathEntryStore : IEntryStore
         int windowMinutes = 5, CancellationToken ct = default)
     {
         return await _entryRepository.CheckForDuplicateEntryAsync(device, type, sgv, mills, windowMinutes, ct);
-    }
-
-    public async Task<IReadOnlyList<Entry>> CreateAsync(IEnumerable<Entry> entries, CancellationToken ct = default)
-    {
-        var created = await _entryRepository.CreateEntriesAsync(entries, ct);
-        return created.ToList();
-    }
-
-    public async Task<Entry?> UpdateAsync(string id, Entry entry, CancellationToken ct = default)
-    {
-        return await _entryRepository.UpdateEntryAsync(id, entry, ct);
-    }
-
-    public async Task<bool> DeleteAsync(string id, CancellationToken ct = default)
-    {
-        return await _entryRepository.DeleteEntryAsync(id, ct);
-    }
-
-    public async Task<long> BulkDeleteAsync(string? find, CancellationToken ct = default)
-    {
-        return await _entryRepository.BulkDeleteEntriesAsync(find ?? "{}", ct);
     }
 }

@@ -3,9 +3,9 @@ using Nocturne.Core.Models;
 namespace Nocturne.Core.Contracts.Entries;
 
 /// <summary>
-/// Driven port for all entry persistence. Abstracts dual-path storage
+/// Driven port for entry reads. Abstracts dual-path storage
 /// (legacy entries table + V4 projected entries) behind a single interface.
-/// The adapter handles write routing, read-time merging, and projection.
+/// The adapter handles read-time merging, projection, and deduplication.
 /// </summary>
 public interface IEntryStore
 {
@@ -14,8 +14,4 @@ public interface IEntryStore
     Task<Entry?> GetByIdAsync(string id, CancellationToken ct = default);
     Task<Entry?> CheckDuplicateAsync(string? device, string type, double? sgv, long mills,
         int windowMinutes = 5, CancellationToken ct = default);
-    Task<IReadOnlyList<Entry>> CreateAsync(IEnumerable<Entry> entries, CancellationToken ct = default);
-    Task<Entry?> UpdateAsync(string id, Entry entry, CancellationToken ct = default);
-    Task<bool> DeleteAsync(string id, CancellationToken ct = default);
-    Task<long> BulkDeleteAsync(string? find, CancellationToken ct = default);
 }
