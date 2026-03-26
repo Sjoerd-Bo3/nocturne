@@ -334,7 +334,7 @@ public class EntryServiceTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Category", "Parity")]
-    public async Task CreateEntriesAsync_CallsStoreAndInvalidatesCacheAndFiresEvent()
+    public async Task CreateEntriesAsync_CallsStoreAndFiresEvent()
     {
         // Arrange
         var entries = new List<Entry>
@@ -359,7 +359,8 @@ public class EntryServiceTests
         _repository.Verify(
             x => x.CreateEntriesAsync(It.IsAny<IEnumerable<Entry>>(), It.IsAny<CancellationToken>()),
             Times.Once);
-        _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // Cache invalidation is handled by the EventSink, not the service
+        _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Never);
         _events.Verify(
             x => x.OnCreatedAsync(It.IsAny<IReadOnlyList<Entry>>(), It.IsAny<CancellationToken>()),
             Times.Once);
@@ -397,7 +398,7 @@ public class EntryServiceTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Category", "Parity")]
-    public async Task UpdateEntryAsync_WhenSuccessful_InvalidatesCacheAndFiresEvent()
+    public async Task UpdateEntryAsync_WhenSuccessful_FiresEvent()
     {
         // Arrange
         var entryId = "60a1b2c3d4e5f6789012345";
@@ -414,7 +415,8 @@ public class EntryServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(125, result.Sgv);
-        _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // Cache invalidation is handled by the EventSink, not the service
+        _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Never);
         _events.Verify(
             x => x.OnUpdatedAsync(It.IsAny<Entry>(), It.IsAny<CancellationToken>()),
             Times.Once);
@@ -472,7 +474,8 @@ public class EntryServiceTests
             x => x.BeforeDeleteAsync(entryId, It.IsAny<CancellationToken>()),
             Times.Once);
         _repository.Verify(x => x.DeleteEntryAsync(entryId, It.IsAny<CancellationToken>()), Times.Once);
-        _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // Cache invalidation is handled by the EventSink, not the service
+        _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Never);
         _events.Verify(
             x => x.OnDeletedAsync(It.IsAny<Entry?>(), It.IsAny<CancellationToken>()),
             Times.Once);
@@ -511,7 +514,7 @@ public class EntryServiceTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Category", "Parity")]
-    public async Task DeleteEntriesAsync_CallsStoreAndInvalidatesAndFiresEvent()
+    public async Task DeleteEntriesAsync_CallsStoreAndFiresEvent()
     {
         // Arrange
         var find = "{\"type\":\"sgv\"}";
@@ -526,7 +529,8 @@ public class EntryServiceTests
         // Assert
         Assert.Equal(5, result);
         _repository.Verify(x => x.BulkDeleteEntriesAsync(find, It.IsAny<CancellationToken>()), Times.Once);
-        _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // Cache invalidation is handled by the EventSink, not the service
+        _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Never);
         _events.Verify(
             x => x.OnBulkDeletedAsync(5, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -535,7 +539,7 @@ public class EntryServiceTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Category", "Parity")]
-    public async Task DeleteEntriesAsync_WithNoMatches_StillInvalidatesAndFiresEvent()
+    public async Task DeleteEntriesAsync_WithNoMatches_StillFiresEvent()
     {
         // Arrange
         var find = "{\"type\":\"nonexistent\"}";
@@ -549,7 +553,8 @@ public class EntryServiceTests
 
         // Assert
         Assert.Equal(0, result);
-        _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // Cache invalidation is handled by the EventSink, not the service
+        _cache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Never);
         _events.Verify(
             x => x.OnBulkDeletedAsync(0, It.IsAny<CancellationToken>()),
             Times.Once);

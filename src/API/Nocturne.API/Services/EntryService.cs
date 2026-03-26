@@ -149,7 +149,6 @@ public class EntryService : IEntryService
     {
         var created = (await _repository.CreateEntriesAsync(entries.ToList(), cancellationToken)).ToList();
 
-        await _cache.InvalidateAsync(cancellationToken);
         await _events.OnCreatedAsync(created, cancellationToken);
 
         return created;
@@ -164,7 +163,6 @@ public class EntryService : IEntryService
         var updated = await _repository.UpdateEntryAsync(id, entry, cancellationToken);
         if (updated is null) return null;
 
-        await _cache.InvalidateAsync(cancellationToken);
         await _events.OnUpdatedAsync(updated, cancellationToken);
 
         return updated;
@@ -182,7 +180,6 @@ public class EntryService : IEntryService
 
         if (deleted)
         {
-            await _cache.InvalidateAsync(cancellationToken);
             await _events.OnDeletedAsync(entryToDelete, cancellationToken);
         }
 
@@ -196,7 +193,6 @@ public class EntryService : IEntryService
     {
         var deletedCount = await _repository.BulkDeleteEntriesAsync(find ?? "{}", cancellationToken);
 
-        await _cache.InvalidateAsync(cancellationToken);
         await _events.OnBulkDeletedAsync(deletedCount, cancellationToken);
 
         return deletedCount;
