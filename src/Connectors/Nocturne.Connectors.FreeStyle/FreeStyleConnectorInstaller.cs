@@ -1,11 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Connectors.Core.Services;
-using Nocturne.Connectors.Core.Utilities;
 using Nocturne.Connectors.FreeStyle.Configurations;
 using Nocturne.Connectors.FreeStyle.Services;
 
@@ -17,16 +15,25 @@ public class FreeStyleConnectorInstaller : IConnectorInstaller
 
     public void Install(IServiceCollection services, IConfiguration configuration)
     {
-        var libreConfig = services.AddConnectorConfiguration<LibreLinkUpConnectorConfiguration>(
+        var config = services.AddConnector<LibreLinkUpConnectorConfiguration, LibreConnectorService, LibreLinkAuthTokenProvider>(
             configuration,
-            "LibreLinkUp"
-        );
-        if (!libreConfig.Enabled)
+            new LibreLinkUpConnectorOptions());
+
+        if (config == null)
             return;
 
-        var server = ConnectorServerResolver.Resolve(
-            libreConfig.Region,
-            new Dictionary<string, string>
+        services.AddConnectorTokenProvider<LibreLinkAuthTokenProvider>();
+        services.AddConnectorSyncExecutor<FreeStyleSyncExecutor>();
+    }
+
+    private sealed class LibreLinkUpConnectorOptions : ConnectorOptions
+    {
+        [SetsRequiredMembers]
+        public LibreLinkUpConnectorOptions()
+        {
+            ConnectorName = "LibreLinkUp";
+            DefaultServer = LibreLinkUpConstants.Endpoints.Eu;
+            ServerMapping = new Dictionary<string, string>
             {
                 ["AE"] = LibreLinkUpConstants.Endpoints.Ae,
                 ["AP"] = LibreLinkUpConstants.Endpoints.Ap,
@@ -38,32 +45,14 @@ public class FreeStyleConnectorInstaller : IConnectorInstaller
                 ["FR"] = LibreLinkUpConstants.Endpoints.Fr,
                 ["JP"] = LibreLinkUpConstants.Endpoints.Jp,
                 ["US"] = LibreLinkUpConstants.Endpoints.Us
-            },
-            LibreLinkUpConstants.Endpoints.Eu
-        );
-
-        var libreHeaders = new Dictionary<string, string>
-        {
-            ["Version"] = "4.16.0",
-            ["Product"] = "llu.android"
-        };
-        services.AddHttpClient<LibreConnectorService>()
-            .ConfigureConnectorClient(server, additionalHeaders: libreHeaders);
-        services.AddHttpClient<LibreLinkAuthTokenProvider>()
-            .ConfigureConnectorClient(server, additionalHeaders: libreHeaders);
-
-        // Register as Singleton to preserve token cache across requests
-        services.AddSingleton(sp =>
-        {
-            var factory = sp.GetRequiredService<IHttpClientFactory>();
-            var httpClient = factory.CreateClient(nameof(LibreLinkAuthTokenProvider));
-            var config = sp.GetRequiredService<IOptions<LibreLinkUpConnectorConfiguration>>();
-            var logger = sp.GetRequiredService<ILogger<LibreLinkAuthTokenProvider>>();
-            var retryStrategy = sp.GetRequiredService<IRetryDelayStrategy>();
-            return new LibreLinkAuthTokenProvider(config, httpClient, logger, retryStrategy);
-        });
-
-        services.AddScoped<IConnectorSyncExecutor, FreeStyleSyncExecutor>();
+            };
+            GetServerRegion = config => ((LibreLinkUpConnectorConfiguration)config).Region;
+            AdditionalHeaders = new Dictionary<string, string>
+            {
+                ["Version"] = "4.16.0",
+                ["Product"] = "llu.android"
+            };
+        }
     }
 }
 

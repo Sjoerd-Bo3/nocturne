@@ -53,6 +53,11 @@ public abstract class ConnectorOptions
     public TimeSpan? Timeout { get; init; }
 
     /// <summary>
+    ///     Connection timeout
+    /// </summary>
+    public TimeSpan? ConnectTimeout { get; init; }
+
+    /// <summary>
     ///     Whether to add resilience policies (retry, circuit breaker)
     /// </summary>
     public bool AddResilience { get; init; }
@@ -113,21 +118,8 @@ public static class ConnectorServiceCollectionExtensions
             if (!config.Enabled)
                 return null;
 
-            // Resolve server URL if mapping is provided
-            string? serverUrl = null;
-            if (options is { ServerMapping: not null, GetServerRegion: not null })
-            {
-                var region = options.GetServerRegion(config);
-                serverUrl = ConnectorServerResolver.Resolve(
-                    region,
-                    options.ServerMapping,
-                    options.DefaultServer ?? options.ServerMapping.Values.FirstOrDefault() ?? ""
-                );
-            }
-            else if (options.DefaultServer != null)
-            {
-                serverUrl = options.DefaultServer;
-            }
+            // Resolve server URL
+            var serverUrl = ResolveServerUrl(config, options);
 
             // Register HttpClients with configuration
             if (serverUrl != null)
@@ -138,7 +130,8 @@ public static class ConnectorServiceCollectionExtensions
                         options.AdditionalHeaders,
                         options.UserAgent,
                         options.Timeout,
-                        addResilience: options.AddResilience
+                        options.ConnectTimeout,
+                        options.AddResilience
                     );
 
                 services.AddHttpClient<TTokenProvider>()
@@ -147,7 +140,8 @@ public static class ConnectorServiceCollectionExtensions
                         options.AdditionalHeaders,
                         options.UserAgent,
                         options.Timeout,
-                        addResilience: options.AddResilience
+                        options.ConnectTimeout,
+                        options.AddResilience
                     );
             }
             else
@@ -178,21 +172,8 @@ public static class ConnectorServiceCollectionExtensions
             if (!config.Enabled)
                 return null;
 
-            // Resolve server URL if mapping is provided
-            string? serverUrl = null;
-            if (options.ServerMapping != null && options.GetServerRegion != null)
-            {
-                var region = options.GetServerRegion(config);
-                serverUrl = ConnectorServerResolver.Resolve(
-                    region,
-                    options.ServerMapping,
-                    options.DefaultServer ?? options.ServerMapping.Values.FirstOrDefault() ?? ""
-                );
-            }
-            else if (options.DefaultServer != null)
-            {
-                serverUrl = options.DefaultServer;
-            }
+            // Resolve server URL
+            var serverUrl = ResolveServerUrl(config, options);
 
             // Register HttpClient with configuration
             if (serverUrl != null)
@@ -203,7 +184,8 @@ public static class ConnectorServiceCollectionExtensions
                         options.AdditionalHeaders,
                         options.UserAgent,
                         options.Timeout,
-                        addResilience: options.AddResilience
+                        options.ConnectTimeout,
+                        options.AddResilience
                     );
             }
             else
@@ -212,6 +194,36 @@ public static class ConnectorServiceCollectionExtensions
             }
 
             return config;
+        }
+
+        /// <summary>
+        ///     Registers a token provider as a singleton, resolving the named HttpClient
+        ///     from IHttpClientFactory and all other constructor dependencies from DI.
+        ///     This replaces the manual factory lambda pattern used across connector installers.
+        /// </summary>
+        /// <typeparam name="TTokenProvider">Token provider type (must have a public constructor)</typeparam>
+        public IServiceCollection AddConnectorTokenProvider<TTokenProvider>()
+            where TTokenProvider : class
+        {
+            services.AddSingleton(sp =>
+            {
+                var factory = sp.GetRequiredService<IHttpClientFactory>();
+                var httpClient = factory.CreateClient(typeof(TTokenProvider).Name);
+                return ActivatorUtilities.CreateInstance<TTokenProvider>(sp, httpClient);
+            });
+
+            return services;
+        }
+
+        /// <summary>
+        ///     Registers a sync executor as a scoped IConnectorSyncExecutor.
+        /// </summary>
+        /// <typeparam name="TSyncExecutor">Sync executor type</typeparam>
+        public IServiceCollection AddConnectorSyncExecutor<TSyncExecutor>()
+            where TSyncExecutor : class, IConnectorSyncExecutor
+        {
+            services.AddScoped<IConnectorSyncExecutor, TSyncExecutor>();
+            return services;
         }
 
         /// <summary>
@@ -317,5 +329,22 @@ public static class ConnectorServiceCollectionExtensions
 
             return services;
         }
+    }
+
+    /// <summary>
+    ///     Resolves the server URL from connector options and configuration.
+    ///     When a server mapping is provided but the region value doesn't match any key,
+    ///     the region value itself is used as the server URL (allowing direct URL configuration).
+    /// </summary>
+    private static string? ResolveServerUrl(BaseConnectorConfiguration config, ConnectorOptions options)
+    {
+        if (options is { ServerMapping: not null, GetServerRegion: not null })
+        {
+            var region = options.GetServerRegion(config);
+            var defaultServer = options.DefaultServer ?? region ?? options.ServerMapping.Values.FirstOrDefault() ?? "";
+            return ConnectorServerResolver.Resolve(region, options.ServerMapping, defaultServer);
+        }
+
+        return options.DefaultServer;
     }
 }

@@ -1,11 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Connectors.Core.Services;
-using Nocturne.Connectors.Core.Utilities;
 using Nocturne.Connectors.Dexcom.Configurations;
 using Nocturne.Connectors.Dexcom.Services;
 
@@ -17,39 +15,31 @@ public class DexcomConnectorInstaller : IConnectorInstaller
 
     public void Install(IServiceCollection services, IConfiguration configuration)
     {
-        var dexcomConfig = services.AddConnectorConfiguration<DexcomConnectorConfiguration>(
+        var config = services.AddConnector<DexcomConnectorConfiguration, DexcomConnectorService, DexcomAuthTokenProvider>(
             configuration,
-            "Dexcom"
-        );
-        if (!dexcomConfig.Enabled)
+            new DexcomConnectorOptions());
+
+        if (config == null)
             return;
 
-        var serverUrl = ConnectorServerResolver.Resolve(
-            dexcomConfig.Server,
-            new Dictionary<string, string>
+        services.AddConnectorTokenProvider<DexcomAuthTokenProvider>();
+        services.AddConnectorSyncExecutor<DexcomSyncExecutor>();
+    }
+
+    private sealed class DexcomConnectorOptions : ConnectorOptions
+    {
+        [SetsRequiredMembers]
+        public DexcomConnectorOptions()
+        {
+            ConnectorName = "Dexcom";
+            ServerMapping = new Dictionary<string, string>
             {
                 ["US"] = DexcomConstants.Servers.Us,
                 ["EU"] = DexcomConstants.Servers.Ous,
                 ["OUS"] = DexcomConstants.Servers.Ous
-            },
-            dexcomConfig.Server
-        );
-
-        services.AddHttpClient<DexcomConnectorService>().ConfigureConnectorClient(serverUrl);
-        services.AddHttpClient<DexcomAuthTokenProvider>().ConfigureConnectorClient(serverUrl);
-
-        // Register as Singleton to preserve token cache across requests
-        services.AddSingleton(sp =>
-        {
-            var factory = sp.GetRequiredService<IHttpClientFactory>();
-            var httpClient = factory.CreateClient(nameof(DexcomAuthTokenProvider));
-            var config = sp.GetRequiredService<IOptions<DexcomConnectorConfiguration>>();
-            var logger = sp.GetRequiredService<ILogger<DexcomAuthTokenProvider>>();
-            var retryStrategy = sp.GetRequiredService<IRetryDelayStrategy>();
-            return new DexcomAuthTokenProvider(config, httpClient, logger, retryStrategy);
-        });
-
-        services.AddScoped<IConnectorSyncExecutor, DexcomSyncExecutor>();
+            };
+            GetServerRegion = config => ((DexcomConnectorConfiguration)config).Server;
+        }
     }
 }
 
