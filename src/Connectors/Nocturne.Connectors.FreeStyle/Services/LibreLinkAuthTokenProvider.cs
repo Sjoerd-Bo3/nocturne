@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Connectors.Core.Services;
 using Nocturne.Connectors.FreeStyle.Configurations;
@@ -64,23 +63,9 @@ public class LibreLinkAuthTokenProvider(
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-
-                    if (response.IsRetryableError())
-                    {
-                        _logger.LogWarning(
-                            "LibreLinkUp authentication failed with retryable error on attempt {Attempt}: {StatusCode} - {Error}",
-                            attempt + 1,
-                            response.StatusCode,
-                            errorContent);
-                        return (null, true);
-                    }
-
-                    _logger.LogError(
-                        "LibreLinkUp authentication failed with non-retryable error: {StatusCode} - {Error}",
-                        response.StatusCode,
-                        errorContent);
-                    return (null, false);
+                    var shouldRetry = await HandleErrorResponseAsync(
+                        response, "LibreLinkUp authentication", cancellationToken);
+                    return (null, shouldRetry);
                 }
 
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);

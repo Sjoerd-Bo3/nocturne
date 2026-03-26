@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Connectors.Core.Services;
 using Nocturne.Connectors.Dexcom.Configurations;
@@ -90,21 +89,7 @@ public class DexcomAuthTokenProvider(
 
         if (!response.IsSuccessStatusCode)
         {
-            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            if (response.IsRetryableError())
-            {
-                _logger.LogWarning(
-                    "Dexcom authentication failed with retryable error: {StatusCode} - {Error}",
-                    response.StatusCode,
-                    errorContent);
-                return null;
-            }
-
-            _logger.LogError(
-                "Dexcom authentication failed with non-retryable error: {StatusCode} - {Error}",
-                response.StatusCode,
-                errorContent);
+            await HandleErrorResponseAsync(response, "Dexcom authentication", cancellationToken);
             return null;
         }
 
@@ -135,21 +120,7 @@ public class DexcomAuthTokenProvider(
 
         if (!response.IsSuccessStatusCode)
         {
-            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            if (response.IsRetryableError())
-            {
-                _logger.LogWarning(
-                    "Dexcom session creation failed with retryable error: {StatusCode} - {Error}",
-                    response.StatusCode,
-                    errorContent);
-                return null;
-            }
-
-            _logger.LogError(
-                "Dexcom session creation failed with non-retryable error: {StatusCode} - {Error}",
-                response.StatusCode,
-                errorContent);
+            await HandleErrorResponseAsync(response, "Dexcom session creation", cancellationToken);
             return null;
         }
 

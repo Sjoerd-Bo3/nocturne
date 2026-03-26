@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
 
 namespace Nocturne.Connectors.Core.Services;
@@ -156,6 +157,40 @@ public abstract class AuthTokenProviderBase<TConfig>(
 
         _logger.LogError("{OperationName} failed after {MaxRetries} attempts", operationName, maxRetries);
         return null;
+    }
+
+    /// <summary>
+    ///     Reads the error response body from a failed HTTP response, logs it with the appropriate
+    ///     severity based on whether the error is retryable, and returns whether a retry is warranted.
+    ///     This consolidates the common error handling pattern used across connector token providers.
+    /// </summary>
+    /// <param name="response">The failed HTTP response (caller must verify !IsSuccessStatusCode before calling)</param>
+    /// <param name="operationName">A human-readable name for the operation, used in log messages</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>True if the error is retryable and the caller should retry; false otherwise</returns>
+    protected async Task<bool> HandleErrorResponseAsync(
+        HttpResponseMessage response,
+        string operationName,
+        CancellationToken cancellationToken)
+    {
+        var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (response.IsRetryableError())
+        {
+            _logger.LogWarning(
+                "{OperationName} failed with retryable error: {StatusCode} - {Error}",
+                operationName,
+                response.StatusCode,
+                errorContent);
+            return true;
+        }
+
+        _logger.LogError(
+            "{OperationName} failed with non-retryable error: {StatusCode} - {Error}",
+            operationName,
+            response.StatusCode,
+            errorContent);
+        return false;
     }
 
     protected void Dispose(bool disposing)

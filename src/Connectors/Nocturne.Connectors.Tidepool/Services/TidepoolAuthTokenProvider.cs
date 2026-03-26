@@ -2,7 +2,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Connectors.Core.Services;
 using Nocturne.Connectors.Core.Utilities;
@@ -89,21 +88,7 @@ public class TidepoolAuthTokenProvider(
 
         if (!response.IsSuccessStatusCode)
         {
-            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            if (response.IsRetryableError())
-            {
-                _logger.LogWarning(
-                    "Tidepool authentication failed with retryable error: {StatusCode} - {Error}",
-                    response.StatusCode,
-                    errorContent);
-                return null;
-            }
-
-            _logger.LogError(
-                "Tidepool authentication failed with non-retryable error: {StatusCode} - {Error}",
-                response.StatusCode,
-                errorContent);
+            await HandleErrorResponseAsync(response, "Tidepool authentication", cancellationToken);
             return null;
         }
 
