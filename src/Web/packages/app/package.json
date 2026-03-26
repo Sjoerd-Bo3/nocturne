@@ -70,6 +70,7 @@
     "happy-dom": "^20.5.3",
     "layerchart": "2.0.0-next.43",
     "mode-watcher": "^1.1.0",
+    "openapi-remote-codegen": "^0.1.0",
     "paneforge": "^1.0.2",
     "prettier": "^3.8.1",
     "prettier-plugin-jsdoc": "^1.8.0",

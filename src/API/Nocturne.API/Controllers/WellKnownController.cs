@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Nocturne.API.Attributes;
+using OpenApi.Remote.Attributes;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Core.Models.Configuration;
 

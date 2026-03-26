@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Nocturne.API.Attributes;
+using OpenApi.Remote.Attributes;
 using Nocturne.Core.Contracts;
 
 namespace Nocturne.API.Controllers.V2;

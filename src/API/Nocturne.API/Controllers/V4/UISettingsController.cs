@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using Nocturne.API.Attributes;
+using OpenApi.Remote.Attributes;
 using Nocturne.Connectors.Core.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Configuration;

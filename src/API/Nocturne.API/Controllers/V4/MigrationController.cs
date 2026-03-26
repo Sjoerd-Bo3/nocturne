@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Nocturne.API.Attributes;
+using OpenApi.Remote.Attributes;
 using Nocturne.API.Services.Migration;
 
 namespace Nocturne.API.Controllers.V4;

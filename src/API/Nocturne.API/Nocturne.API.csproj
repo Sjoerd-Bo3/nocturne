@@ -30,6 +30,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" />
     <PackageReference Include="NSwag.AspNetCore" />
+    <PackageReference Include="OpenApiRemoteCodegen.Attributes" />
     <PackageReference Include="NSwag.MSBuild">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

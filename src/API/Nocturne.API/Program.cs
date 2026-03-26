@@ -7,7 +7,7 @@ using Nocturne.API.Extensions;
 using Nocturne.API.Hubs;
 using Nocturne.API.Middleware;
 using Nocturne.API.Multitenancy;
-using Nocturne.API.OpenApi;
+using OpenApi.Remote.Processors;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Infrastructure.Cache.Extensions;
