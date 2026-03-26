@@ -1,0 +1,25 @@
+﻿{
+  StatusCode: 200,
+  ContentType: application/json; charset=utf-8,
+  Body: {
+    status: 200,
+    result: [
+      {
+        identifier: aaaaaaaaaaaaaaaaaaaaa001,
+        srvModified: {Scrubbed},
+        srvCreated: {Scrubbed},
+        _id: aaaaaaaaaaaaaaaaaaaaa001,
+        date: {Scrubbed},
+        mills: {Scrubbed},
+        dateString: {Scrubbed},
+        sysTime: {Scrubbed},
+        mgdl: 145,
+        sgv: 145,
+        direction: FortyFiveUp,
+        type: sgv,
+        device: xDrip-DexcomG6,
+        isValid: true
+      }
+    ]
+  }
+}

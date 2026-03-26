@@ -1,0 +1,8 @@
+﻿{
+  StatusCode: 500,
+  ContentType: application/json; charset=utf-8,
+  Body: {
+    status: 500,
+    message: Internal server error
+  }
+}

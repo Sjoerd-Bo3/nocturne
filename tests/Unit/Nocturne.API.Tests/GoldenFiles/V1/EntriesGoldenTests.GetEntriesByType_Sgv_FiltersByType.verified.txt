@@ -1,0 +1,45 @@
+﻿{
+  StatusCode: 200,
+  ContentType: application/json; charset=utf-8,
+  Body: [
+    {
+      _id: aaaaaaaaaaaaaaaaaaaaa001,
+      date: 1711454400000,
+      mills: 1711454400000,
+      dateString: DateTimeOffset_1,
+      sysTime: DateTimeOffset_1,
+      mgdl: 120,
+      sgv: 120,
+      direction: Flat,
+      type: sgv,
+      device: xDrip-DexcomG6,
+      isValid: true
+    },
+    {
+      _id: aaaaaaaaaaaaaaaaaaaaa002,
+      date: 1711454100000,
+      mills: 1711454100000,
+      dateString: DateTimeOffset_2,
+      sysTime: DateTimeOffset_2,
+      mgdl: 120,
+      sgv: 120,
+      direction: Flat,
+      type: sgv,
+      device: xDrip-DexcomG6,
+      isValid: true
+    },
+    {
+      _id: aaaaaaaaaaaaaaaaaaaaa003,
+      date: 1711453800000,
+      mills: 1711453800000,
+      dateString: DateTimeOffset_3,
+      sysTime: DateTimeOffset_3,
+      mgdl: 120,
+      sgv: 120,
+      direction: Flat,
+      type: sgv,
+      device: xDrip-DexcomG6,
+      isValid: true
+    }
+  ]
+}

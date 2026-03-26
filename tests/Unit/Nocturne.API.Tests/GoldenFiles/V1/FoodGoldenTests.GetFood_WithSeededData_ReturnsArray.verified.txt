@@ -1,0 +1,54 @@
+﻿{
+  StatusCode: 200,
+  ContentType: application/json; charset=utf-8,
+  Body: [
+    {
+      _id: eeeeeeeeeeeeeeeeeeeee001,
+      type: food,
+      category: Fruits,
+      subcategory: Fresh,
+      name: Apple,
+      portion: 100,
+      carbs: 14,
+      fat: 0.2,
+      protein: 0.3,
+      energy: 52,
+      gi: 2,
+      unit: g,
+      position: 99999,
+      created_at: DateTimeOffset_1
+    },
+    {
+      _id: eeeeeeeeeeeeeeeeeeeee002,
+      type: food,
+      category: Fruits,
+      subcategory: Fresh,
+      name: Banana,
+      portion: 120,
+      carbs: 23,
+      fat: 0.3,
+      protein: 1.1,
+      energy: 89,
+      gi: 2,
+      unit: g,
+      position: 99999,
+      created_at: DateTimeOffset_1
+    },
+    {
+      _id: eeeeeeeeeeeeeeeeeeeee003,
+      type: food,
+      category: Fruits,
+      subcategory: Fresh,
+      name: Rice,
+      portion: 100,
+      carbs: 28,
+      fat: 0.3,
+      protein: 2.7,
+      energy: 130,
+      gi: 2,
+      unit: g,
+      position: 99999,
+      created_at: DateTimeOffset_1
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+﻿{
+  StatusCode: 200,
+  ContentType: application/json; charset=utf-8,
+  Body: [
+    {
+      _id: aaaaaaaaaaaaaaaaaaaaa099,
+      date: 1711454400000,
+      mills: 1711454400000,
+      dateString: DateTimeOffset_1,
+      sysTime: DateTimeOffset_1,
+      mgdl: 145,
+      sgv: 145,
+      direction: FortyFiveUp,
+      trend: 3,
+      trendRate: 1.5,
+      type: sgv,
+      device: xDrip-DexcomG6,
+      delta: 3.5,
+      utcOffset: 0,
+      noise: 1,
+      filtered: 162000,
+      unfiltered: 163000,
+      rssi: -75,
+      isValid: true
+    }
+  ]
+}

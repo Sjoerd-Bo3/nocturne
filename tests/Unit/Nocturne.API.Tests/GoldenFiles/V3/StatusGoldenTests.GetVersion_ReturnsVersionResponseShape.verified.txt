@@ -1,0 +1,12 @@
+﻿{
+  StatusCode: 200,
+  ContentType: application/json; charset=utf-8,
+  Body: {
+    version: 0.0.0.0,
+    name: Nocturne.API,
+    serverTime: {Scrubbed},
+    head: unknown,
+    build: {Scrubbed},
+    apiCompatibility: Nightscout v15.0
+  }
+}

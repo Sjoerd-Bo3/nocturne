@@ -1,0 +1,57 @@
+﻿{
+  StatusCode: 200,
+  ContentType: application/json; charset=utf-8,
+  Body: {
+    status: 200,
+    result: [
+      {
+        identifier: aaaaaaaaaaaaaaaaaaaaa003,
+        srvModified: {Scrubbed},
+        srvCreated: {Scrubbed},
+        _id: aaaaaaaaaaaaaaaaaaaaa003,
+        date: {Scrubbed},
+        mills: {Scrubbed},
+        dateString: {Scrubbed},
+        sysTime: {Scrubbed},
+        mgdl: 120,
+        sgv: 120,
+        direction: Flat,
+        type: sgv,
+        device: xDrip-DexcomG6,
+        isValid: true
+      },
+      {
+        identifier: aaaaaaaaaaaaaaaaaaaaa002,
+        srvModified: {Scrubbed},
+        srvCreated: {Scrubbed},
+        _id: aaaaaaaaaaaaaaaaaaaaa002,
+        date: {Scrubbed},
+        mills: {Scrubbed},
+        dateString: {Scrubbed},
+        sysTime: {Scrubbed},
+        mgdl: 110,
+        sgv: 110,
+        direction: Flat,
+        type: sgv,
+        device: xDrip-DexcomG6,
+        isValid: true
+      },
+      {
+        identifier: aaaaaaaaaaaaaaaaaaaaa001,
+        srvModified: {Scrubbed},
+        srvCreated: {Scrubbed},
+        _id: aaaaaaaaaaaaaaaaaaaaa001,
+        date: {Scrubbed},
+        mills: {Scrubbed},
+        dateString: {Scrubbed},
+        sysTime: {Scrubbed},
+        mgdl: 100,
+        sgv: 100,
+        direction: Flat,
+        type: sgv,
+        device: xDrip-DexcomG6,
+        isValid: true
+      }
+    ]
+  }
+}

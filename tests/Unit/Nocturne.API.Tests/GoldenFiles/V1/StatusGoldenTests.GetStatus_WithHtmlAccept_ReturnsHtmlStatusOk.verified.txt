@@ -1,0 +1,5 @@
+﻿{
+  StatusCode: 200,
+  ContentType: text/html,
+  Body: <h1>STATUS OK</h1>
+}

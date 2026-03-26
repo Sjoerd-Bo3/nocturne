@@ -1,0 +1,32 @@
+﻿{
+  StatusCode: 201,
+  ContentType: application/json; charset=utf-8,
+  Body: [
+    {
+      _id: {Scrubbed},
+      date: {Scrubbed},
+      mills: {Scrubbed},
+      dateString: DateTimeOffset_1,
+      sysTime: {Scrubbed},
+      sgv: 150,
+      direction: Flat,
+      type: sgv,
+      device: xDrip-DexcomG6,
+      utcOffset: 0,
+      isValid: true
+    },
+    {
+      _id: {Scrubbed},
+      date: {Scrubbed},
+      mills: {Scrubbed},
+      dateString: DateTimeOffset_2,
+      sysTime: {Scrubbed},
+      sgv: 155,
+      direction: FortyFiveUp,
+      type: sgv,
+      device: xDrip-DexcomG6,
+      utcOffset: 0,
+      isValid: true
+    }
+  ]
+}
