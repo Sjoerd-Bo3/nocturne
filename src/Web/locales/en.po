@@ -1115,6 +1115,7 @@ msgstr "Delete the attribution entries entirely."
 #: src/lib/components/settings/AlarmProfileDialog.svelte
 #: src/lib/components/settings/ApiTokens.svelte
 #: src/lib/components/settings/ApiTokens.svelte
+#: src/lib/components/settings/ConnectorConfigForm.svelte
 #: src/lib/components/settings/CustomSoundUpload.svelte
 #: src/lib/components/settings/notifications/webhooks/WebhookSettingsModal.svelte
 #: src/lib/components/trackers/TrackerCompletionDialog.svelte
@@ -3490,9 +3491,7 @@ msgstr "Source:"
 msgid "<0/> Add Section"
 msgstr "<0/> Add Section"
 
-#: src/lib/components/connectors/ConnectorSetup.svelte
 #: src/lib/components/entries/EntryEditDialog.svelte
-#: src/lib/components/settings/ConnectorConfigForm.svelte
 #: src/lib/components/settings/ConnectorConfigForm.svelte
 #: src/lib/components/treatments/TreatmentFoodEntryEditDialog.svelte
 #: src/lib/components/treatments/TreatmentFoodSelectorDialog.svelte
@@ -5377,9 +5376,8 @@ msgstr "Maximum: {0}"
 msgid "{0} settings"
 msgstr "{0} settings"
 
-#: src/lib/components/settings/ConnectorConfigForm.svelte
-msgid "<0/> Save Configuration"
-msgstr "<0/> Save Configuration"
+#~ msgid "<0/> Save Configuration"
+#~ msgstr "<0/> Save Configuration"
 
 #: src/lib/components/settings/ConnectorConfigForm.svelte
 msgid "<0/> Credentials"
@@ -5408,9 +5406,8 @@ msgstr "Enter to update (leave blank to keep current)"
 msgid "Environment variable: <0/>"
 msgstr "Environment variable: <0/>"
 
-#: src/lib/components/settings/ConnectorConfigForm.svelte
-msgid "<0/> Update Credentials"
-msgstr "<0/> Update Credentials"
+#~ msgid "<0/> Update Credentials"
+#~ msgstr "<0/> Update Credentials"
 
 #: src/lib/components/settings/AlarmPreview.svelte
 #: src/lib/components/settings/CustomSoundUpload.svelte
@@ -10814,6 +10811,7 @@ msgstr ""
 msgid "<0/> Create"
 msgstr "<0/> Create"
 
+#: src/lib/components/settings/ConnectorConfigForm.svelte
 #: src/routes/settings/admin/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/alerts/+page.svelte
@@ -11159,9 +11157,6 @@ msgid "Sync started"
 msgstr "Sync started"
 
 #: src/lib/components/connectors/ConnectorSetup.svelte
-#: src/lib/components/connectors/ConnectorSetup.svelte
-#: src/lib/components/connectors/ConnectorSetup.svelte
-#: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
 #: src/routes/settings/connectors/+page.svelte
@@ -13785,14 +13780,11 @@ msgid "Failed to load connector configuration"
 msgstr "Failed to load connector configuration"
 
 #: src/lib/components/connectors/ConnectorSetup.svelte
-#: src/lib/components/connectors/ConnectorSetup.svelte
 msgid "Failed to save configuration"
 msgstr "Failed to save configuration"
 
-#: src/lib/components/connectors/ConnectorSetup.svelte
-#: src/lib/components/connectors/ConnectorSetup.svelte
-msgid "Failed to save credentials"
-msgstr "Failed to save credentials"
+#~ msgid "Failed to save credentials"
+#~ msgstr "Failed to save credentials"
 
 #~ msgid "An error occurred during setup"
 #~ msgstr "An error occurred during setup"
@@ -13970,13 +13962,11 @@ msgstr "Permanently delete all data synced by this connector."
 msgid "<0/> Delete Data"
 msgstr "<0/> Delete Data"
 
-#: src/lib/components/connectors/ConnectorSetup.svelte
-msgid "Configuration saved successfully"
-msgstr "Configuration saved successfully"
+#~ msgid "Configuration saved successfully"
+#~ msgstr "Configuration saved successfully"
 
-#: src/lib/components/connectors/ConnectorSetup.svelte
-msgid "Credentials saved successfully"
-msgstr "Credentials saved successfully"
+#~ msgid "Credentials saved successfully"
+#~ msgstr "Credentials saved successfully"
 
 #. placeholder {0}: displayName
 #: src/lib/components/connectors/ConnectorSetup.svelte
@@ -15508,9 +15498,8 @@ msgstr ""
 "Check the documentation for environment variable\n"
 "configuration."
 
-#: src/lib/components/connectors/ConnectorSetup.svelte
-msgid "Save and Sync"
-msgstr "Save and Sync"
+#~ msgid "Save and Sync"
+#~ msgstr "Save and Sync"
 
 #: src/lib/components/connectors/ConnectorSetup.svelte
 msgid ""
@@ -15624,7 +15613,6 @@ msgstr "View glucose readings"
 #: src/routes/oauth/device/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/api-access/+page.svelte
-#: src/routes/settings/sharing/+page.svelte
 msgid "View and record glucose readings"
 msgstr "View and record glucose readings"
 
@@ -15643,7 +15631,6 @@ msgstr "View treatments"
 #: src/routes/oauth/device/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/api-access/+page.svelte
-#: src/routes/settings/sharing/+page.svelte
 msgid "View and record treatments"
 msgstr "View and record treatments"
 
@@ -15664,7 +15651,6 @@ msgstr "View device status"
 #: src/routes/oauth/device/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/api-access/+page.svelte
-#: src/routes/settings/sharing/+page.svelte
 msgid "View and update device status"
 msgstr "View and update device status"
 
@@ -15683,7 +15669,6 @@ msgstr "View profile settings"
 #: src/routes/oauth/device/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/api-access/+page.svelte
-#: src/routes/settings/sharing/+page.svelte
 msgid "View and update profile settings"
 msgstr "View and update profile settings"
 
@@ -15704,7 +15689,6 @@ msgstr "View notifications"
 #: src/routes/oauth/device/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/api-access/+page.svelte
-#: src/routes/settings/sharing/+page.svelte
 msgid "Manage notifications"
 msgstr "Manage notifications"
 
@@ -15726,7 +15710,6 @@ msgstr "View reports and analytics"
 #: src/routes/oauth/device/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/api-access/+page.svelte
-#: src/routes/settings/sharing/+page.svelte
 msgid "View basic account info"
 msgstr "View basic account info"
 
@@ -15736,7 +15719,6 @@ msgstr "View basic account info"
 #: src/routes/oauth/device/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/api-access/+page.svelte
-#: src/routes/settings/sharing/+page.svelte
 msgid "Manage sharing settings"
 msgstr "Manage sharing settings"
 
@@ -15747,7 +15729,6 @@ msgstr "Manage sharing settings"
 #: src/routes/oauth/device/+page.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/api-access/+page.svelte
-#: src/routes/settings/sharing/+page.svelte
 msgid "View all health data (read-only)"
 msgstr "View all health data (read-only)"
 
@@ -15799,7 +15780,7 @@ msgstr "<0/> Revoke"
 #. placeholder {0}: formatDate(credential.createdAt)
 #. placeholder {0}: formatDate(grant.createdAt)
 #. placeholder {0}: formatDate(credential.createdAt)
-#. placeholder {0}: formatDate(grant.createdAt)
+#. placeholder {0}: formatDate(follower.sysCreatedAt)
 #: src/lib/components/settings/ApiTokens.svelte
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/settings/account/+page.svelte
@@ -15814,7 +15795,7 @@ msgstr "<0/> Created {0}"
 #. placeholder {0}: formatDate(credential.lastUsedAt)
 #. placeholder {0}: formatDate(grant.lastUsedAt)
 #. placeholder {0}: formatDate(credential.lastUsedAt)
-#. placeholder {0}: formatDate(grant.lastUsedAt)
+#. placeholder {0}: formatDate(follower.lastUsedAt)
 #: src/lib/components/settings/ApiTokens.svelte
 #: src/lib/components/settings/ConnectedApps.svelte
 #: src/routes/settings/account/+page.svelte
@@ -15842,13 +15823,11 @@ msgstr "<0/> Viewing data for"
 msgid "My Data"
 msgstr "My Data"
 
-#: src/routes/settings/sharing/+page.svelte
-msgid "Grant revoked successfully."
-msgstr "Grant revoked successfully."
+#~ msgid "Grant revoked successfully."
+#~ msgstr "Grant revoked successfully."
 
-#: src/routes/settings/sharing/+page.svelte
-msgid "Failed to revoke grant. Please try again."
-msgstr "Failed to revoke grant. Please try again."
+#~ msgid "Failed to revoke grant. Please try again."
+#~ msgstr "Failed to revoke grant. Please try again."
 
 #~ msgid "Follower added successfully."
 #~ msgstr "Follower added successfully."
@@ -16527,7 +16506,6 @@ msgstr "<0/> Register with passkey"
 #: src/lib/components/settings/ApiTokens.svelte
 #: src/routes/settings/admin/tenants/+page.svelte
 #: src/routes/settings/api-access/+page.svelte
-#: src/routes/settings/sharing/+page.svelte
 msgid "Full access (including delete)"
 msgstr "Full access (including delete)"
 
@@ -17624,3 +17602,23 @@ msgid ""
 msgstr ""
 "Remove this member from the tenant? They will lose access to all tenant\n"
 "data."
+
+#: src/routes/settings/sharing/+page.svelte
+msgid "Follower removed successfully."
+msgstr "Follower removed successfully."
+
+#: src/routes/settings/sharing/+page.svelte
+msgid "Failed to remove follower. Please try again."
+msgstr "Failed to remove follower. Please try again."
+
+#: src/lib/components/settings/ConnectorConfigForm.svelte
+msgid "You have unsaved changes"
+msgstr "You have unsaved changes"
+
+#: src/lib/components/connectors/ConnectorSetup.svelte
+msgid "Configuration saved"
+msgstr "Configuration saved"
+
+#: src/routes/reports/site-change-impact/+page.svelte
+msgid "days between changes (avg)"
+msgstr "days between changes (avg)"

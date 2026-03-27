@@ -118,10 +118,20 @@
           <span class="text-muted-foreground">({dayCount} days)</span>
         </div>
         {#if analysis?.siteChangeCount}
-          <div class="flex items-center gap-2 text-sm">
-            <RefreshCw class="h-4 w-4 text-muted-foreground" />
-            <span class="font-medium">{analysis.siteChangeCount}</span>
-            <span class="text-muted-foreground">site changes analyzed</span>
+          <div class="flex items-center gap-4 text-sm">
+            <div class="flex items-center gap-2">
+              <RefreshCw class="h-4 w-4 text-muted-foreground" />
+              <span class="font-medium">{analysis.siteChangeCount}</span>
+              <span class="text-muted-foreground">site changes analyzed</span>
+            </div>
+            {#if analysis.averageDaysBetweenChanges}
+              <Separator orientation="vertical" class="h-4" />
+              <div class="flex items-center gap-2">
+                <Calendar class="h-4 w-4 text-muted-foreground" />
+                <span class="font-medium">{analysis.averageDaysBetweenChanges}</span>
+                <span class="text-muted-foreground">days between changes (avg)</span>
+              </div>
+            {/if}
           </div>
         {/if}
       </CardContent>

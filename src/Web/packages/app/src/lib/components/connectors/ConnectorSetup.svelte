@@ -29,8 +29,6 @@
     getConnectorCapabilities,
     getConnectorDataSummary,
   } from "$lib/api/generated/services.generated.remote";
-  import { getApiClient } from "$lib/api";
-
   import {
     Card,
     CardContent,
@@ -293,10 +291,9 @@
   }
 
   // --- Configuration save ---
-  async function handleSaveConfiguration(config: Record<string, unknown>) {
+  async function handleSave(config: Record<string, unknown>, newSecrets: Record<string, string>) {
     if (!connectorInfo?.id) return;
 
-    isSaving = true;
     saveMessage = null;
 
     try {
@@ -304,125 +301,33 @@
         connectorName: connectorInfo.id,
         request: config as any,
       });
-      saveMessage = {
-        type: "success",
-        text: "Configuration saved successfully",
-      };
-      await loadConnectorData(connectorInfo.id);
-    } catch (e) {
-      saveMessage = {
-        type: "error",
-        text: e instanceof Error ? e.message : "Failed to save configuration",
-      };
-    }
 
-    isSaving = false;
-    clearMessageAfterDelay();
-  }
-
-  async function handleSaveSecrets(newSecrets: Record<string, string>) {
-    if (!connectorInfo?.id) return;
-
-    isSaving = true;
-    saveMessage = null;
-
-    try {
-      await saveSecrets({
-        connectorName: connectorInfo.id,
-        request: newSecrets,
-      });
-      saveMessage = {
-        type: "success",
-        text: "Credentials saved successfully",
-      };
-      secrets = {};
-      await loadConnectorData(connectorInfo.id);
-    } catch (e) {
-      saveMessage = {
-        type: "error",
-        text: e instanceof Error ? e.message : "Failed to save credentials",
-      };
-    }
-
-    isSaving = false;
-    clearMessageAfterDelay();
-  }
-
-  async function handleSaveAndSync() {
-    if (!connectorInfo?.id) return;
-
-    // Save config first
-    isSaving = true;
-    saveMessage = null;
-
-    try {
-      await saveConfiguration({
-        connectorName: connectorInfo.id,
-        request: configuration as any,
-      });
-    } catch (e) {
-      saveMessage = {
-        type: "error",
-        text: e instanceof Error ? e.message : "Failed to save configuration",
-      };
-      isSaving = false;
-      return;
-    }
-
-    // Save secrets if any non-empty
-    const nonEmptySecrets: Record<string, string> = {};
-    for (const [key, value] of Object.entries(secrets)) {
-      if (value && value.trim()) {
-        nonEmptySecrets[key] = value;
-      }
-    }
-    if (Object.keys(nonEmptySecrets).length > 0) {
-      try {
+      if (Object.keys(newSecrets).length > 0) {
         await saveSecrets({
           connectorName: connectorInfo.id,
-          request: nonEmptySecrets,
+          request: newSecrets,
         });
-      } catch (e) {
-        saveMessage = {
-          type: "error",
-          text: e instanceof Error ? e.message : "Failed to save credentials",
-        };
-        isSaving = false;
-        return;
       }
-    }
 
-    // Enable the connector
-    await setConnectorActive({
-      connectorName: connectorInfo.id,
-      isActive: true,
-    });
-
-    isSaving = false;
-
-    // Move to syncing
-    step = "syncing";
-
-    try {
-      const apiClient = getApiClient();
-      const result = await apiClient.services.triggerConnectorSync(
-        connectorInfo.id,
-        {}
-      );
-      syncResult = result;
-      step = "results";
-
-      if (result.success && onComplete) {
-        onComplete(result);
+      // In wizard/setup mode, activate the connector after saving
+      if (primaryAction === "save-and-sync") {
+        await setConnectorActive({
+          connectorName: connectorInfo.id,
+          isActive: true,
+        });
       }
+
+      saveMessage = { type: "success", text: "Configuration saved" };
+      await loadConnectorData(connectorInfo.id);
     } catch (e) {
-      syncResult = {
-        success: false,
-        message: e instanceof Error ? e.message : "Sync failed",
-        errors: [e instanceof Error ? e.message : "Sync failed"],
+      saveMessage = {
+        type: "error",
+        text: e instanceof Error ? e.message : "Failed to save configuration",
       };
-      step = "results";
+      throw e;
     }
+
+    clearMessageAfterDelay();
   }
 
   // --- Toggle ---
@@ -678,11 +583,7 @@
           bind:secrets
           {effectiveConfig}
           {hasSecrets}
-          onSaveConfiguration={primaryAction === "save-only"
-            ? handleSaveConfiguration
-            : handleSaveConfiguration}
-          onSaveSecrets={handleSaveSecrets}
-          {isSaving}
+          onSave={handleSave}
         />
       {:else}
         <Card>
@@ -704,20 +605,6 @@
             </div>
           </CardContent>
         </Card>
-      {/if}
-
-      <!-- Save & Sync button for wizard mode -->
-      {#if primaryAction === "save-and-sync"}
-        <div class="flex justify-end">
-          <Button onclick={handleSaveAndSync} disabled={isSaving}>
-            {#if isSaving}
-              <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-              Saving...
-            {:else}
-              Save and Sync
-            {/if}
-          </Button>
-        </div>
       {/if}
 
       <!-- Extras snippet -->

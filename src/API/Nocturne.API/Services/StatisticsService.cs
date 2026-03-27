@@ -2499,6 +2499,18 @@ public class StatisticsService : IStatisticsService
 
         result.SiteChangeCount = siteChanges.Count;
 
+        // Calculate average days between site changes
+        if (siteChanges.Count >= 2)
+        {
+            var intervals = new List<double>();
+            for (int i = 1; i < siteChanges.Count; i++)
+            {
+                var daysBetween = (siteChanges[i].Mills - siteChanges[i - 1].Mills) / (1000.0 * 60 * 60 * 24);
+                intervals.Add(daysBetween);
+            }
+            result.AverageDaysBetweenChanges = Math.Round(intervals.Average(), 1);
+        }
+
         if (siteChanges.Count < 2)
         {
             result.HasSufficientData = false;

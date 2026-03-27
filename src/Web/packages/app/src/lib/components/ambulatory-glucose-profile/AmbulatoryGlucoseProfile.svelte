@@ -22,21 +22,8 @@
   const units = $derived(glucoseUnits.current);
   const isMMOL = $derived(units === "mmol");
 
-  // Memoize data transformation to avoid recreating arrays on every render
-  // We use a stable key based on rawData length + first/last item + units
-  let cachedData: typeof rawData = [];
-  let cacheKey = "";
-
-  const data = $derived.by(() => {
-    // Create a simple cache key to detect meaningful changes
-    const newKey = `${rawData.length}-${rawData[0]?.hour ?? ""}-${rawData[rawData.length - 1]?.hour ?? ""}-${units}`;
-
-    if (newKey === cacheKey && cachedData.length > 0) {
-      return cachedData;
-    }
-
-    // Transform data with unit conversion
-    cachedData = rawData.map((d) => ({
+  const data = $derived(
+    rawData.map((d) => ({
       ...d,
       median: convertToDisplayUnits(d.median ?? 0, units),
       percentiles: d.percentiles
@@ -47,10 +34,8 @@
             p90: convertToDisplayUnits(d.percentiles.p90 ?? 0, units),
           }
         : undefined,
-    }));
-    cacheKey = newKey;
-    return cachedData;
-  });
+    }))
+  );
 
   // Dynamic Y-axis domain based on units
   const yDomain = $derived<[number, number]>(isMMOL ? [0, 22.2] : [0, 400]);

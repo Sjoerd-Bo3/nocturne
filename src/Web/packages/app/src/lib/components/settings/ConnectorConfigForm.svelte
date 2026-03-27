@@ -44,9 +44,7 @@
     effectiveConfig?: Record<string, unknown> | null;
     /** Whether secrets are configured (from API) */
     hasSecrets?: boolean;
-    onSaveConfiguration: (config: Record<string, unknown>) => Promise<void>;
-    onSaveSecrets?: (secrets: Record<string, string>) => Promise<void>;
-    isSaving?: boolean;
+    onSave: (config: Record<string, unknown>, secrets: Record<string, string>) => Promise<void>;
   }
 
   let {
@@ -55,9 +53,7 @@
     secrets = $bindable({}),
     effectiveConfig = null,
     hasSecrets = false,
-    onSaveConfiguration,
-    onSaveSecrets,
-    isSaving = false,
+    onSave,
   }: Props = $props();
 
   // Track which secret fields are visible
@@ -67,12 +63,31 @@
   let initialConfiguration = $state<Record<string, unknown>>({});
   let hasInitialized = $state(false);
 
+  // Local saving state
+  let isSaving = $state(false);
+
   // Initialize initial config when configuration changes (on load/save)
   $effect(() => {
     if (!hasInitialized && Object.keys(configuration).length > 0) {
       initialConfiguration = { ...configuration };
       hasInitialized = true;
     }
+  });
+
+  const hasAnyUnsavedChanges = $derived.by(() => {
+    const allKeys = new Set([
+      ...Object.keys(configuration),
+      ...Object.keys(initialConfiguration),
+    ]);
+    for (const key of allKeys) {
+      if (String(configuration[key] ?? "") !== String(initialConfiguration[key] ?? "")) {
+        return true;
+      }
+    }
+    for (const value of Object.values(secrets)) {
+      if (value && value.trim()) return true;
+    }
+    return false;
   });
 
   // Track if advanced section is expanded
@@ -243,33 +258,27 @@
     }
   }
 
-  async function handleSaveConfiguration(config: Record<string, unknown>) {
-    await onSaveConfiguration(config);
-    // Update initial configuration after successful save
-    initialConfiguration = { ...config };
+  async function handleSave() {
+    isSaving = true;
+    try {
+      const nonEmptySecrets: Record<string, string> = {};
+      for (const [key, value] of Object.entries(secrets)) {
+        if (value && value.trim()) nonEmptySecrets[key] = value;
+      }
+      await onSave(configuration, nonEmptySecrets);
+      // onSave resolves after loadConnectorData runs in the parent,
+      // so configuration now has the latest backend values
+      initialConfiguration = { ...configuration };
+      secrets = {};
+    } finally {
+      isSaving = false;
+    }
   }
 
-  async function handleSaveCredentials() {
-    // Snapshot secrets before saving config, because the config save
-    // triggers loadData() which resets secrets to {}
-    const secretsSnapshot: Record<string, string> = {};
-    if (onSaveSecrets) {
-      for (const [key, value] of Object.entries(secrets)) {
-        if (value && value.trim()) {
-          secretsSnapshot[key] = value;
-        }
-      }
-    }
-
-    // Save non-secret credential fields via regular config
-    if (credentialFields.length > 0) {
-      await handleSaveConfiguration(configuration);
-    }
-
-    // Save secret fields via secrets endpoint
-    if (onSaveSecrets && Object.keys(secretsSnapshot).length > 0) {
-      await onSaveSecrets(secretsSnapshot);
-    }
+  function handleCancel() {
+    configuration = { ...initialConfiguration };
+    secrets = {};
+    visibleSecrets.clear();
   }
 
 </script>
@@ -514,22 +523,6 @@
     </Collapsible.Root>
   {/if}
 
-  <!-- Save Configuration Button -->
-  <div class="flex justify-end">
-    <Button
-      onclick={() => handleSaveConfiguration(configuration)}
-      disabled={isSaving}
-    >
-      {#if isSaving}
-        <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-        Saving...
-      {:else}
-        <Save class="mr-2 h-4 w-4" />
-        Save Configuration
-      {/if}
-    </Button>
-  </div>
-
   <!-- Credentials Section -->
   {#if secretFields.length > 0 || credentialFields.length > 0}
     <Separator class="my-6" />
@@ -603,21 +596,26 @@
       </CardContent>
     </Card>
 
-    <!-- Save Credentials Button -->
-    <div class="flex justify-end">
-      <Button
-        onclick={handleSaveCredentials}
-        disabled={isSaving}
-        variant="secondary"
-      >
-        {#if isSaving}
-          <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-          Saving...
-        {:else}
-          <Save class="mr-2 h-4 w-4" />
-          Update Credentials
-        {/if}
-      </Button>
+  {/if}
+
+  <!-- Sticky Save Bar -->
+  {#if hasAnyUnsavedChanges}
+    <div class="sticky bottom-0 -mx-6 border-t bg-background px-6 py-4 flex items-center justify-between gap-4">
+      <p class="text-sm text-muted-foreground">You have unsaved changes</p>
+      <div class="flex gap-2">
+        <Button variant="outline" onclick={handleCancel} disabled={isSaving}>
+          Cancel
+        </Button>
+        <Button onclick={handleSave} disabled={isSaving}>
+          {#if isSaving}
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+            Saving...
+          {:else}
+            <Save class="mr-2 h-4 w-4" />
+            Save
+          {/if}
+        </Button>
+      </div>
     </div>
   {/if}
 </div>

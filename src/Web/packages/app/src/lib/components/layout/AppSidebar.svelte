@@ -18,7 +18,7 @@
     followerTargets,
     type ActingAsTarget,
   } from "$lib/stores/acting-as";
-  import { getFollowerTargets } from "$lib/api/generated/oauths.generated.remote";
+  import { getMyTenants } from "$lib/api/generated/mytenants.generated.remote";
   import {
     Home,
     BarChart3,
@@ -78,15 +78,15 @@
    */
   async function loadFollowerTargets() {
     try {
-      const data = await getFollowerTargets();
-      const fetched: ActingAsTarget[] = (data?.targets ?? [])
-        .filter((t): t is typeof t & { subjectId: string } => !!t.subjectId)
+      const tenants = await getMyTenants();
+      const fetched: ActingAsTarget[] = (tenants ?? [])
+        .filter((t): t is typeof t & { id: string } => !!t.id && !t.isDefault)
         .map((t) => ({
-          subjectId: t.subjectId,
+          subjectId: t.id,
           displayName: t.displayName ?? null,
-          email: t.email ?? null,
-          scopes: t.scopes ?? [],
-          label: t.label ?? null,
+          email: null,
+          scopes: [],
+          label: t.slug ?? null,
         }));
       targets = fetched;
       followerTargets.set(fetched);
@@ -160,6 +160,7 @@
       children: [
         { title: "Overview", href: "/reports", icon: PieChart, strict: true },
         { title: "AGP", href: "/reports/agp", icon: LineChart },
+        { title: "IDP", href: "/reports/idp", icon: Droplets },
         {
           title: "Executive Summary",
           href: "/reports/executive-summary",

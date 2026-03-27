@@ -119,7 +119,7 @@ internal sealed class GlucosePublisher : IGlucosePublisher
 
             await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
             await context.Database.ExecuteSqlInterpolatedAsync(
-                $"UPDATE tenants SET last_reading_at = {DateTime.UtcNow} WHERE id = {tenantId}", cancellationToken);
+                $"""UPDATE tenants SET last_reading_at = {DateTime.UtcNow} WHERE "Id" = {tenantId}""", cancellationToken);
         }
         catch (Exception ex)
         {

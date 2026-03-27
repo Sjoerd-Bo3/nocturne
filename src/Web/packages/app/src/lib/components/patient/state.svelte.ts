@@ -1,5 +1,5 @@
 import * as patientRemote from "$api/generated/patientRecords.generated.remote";
-import { getInsulinCatalog } from "$api/generated/insulinCatalog.generated.remote";
+import { getCatalog as getInsulinCatalog } from "$api/generated/insulins.generated.remote";
 import {
   type PatientDevice,
   type PatientInsulin,

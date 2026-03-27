@@ -473,34 +473,50 @@ public class PasskeyController : ControllerBase
             return Problem(detail: "Default tenant not found — restart the application", statusCode: 500, title: "Server Error");
         }
 
-        // Create the first user subject
-        var subjectId = Guid.CreateVersion7();
-        _dbContext.Subjects.Add(new Infrastructure.Data.Entities.SubjectEntity
+        // Idempotent: reuse existing setup subject if the WebAuthn ceremony
+        // failed on a previous attempt (e.g. user scanned QR with phone on localhost)
+        var existingSubject = await _dbContext.Subjects
+            .FirstOrDefaultAsync(s => !s.IsSystemSubject && s.IsActive);
+
+        Guid subjectId;
+        if (existingSubject != null)
         {
-            Id = subjectId,
-            Name = request.DisplayName.Trim(),
-            Username = request.Username.Trim().ToLowerInvariant(),
-            IsActive = true,
-            IsSystemSubject = false,
-        });
-
-        // Add as owner of the default tenant
-        _dbContext.TenantMembers.Add(new Infrastructure.Data.Entities.TenantMemberEntity
+            subjectId = existingSubject.Id;
+            // Update in case the user changed their details between attempts
+            existingSubject.Name = request.DisplayName.Trim();
+            existingSubject.Username = request.Username.Trim().ToLowerInvariant();
+            await _dbContext.SaveChangesAsync();
+        }
+        else
         {
-            Id = Guid.CreateVersion7(),
-            TenantId = defaultTenant.Id,
-            SubjectId = subjectId,
-            Role = Infrastructure.Data.Entities.TenantRole.Owner,
-        });
+            subjectId = Guid.CreateVersion7();
+            _dbContext.Subjects.Add(new Infrastructure.Data.Entities.SubjectEntity
+            {
+                Id = subjectId,
+                Name = request.DisplayName.Trim(),
+                Username = request.Username.Trim().ToLowerInvariant(),
+                IsActive = true,
+                IsSystemSubject = false,
+            });
 
-        await _dbContext.SaveChangesAsync();
+            // Add as owner of the default tenant
+            _dbContext.TenantMembers.Add(new Infrastructure.Data.Entities.TenantMemberEntity
+            {
+                Id = Guid.CreateVersion7(),
+                TenantId = defaultTenant.Id,
+                SubjectId = subjectId,
+                Role = Infrastructure.Data.Entities.TenantRole.Owner,
+            });
 
-        // Assign admin role
-        await _subjectService.AssignRoleAsync(subjectId, "admin");
+            await _dbContext.SaveChangesAsync();
 
-        _logger.LogInformation(
-            "Setup: created first user {SubjectId} ({Username}) in tenant {TenantId}",
-            subjectId, request.Username.Trim(), defaultTenant.Id);
+            // Assign admin role
+            await _subjectService.AssignRoleAsync(subjectId, "admin");
+
+            _logger.LogInformation(
+                "Setup: created first user {SubjectId} ({Username}) in tenant {TenantId}",
+                subjectId, request.Username.Trim(), defaultTenant.Id);
+        }
 
         // Generate passkey registration options for the new subject
         var result = await _passkeyService.GenerateRegistrationOptionsAsync(

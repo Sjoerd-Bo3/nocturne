@@ -315,7 +315,6 @@
                 <Label for="insulin-formulation">Formulation</Label>
                 <Select.Root
                   type="single"
-                  name="formulationId"
                   bind:value={inlineFormulationId}
                   onValueChange={() => onInlineFormulationChange()}
                 >

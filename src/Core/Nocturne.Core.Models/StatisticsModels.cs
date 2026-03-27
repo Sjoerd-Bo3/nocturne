@@ -2136,6 +2136,10 @@ public class SiteChangeImpactAnalysis
     [JsonPropertyName("siteChangeCount")]
     public int SiteChangeCount { get; set; }
 
+    /// <summary>Average number of days between site changes</summary>
+    [JsonPropertyName("averageDaysBetweenChanges")]
+    public double? AverageDaysBetweenChanges { get; set; }
+
     /// <summary>Time points with averaged glucose data</summary>
     [JsonPropertyName("dataPoints")]
     public List<SiteChangeImpactDataPoint> DataPoints { get; set; } = new();

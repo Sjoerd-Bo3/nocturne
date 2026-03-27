@@ -60,10 +60,63 @@
     const mid = yMax / 2;
     return [0, mid, yMax];
   });
+
+  // Build a step-line path from the basal schedule
+  const stepPath = $derived.by(() => {
+    const steps = chartData.steps;
+    if (steps.length === 0) return "";
+
+    const chartW = 365;
+    const chartH = 70;
+    const toX = (frac: number) => frac * chartW;
+    const toY = (rate: number) => chartH - (rate / yMax) * chartH;
+
+    const parts: string[] = [];
+    for (const step of steps) {
+      const x1 = toX(step.x1);
+      const x2 = toX(step.x2);
+      const y = toY(step.rate);
+      if (parts.length === 0) {
+        parts.push(`M${x1},${y}`);
+      } else {
+        parts.push(`V${y}`);
+      }
+      parts.push(`H${x2}`);
+    }
+    return parts.join("");
+  });
+
+  // Build a closed fill path (step line closed down to baseline)
+  const fillPath = $derived.by(() => {
+    const steps = chartData.steps;
+    if (steps.length === 0) return "";
+
+    const chartW = 365;
+    const chartH = 70;
+    const toX = (frac: number) => frac * chartW;
+    const toY = (rate: number) => chartH - (rate / yMax) * chartH;
+
+    const parts: string[] = [];
+    const firstX = toX(steps[0]!.x1);
+    parts.push(`M${firstX},${chartH}`);
+    parts.push(`V${toY(steps[0]!.rate)}`);
+
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i]!;
+      const x2 = toX(step.x2);
+      const y = toY(step.rate);
+      if (i > 0) {
+        parts.push(`V${y}`);
+      }
+      parts.push(`H${x2}`);
+    }
+    parts.push(`V${chartH}Z`);
+    return parts.join("");
+  });
 </script>
 
 {#if chartData.steps.length > 0}
-  <svg viewBox="0 0 400 80" class="w-full h-full" preserveAspectRatio="none">
+  <svg viewBox="0 0 400 80" class="w-full h-full">
     <!-- Y axis labels -->
     {#each yTicks() as tick}
       {@const y = 75 - (tick / yMax) * 70}
@@ -107,22 +160,20 @@
         />
       {/each}
 
-      <!-- Step rectangles -->
-      {#each chartData.steps as step}
-        {@const x = step.x1 * 365}
-        {@const w = (step.x2 - step.x1) * 365}
-        {@const h = (step.rate / yMax) * 70}
-        {@const y = 70 - h}
-        <rect
-          {x}
-          {y}
-          width={w}
-          height={h}
-          style="fill: var(--insulin-scheduled-basal)"
-          stroke="var(--insulin-bolus)"
-          stroke-width="0.5"
-        />
-      {/each}
+      <!-- Filled area under the step line -->
+      <path
+        d={fillPath}
+        style="fill: var(--insulin-scheduled-basal)"
+        opacity="0.2"
+      />
+
+      <!-- Step line -->
+      <path
+        d={stepPath}
+        fill="none"
+        style="stroke: var(--insulin-scheduled-basal)"
+        stroke-width="2"
+      />
 
       <!-- Baseline -->
       <line x1="0" y1="70" x2="365" y2="70" class="stroke-border" stroke-width="1" />
