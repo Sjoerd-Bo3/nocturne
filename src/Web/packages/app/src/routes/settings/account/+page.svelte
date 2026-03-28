@@ -26,7 +26,10 @@
     Loader2,
     Info,
     Server,
+    Smartphone,
   } from "lucide-svelte";
+  import * as InputOTP from "$lib/components/ui/input-otp";
+  import QRCode from "qrcode";
   import type { PageData } from "./$types";
   import { formatSessionExpiry } from "$lib/stores/auth-store.svelte";
   import { formatDate } from "$lib/utils/formatting";
@@ -39,6 +42,12 @@
     getRecoveryStatus,
     regenerateRecoveryCodes,
   } from "$lib/api/generated/passkeys.generated.remote";
+  import {
+    setup as totpSetup,
+    verifySetup as totpVerifySetup,
+    listCredentials as totpListCredentials,
+    removeCredential as totpRemoveCredential,
+  } from "$lib/api/generated/totps.generated.remote";
 
   const { data }: { data: PageData } = $props();
 
@@ -94,6 +103,25 @@
   let showNewCodesDialog = $state(false);
   let newRecoveryCodes = $state<string[]>([]);
   let copiedCodes = $state(false);
+
+  // ============================================================================
+  // TOTP Authenticator State
+  // ============================================================================
+
+  const totpQuery = totpListCredentials();
+  let showTotpSetup = $state(false);
+  let totpSetupData = $state<{ provisioningUri?: string; base32Secret?: string; challengeToken?: string } | null>(null);
+  let totpQrDataUrl = $state<string | null>(null);
+  let totpVerifyCode = $state("");
+  let totpLabel = $state("");
+  let totpSetupLoading = $state(false);
+  let totpSetupError = $state<string | null>(null);
+  let totpRemovingId = $state<string | null>(null);
+  let showTotpRemoveDialog = $state(false);
+  let totpRemoveTarget = $state<{ id?: string; label?: string | null } | null>(null);
+
+  const totpCredentials = $derived(totpQuery.current?.credentials ?? []);
+  const maxTotpCredentials = 10;
 
   const credentials = $derived(credentialsQuery.current?.credentials ?? []);
   const hasOidcLink = $derived(credentialsQuery.current?.hasOidcLink ?? false);
@@ -192,6 +220,90 @@
     await navigator.clipboard.writeText(text);
     copiedCodes = true;
     setTimeout(() => (copiedCodes = false), 2000);
+  }
+
+  // ============================================================================
+  // TOTP Authenticator Management
+  // ============================================================================
+
+  async function handleStartTotpSetup() {
+    totpSetupLoading = true;
+    totpSetupError = null;
+    totpVerifyCode = "";
+    totpLabel = "";
+    totpQrDataUrl = null;
+
+    try {
+      const result = await totpSetup();
+      totpSetupData = {
+        provisioningUri: result.provisioningUri,
+        base32Secret: result.base32Secret,
+        challengeToken: result.challengeToken,
+      };
+
+      if (result.provisioningUri) {
+        totpQrDataUrl = await QRCode.toDataURL(result.provisioningUri, {
+          width: 200,
+          margin: 2,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+      }
+
+      showTotpSetup = true;
+    } catch (err) {
+      errorMessage = err instanceof Error ? err.message : "Failed to start authenticator setup.";
+    } finally {
+      totpSetupLoading = false;
+    }
+  }
+
+  async function handleCompleteTotpSetup() {
+    if (!totpSetupData?.challengeToken || totpVerifyCode.length !== 6) return;
+    totpSetupLoading = true;
+    totpSetupError = null;
+
+    try {
+      await totpVerifySetup({
+        challengeToken: totpSetupData.challengeToken,
+        code: totpVerifyCode,
+        label: totpLabel.trim() || undefined,
+      });
+
+      showTotpSetup = false;
+      totpSetupData = null;
+      totpQrDataUrl = null;
+      totpVerifyCode = "";
+      totpLabel = "";
+      successMessage = "Authenticator app added successfully.";
+      clearMessages();
+    } catch (err) {
+      totpSetupError = err instanceof Error ? err.message : "Verification failed. Check the code and try again.";
+    } finally {
+      totpSetupLoading = false;
+    }
+  }
+
+  function confirmRemoveTotp(credential: { id?: string; label?: string | null }) {
+    totpRemoveTarget = credential;
+    showTotpRemoveDialog = true;
+  }
+
+  async function handleRemoveTotp() {
+    if (!totpRemoveTarget?.id) return;
+    totpRemovingId = totpRemoveTarget.id;
+    errorMessage = null;
+    showTotpRemoveDialog = false;
+
+    try {
+      await totpRemoveCredential(totpRemoveTarget.id);
+      successMessage = "Authenticator removed.";
+      clearMessages();
+    } catch (err) {
+      errorMessage = err instanceof Error ? err.message : "Failed to remove authenticator.";
+    } finally {
+      totpRemovingId = null;
+      totpRemoveTarget = null;
+    }
   }
 
   function clearMessages() {
@@ -462,7 +574,99 @@
         </Card.Content>
       </Card.Root>
 
-      <!-- Section 2: Recovery Codes -->
+      <!-- Section 2: Authenticator Apps -->
+      <Card.Root>
+        <Card.Header>
+          <div class="flex items-center justify-between">
+            <div>
+              <Card.Title class="flex items-center gap-2">
+                <Smartphone class="h-5 w-5" />
+                Authenticator Apps
+              </Card.Title>
+              <Card.Description>
+                Use an authenticator app like Google Authenticator or Authy to
+                generate time-based one-time passwords for sign-in.
+              </Card.Description>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={totpSetupLoading || totpCredentials.length >= maxTotpCredentials}
+              onclick={handleStartTotpSetup}
+            >
+              {#if totpSetupLoading}
+                <Loader2 class="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              {:else}
+                <Plus class="mr-1.5 h-3.5 w-3.5" />
+              {/if}
+              Add authenticator
+            </Button>
+          </div>
+        </Card.Header>
+        <Card.Content class="space-y-3">
+          {#if totpCredentials.length === 0}
+            <div class="flex flex-col items-center justify-center py-8 text-center">
+              <div
+                class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted"
+              >
+                <Smartphone class="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p class="text-sm text-muted-foreground max-w-sm">
+                No authenticator apps registered. Add one for an additional
+                sign-in method.
+              </p>
+            </div>
+          {:else}
+            {#each totpCredentials as credential (credential.id)}
+              <div
+                class="flex items-center justify-between gap-4 rounded-md border p-3"
+              >
+                <div class="space-y-1 flex-1 min-w-0">
+                  <p class="text-sm font-medium">
+                    {credential.label ?? "Unnamed authenticator"}
+                  </p>
+                  <div
+                    class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"
+                  >
+                    <span class="flex items-center gap-1">
+                      <Clock class="h-3 w-3" />
+                      Created {formatDate(credential.createdAt)}
+                    </span>
+                    {#if credential.lastUsedAt}
+                      <span class="flex items-center gap-1">
+                        <Clock class="h-3 w-3" />
+                        Last used {formatDate(credential.lastUsedAt)}
+                      </span>
+                    {/if}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  class="text-destructive hover:text-destructive shrink-0"
+                  disabled={totpRemovingId === credential.id}
+                  onclick={() => confirmRemoveTotp(credential)}
+                >
+                  {#if totpRemovingId === credential.id}
+                    <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                  {:else}
+                    <Trash2 class="h-3.5 w-3.5" />
+                  {/if}
+                </Button>
+              </div>
+            {/each}
+          {/if}
+
+          {#if totpCredentials.length >= maxTotpCredentials}
+            <p class="text-xs text-muted-foreground">
+              Maximum of {maxTotpCredentials} authenticators reached.
+            </p>
+          {/if}
+        </Card.Content>
+      </Card.Root>
+
+      <!-- Section 3: Recovery Codes -->
       <Card.Root>
         <Card.Header>
           <Card.Title class="flex items-center gap-2">
@@ -517,7 +721,7 @@
         </Card.Content>
       </Card.Root>
 
-      <!-- Section 3: Recovery Mode Info -->
+      <!-- Section 4: Recovery Mode Info -->
       <Card.Root class="border-muted">
         <Card.Header>
           <Card.Title class="flex items-center gap-2 text-muted-foreground">
@@ -696,6 +900,123 @@
         }}
       >
         Done
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
+
+<!-- TOTP Setup Dialog -->
+<Dialog.Root bind:open={showTotpSetup}>
+  <Dialog.Content class="max-w-md">
+    <Dialog.Header>
+      <Dialog.Title>Set up authenticator app</Dialog.Title>
+      <Dialog.Description>
+        Scan the QR code with your authenticator app, then enter the 6-digit
+        code to verify.
+      </Dialog.Description>
+    </Dialog.Header>
+    <div class="space-y-4 py-4">
+      {#if totpQrDataUrl}
+        <div class="flex justify-center">
+          <div class="rounded-md border bg-white p-2">
+            <img src={totpQrDataUrl} alt="TOTP QR code" class="h-[200px] w-[200px]" />
+          </div>
+        </div>
+      {/if}
+
+      {#if totpSetupData?.base32Secret}
+        <div class="space-y-1">
+          <p class="text-xs text-muted-foreground">
+            Or enter this secret manually:
+          </p>
+          <p class="rounded-md border bg-muted/30 px-3 py-2 font-mono text-xs text-center select-all break-all">
+            {totpSetupData.base32Secret}
+          </p>
+        </div>
+      {/if}
+
+      <div class="space-y-2">
+        <Label for="totp-label">Label (optional)</Label>
+        <Input
+          id="totp-label"
+          type="text"
+          placeholder="e.g. Google Authenticator"
+          bind:value={totpLabel}
+        />
+      </div>
+
+      <div class="space-y-2">
+        <Label>Verification code</Label>
+        <div class="flex justify-center">
+          <InputOTP.Root maxlength={6} bind:value={totpVerifyCode} onComplete={handleCompleteTotpSetup}>
+            {#snippet children({ cells })}
+              <InputOTP.Group>
+                {#each cells.slice(0, 3) as cell}
+                  <InputOTP.Slot {cell} />
+                {/each}
+              </InputOTP.Group>
+              <InputOTP.Separator />
+              <InputOTP.Group>
+                {#each cells.slice(3, 6) as cell}
+                  <InputOTP.Slot {cell} />
+                {/each}
+              </InputOTP.Group>
+            {/snippet}
+          </InputOTP.Root>
+        </div>
+      </div>
+
+      {#if totpSetupError}
+        <div class="flex items-start gap-3 rounded-md border border-destructive/20 bg-destructive/5 p-3">
+          <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+          <p class="text-sm text-destructive">{totpSetupError}</p>
+        </div>
+      {/if}
+    </div>
+    <Dialog.Footer>
+      <Button
+        variant="outline"
+        onclick={() => {
+          showTotpSetup = false;
+          totpSetupData = null;
+          totpQrDataUrl = null;
+          totpVerifyCode = "";
+          totpLabel = "";
+          totpSetupError = null;
+        }}
+      >
+        Cancel
+      </Button>
+      <Button
+        disabled={totpSetupLoading || totpVerifyCode.length !== 6}
+        onclick={handleCompleteTotpSetup}
+      >
+        {#if totpSetupLoading}
+          <Loader2 class="mr-1.5 h-4 w-4 animate-spin" />
+        {/if}
+        Verify and save
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
+
+<!-- TOTP Remove Confirmation Dialog -->
+<Dialog.Root bind:open={showTotpRemoveDialog}>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Remove authenticator</Dialog.Title>
+      <Dialog.Description>
+        Are you sure you want to remove "{totpRemoveTarget?.label ??
+          "Unnamed authenticator"}"? You will no longer be able to sign in with
+        this authenticator app.
+      </Dialog.Description>
+    </Dialog.Header>
+    <Dialog.Footer>
+      <Button variant="outline" onclick={() => (showTotpRemoveDialog = false)}>
+        Cancel
+      </Button>
+      <Button variant="destructive" onclick={handleRemoveTotp}>
+        Remove
       </Button>
     </Dialog.Footer>
   </Dialog.Content>
