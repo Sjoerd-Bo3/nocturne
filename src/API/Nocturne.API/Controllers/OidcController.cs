@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -7,6 +8,7 @@ using Nocturne.API.Extensions;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Core.Models.Configuration;
+using Nocturne.Infrastructure.Data.Entities;
 using SameSiteMode = Nocturne.Core.Models.Configuration.SameSiteMode;
 
 namespace Nocturne.API.Controllers;
@@ -22,6 +24,7 @@ public class OidcController : ControllerBase
 {
     private readonly IOidcAuthService _authService;
     private readonly IOidcProviderService _providerService;
+    private readonly IAuthAuditService _auditService;
     private readonly OidcOptions _options;
     private readonly ILogger<OidcController> _logger;
 
@@ -31,12 +34,14 @@ public class OidcController : ControllerBase
     public OidcController(
         IOidcAuthService authService,
         IOidcProviderService providerService,
+        IAuthAuditService auditService,
         IOptions<OidcOptions> options,
         ILogger<OidcController> logger
     )
     {
         _authService = authService;
         _providerService = providerService;
+        _auditService = auditService;
         _options = options.Value;
         _logger = logger;
     }
@@ -186,6 +191,12 @@ public class OidcController : ControllerBase
                 result.Error,
                 result.ErrorDescription
             );
+
+            await _auditService.LogAsync(AuthAuditEventType.FailedAuth, subjectId: null, success: false,
+                ipAddress: GetClientIpAddress(), userAgent: Request.Headers.UserAgent,
+                errorMessage: result.ErrorDescription,
+                detailsJson: JsonSerializer.Serialize(new { method = "oidc" }));
+
             return RedirectToError(
                 result.Error ?? "callback_failed",
                 result.ErrorDescription ?? "Authentication failed"
@@ -194,6 +205,10 @@ public class OidcController : ControllerBase
 
         // Set session cookies
         SetSessionCookies(result.Tokens!);
+
+        await _auditService.LogAsync(AuthAuditEventType.Login, result.Tokens?.SubjectId, success: true,
+            ipAddress: GetClientIpAddress(), userAgent: Request.Headers.UserAgent,
+            detailsJson: JsonSerializer.Serialize(new { method = "oidc" }));
 
         _logger.LogInformation(
             "OIDC login successful for user {Name} (subject: {SubjectId})",
@@ -249,6 +264,9 @@ public class OidcController : ControllerBase
         // Update session cookies
         SetSessionCookies(result);
 
+        await _auditService.LogAsync(AuthAuditEventType.TokenRefreshed, result.SubjectId, success: true,
+            ipAddress: GetClientIpAddress(), userAgent: Request.Headers.UserAgent);
+
         return Ok(result);
     }
 
@@ -277,6 +295,10 @@ public class OidcController : ControllerBase
 
         // Clear session cookies
         ClearSessionCookies();
+
+        var authContext = HttpContext.GetAuthContext();
+        await _auditService.LogAsync(AuthAuditEventType.Logout, authContext?.SubjectId, success: true,
+            ipAddress: GetClientIpAddress(), userAgent: Request.Headers.UserAgent);
 
         _logger.LogInformation("User logged out");
 

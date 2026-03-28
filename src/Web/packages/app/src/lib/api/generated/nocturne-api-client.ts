@@ -2133,6 +2133,252 @@ export class PasskeyClient {
     }
 }
 
+export class TotpClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Generate TOTP setup data including provisioning URI and secret
+     */
+    setup(signal?: AbortSignal): Promise<TotpSetupResponse> {
+        let url_ = this.baseUrl + "/api/auth/totp/setup";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSetup(_response);
+        });
+    }
+
+    protected processSetup(response: Response): Promise<TotpSetupResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TotpSetupResponse;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TotpSetupResponse>(null as any);
+    }
+
+    /**
+     * Verify a TOTP code to complete authenticator setup
+     */
+    verifySetup(request: TotpVerifySetupRequest, signal?: AbortSignal): Promise<TotpVerifySetupResponse> {
+        let url_ = this.baseUrl + "/api/auth/totp/verify-setup";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processVerifySetup(_response);
+        });
+    }
+
+    protected processVerifySetup(response: Response): Promise<TotpVerifySetupResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TotpVerifySetupResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TotpVerifySetupResponse>(null as any);
+    }
+
+    /**
+     * List all TOTP credentials for the authenticated user
+     */
+    listCredentials(signal?: AbortSignal): Promise<TotpCredentialDto[]> {
+        let url_ = this.baseUrl + "/api/auth/totp";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processListCredentials(_response);
+        });
+    }
+
+    protected processListCredentials(response: Response): Promise<TotpCredentialDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TotpCredentialDto[];
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TotpCredentialDto[]>(null as any);
+    }
+
+    /**
+     * Remove a TOTP credential by ID
+     */
+    removeCredential(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/auth/totp/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRemoveCredential(_response);
+        });
+    }
+
+    protected processRemoveCredential(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result401);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Authenticate using a TOTP code and username
+     */
+    login(request: TotpLoginRequest, signal?: AbortSignal): Promise<TotpLoginResponse> {
+        let url_ = this.baseUrl + "/api/auth/totp/login";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processLogin(_response);
+        });
+    }
+
+    protected processLogin(response: Response): Promise<TotpLoginResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TotpLoginResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TotpLoginResponse>(null as any);
+    }
+}
+
 export class WellKnownClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -26719,6 +26965,47 @@ export interface SetupCompleteRequest {
     challengeToken?: string;
 }
 
+/** Response containing TOTP setup data */
+export interface TotpSetupResponse {
+    provisioningUri?: string;
+    base32Secret?: string;
+    challengeToken?: string;
+}
+
+/** Response after successful TOTP setup verification */
+export interface TotpVerifySetupResponse {
+    credentialId?: string;
+    success?: boolean;
+}
+
+/** Request to verify a TOTP code during setup */
+export interface TotpVerifySetupRequest {
+    code?: string;
+    label?: string;
+    challengeToken?: string;
+}
+
+/** TOTP credential information */
+export interface TotpCredentialDto {
+    id?: string;
+    label?: string | undefined;
+    createdAt?: Date;
+    lastUsedAt?: Date | undefined;
+}
+
+/** Response after successful TOTP authentication */
+export interface TotpLoginResponse {
+    success?: boolean;
+    accessToken?: string;
+    expiresIn?: number;
+}
+
+/** Request to authenticate using TOTP */
+export interface TotpLoginRequest {
+    username?: string;
+    code?: string;
+}
+
 /** OpenID Connect Discovery Document See: https://openid.net/specs/openid-connect-discovery-1_0.html */
 export interface OpenIdConfiguration {
     issuer?: string;
@@ -31782,6 +32069,7 @@ export interface PeriodStatistics {
 
 export interface SiteChangeImpactAnalysis {
     siteChangeCount?: number;
+    averageDaysBetweenChanges?: number | undefined;
     dataPoints?: SiteChangeImpactDataPoint[];
     summary?: SiteChangeImpactSummary;
     hoursBeforeChange?: number;

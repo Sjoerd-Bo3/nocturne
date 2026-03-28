@@ -67,12 +67,15 @@ public class PasskeyControllerTests : IDisposable
 
         var logger = new Mock<ILogger<PasskeyController>>();
 
+        var auditService = new Mock<IAuthAuditService>();
+
         _controller = new PasskeyController(
             _passkeyService.Object,
             _recoveryCodeService.Object,
             _jwtService.Object,
             _refreshTokenService.Object,
             _subjectService.Object,
+            auditService.Object,
             _tenantAccessor.Object,
             _dbContext,
             oidcOptions,

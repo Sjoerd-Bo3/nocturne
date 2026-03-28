@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
@@ -14,14 +15,16 @@ namespace Nocturne.API.Services.Auth;
 public class SubjectService : ISubjectService
 {
     private readonly NocturneDbContext _dbContext;
+    private readonly IAuthAuditService _auditService;
     private readonly ILogger<SubjectService> _logger;
 
     /// <summary>
     /// Creates a new instance of SubjectService
     /// </summary>
-    public SubjectService(NocturneDbContext dbContext, ILogger<SubjectService> logger)
+    public SubjectService(NocturneDbContext dbContext, IAuthAuditService auditService, ILogger<SubjectService> logger)
     {
         _dbContext = dbContext;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -209,6 +212,9 @@ public class SubjectService : ISubjectService
 
         _logger.LogInformation("Created subject {SubjectId} ({Name})", entity.Id, entity.Name);
 
+        await _auditService.LogAsync(AuthAuditEventType.SubjectCreated, entity.Id, success: true,
+            detailsJson: JsonSerializer.Serialize(new { name = entity.Name }));
+
         return new SubjectCreationResult
         {
             Subject = MapToModel(entity),
@@ -243,6 +249,10 @@ public class SubjectService : ISubjectService
             .FirstAsync(s => s.Id == entity.Id);
 
         _logger.LogInformation("Updated subject {SubjectId}", entity.Id);
+
+        await _auditService.LogAsync(AuthAuditEventType.SubjectUpdated, entity.Id, success: true,
+            detailsJson: JsonSerializer.Serialize(new { name = entity.Name }));
+
         return MapToModel(entity);
     }
 
@@ -265,6 +275,9 @@ public class SubjectService : ISubjectService
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("Deleted subject {SubjectId}", subjectId);
+
+        await _auditService.LogAsync(AuthAuditEventType.SubjectDeleted, subjectId, success: true);
+
         return true;
     }
 
@@ -439,6 +452,10 @@ public class SubjectService : ISubjectService
             roleName,
             subjectId
         );
+
+        await _auditService.LogAsync(AuthAuditEventType.RoleAssigned, subjectId, success: true,
+            detailsJson: JsonSerializer.Serialize(new { role = roleName, assigned_by = assignedBy }));
+
         return true;
     }
 
@@ -462,6 +479,9 @@ public class SubjectService : ISubjectService
                 roleName,
                 subjectId
             );
+
+            await _auditService.LogAsync(AuthAuditEventType.RoleRemoved, subjectId, success: true,
+                detailsJson: JsonSerializer.Serialize(new { role = roleName }));
         }
 
         return result > 0;

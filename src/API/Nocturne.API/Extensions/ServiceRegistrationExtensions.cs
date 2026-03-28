@@ -120,6 +120,7 @@ public static class ServiceRegistrationExtensions
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<OidcOptions>(configuration.GetSection(OidcOptions.SectionName));
         // Auth services
+        services.AddScoped<IAuthAuditService, AuthAuditService>();
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<ISubjectService, SubjectService>();

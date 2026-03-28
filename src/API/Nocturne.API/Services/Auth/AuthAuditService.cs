@@ -1,0 +1,53 @@
+using Nocturne.Core.Contracts;
+using Nocturne.Infrastructure.Data;
+using Nocturne.Infrastructure.Data.Entities;
+
+namespace Nocturne.API.Services.Auth;
+
+/// <summary>
+/// Writes authentication and authorization audit events to the database.
+/// </summary>
+public class AuthAuditService : IAuthAuditService
+{
+    private readonly NocturneDbContext _dbContext;
+    private readonly ILogger<AuthAuditService> _logger;
+
+    /// <summary>
+    /// Creates a new instance of AuthAuditService.
+    /// </summary>
+    public AuthAuditService(NocturneDbContext dbContext, ILogger<AuthAuditService> logger)
+    {
+        _dbContext = dbContext;
+        _logger = logger;
+    }
+
+    /// <inheritdoc />
+    public async Task LogAsync(string eventType, Guid? subjectId, bool success,
+        string? ipAddress = null, string? userAgent = null,
+        string? errorMessage = null, string? detailsJson = null,
+        Guid? refreshTokenId = null)
+    {
+        try
+        {
+            _dbContext.AuthAuditLog.Add(new AuthAuditLogEntity
+            {
+                Id = Guid.CreateVersion7(),
+                EventType = eventType,
+                SubjectId = subjectId,
+                Success = success,
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                ErrorMessage = errorMessage,
+                DetailsJson = detailsJson,
+                RefreshTokenId = refreshTokenId,
+                CreatedAt = DateTime.UtcNow,
+            });
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // Audit logging must never block the main operation
+            _logger.LogWarning(ex, "Failed to write auth audit log entry ({EventType})", eventType);
+        }
+    }
+}

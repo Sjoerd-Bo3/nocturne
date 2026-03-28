@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.API.Services.Auth;
 using Nocturne.Infrastructure.Data;
+using Nocturne.Infrastructure.Data.Entities;
 using SameSiteMode = Nocturne.Core.Models.Configuration.SameSiteMode;
 
 namespace Nocturne.API.Controllers;
@@ -29,6 +31,7 @@ public class PasskeyController : ControllerBase
     private readonly IJwtService _jwtService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ISubjectService _subjectService;
+    private readonly IAuthAuditService _auditService;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly NocturneDbContext _dbContext;
     private readonly OidcOptions _oidcOptions;
@@ -43,6 +46,7 @@ public class PasskeyController : ControllerBase
         IJwtService jwtService,
         IRefreshTokenService refreshTokenService,
         ISubjectService subjectService,
+        IAuthAuditService auditService,
         ITenantAccessor tenantAccessor,
         NocturneDbContext dbContext,
         IOptions<OidcOptions> oidcOptions,
@@ -53,6 +57,7 @@ public class PasskeyController : ControllerBase
         _jwtService = jwtService;
         _refreshTokenService = refreshTokenService;
         _subjectService = subjectService;
+        _auditService = auditService;
         _tenantAccessor = tenantAccessor;
         _dbContext = dbContext;
         _oidcOptions = oidcOptions.Value;
@@ -208,6 +213,11 @@ public class PasskeyController : ControllerBase
 
             SetSessionCookies(accessToken, refreshToken);
 
+            await _auditService.LogAsync(AuthAuditEventType.Login, assertionResult.SubjectId, success: true,
+                ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                userAgent: Request.Headers.UserAgent.ToString(),
+                detailsJson: JsonSerializer.Serialize(new { method = "passkey" }));
+
             return Ok(new PasskeyLoginCompleteResponse
             {
                 Success = true,
@@ -218,6 +228,13 @@ public class PasskeyController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Passkey login completion failed");
+
+            await _auditService.LogAsync(AuthAuditEventType.FailedAuth, subjectId: null, success: false,
+                ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                userAgent: Request.Headers.UserAgent.ToString(),
+                errorMessage: ex.Message,
+                detailsJson: JsonSerializer.Serialize(new { method = "passkey" }));
+
             return Problem(detail: "Passkey authentication failed", statusCode: 400, title: "Bad Request");
         }
     }
@@ -251,8 +268,17 @@ public class PasskeyController : ControllerBase
         var verified = await _recoveryCodeService.VerifyAndConsumeAsync(subjectEntity.Id, request.Code);
         if (!verified)
         {
+            await _auditService.LogAsync(AuthAuditEventType.FailedAuth, subjectEntity.Id, success: false,
+                ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                userAgent: Request.Headers.UserAgent.ToString(),
+                detailsJson: JsonSerializer.Serialize(new { method = "recovery_code" }));
             return Problem(detail: "Invalid username or recovery code", statusCode: 400, title: "Bad Request");
         }
+
+        await _auditService.LogAsync(AuthAuditEventType.Login, subjectEntity.Id, success: true,
+            ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+            userAgent: Request.Headers.UserAgent.ToString(),
+            detailsJson: JsonSerializer.Serialize(new { method = "recovery_code" }));
 
         // Issue a restricted recovery session (short-lived)
         var subjectInfo = new SubjectInfo

@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using OpenApi.Remote.Attributes;
+using System.Text.Json;
 using Nocturne.API.Extensions;
 using Nocturne.API.Services.Auth;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Configuration;
+using Nocturne.Infrastructure.Data.Entities;
 using SameSiteMode = Nocturne.Core.Models.Configuration.SameSiteMode;
 
 namespace Nocturne.API.Controllers;
@@ -24,6 +26,7 @@ public class TotpController : ControllerBase
     private readonly IJwtService _jwtService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly ISubjectService _subjectService;
+    private readonly IAuthAuditService _auditService;
     private readonly OidcOptions _oidcOptions;
     private readonly ILogger<TotpController> _logger;
 
@@ -35,6 +38,7 @@ public class TotpController : ControllerBase
         IJwtService jwtService,
         IRefreshTokenService refreshTokenService,
         ISubjectService subjectService,
+        IAuthAuditService auditService,
         IOptions<OidcOptions> oidcOptions,
         ILogger<TotpController> logger)
     {
@@ -42,6 +46,7 @@ public class TotpController : ControllerBase
         _jwtService = jwtService;
         _refreshTokenService = refreshTokenService;
         _subjectService = subjectService;
+        _auditService = auditService;
         _oidcOptions = oidcOptions.Value;
         _logger = logger;
     }
@@ -165,9 +170,15 @@ public class TotpController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TotpLoginResponse>> Login([FromBody] TotpLoginRequest request)
     {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var ua = Request.Headers.UserAgent.ToString();
+
         var result = await _totpService.VerifyLoginAsync(request.Username, request.Code);
         if (result == null)
         {
+            await _auditService.LogAsync(AuthAuditEventType.FailedAuth, subjectId: null, success: false,
+                ipAddress: ip, userAgent: ua,
+                detailsJson: JsonSerializer.Serialize(new { method = "totp", username = request.Username }));
             return Problem(detail: "Invalid username or code", statusCode: 400, title: "Bad Request");
         }
 
@@ -200,6 +211,10 @@ public class TotpController : ControllerBase
         SetSessionCookies(accessToken, refreshToken);
 
         await _subjectService.UpdateLastLoginAsync(result.SubjectId);
+
+        await _auditService.LogAsync(AuthAuditEventType.Login, result.SubjectId, success: true,
+            ipAddress: ip, userAgent: ua,
+            detailsJson: JsonSerializer.Serialize(new { method = "totp" }));
 
         return Ok(new TotpLoginResponse
         {

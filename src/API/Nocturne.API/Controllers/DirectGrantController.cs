@@ -1,9 +1,11 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.API.Middleware.Handlers;
+using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -23,6 +25,7 @@ public class DirectGrantController : ControllerBase
     private const int TokenRandomBytes = 32;
 
     private readonly NocturneDbContext _dbContext;
+    private readonly IAuthAuditService _auditService;
     private readonly ILogger<DirectGrantController> _logger;
 
     /// <summary>
@@ -30,9 +33,11 @@ public class DirectGrantController : ControllerBase
     /// </summary>
     public DirectGrantController(
         NocturneDbContext dbContext,
+        IAuthAuditService auditService,
         ILogger<DirectGrantController> logger)
     {
         _dbContext = dbContext;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -84,6 +89,11 @@ public class DirectGrantController : ControllerBase
         _logger.LogInformation(
             "DirectGrantAudit: {Event} grant_id={GrantId} subject_id={SubjectId} scopes={Scopes}",
             "direct_grant_created", entity.Id, auth.SubjectId.Value, string.Join(" ", normalizedScopes));
+
+        await _auditService.LogAsync(AuthAuditEventType.TokenIssued, auth.SubjectId.Value, success: true,
+            ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+            userAgent: Request.Headers.UserAgent.ToString(),
+            detailsJson: JsonSerializer.Serialize(new { method = "direct_grant", grant_id = entity.Id }));
 
         return Ok(new CreateDirectGrantResponse
         {
@@ -168,6 +178,11 @@ public class DirectGrantController : ControllerBase
         _logger.LogInformation(
             "DirectGrantAudit: {Event} grant_id={GrantId} subject_id={SubjectId}",
             "direct_grant_revoked", id, auth.SubjectId.Value);
+
+        await _auditService.LogAsync(AuthAuditEventType.TokenRevoked, auth.SubjectId.Value, success: true,
+            ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+            userAgent: Request.Headers.UserAgent.ToString(),
+            detailsJson: JsonSerializer.Serialize(new { grant_id = id }));
 
         return NoContent();
     }

@@ -1712,6 +1712,224 @@
         "x-remote-type": "command"
       }
     },
+    "/api/auth/totp/setup": {
+      "post": {
+        "tags": [
+          "Totp"
+        ],
+        "summary": "Generate TOTP setup data including provisioning URI and secret",
+        "operationId": "Totp_Setup",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpSetupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/auth/totp/verify-setup": {
+      "post": {
+        "tags": [
+          "Totp"
+        ],
+        "summary": "Verify a TOTP code to complete authenticator setup",
+        "operationId": "Totp_VerifySetup",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TotpVerifySetupRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpVerifySetupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "ListCredentials"
+        ]
+      }
+    },
+    "/api/auth/totp": {
+      "get": {
+        "tags": [
+          "Totp"
+        ],
+        "summary": "List all TOTP credentials for the authenticated user",
+        "operationId": "Totp_ListCredentials",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TotpCredentialDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/auth/totp/{id}": {
+      "delete": {
+        "tags": [
+          "Totp"
+        ],
+        "summary": "Remove a TOTP credential by ID",
+        "operationId": "Totp_RemoveCredential",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "ListCredentials"
+        ]
+      }
+    },
+    "/api/auth/totp/login": {
+      "post": {
+        "tags": [
+          "Totp"
+        ],
+        "summary": "Authenticate using a TOTP code and username",
+        "operationId": "Totp_Login",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TotpLoginRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpLoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
     "/.well-known/openid-configuration": {
       "get": {
         "tags": [
@@ -25415,6 +25633,106 @@
           }
         }
       },
+      "TotpSetupResponse": {
+        "type": "object",
+        "description": "Response containing TOTP setup data",
+        "additionalProperties": false,
+        "properties": {
+          "provisioningUri": {
+            "type": "string"
+          },
+          "base32Secret": {
+            "type": "string"
+          },
+          "challengeToken": {
+            "type": "string"
+          }
+        }
+      },
+      "TotpVerifySetupResponse": {
+        "type": "object",
+        "description": "Response after successful TOTP setup verification",
+        "additionalProperties": false,
+        "properties": {
+          "credentialId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TotpVerifySetupRequest": {
+        "type": "object",
+        "description": "Request to verify a TOTP code during setup",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "challengeToken": {
+            "type": "string"
+          }
+        }
+      },
+      "TotpCredentialDto": {
+        "type": "object",
+        "description": "TOTP credential information",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "TotpLoginResponse": {
+        "type": "object",
+        "description": "Response after successful TOTP authentication",
+        "additionalProperties": false,
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TotpLoginRequest": {
+        "type": "object",
+        "description": "Request to authenticate using TOTP",
+        "additionalProperties": false,
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
       "OpenIdConfiguration": {
         "type": "object",
         "description": "OpenID Connect Discovery Document\nSee: https://openid.net/specs/openid-connect-discovery-1_0.html",
@@ -42310,6 +42628,11 @@
           "siteChangeCount": {
             "type": "integer",
             "format": "int32"
+          },
+          "averageDaysBetweenChanges": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           },
           "dataPoints": {
             "type": "array",
