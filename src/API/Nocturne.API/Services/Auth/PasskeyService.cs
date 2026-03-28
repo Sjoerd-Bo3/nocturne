@@ -236,22 +236,6 @@ public class PasskeyService : IPasskeyService
             .FirstOrDefaultAsync(c => c.Id == credentialId && c.SubjectId == subjectId && c.TenantId == tenantId)
             ?? throw new InvalidOperationException("Credential not found.");
 
-        // Check if this is the last passkey
-        var credentialCount = await _dbContext.PasskeyCredentials
-            .CountAsync(c => c.SubjectId == subjectId && c.TenantId == tenantId);
-
-        if (credentialCount <= 1)
-        {
-            // Block removal if no OIDC link exists
-            var hasOidc = await HasOidcLinkAsync(subjectId);
-            if (!hasOidc)
-            {
-                throw new InvalidOperationException(
-                    "Cannot remove the last passkey credential when no OIDC identity is linked. "
-                    + "Link an external identity provider before removing this credential.");
-            }
-        }
-
         _dbContext.PasskeyCredentials.Remove(credential);
         await _dbContext.SaveChangesAsync();
 

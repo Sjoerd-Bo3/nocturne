@@ -226,40 +226,10 @@ public class PasskeyServiceTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task RemoveCredentialAsync_BlocksRemovalOfLastPasskeyWithoutOidc()
+    public async Task RemoveCredentialAsync_RemovesLastPasskey_GuardIsNowOnController()
     {
-        // Subject with no OIDC link
-        _dbContext.Subjects.Add(new SubjectEntity
-        {
-            Id = _subjectId,
-            Name = "Test User",
-            OidcSubjectId = null,
-        });
-
-        var cred = CreateCredentialEntity(_subjectId, _tenantId);
-        _dbContext.PasskeyCredentials.Add(cred);
-        await _dbContext.SaveChangesAsync();
-
-        var service = CreateService();
-
-        var act = () => service.RemoveCredentialAsync(cred.Id, _subjectId, _tenantId);
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("Cannot remove the last passkey credential*");
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task RemoveCredentialAsync_AllowsRemovalOfLastPasskeyWithOidc()
-    {
-        // Subject with OIDC link
-        _dbContext.Subjects.Add(new SubjectEntity
-        {
-            Id = _subjectId,
-            Name = "Test User",
-            OidcSubjectId = "google|12345",
-        });
-
+        // Guard logic has been moved to the controller via SubjectService.HasAlternativeAuthMethodAsync.
+        // PasskeyService now simply removes the credential without checking alternatives.
         var cred = CreateCredentialEntity(_subjectId, _tenantId);
         _dbContext.PasskeyCredentials.Add(cred);
         await _dbContext.SaveChangesAsync();

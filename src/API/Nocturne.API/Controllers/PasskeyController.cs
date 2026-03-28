@@ -338,13 +338,13 @@ public class PasskeyController : ControllerBase
 
         var tenantId = _tenantAccessor.TenantId;
 
-        // Check removal protection: cannot remove last passkey if no OIDC link
-        var credentialCount = await _passkeyService.GetCredentialCountAsync(auth.SubjectId.Value, tenantId);
-        var hasOidc = await _passkeyService.HasOidcLinkAsync(auth.SubjectId.Value);
-
-        if (credentialCount <= 1 && !hasOidc)
+        // Check removal protection: cannot remove last sign-in method
+        var guard = await _subjectService.HasAlternativeAuthMethodAsync(auth.SubjectId.Value, AuthMethodType.Passkey);
+        if (!guard.HasAlternative)
         {
-            return Problem(detail: "Cannot remove your last passkey without an alternative sign-in method", statusCode: 400, title: "Bad Request");
+            return Problem(
+                detail: $"Cannot remove your last sign-in method. Your only remaining login method is your {guard.LastRemainingMethodName}.",
+                statusCode: 400, title: "Bad Request");
         }
 
         try

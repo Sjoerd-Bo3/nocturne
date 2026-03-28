@@ -558,6 +558,53 @@ public class SubjectService : ISubjectService
             );
     }
 
+    /// <inheritdoc />
+    public async Task<AuthMethodGuardResult> HasAlternativeAuthMethodAsync(Guid subjectId, AuthMethodType excluding)
+    {
+        var hasOidc = excluding != AuthMethodType.Oidc
+            && await _dbContext.Subjects.AnyAsync(s => s.Id == subjectId && s.OidcSubjectId != null);
+
+        var passkeyCount = excluding != AuthMethodType.Passkey
+            ? await _dbContext.PasskeyCredentials.CountAsync(c => c.SubjectId == subjectId)
+            : 0;
+
+        var totpCount = excluding != AuthMethodType.Totp
+            ? await _dbContext.TotpCredentials.CountAsync(c => c.SubjectId == subjectId)
+            : 0;
+
+        if (hasOidc || passkeyCount > 0 || totpCount > 0)
+        {
+            return new AuthMethodGuardResult(HasAlternative: true, LastRemainingMethodName: null, LastRemainingMethodType: null);
+        }
+
+        // No alternatives exist. Find the name of the last remaining method of the excluded type.
+        string? lastMethodName = null;
+        AuthMethodType? lastMethodType = excluding;
+
+        switch (excluding)
+        {
+            case AuthMethodType.Passkey:
+                lastMethodName = await _dbContext.PasskeyCredentials
+                    .Where(c => c.SubjectId == subjectId)
+                    .Select(c => c.Label ?? "passkey")
+                    .FirstOrDefaultAsync();
+                break;
+
+            case AuthMethodType.Totp:
+                lastMethodName = await _dbContext.TotpCredentials
+                    .Where(c => c.SubjectId == subjectId)
+                    .Select(c => c.Label ?? "TOTP application")
+                    .FirstOrDefaultAsync();
+                break;
+
+            case AuthMethodType.Oidc:
+                lastMethodName = "OIDC identity";
+                break;
+        }
+
+        return new AuthMethodGuardResult(HasAlternative: false, LastRemainingMethodName: lastMethodName, LastRemainingMethodType: lastMethodType);
+    }
+
     /// <summary>
     /// Generate a secure access token
     /// </summary>
