@@ -33,8 +33,9 @@ public class RecoveryModeMiddleware
 
         var path = context.Request.Path.Value ?? "";
 
-        // Allow passkey registration, login, recovery, and setup endpoints
+        // Allow passkey, TOTP, and metadata endpoints
         if (path.StartsWith("/api/auth/passkey/", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/api/auth/totp/", StringComparison.OrdinalIgnoreCase) ||
             path.StartsWith("/api/metadata", StringComparison.OrdinalIgnoreCase))
         {
             await _next(context);
@@ -52,8 +53,8 @@ public class RecoveryModeMiddleware
             {
                 error = state.IsSetupRequired ? "setup_required" : "recovery_mode_active",
                 message = state.IsSetupRequired
-                    ? "Initial setup required. Please register your first passkey."
-                    : "Instance is in recovery mode. Please register a passkey to continue.",
+                    ? "Initial setup required. Please register a passkey or authenticator app."
+                    : "Instance is in recovery mode. Please register a passkey or authenticator app to continue.",
                 setupRequired = state.IsSetupRequired,
                 recoveryMode = state.IsEnabled,
             });
