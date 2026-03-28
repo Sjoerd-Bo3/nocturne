@@ -90,7 +90,7 @@ import {
   VersionClient,
   VersionsClient,
   WebhookSettingsClient
-} from "./generated/api-client";
+} from "./generated/nocturne-api-client";
 
 /**
  * API client wrapper.
@@ -284,4 +284,4 @@ export class ApiClient {
 }
 
 // Export the generated client types for use in components
-export * from "./generated/api-client";
+export * from "./generated/nocturne-api-client";

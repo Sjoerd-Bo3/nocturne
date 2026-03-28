@@ -26980,9 +26980,9 @@ export interface TotpVerifySetupResponse {
 
 /** Request to verify a TOTP code during setup */
 export interface TotpVerifySetupRequest {
-    code?: string;
+    code: string;
     label?: string;
-    challengeToken?: string;
+    challengeToken: string;
 }
 
 /** TOTP credential information */
@@ -27002,8 +27002,8 @@ export interface TotpLoginResponse {
 
 /** Request to authenticate using TOTP */
 export interface TotpLoginRequest {
-    username?: string;
-    code?: string;
+    username: string;
+    code: string;
 }
 
 /** OpenID Connect Discovery Document See: https://openid.net/specs/openid-connect-discovery-1_0.html */

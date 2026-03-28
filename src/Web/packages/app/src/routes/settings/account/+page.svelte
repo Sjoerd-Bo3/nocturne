@@ -120,7 +120,7 @@
   let showTotpRemoveDialog = $state(false);
   let totpRemoveTarget = $state<{ id?: string; label?: string | null } | null>(null);
 
-  const totpCredentials = $derived(totpQuery.current?.credentials ?? []);
+  const totpCredentials = $derived(totpQuery.current ?? []);
   const maxTotpCredentials = 10;
 
   const credentials = $derived(credentialsQuery.current?.credentials ?? []);
