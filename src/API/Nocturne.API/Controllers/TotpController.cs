@@ -1,9 +1,10 @@
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using OpenApi.Remote.Attributes;
-using System.Text.Json;
 using Nocturne.API.Extensions;
 using Nocturne.API.Services.Auth;
 using Nocturne.Core.Contracts;
@@ -286,8 +287,13 @@ public class TotpSetupResponse
 /// </summary>
 public class TotpVerifySetupRequest
 {
+    [Required, RegularExpression(@"^\d{6}$")]
     public string Code { get; set; } = string.Empty;
+
+    [StringLength(255)]
     public string Label { get; set; } = string.Empty;
+
+    [Required]
     public string ChallengeToken { get; set; } = string.Empty;
 }
 
@@ -316,7 +322,10 @@ public class TotpCredentialDto
 /// </summary>
 public class TotpLoginRequest
 {
+    [Required, StringLength(255)]
     public string Username { get; set; } = string.Empty;
+
+    [Required, RegularExpression(@"^\d{6}$")]
     public string Code { get; set; } = string.Empty;
 }
 

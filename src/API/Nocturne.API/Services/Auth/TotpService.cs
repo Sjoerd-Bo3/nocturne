@@ -91,22 +91,36 @@ public class TotpService : ITotpService
             .Where(c => c.SubjectId == subject.Id)
             .ToListAsync();
 
+        if (credentials.Count == 0)
+        {
+            TotpHelper.Verify(DummySecret, code);
+            return null;
+        }
+
+        // Verify against all credentials (don't short-circuit) to prevent
+        // timing leaks that could reveal how many credentials a user has.
+        TotpCredentialEntity? matchedCredential = null;
         foreach (var credential in credentials)
         {
             if (TotpHelper.Verify(credential.SecretKey, code))
             {
-                credential.LastUsedAt = DateTime.UtcNow;
-                await _dbContext.SaveChangesAsync();
-
-                _logger.LogInformation(
-                    "TOTP verification succeeded for subject {SubjectId}",
-                    subject.Id);
-
-                return new TotpLoginResult(subject.Id, subject.Username ?? subject.Name, subject.Name);
+                matchedCredential = credential;
             }
         }
 
-        return null;
+        if (matchedCredential is null)
+        {
+            return null;
+        }
+
+        matchedCredential.LastUsedAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "TOTP verification succeeded for subject {SubjectId}",
+            subject.Id);
+
+        return new TotpLoginResult(subject.Id, subject.Username ?? subject.Name, subject.Name);
     }
 
     public async Task<List<TotpCredentialInfo>> GetCredentialsAsync(Guid subjectId)

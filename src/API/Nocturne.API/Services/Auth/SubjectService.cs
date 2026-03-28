@@ -584,20 +584,26 @@ public class SubjectService : ISubjectService
         var hasOidc = excluding != AuthMethodType.Oidc
             && await _dbContext.Subjects.AnyAsync(s => s.Id == subjectId && s.OidcSubjectId != null);
 
-        var passkeyCount = excluding != AuthMethodType.Passkey
-            ? await _dbContext.PasskeyCredentials.CountAsync(c => c.SubjectId == subjectId)
-            : 0;
+        var passkeyCount = await _dbContext.PasskeyCredentials.CountAsync(c => c.SubjectId == subjectId);
+        var totpCount = await _dbContext.TotpCredentials.CountAsync(c => c.SubjectId == subjectId);
 
-        var totpCount = excluding != AuthMethodType.Totp
-            ? await _dbContext.TotpCredentials.CountAsync(c => c.SubjectId == subjectId)
-            : 0;
+        // Count alternatives: other method types, OR >1 of the same type being removed
+        var otherPasskeys = excluding == AuthMethodType.Passkey ? 0 : passkeyCount;
+        var otherTotp = excluding == AuthMethodType.Totp ? 0 : totpCount;
+        var sameTypeCount = excluding switch
+        {
+            AuthMethodType.Passkey => passkeyCount,
+            AuthMethodType.Totp => totpCount,
+            _ => 0,
+        };
 
-        if (hasOidc || passkeyCount > 0 || totpCount > 0)
+        // User can delete if they have other method types OR >1 of the same type
+        if (hasOidc || otherPasskeys > 0 || otherTotp > 0 || sameTypeCount > 1)
         {
             return new AuthMethodGuardResult(HasAlternative: true, LastRemainingMethodName: null, LastRemainingMethodType: null);
         }
 
-        // No alternatives exist. Find the name of the last remaining method of the excluded type.
+        // This is the user's last credential and only auth method type.
         string? lastMethodName = null;
         AuthMethodType? lastMethodType = excluding;
 
