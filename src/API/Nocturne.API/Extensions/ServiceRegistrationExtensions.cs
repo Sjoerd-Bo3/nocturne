@@ -145,6 +145,7 @@ public static class ServiceRegistrationExtensions
         // Passkey (WebAuthn/FIDO2) services
         services.AddScoped<IPasskeyService, PasskeyService>();
         services.AddScoped<IRecoveryCodeService, RecoveryCodeService>();
+        services.AddScoped<ITotpService, TotpService>();
         // Derive WebAuthn RP config from the multitenancy base domain (single source of truth)
         var baseDomain = configuration["Multitenancy:BaseDomain"] ?? "localhost:1612";
         var rpId = baseDomain.Split(':')[0]; // hostname without port
