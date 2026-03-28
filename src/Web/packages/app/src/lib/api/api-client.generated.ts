@@ -77,6 +77,7 @@ import {
   SystemEventsClient,
   TenantClient,
   TimeQueryClient,
+  TotpClient,
   TrackerAlertsClient,
   TrackersClient,
   TreatmentsClient,
@@ -89,7 +90,7 @@ import {
   VersionClient,
   VersionsClient,
   WebhookSettingsClient
-} from "./generated/nocturne-api-client";
+} from "./generated/api-client";
 
 /**
  * API client wrapper.
@@ -171,6 +172,7 @@ export class ApiClient {
   public readonly systemEvents: SystemEventsClient;
   public readonly tenant: TenantClient;
   public readonly timeQuery: TimeQueryClient;
+  public readonly totp: TotpClient;
   public readonly trackerAlerts: TrackerAlertsClient;
   public readonly trackers: TrackersClient;
   public readonly treatments: TreatmentsClient;
@@ -265,6 +267,7 @@ export class ApiClient {
     this.systemEvents = new SystemEventsClient(apiBaseUrl, http);
     this.tenant = new TenantClient(apiBaseUrl, http);
     this.timeQuery = new TimeQueryClient(apiBaseUrl, http);
+    this.totp = new TotpClient(apiBaseUrl, http);
     this.trackerAlerts = new TrackerAlertsClient(apiBaseUrl, http);
     this.trackers = new TrackersClient(apiBaseUrl, http);
     this.treatments = new TreatmentsClient(apiBaseUrl, http);
@@ -281,4 +284,4 @@ export class ApiClient {
 }
 
 // Export the generated client types for use in components
-export * from "./generated/nocturne-api-client";
+export * from "./generated/api-client";
