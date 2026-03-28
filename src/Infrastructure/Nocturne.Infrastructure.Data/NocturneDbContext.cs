@@ -142,6 +142,11 @@ public class NocturneDbContext : DbContext
     public DbSet<RecoveryCodeEntity> RecoveryCodes { get; set; }
 
     /// <summary>
+    /// Gets or sets the TotpCredentials table for TOTP two-factor authentication
+    /// </summary>
+    public DbSet<TotpCredentialEntity> TotpCredentials { get; set; }
+
+    /// <summary>
     /// Gets or sets the DataSourceMetadata table for user preferences about data sources
     /// </summary>
     public DbSet<DataSourceMetadataEntity> DataSourceMetadata { get; set; }

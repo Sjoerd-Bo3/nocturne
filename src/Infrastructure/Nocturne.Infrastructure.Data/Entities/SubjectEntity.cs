@@ -132,4 +132,9 @@ public class SubjectEntity
     /// Passkey credentials registered by this subject
     /// </summary>
     public ICollection<PasskeyCredentialEntity> PasskeyCredentials { get; set; } = new List<PasskeyCredentialEntity>();
+
+    /// <summary>
+    /// TOTP credentials registered by this subject
+    /// </summary>
+    public ICollection<TotpCredentialEntity> TotpCredentials { get; set; } = new List<TotpCredentialEntity>();
 }
