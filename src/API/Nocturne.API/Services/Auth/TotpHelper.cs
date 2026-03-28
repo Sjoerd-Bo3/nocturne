@@ -107,6 +107,7 @@ public static class TotpHelper
     public static string BuildProvisioningUri(string username, byte[] secret)
     {
         var base32Secret = ToBase32(secret);
-        return $"otpauth://totp/Nocturne:{username}?secret={base32Secret}&issuer=Nocturne&digits=6&period=30";
+        var encodedUser = Uri.EscapeDataString(username);
+        return $"otpauth://totp/Nocturne:{encodedUser}?secret={base32Secret}&issuer=Nocturne&digits=6&period=30";
     }
 }
