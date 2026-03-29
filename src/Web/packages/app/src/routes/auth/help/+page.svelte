@@ -16,7 +16,7 @@
 </svelte:head>
 
 <div class="flex min-h-screen items-center justify-center bg-background p-4">
-  <div class="w-full max-w-md space-y-4">
+  <div class="w-full max-w-xl space-y-4">
     <Card.Root>
       <Card.Header class="space-y-1 text-center">
         <div
@@ -43,13 +43,13 @@
         </div>
       </Card.Header>
       <Card.Content>
-        <p class="text-sm text-muted-foreground">
+        <p class="text-sm leading-relaxed text-muted-foreground">
           Passkeys are the primary way to sign in to Nocturne. They use your
           device's built-in security — like a fingerprint sensor, face
           recognition, or a hardware security key — so there's no password to
           remember.
         </p>
-        <p class="mt-2 text-sm text-muted-foreground">
+        <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
           On the login page, tap <strong>Sign in with passkey</strong> and
           follow your device's prompt. If you have multiple accounts, choose
           <strong>Sign in with username</strong> and enter your username first.
@@ -69,12 +69,12 @@
         </div>
       </Card.Header>
       <Card.Content>
-        <p class="text-sm text-muted-foreground">
+        <p class="text-sm leading-relaxed text-muted-foreground">
           If you've set up an authenticator app (such as Google Authenticator or
           Authy), you can sign in using a 6-digit code that refreshes every 30
           seconds.
         </p>
-        <p class="mt-2 text-sm text-muted-foreground">
+        <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
           On the login page, choose <strong>Sign in with authenticator</strong>,
           enter your username, then type the code shown in your authenticator
           app. You can set up an authenticator in your account settings after
@@ -95,12 +95,12 @@
         </div>
       </Card.Header>
       <Card.Content>
-        <p class="text-sm text-muted-foreground">
+        <p class="text-sm leading-relaxed text-muted-foreground">
           Recovery codes are one-time backup codes you received when you first
           set up your account. Use them if you can't access your passkey or
           authenticator app.
         </p>
-        <p class="mt-2 text-sm text-muted-foreground">
+        <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
           On the login page, choose
           <strong>Sign in with recovery code</strong>, enter your username and
           one of your remaining codes. Each code can only be used once, so cross
@@ -121,12 +121,12 @@
         </div>
       </Card.Header>
       <Card.Content>
-        <p class="text-sm text-muted-foreground">
+        <p class="text-sm leading-relaxed text-muted-foreground">
           Your Nocturne instance may allow you to sign in with an external
           account like Google, GitHub, or Microsoft. If available, you'll see
           provider buttons on the login page.
         </p>
-        <p class="mt-2 text-sm text-muted-foreground">
+        <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
           External providers are configured by your instance administrator. If
           you don't see any provider buttons on the login page, this sign-in
           method isn't enabled for your instance.
