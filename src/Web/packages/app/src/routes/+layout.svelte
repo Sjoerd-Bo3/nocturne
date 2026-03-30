@@ -104,8 +104,10 @@
   }
 
   onMount(() => {
-    realtimeStore.initialize();
-    titleFaviconService.initialize();
+    if (data.isAuthenticated) {
+      realtimeStore.initialize();
+      titleFaviconService.initialize();
+    }
 
     // Reload settings after hydration (SSR fix)
     titleFaviconSettings = loadTitleFaviconSettings();
@@ -225,10 +227,12 @@
   {@render children()}
 {:else}
   <Sidebar.Provider>
-    <AppSidebar user={data.user} tenantCount={data.tenantCount} />
+    <AppSidebar user={data.user} tenantCount={data.tenantCount} effectivePermissions={data.effectivePermissions} />
     <MobileHeader />
     <Sidebar.Inset>
-      <AlertBanner />
+      {#if data.isAuthenticated}
+        <AlertBanner />
+      {/if}
       <main class="flex-1 overflow-auto">
         <svelte:boundary>
           {@render children()}

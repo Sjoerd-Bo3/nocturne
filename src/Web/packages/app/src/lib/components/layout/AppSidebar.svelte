@@ -56,6 +56,7 @@
     ListChecks,
     Shield,
     Eye,
+    Users,
   } from "lucide-svelte";
   import type { AuthUser } from "$lib/stores/auth-store.svelte";
 
@@ -64,9 +65,16 @@
     user?: AuthUser | null;
     /** Number of tenants the user is a member of */
     tenantCount?: number;
+    /** Effective permissions for the current user */
+    effectivePermissions?: string[];
   }
 
-  const { user = null, tenantCount = 0 }: Props = $props();
+  const { user = null, tenantCount = 0, effectivePermissions = [] }: Props = $props();
+
+  const canManageRoles = $derived(
+    effectivePermissions.includes("roles.manage") ||
+      effectivePermissions.includes("*"),
+  );
   const sidebar = Sidebar.useSidebar();
 
   // Follower target selector state
@@ -296,7 +304,10 @@
           icon: Timer,
         },
         { title: "Connectors & Apps", href: "/settings/connectors", icon: Plug },
-        { title: "Followers & Sharing", href: "/settings/sharing", icon: Shield },
+        { title: "Members", href: "/settings/members", icon: Users },
+        ...(canManageRoles
+          ? [{ title: "Roles", href: "/settings/roles", icon: Shield }]
+          : []),
         {
           title: "Support & Community",
           href: "/settings/support",
@@ -504,7 +515,9 @@
       <Sidebar.MenuItem
         class="flex items-center gap-2 min-w-0 group-data-[collapsible=icon]:flex-col"
       >
-        <SidebarNotifications />
+        {#if user}
+          <SidebarNotifications />
+        {/if}
         <UserMenu
           {user}
           collapsed={sidebar.state === "collapsed"}

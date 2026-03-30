@@ -3,6 +3,7 @@
 // Source: openapi.json
 //
 import {
+  AccessRequestClient,
   ActivityClient,
   BackfillClient,
   AlertInvitesClient,
@@ -66,6 +67,7 @@ import {
   ProfileClient,
   PumpSnapshotClient,
   RetrospectiveClient,
+  RoleClient,
   SensorGlucoseClient,
   ServicesClient,
   SettingsClient,
@@ -98,6 +100,7 @@ import {
  */
 export class ApiClient {
   public readonly baseUrl: string;
+  public readonly accessRequest: AccessRequestClient;
   public readonly activity: ActivityClient;
   public readonly admin: BackfillClient;
   public readonly alertInvites: AlertInvitesClient;
@@ -161,6 +164,7 @@ export class ApiClient {
   public readonly profile: ProfileClient;
   public readonly pumpSnapshots: PumpSnapshotClient;
   public readonly retrospective: RetrospectiveClient;
+  public readonly roles: RoleClient;
   public readonly sensorGlucose: SensorGlucoseClient;
   public readonly services: ServicesClient;
   public readonly settings: SettingsClient;
@@ -193,6 +197,7 @@ export class ApiClient {
     const apiBaseUrl = baseUrl;
     this.baseUrl = apiBaseUrl;
 
+    this.accessRequest = new AccessRequestClient(apiBaseUrl, http);
     this.activity = new ActivityClient(apiBaseUrl, http);
     this.admin = new BackfillClient(apiBaseUrl, http);
     this.alertInvites = new AlertInvitesClient(apiBaseUrl, http);
@@ -256,6 +261,7 @@ export class ApiClient {
     this.profile = new ProfileClient(apiBaseUrl, http);
     this.pumpSnapshots = new PumpSnapshotClient(apiBaseUrl, http);
     this.retrospective = new RetrospectiveClient(apiBaseUrl, http);
+    this.roles = new RoleClient(apiBaseUrl, http);
     this.sensorGlucose = new SensorGlucoseClient(apiBaseUrl, http);
     this.services = new ServicesClient(apiBaseUrl, http);
     this.settings = new SettingsClient(apiBaseUrl, http);

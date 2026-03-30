@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { enhance } from "$app/forms";
+  import { page } from "$app/state";
   import { goto, invalidateAll } from "$app/navigation";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
@@ -11,74 +11,75 @@
     Check,
     AlertTriangle,
     Clock,
-    Eye,
-    Activity,
-    Smartphone,
-    User,
-    Bell,
-    FileText,
     Fingerprint,
     ExternalLink,
     Loader2,
     Copy,
     ShieldCheck,
     Shield,
-    PenLine,
-    Crown,
+    ChevronDown,
+    ChevronUp,
   } from "lucide-svelte";
   import { startRegistration } from "@simplewebauthn/browser";
-  import { getOidcProviders } from "$routes/auth/auth.remote";
+  import { getOidcProviders, setAuthCookies } from "$routes/auth/auth.remote";
   import {
-    registerOptions,
-    registerComplete,
+    inviteOptions,
+    inviteComplete,
   } from "$lib/api/generated/passkeys.generated.remote";
+  import {
+    getInviteInfo,
+    acceptInvite,
+  } from "$lib/api/generated/memberinvites.generated.remote";
+  import { getRoles } from "$lib/api/generated/roles.generated.remote";
 
-  const { data, form } = $props();
+  const token = $derived(page.params.token);
+  const isAuthenticated = $derived(page.data.isAuthenticated);
 
-  /** Human-readable descriptions for each OAuth scope. */
-  const scopeDescriptions: Record<string, string> = {
-    "entries.read": "View glucose readings",
-    "treatments.read": "View treatments",
-    "devicestatus.read": "View device status",
-    "profile.read": "View profile settings",
-    "notifications.read": "View notifications",
-    "reports.read": "View reports and analytics",
-    "identity.read": "View basic account info",
-    "health.read": "View all health data (read-only)",
+  const inviteQuery = $derived(getInviteInfo(token));
+  const invite = $derived(inviteQuery.current);
+  const isLoading = $derived(!inviteQuery.current && !inviteQuery.error);
+
+  // Fetch roles to resolve roleIds to names/permissions
+  const rolesQuery = $derived(getRoles());
+  const allRoles = $derived(rolesQuery.current ?? []);
+
+  /** Permission categories for read-only display (mirrors PermissionPicker) */
+  const permissionLabels: Record<string, string> = {
+    "entries.read": "Read blood glucose",
+    "entries.readwrite": "Read & write blood glucose",
+    "treatments.read": "Read treatments",
+    "treatments.readwrite": "Read & write treatments",
+    "devicestatus.read": "Read device status",
+    "devicestatus.readwrite": "Read & write device status",
+    "profile.read": "Read profile",
+    "profile.readwrite": "Read & write profile",
+    "notifications.read": "Read notifications",
+    "notifications.readwrite": "Read & write notifications",
+    "reports.read": "Read reports",
+    "health.read": "Read health data",
+    "identity.read": "Read identity",
+    "roles.manage": "Manage roles",
+    "members.invite": "Invite members",
+    "members.manage": "Manage members",
+    "tenant.settings": "Tenant settings",
+    "sharing.manage": "Manage sharing",
+    "*": "Full access",
   };
 
-  /** Icons for scopes */
-  const scopeIcons: Record<string, typeof Eye> = {
-    "entries.read": Activity,
-    "treatments.read": FileText,
-    "devicestatus.read": Smartphone,
-    "profile.read": User,
-    "notifications.read": Bell,
-    "reports.read": FileText,
-  };
+  // Resolve invite roles from roleIds
+  const inviteRoles = $derived(
+    (invite?.roleIds ?? [])
+      .map((id: string) => allRoles.find((r) => r.id === id))
+      .filter((r): r is NonNullable<typeof r> => !!r),
+  );
 
-  /** Role descriptions for non-follower roles */
-  const roleDescriptions: Record<string, { text: string; icon: typeof Shield }> = {
-    caretaker: {
-      text: "you'll be able to read and write clinical data",
-      icon: PenLine,
-    },
-    admin: {
-      text: "you'll have full management access",
-      icon: Shield,
-    },
-    owner: {
-      text: "you'll have full ownership of this tenant",
-      icon: Crown,
-    },
-  };
+  const hasRoles = $derived(inviteRoles.length > 0);
+  const hasDirectPermissions = $derived(
+    (invite?.directPermissions ?? []).length > 0,
+  );
 
-  const invite = $derived(data.invite);
-  const isAuthenticated = $derived(data.isAuthenticated);
-  const formError = $derived(form?.error as string | undefined);
-
-  const isFollower = $derived(invite?.role === "follower");
-  const roleInfo = $derived(invite?.role ? roleDescriptions[invite.role] : undefined);
+  // Track which role's permissions are expanded
+  let expandedRoleId = $state<string | null>(null);
 
   // OIDC providers for unauthenticated registration
   const oidcQuery = getOidcProviders();
@@ -93,48 +94,59 @@
   let codesCopied = $state(false);
   let isRedirecting = $state(false);
   let selectedProvider = $state<string | null>(null);
+  let isAccepting = $state(false);
 
   const canRegister = $derived(
-    username.trim().length > 0 && displayName.trim().length > 0
+    username.trim().length > 0 && displayName.trim().length > 0,
   );
 
+  async function handleAcceptInvite() {
+    isAccepting = true;
+    errorMessage = null;
+    try {
+      await acceptInvite(token);
+      await goto("/", { invalidateAll: true });
+    } catch (err) {
+      errorMessage =
+        err instanceof Error ? err.message : "Failed to accept invite.";
+    } finally {
+      isAccepting = false;
+    }
+  }
+
   async function handlePasskeyRegistration() {
-    if (!data.token) return;
+    if (!token) return;
 
     isRegistering = true;
     errorMessage = null;
 
     try {
-      // TODO: Update to use member invite accept endpoint after NSwag regeneration
-      const acceptResponse = await fetch(`/api/auth/passkey/invite/accept`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: data.token, username: username.trim(), displayName: displayName.trim() }),
+      const optionsResult = await inviteOptions({
+        token,
+        username: username.trim(),
+        displayName: displayName.trim(),
       });
 
-      if (!acceptResponse.ok) {
-        const body = await acceptResponse.text();
-        errorMessage = body || "Failed to accept invite";
-        return;
-      }
-
-      const acceptResult: { subjectId: string } = await acceptResponse.json();
-
-      // Step 2: Register a passkey for the new user via generated remote functions
-      const response = await registerOptions({ subjectId: acceptResult.subjectId, username: username.trim() });
-      const options = JSON.parse(response.options ?? "");
-      const challengeToken = response.challengeToken ?? "";
-
+      const options = JSON.parse(optionsResult.options ?? "");
       const attestation = await startRegistration({ optionsJSON: options });
 
-      await registerComplete({
+      const result = await inviteComplete({
+        token,
         attestationResponseJson: JSON.stringify(attestation),
-        challengeToken,
-        label: `${displayName.trim()}'s passkey`,
+        challengeToken: optionsResult.challengeToken ?? "",
       });
 
+      // Set auth cookies so the user is logged in immediately
+      if (result.accessToken) {
+        await setAuthCookies({
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken ?? undefined,
+          expiresIn: result.expiresIn ?? undefined,
+        });
+      }
+
       registrationComplete = true;
-      recoveryCodes = [];
+      recoveryCodes = result.recoveryCodes ?? [];
     } catch (err) {
       errorMessage =
         err instanceof Error ? err.message : "Registration failed";
@@ -164,7 +176,7 @@
 
     const params = new URLSearchParams();
     params.set("provider", providerId);
-    params.set("returnUrl", `/invite/${data.token}`);
+    params.set("returnUrl", `/invite/${token}`);
 
     window.location.href = `/api/auth/login?${params.toString()}`;
   }
@@ -181,26 +193,37 @@
 
 <div class="flex min-h-screen items-center justify-center p-4">
   <Card.Root class="w-full max-w-md">
-    {#if !invite}
+    {#if isLoading}
+      <Card.Header class="text-center">
+        <div
+          class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted"
+        >
+          <Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+        <Card.Title class="text-xl">Loading invite...</Card.Title>
+      </Card.Header>
+    {:else if !invite}
       <!-- Invite not found -->
       <Card.Header class="text-center">
-        <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+        <div
+          class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10"
+        >
           <AlertTriangle class="h-8 w-8 text-destructive" />
         </div>
         <Card.Title class="text-xl">Invite Not Found</Card.Title>
         <Card.Description>
-          {data.error ?? "This invite link is invalid or has expired."}
+          This invite link is invalid or has expired.
         </Card.Description>
       </Card.Header>
       <Card.Content class="text-center">
-        <Button href="/auth/login" variant="outline">
-          Go to Login
-        </Button>
+        <Button href="/auth/login" variant="outline"> Go to Login </Button>
       </Card.Content>
     {:else if !invite.isValid}
       <!-- Invite expired or revoked -->
       <Card.Header class="text-center">
-        <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+        <div
+          class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted"
+        >
           <Clock class="h-8 w-8 text-muted-foreground" />
         </div>
         <Card.Title class="text-xl">
@@ -214,38 +237,33 @@
         </Card.Title>
         <Card.Description>
           {#if invite.isExpired}
-            This invite link has expired. Please ask {invite.createdByName ?? "the invite creator"} for a new invite.
+            This invite link has expired. Please ask {invite.createdByName ??
+              "the invite creator"} for a new invite.
           {:else if invite.isRevoked}
-            This invite link has been revoked by {invite.createdByName ?? "the invite creator"}.
+            This invite link has been revoked by {invite.createdByName ??
+              "the invite creator"}.
           {:else}
             This invite link is no longer available.
           {/if}
         </Card.Description>
       </Card.Header>
       <Card.Content class="text-center">
-        <Button href="/auth/login" variant="outline">
-          Go to Login
-        </Button>
+        <Button href="/auth/login" variant="outline"> Go to Login </Button>
       </Card.Content>
     {:else}
       <!-- Valid invite -->
       <Card.Header class="text-center">
-        <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+        <div
+          class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+        >
           <UserPlus class="h-8 w-8 text-primary" />
         </div>
         <Card.Title class="text-xl">You're Invited</Card.Title>
         <Card.Description>
-          {#if isFollower}
-            You've been invited to follow
-            <span class="font-medium text-foreground">{invite.tenantName ?? "a Nocturne site"}</span>
-          {:else}
-            You've been invited to join
-            <span class="font-medium text-foreground">{invite.tenantName ?? "a Nocturne site"}</span>
-            {#if invite.role}
-              as {invite.role === "admin" ? "an" : "a"}
-              <span class="font-medium text-foreground capitalize">{invite.role}</span>
-            {/if}
-          {/if}
+          You've been invited to join
+          <span class="font-medium text-foreground"
+            >{invite.tenantName ?? "a Nocturne site"}</span
+          >
           {#if invite.label}
             <Badge variant="secondary" class="ml-2">{invite.label}</Badge>
           {/if}
@@ -253,65 +271,99 @@
       </Card.Header>
 
       <Card.Content class="space-y-6">
-        {#if isFollower && invite.scopes?.length}
-          <!-- Follower: show scope list -->
-          <div>
-            <p class="mb-3 text-sm font-medium">You'll be able to see:</p>
-            <ul class="space-y-2">
-              {#each invite.scopes as scope}
-                {@const Icon = scopeIcons[scope] ?? Eye}
-                <li class="flex items-center gap-3 text-sm">
-                  <div class="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                    <Icon class="h-4 w-4 text-muted-foreground" />
+        {#if hasRoles}
+          <div class="space-y-3">
+            <p class="text-sm font-medium">This invite grants the following roles:</p>
+            {#each inviteRoles as role (role.id)}
+              <div class="rounded-md border bg-muted/50 overflow-hidden">
+                <button
+                  type="button"
+                  class="flex items-center justify-between w-full p-3 text-left hover:bg-muted/80 transition-colors"
+                  onclick={() => expandedRoleId = expandedRoleId === role.id ? null : role.id}
+                >
+                  <div class="flex items-center gap-2">
+                    <Shield class="h-4 w-4 text-primary" />
+                    <span class="text-sm font-medium">{role.name}</span>
+                    {#if role.permissions?.length}
+                      <Badge variant="outline" class="text-xs">
+                        {role.permissions.length} permission{role.permissions.length !== 1 ? "s" : ""}
+                      </Badge>
+                    {/if}
                   </div>
-                  <span>{scopeDescriptions[scope] ?? scope}</span>
-                </li>
-              {/each}
-            </ul>
-            {#if invite.limitTo24Hours}
-              <p class="mt-3 text-xs text-muted-foreground">
-                Access is limited to the most recent 24 hours of data.
-              </p>
-            {/if}
-          </div>
-        {:else if roleInfo}
-          <!-- Non-follower: show role description -->
-          <div class="flex items-start gap-3 rounded-md border bg-muted/50 p-4">
-            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <roleInfo.icon class="h-4 w-4 text-primary" />
-            </div>
-            <p class="text-sm">
-              As a <span class="font-medium capitalize">{invite.role}</span>, {roleInfo.text}.
-            </p>
+                  {#if expandedRoleId === role.id}
+                    <ChevronUp class="h-4 w-4 text-muted-foreground" />
+                  {:else}
+                    <ChevronDown class="h-4 w-4 text-muted-foreground" />
+                  {/if}
+                </button>
+                {#if expandedRoleId === role.id && role.permissions?.length}
+                  <div class="border-t px-3 py-2 space-y-1">
+                    {#each role.permissions as perm}
+                      <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Check class="h-3 w-3 text-primary shrink-0" />
+                        <span>{permissionLabels[perm] ?? perm}</span>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/each}
           </div>
         {/if}
 
-        {#if formError}
-          <div class="flex items-start gap-3 rounded-md border border-destructive/20 bg-destructive/5 p-3">
-            <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-            <p class="text-sm text-destructive">{formError}</p>
+        {#if hasDirectPermissions}
+          <div class="space-y-2">
+            <p class="text-sm font-medium">Direct Permissions</p>
+            <div class="rounded-md border bg-muted/50 p-3 space-y-1">
+              {#each invite.directPermissions ?? [] as perm}
+                <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check class="h-3 w-3 text-primary shrink-0" />
+                  <span>{permissionLabels[perm] ?? perm}</span>
+                </div>
+              {/each}
+            </div>
           </div>
+        {/if}
+
+        {#if invite.limitTo24Hours}
+          <p class="text-xs text-muted-foreground">
+            Access is limited to the most recent 24 hours of data.
+          </p>
         {/if}
 
         {#if errorMessage}
-          <div class="flex items-start gap-3 rounded-md border border-destructive/20 bg-destructive/5 p-3">
-            <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+          <div
+            class="flex items-start gap-3 rounded-md border border-destructive/20 bg-destructive/5 p-3"
+          >
+            <AlertTriangle
+              class="mt-0.5 h-4 w-4 shrink-0 text-destructive"
+            />
             <p class="text-sm text-destructive">{errorMessage}</p>
           </div>
         {/if}
 
         {#if isAuthenticated}
           <!-- User is logged in - show accept button -->
-          <form method="POST" action="?/accept" use:enhance>
-            <Button type="submit" class="w-full" size="lg">
+          <Button
+            class="w-full"
+            size="lg"
+            disabled={isAccepting}
+            onclick={handleAcceptInvite}
+          >
+            {#if isAccepting}
+              <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+              Accepting...
+            {:else}
               <Check class="mr-2 h-4 w-4" />
               Accept Invite
-            </Button>
-          </form>
+            {/if}
+          </Button>
         {:else if registrationComplete}
           <!-- Registration complete - show recovery codes -->
           <div class="space-y-4">
-            <div class="flex items-start gap-3 rounded-md border border-green-500/20 bg-green-500/5 p-3">
+            <div
+              class="flex items-start gap-3 rounded-md border border-green-500/20 bg-green-500/5 p-3"
+            >
               <Check class="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
               <p class="text-sm text-green-700 dark:text-green-400">
                 Account created and passkey registered.
@@ -325,12 +377,17 @@
                   <h3 class="font-medium">Recovery Codes</h3>
                 </div>
                 <p class="text-sm text-muted-foreground">
-                  Save these recovery codes in a safe place. Each code can only be used once.
+                  Save these recovery codes in a safe place. Each code can only
+                  be used once.
                 </p>
 
-                <div class="grid grid-cols-2 gap-2 rounded-lg border bg-muted/50 p-4">
+                <div
+                  class="grid grid-cols-2 gap-2 rounded-lg border bg-muted/50 p-4"
+                >
                   {#each recoveryCodes as code}
-                    <code class="rounded bg-background px-2 py-1 text-center text-sm font-mono">
+                    <code
+                      class="rounded bg-background px-2 py-1 text-center text-sm font-mono"
+                    >
                       {code}
                     </code>
                   {/each}
@@ -414,7 +471,9 @@
                 <div class="absolute inset-0 flex items-center">
                   <span class="w-full border-t"></span>
                 </div>
-                <div class="relative flex justify-center text-xs uppercase">
+                <div
+                  class="relative flex justify-center text-xs uppercase"
+                >
                   <span class="bg-background px-2 text-muted-foreground">
                     Or continue with
                   </span>
@@ -427,8 +486,11 @@
                     variant="outline"
                     class="w-full h-11 relative"
                     style={getButtonStyle(provider.buttonColor)}
-                    disabled={isRegistering || isRedirecting || !provider.id}
-                    onclick={() => provider.id && loginWithProvider(provider.id)}
+                    disabled={isRegistering ||
+                      isRedirecting ||
+                      !provider.id}
+                    onclick={() =>
+                      provider.id && loginWithProvider(provider.id)}
                   >
                     {#if isRedirecting && selectedProvider === provider.id}
                       <Loader2 class="mr-2 h-4 w-4 animate-spin" />
@@ -445,7 +507,7 @@
             <p class="text-center text-xs text-muted-foreground">
               Already have an account?
               <a
-                href="/auth/login?returnUrl=/invite/{data.token}"
+                href="/auth/login?returnUrl=/invite/{token}"
                 class="underline hover:text-foreground"
               >
                 Sign in
@@ -455,7 +517,9 @@
         {/if}
 
         <p class="text-center text-xs text-muted-foreground">
-          This invite expires on {invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString() : "unknown"}
+          This invite expires on {invite.expiresAt
+            ? new Date(invite.expiresAt).toLocaleDateString()
+            : "unknown"}
         </p>
       </Card.Content>
     {/if}
