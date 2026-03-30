@@ -164,6 +164,7 @@ public static class ServiceRegistrationExtensions
         );
         services.AddScoped<ITenantAccessor, HttpContextTenantAccessor>();
         services.AddScoped<ITenantMemberService, TenantMemberService>();
+        services.AddScoped<ITenantRoleService, TenantRoleService>();
         services.AddScoped<ITenantService, TenantService>();
 
         // Auth handlers (executed in priority order, lowest first)
