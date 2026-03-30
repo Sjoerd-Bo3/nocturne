@@ -35,7 +35,7 @@
   const token = $derived(page.params.token);
   const isAuthenticated = $derived(page.data.isAuthenticated);
 
-  const inviteQuery = $derived(getInviteInfo(token));
+  const inviteQuery = $derived(getInviteInfo(token ?? ""));
   const invite = $derived(inviteQuery.current);
   const isLoading = $derived(!inviteQuery.current && !inviteQuery.error);
 
@@ -104,7 +104,7 @@
     isAccepting = true;
     errorMessage = null;
     try {
-      await acceptInvite(token);
+      await acceptInvite(token ?? "");
       await goto("/", { invalidateAll: true });
     } catch (err) {
       errorMessage =
@@ -279,7 +279,7 @@
                 <button
                   type="button"
                   class="flex items-center justify-between w-full p-3 text-left hover:bg-muted/80 transition-colors"
-                  onclick={() => expandedRoleId = expandedRoleId === role.id ? null : role.id}
+                  onclick={() => expandedRoleId = expandedRoleId === (role.id ?? null) ? null : (role.id ?? null)}
                 >
                   <div class="flex items-center gap-2">
                     <Shield class="h-4 w-4 text-primary" />
