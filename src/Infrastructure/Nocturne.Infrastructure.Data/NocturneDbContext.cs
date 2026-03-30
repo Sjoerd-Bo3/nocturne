@@ -2376,10 +2376,6 @@ public class NocturneDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<TenantMemberEntity>()
-            .Property(tm => tm.Role)
-            .HasConversion<string>();
-
-        modelBuilder.Entity<TenantMemberEntity>()
             .HasOne(e => e.CreatedFromInvite)
             .WithMany(i => i.CreatedMembers)
             .HasForeignKey(e => e.CreatedFromInviteId)

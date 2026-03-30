@@ -22,12 +22,11 @@ public class MemberInviteEntity
     public string TokenHash { get; set; } = string.Empty;
 
     [Required]
-    [Column("role")]
-    [MaxLength(32)]
-    public string Role { get; set; } = TenantRole.Follower;
+    [Column("role_ids", TypeName = "jsonb")]
+    public List<Guid> RoleIds { get; set; } = [];
 
-    [Column("scopes", TypeName = "jsonb")]
-    public List<string>? Scopes { get; set; }
+    [Column("direct_permissions", TypeName = "jsonb")]
+    public List<string>? DirectPermissions { get; set; }
 
     [Column("label")]
     [MaxLength(255)]

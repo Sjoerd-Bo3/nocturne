@@ -18,18 +18,14 @@ public class TenantMemberEntity
     [Column("subject_id")]
     public Guid SubjectId { get; set; }
 
-    [Column("role")]
-    [MaxLength(32)]
-    public string Role { get; set; } = TenantRole.Follower;
-
     [Column("sys_created_at")]
     public DateTime SysCreatedAt { get; set; } = DateTime.UtcNow;
 
     [Column("sys_updated_at")]
     public DateTime SysUpdatedAt { get; set; } = DateTime.UtcNow;
 
-    [Column("scopes", TypeName = "jsonb")]
-    public List<string>? Scopes { get; set; }
+    [Column("direct_permissions", TypeName = "jsonb")]
+    public List<string>? DirectPermissions { get; set; }
 
     [Column("label")]
     [MaxLength(255)]
@@ -59,15 +55,4 @@ public class TenantMemberEntity
     public SubjectEntity? Subject { get; set; }
     public MemberInviteEntity? CreatedFromInvite { get; set; }
     public List<TenantMemberRoleEntity> MemberRoles { get; set; } = [];
-}
-
-/// <summary>
-/// Roles a subject can have within a tenant
-/// </summary>
-public static class TenantRole
-{
-    public const string Owner = "owner";
-    public const string Admin = "admin";
-    public const string Caretaker = "caretaker";
-    public const string Follower = "follower";
 }
