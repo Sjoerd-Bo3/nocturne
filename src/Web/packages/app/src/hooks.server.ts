@@ -15,6 +15,7 @@ import * as js from '../../../locales/js.loader.server.js'
 import { locales } from '../../../locales/data.js'
 import supportedLocales from '../../../supportedLocales.json';
 import { LANGUAGE_COOKIE_NAME } from "$lib/stores/appearance-store.svelte";
+import { isPublicRoute } from "$lib/config/public-routes";
 
 // load at server startup
 loadLocales(main.key, main.loadIDs, main.loadCatalog, locales)
@@ -141,6 +142,26 @@ const authHandle: Handle = async ({ event, resolve }) => {
 
       event.locals.user = user;
       event.locals.isAuthenticated = true;
+
+      // Fetch effective permissions (granted scopes) for the current tenant
+      try {
+        const permUrl = new URL("/api/v4/me/permissions", apiBaseUrl);
+        const permHeaders = new Headers();
+        if (getHashedApiSecret()) {
+          permHeaders.set("api-secret", getHashedApiSecret()!);
+        }
+        const permCookies: string[] = [];
+        if (accessToken) permCookies.push(`${AUTH_COOKIE_NAMES.accessToken}=${accessToken}`);
+        if (refreshToken) permCookies.push(`${AUTH_COOKIE_NAMES.refreshToken}=${refreshToken}`);
+        if (permCookies.length > 0) permHeaders.set("Cookie", permCookies.join("; "));
+
+        const permResponse = await fetch(permUrl.toString(), { headers: permHeaders });
+        if (permResponse.ok) {
+          event.locals.effectivePermissions = await permResponse.json();
+        }
+      } catch {
+        // Non-fatal — permissions will default to empty
+      }
     }
   } catch (error) {
     // Log but don't fail the request - user will be treated as unauthenticated
@@ -151,38 +172,22 @@ const authHandle: Handle = async ({ event, resolve }) => {
 };
 
 /**
- * Site security handler - checks if site lockdown is enabled and enforces authentication
+ * Site security handler - enforces authentication when required, detects setup/recovery mode.
+ * Uses shared public route list to determine which paths bypass all gates.
  */
 const siteSecurityHandle: Handle = async ({ event, resolve }) => {
   const apiBaseUrl = getApiBaseUrl();
 
-  if (!apiBaseUrl) {
-    return resolve(event);
-  }
-
-  // Skip security check for public routes (auth pages, API, static assets, setup)
-  const path = event.url.pathname;
-  if (
-    path.startsWith("/auth") ||
-    path.startsWith("/api") ||
-    path.startsWith("/_app") ||
-    path.startsWith("/assets") ||
-    path.startsWith("/settings/setup") ||
-    path === "/" ||
-    path === "/favicon.ico"
-  ) {
+  if (!apiBaseUrl || isPublicRoute(event.url.pathname)) {
     return resolve(event);
   }
 
   try {
-    // Fetch site status to check if authentication is required
-    // Cache this check in locals to avoid multiple API calls
     if (!event.locals.siteSecurityChecked) {
       const apiClient = createServerApiClient(apiBaseUrl, fetch, {
         hashedSecret: getHashedApiSecret(),
       });
 
-      // Get status with security settings
       const status = await apiClient.status.getStatus();
       const requireAuth = status?.settings?.["requireAuthentication"] === true;
 
@@ -190,7 +195,6 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
       event.locals.siteSecurityChecked = true;
     }
 
-    // If authentication is required and user is not authenticated, redirect to login
     if (event.locals.requireAuthentication && !event.locals.isAuthenticated) {
       const returnUrl = encodeURIComponent(event.url.pathname + event.url.search);
       return new Response(null, {
@@ -201,7 +205,6 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
       });
     }
   } catch (error) {
-    // Check if the API returned a setup/recovery mode 503
     if (error && typeof error === "object" && "status" in error && (error as any).status === 503) {
       try {
         const body = JSON.parse((error as any).response ?? "{}");
@@ -221,8 +224,6 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
         // Couldn't parse, fall through
       }
     }
-    // If we can't check security settings, allow the request to proceed
-    // This prevents site lockout if the API is temporarily unavailable
     console.error("Failed to check site security settings:", error);
   }
 

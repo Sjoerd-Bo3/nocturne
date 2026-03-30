@@ -52,6 +52,10 @@ declare global {
 			 * Whether site requires authentication (lockdown mode)
 			 */
 			requireAuthentication?: boolean;
+			/**
+			 * Effective permissions (granted scopes) for the current user on the current tenant
+			 */
+			effectivePermissions?: string[];
 		}
 
 		// Base page data interface for the main app
