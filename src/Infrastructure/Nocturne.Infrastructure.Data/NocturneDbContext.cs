@@ -387,6 +387,16 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<TenantMemberEntity> TenantMembers { get; set; } = null!;
 
+    /// <summary>
+    /// Gets or sets the TenantRoles table for RBAC role definitions
+    /// </summary>
+    public DbSet<TenantRoleEntity> TenantRoles { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the TenantMemberRoles join table linking members to roles
+    /// </summary>
+    public DbSet<TenantMemberRoleEntity> TenantMemberRoles { get; set; } = null!;
+
     // Alert Engine entities
 
     /// <summary>
@@ -2380,6 +2390,21 @@ public class NocturneDbContext : DbContext
             .HasDatabaseName("ix_tenant_members_tenant_subject")
             .IsUnique()
             .HasFilter("revoked_at IS NULL");
+
+        // Configure TenantRole entity
+        modelBuilder.Entity<TenantRoleEntity>(entity =>
+        {
+            entity.HasIndex(e => new { e.TenantId, e.Slug }).IsUnique();
+            entity.Property(e => e.SysCreatedAt).HasDefaultValueSql("now()");
+            entity.Property(e => e.SysUpdatedAt).HasDefaultValueSql("now()");
+        });
+
+        // Configure TenantMemberRole join entity
+        modelBuilder.Entity<TenantMemberRoleEntity>(entity =>
+        {
+            entity.HasIndex(e => new { e.TenantMemberId, e.TenantRoleId }).IsUnique();
+            entity.Property(e => e.SysCreatedAt).HasDefaultValueSql("now()");
+        });
 
         // ───────────────────────────────────────────────
         // Alert Engine entity configuration

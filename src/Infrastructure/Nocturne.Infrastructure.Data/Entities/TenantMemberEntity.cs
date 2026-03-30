@@ -58,6 +58,7 @@ public class TenantMemberEntity
     public TenantEntity? Tenant { get; set; }
     public SubjectEntity? Subject { get; set; }
     public MemberInviteEntity? CreatedFromInvite { get; set; }
+    public List<TenantMemberRoleEntity> MemberRoles { get; set; } = [];
 }
 
 /// <summary>
