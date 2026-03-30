@@ -87,6 +87,12 @@ public class TenantEntity
     [Column("quiet_hours_override_critical")]
     public bool QuietHoursOverrideCritical { get; set; } = true;
 
+    /// <summary>
+    /// Whether unauthenticated users can request access to this tenant.
+    /// </summary>
+    [Column("allow_access_requests")]
+    public bool AllowAccessRequests { get; set; } = true;
+
     [Column("sys_created_at")]
     public DateTime SysCreatedAt { get; set; } = DateTime.UtcNow;
 
