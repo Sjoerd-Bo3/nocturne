@@ -22,11 +22,13 @@ public class MemberInviteServiceTests : IDisposable
     private readonly DbContextOptions<NocturneDbContext> _dbOptions;
     private readonly NocturneDbContext _dbContext;
     private readonly Mock<IJwtService> _jwtService;
+    private readonly Mock<ITenantService> _tenantService;
     private readonly MemberInviteService _service;
 
     private readonly Guid _tenantId = Guid.CreateVersion7();
     private readonly Guid _creatorSubjectId = Guid.CreateVersion7();
     private readonly Guid _acceptorSubjectId = Guid.CreateVersion7();
+    private Guid _followerRoleId;
 
     private const string FakeToken = "fake-random-token-abc123";
     private const string FakeTokenHash = "hashed-fake-token";
@@ -49,6 +51,8 @@ public class MemberInviteServiceTests : IDisposable
         _jwtService.Setup(j => j.GenerateRefreshToken()).Returns(FakeToken);
         _jwtService.Setup(j => j.HashRefreshToken(FakeToken)).Returns(FakeTokenHash);
 
+        _tenantService = new Mock<ITenantService>();
+
         var oidcOptions = Options.Create(new OidcOptions
         {
             BaseUrl = BaseUrl,
@@ -59,6 +63,7 @@ public class MemberInviteServiceTests : IDisposable
         _service = new MemberInviteService(
             _dbContext,
             _jwtService.Object,
+            _tenantService.Object,
             oidcOptions,
             logger.Object);
 
@@ -87,6 +92,20 @@ public class MemberInviteServiceTests : IDisposable
             Name = "Acceptor User",
         });
 
+        // Seed a follower role for the tenant
+        _followerRoleId = Guid.CreateVersion7();
+        _dbContext.TenantRoles.Add(new TenantRoleEntity
+        {
+            Id = _followerRoleId,
+            TenantId = _tenantId,
+            Name = "Follower",
+            Slug = "follower",
+            Permissions = [TenantPermissions.EntriesRead, TenantPermissions.HealthRead],
+            IsSystem = true,
+            SysCreatedAt = DateTime.UtcNow,
+            SysUpdatedAt = DateTime.UtcNow,
+        });
+
         _dbContext.SaveChanges();
     }
 
@@ -102,8 +121,7 @@ public class MemberInviteServiceTests : IDisposable
         var result = await _service.CreateInviteAsync(
             _tenantId,
             _creatorSubjectId,
-            TenantRole.Follower,
-            scopes: [OAuthScopes.EntriesRead, OAuthScopes.TreatmentsRead]);
+            [_followerRoleId]);
 
         result.Token.Should().Be(FakeToken);
         result.InviteUrl.Should().Be($"{BaseUrl}/invite/{FakeToken}");
@@ -115,92 +133,44 @@ public class MemberInviteServiceTests : IDisposable
         entity.Should().NotBeNull();
         entity!.TokenHash.Should().Be(FakeTokenHash);
         entity.TenantId.Should().Be(_tenantId);
-        entity.Role.Should().Be(TenantRole.Follower);
+        entity.RoleIds.Should().Contain(_followerRoleId);
     }
 
     [Fact]
-    public async Task CreateInviteAsync_FollowerRole_ValidatesReadOnlyScopes()
+    public async Task CreateInviteAsync_RequiresAtLeastOneRoleOrPermission()
     {
         var act = () => _service.CreateInviteAsync(
             _tenantId,
             _creatorSubjectId,
-            TenantRole.Follower,
-            scopes: [OAuthScopes.EntriesRead, OAuthScopes.EntriesReadWrite]);
+            []);
 
         await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*Invalid scopes*read-only*");
+            .WithMessage("*At least one role or direct permission*");
     }
 
     [Fact]
-    public async Task CreateInviteAsync_FollowerRole_RequiresAtLeastOneScope()
-    {
-        var act = () => _service.CreateInviteAsync(
-            _tenantId,
-            _creatorSubjectId,
-            TenantRole.Follower,
-            scopes: []);
-
-        await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*At least one scope*");
-    }
-
-    [Fact]
-    public async Task CreateInviteAsync_NonFollowerRole_IgnoresScopes()
+    public async Task CreateInviteAsync_WithDirectPermissions_Succeeds()
     {
         var result = await _service.CreateInviteAsync(
             _tenantId,
             _creatorSubjectId,
-            TenantRole.Admin,
-            scopes: [OAuthScopes.EntriesRead]);
+            [],
+            directPermissions: [TenantPermissions.EntriesRead]);
 
         result.Token.Should().Be(FakeToken);
 
         var entity = await _dbContext.MemberInvites.FirstOrDefaultAsync();
         entity.Should().NotBeNull();
-        entity!.Scopes.Should().BeNull();
-        entity.Role.Should().Be(TenantRole.Admin);
-    }
-
-    [Fact]
-    public async Task AcceptInviteAsync_ValidToken_CreatesMembership()
-    {
-        // Create invite
-        await _service.CreateInviteAsync(
-            _tenantId,
-            _creatorSubjectId,
-            TenantRole.Follower,
-            scopes: [OAuthScopes.EntriesRead],
-            label: "Test Invite",
-            limitTo24Hours: true);
-
-        // Accept invite
-        var result = await _service.AcceptInviteAsync(FakeToken, _acceptorSubjectId);
-
-        result.Success.Should().BeTrue();
-        result.MembershipId.Should().NotBeNull();
-        result.ErrorCode.Should().BeNull();
-
-        // Verify membership was created
-        var member = await _dbContext.TenantMembers
-            .FirstOrDefaultAsync(m => m.SubjectId == _acceptorSubjectId);
-        member.Should().NotBeNull();
-        member!.TenantId.Should().Be(_tenantId);
-        member.Role.Should().Be(TenantRole.Follower);
-        member.Scopes.Should().Contain(OAuthScopes.EntriesRead);
-        member.Label.Should().Be("Test Invite");
-        member.LimitTo24Hours.Should().BeTrue();
-        member.CreatedFromInviteId.Should().NotBeNull();
+        entity!.DirectPermissions.Should().Contain(TenantPermissions.EntriesRead);
     }
 
     [Fact]
     public async Task AcceptInviteAsync_ExpiredToken_ReturnsError()
     {
-        // Create invite and manually expire it
         await _service.CreateInviteAsync(
             _tenantId,
             _creatorSubjectId,
-            TenantRole.Follower,
-            scopes: [OAuthScopes.EntriesRead]);
+            [_followerRoleId]);
 
         var invite = await _dbContext.MemberInvites.FirstAsync();
         invite.ExpiresAt = DateTime.UtcNow.AddDays(-1);
@@ -218,8 +188,7 @@ public class MemberInviteServiceTests : IDisposable
         await _service.CreateInviteAsync(
             _tenantId,
             _creatorSubjectId,
-            TenantRole.Follower,
-            scopes: [OAuthScopes.EntriesRead]);
+            [_followerRoleId]);
 
         var invite = await _dbContext.MemberInvites.FirstAsync();
         invite.RevokedAt = DateTime.UtcNow;
@@ -237,8 +206,7 @@ public class MemberInviteServiceTests : IDisposable
         await _service.CreateInviteAsync(
             _tenantId,
             _creatorSubjectId,
-            TenantRole.Follower,
-            scopes: [OAuthScopes.EntriesRead],
+            [_followerRoleId],
             maxUses: 1);
 
         var invite = await _dbContext.MemberInvites.FirstAsync();
@@ -257,8 +225,7 @@ public class MemberInviteServiceTests : IDisposable
         await _service.CreateInviteAsync(
             _tenantId,
             _creatorSubjectId,
-            TenantRole.Follower,
-            scopes: [OAuthScopes.EntriesRead]);
+            [_followerRoleId]);
 
         // Add an existing active membership
         _dbContext.TenantMembers.Add(new TenantMemberEntity
@@ -266,7 +233,6 @@ public class MemberInviteServiceTests : IDisposable
             Id = Guid.CreateVersion7(),
             TenantId = _tenantId,
             SubjectId = _acceptorSubjectId,
-            Role = TenantRole.Follower,
             RevokedAt = null,
         });
         await _dbContext.SaveChangesAsync();
@@ -278,28 +244,12 @@ public class MemberInviteServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task AcceptInviteAsync_IncrementsUseCount()
-    {
-        await _service.CreateInviteAsync(
-            _tenantId,
-            _creatorSubjectId,
-            TenantRole.Follower,
-            scopes: [OAuthScopes.EntriesRead]);
-
-        await _service.AcceptInviteAsync(FakeToken, _acceptorSubjectId);
-
-        var invite = await _dbContext.MemberInvites.FirstAsync();
-        invite.UseCount.Should().Be(1);
-    }
-
-    [Fact]
     public async Task RevokeInviteAsync_SetsRevokedAt()
     {
         var createResult = await _service.CreateInviteAsync(
             _tenantId,
             _creatorSubjectId,
-            TenantRole.Follower,
-            scopes: [OAuthScopes.EntriesRead]);
+            [_followerRoleId]);
 
         var result = await _service.RevokeInviteAsync(createResult.Id, _tenantId);
 

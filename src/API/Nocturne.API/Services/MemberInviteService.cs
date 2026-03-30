@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
-using Nocturne.Core.Models.Authorization;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -16,32 +15,20 @@ public class MemberInviteService : IMemberInviteService
 {
     private readonly NocturneDbContext _dbContext;
     private readonly IJwtService _jwtService;
+    private readonly ITenantService _tenantService;
     private readonly ILogger<MemberInviteService> _logger;
     private readonly OidcOptions _oidcOptions;
-
-    /// <summary>
-    /// Scopes that are allowed for follower grants (read-only access).
-    /// </summary>
-    private static readonly HashSet<string> AllowedFollowerScopes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        OAuthScopes.EntriesRead,
-        OAuthScopes.TreatmentsRead,
-        OAuthScopes.DeviceStatusRead,
-        OAuthScopes.ProfileRead,
-        OAuthScopes.NotificationsRead,
-        OAuthScopes.ReportsRead,
-        OAuthScopes.IdentityRead,
-        OAuthScopes.HealthRead,
-    };
 
     public MemberInviteService(
         NocturneDbContext dbContext,
         IJwtService jwtService,
+        ITenantService tenantService,
         IOptions<OidcOptions> oidcOptions,
         ILogger<MemberInviteService> logger)
     {
         _dbContext = dbContext;
         _jwtService = jwtService;
+        _tenantService = tenantService;
         _oidcOptions = oidcOptions.Value;
         _logger = logger;
     }
@@ -50,37 +37,24 @@ public class MemberInviteService : IMemberInviteService
     public async Task<MemberInviteResult> CreateInviteAsync(
         Guid tenantId,
         Guid createdBySubjectId,
-        string role,
-        List<string>? scopes = null,
+        List<Guid> roleIds,
+        List<string>? directPermissions = null,
         string? label = null,
         int expiresInDays = 7,
         int? maxUses = null,
         bool limitTo24Hours = false)
     {
-        List<string>? resolvedScopes;
+        if (roleIds.Count == 0 && (directPermissions == null || directPermissions.Count == 0))
+            throw new ArgumentException("At least one role or direct permission is required.");
 
-        if (role.Equals(TenantRole.Follower, StringComparison.OrdinalIgnoreCase))
+        // Validate roleIds belong to this tenant
+        if (roleIds.Count > 0)
         {
-            // Validate scopes - only allow read scopes for followers
-            if (scopes == null || scopes.Count == 0)
-            {
-                throw new ArgumentException("At least one scope is required for follower invites.");
-            }
+            var validCount = await _dbContext.TenantRoles
+                .CountAsync(r => r.TenantId == tenantId && roleIds.Contains(r.Id));
 
-            var invalidScopes = scopes.Where(s => !AllowedFollowerScopes.Contains(s)).ToList();
-            if (invalidScopes.Count > 0)
-            {
-                throw new ArgumentException(
-                    $"Invalid scopes for follower invite: {string.Join(", ", invalidScopes)}. " +
-                    "Only read-only scopes are allowed.");
-            }
-
-            resolvedScopes = scopes;
-        }
-        else
-        {
-            // Non-follower roles ignore scopes input
-            resolvedScopes = null;
+            if (validCount != roleIds.Count)
+                throw new ArgumentException("One or more role IDs do not belong to this tenant.");
         }
 
         // Generate token
@@ -93,8 +67,8 @@ public class MemberInviteService : IMemberInviteService
             TenantId = tenantId,
             CreatedBySubjectId = createdBySubjectId,
             TokenHash = tokenHash,
-            Role = role,
-            Scopes = resolvedScopes,
+            RoleIds = roleIds,
+            DirectPermissions = directPermissions,
             Label = label,
             LimitTo24Hours = limitTo24Hours,
             ExpiresAt = DateTime.UtcNow.AddDays(expiresInDays),
@@ -107,8 +81,8 @@ public class MemberInviteService : IMemberInviteService
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation(
-            "MemberInviteAudit: {Event} invite_id={InviteId} tenant_id={TenantId} role={Role} expires_at={ExpiresAt}",
-            "invite_created", entity.Id, tenantId, role, entity.ExpiresAt);
+            "MemberInviteAudit: {Event} invite_id={InviteId} tenant_id={TenantId} role_count={RoleCount} expires_at={ExpiresAt}",
+            "invite_created", entity.Id, tenantId, roleIds.Count, entity.ExpiresAt);
 
         // Build invite URL
         var baseUrl = _oidcOptions.BaseUrl?.TrimEnd('/') ?? "";
@@ -176,22 +150,33 @@ public class MemberInviteService : IMemberInviteService
         if (existingMember != null)
             return new AcceptMemberInviteResult(false, "already_member", "You are already a member of this tenant.");
 
-        // Create the tenant membership
-        var member = new TenantMemberEntity
-        {
-            Id = Guid.CreateVersion7(),
-            TenantId = entity.TenantId,
-            SubjectId = acceptingSubjectId,
-            Role = entity.Role,
-            Scopes = entity.Scopes,
-            Label = entity.Label,
-            LimitTo24Hours = entity.LimitTo24Hours,
-            CreatedFromInviteId = entity.Id,
-            SysCreatedAt = DateTime.UtcNow,
-            SysUpdatedAt = DateTime.UtcNow,
-        };
+        // Filter out deleted roles from the invite
+        var validRoleIds = entity.RoleIds.Count > 0
+            ? await _dbContext.TenantRoles
+                .Where(r => r.TenantId == entity.TenantId && entity.RoleIds.Contains(r.Id))
+                .Select(r => r.Id)
+                .ToListAsync()
+            : [];
 
-        _dbContext.TenantMembers.Add(member);
+        if (validRoleIds.Count == 0 && (entity.DirectPermissions == null || entity.DirectPermissions.Count == 0))
+            return new AcceptMemberInviteResult(false, "no_permissions", "All roles from this invite have been deleted and no direct permissions are assigned.");
+
+        // Create the tenant membership via the tenant service
+        await _tenantService.AddMemberAsync(
+            entity.TenantId,
+            acceptingSubjectId,
+            validRoleIds,
+            entity.DirectPermissions,
+            entity.Label,
+            entity.LimitTo24Hours);
+
+        // Get the member ID for the result
+        var member = await _dbContext.TenantMembers
+            .Where(m => m.TenantId == entity.TenantId && m.SubjectId == acceptingSubjectId)
+            .FirstAsync();
+
+        // Update the invite link to the member
+        member.CreatedFromInviteId = entity.Id;
 
         // Increment use count
         entity.UseCount++;
@@ -249,8 +234,8 @@ public class MemberInviteService : IMemberInviteService
             entity.TenantId,
             entity.Tenant?.DisplayName ?? "",
             entity.CreatedBy?.Name ?? "",
-            entity.Role,
-            entity.Scopes,
+            entity.RoleIds,
+            entity.DirectPermissions,
             entity.Label,
             entity.LimitTo24Hours,
             entity.ExpiresAt,

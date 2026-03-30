@@ -9,6 +9,7 @@ using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.API.Services.Auth;
+using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
 using SameSiteMode = Nocturne.Core.Models.Configuration.SameSiteMode;
@@ -33,6 +34,7 @@ public class PasskeyController : ControllerBase
     private readonly ISubjectService _subjectService;
     private readonly IAuthAuditService _auditService;
     private readonly ITenantAccessor _tenantAccessor;
+    private readonly ITenantService _tenantService;
     private readonly NocturneDbContext _dbContext;
     private readonly OidcOptions _oidcOptions;
     private readonly ILogger<PasskeyController> _logger;
@@ -48,6 +50,7 @@ public class PasskeyController : ControllerBase
         ISubjectService subjectService,
         IAuthAuditService auditService,
         ITenantAccessor tenantAccessor,
+        ITenantService tenantService,
         NocturneDbContext dbContext,
         IOptions<OidcOptions> oidcOptions,
         ILogger<PasskeyController> logger)
@@ -59,6 +62,7 @@ public class PasskeyController : ControllerBase
         _subjectService = subjectService;
         _auditService = auditService;
         _tenantAccessor = tenantAccessor;
+        _tenantService = tenantService;
         _dbContext = dbContext;
         _oidcOptions = oidcOptions.Value;
         _logger = logger;
@@ -455,12 +459,17 @@ public class PasskeyController : ControllerBase
     [AllowAnonymous]
     [RemoteQuery]
     [ProducesResponseType(typeof(AuthStatusResponse), StatusCodes.Status200OK)]
-    public IActionResult GetAuthStatus([FromServices] RecoveryModeState state)
+    public async Task<IActionResult> GetAuthStatus([FromServices] RecoveryModeState state)
     {
+        var tenant = await _dbContext.Tenants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.IsDefault);
+
         return Ok(new AuthStatusResponse
         {
             SetupRequired = state.IsSetupRequired,
             RecoveryMode = state.IsEnabled,
+            AllowAccessRequests = tenant?.AllowAccessRequests ?? false,
         });
     }
 
@@ -525,16 +534,16 @@ public class PasskeyController : ControllerBase
                 IsSystemSubject = false,
             });
 
-            // Add as owner of the default tenant
-            _dbContext.TenantMembers.Add(new Infrastructure.Data.Entities.TenantMemberEntity
-            {
-                Id = Guid.CreateVersion7(),
-                TenantId = defaultTenant.Id,
-                SubjectId = subjectId,
-                Role = Infrastructure.Data.Entities.TenantRole.Owner,
-            });
-
             await _dbContext.SaveChangesAsync();
+
+            // Add as owner of the default tenant (seeds roles if needed and assigns owner)
+            var ownerRole = await _dbContext.TenantRoles
+                .FirstOrDefaultAsync(r => r.TenantId == defaultTenant.Id && r.Slug == "owner");
+
+            if (ownerRole != null)
+            {
+                await _tenantService.AddMemberAsync(defaultTenant.Id, subjectId, [ownerRole.Id]);
+            }
 
             // Assign admin role
             await _subjectService.AssignRoleAsync(subjectId, "admin");
@@ -646,6 +655,282 @@ public class PasskeyController : ControllerBase
         {
             _logger.LogWarning(ex, "Setup passkey registration failed");
             return Problem(detail: "Passkey registration failed during setup", statusCode: 400, title: "Registration Failed");
+        }
+    }
+
+    [HttpPost("access-request/options")]
+    [AllowAnonymous]
+    [RemoteCommand]
+    [ProducesResponseType(typeof(PasskeyOptionsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<PasskeyOptionsResponse>> AccessRequestOptions(
+        [FromBody] AccessRequestOptionsRequest request)
+    {
+        var tenant = await _dbContext.Tenants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.IsDefault);
+
+        if (tenant == null || !tenant.AllowAccessRequests)
+            return NotFound();
+
+        if (string.IsNullOrWhiteSpace(request.DisplayName))
+            return Problem(detail: "Display name is required", statusCode: 400, title: "Bad Request");
+
+        var displayName = request.DisplayName.Trim();
+
+        var existingPending = await _dbContext.Subjects
+            .AnyAsync(s => s.ApprovalStatus == "Pending" && s.Name == displayName);
+
+        if (existingPending)
+            return Conflict(new ProblemDetails
+            {
+                Detail = "A pending access request with this name already exists",
+                Status = 409,
+                Title = "Conflict",
+            });
+
+        var subjectId = Guid.CreateVersion7();
+        var username = displayName.ToLowerInvariant().Replace(" ", "-");
+
+        _dbContext.Subjects.Add(new SubjectEntity
+        {
+            Id = subjectId,
+            Name = displayName,
+            Username = username,
+            IsActive = false,
+            IsSystemSubject = false,
+            ApprovalStatus = "Pending",
+            AccessRequestMessage = request.Message?.Trim(),
+        });
+
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _passkeyService.GenerateRegistrationOptionsAsync(
+            subjectId, username, tenant.Id);
+
+        return Ok(new PasskeyOptionsResponse
+        {
+            Options = result.OptionsJson,
+            ChallengeToken = result.ChallengeToken,
+        });
+    }
+
+    [HttpPost("access-request/complete")]
+    [AllowAnonymous]
+    [RemoteCommand]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> AccessRequestComplete(
+        [FromBody] AccessRequestCompleteRequest request,
+        [FromServices] IInAppNotificationService notificationService)
+    {
+        var tenant = await _dbContext.Tenants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.IsDefault);
+
+        if (tenant == null || !tenant.AllowAccessRequests)
+            return NotFound();
+
+        try
+        {
+            var credResult = await _passkeyService.CompleteRegistrationAsync(
+                request.AttestationResponseJson, request.ChallengeToken, tenant.Id);
+
+            var subject = await _dbContext.Subjects
+                .FirstOrDefaultAsync(s => s.Id == credResult.SubjectId);
+
+            var displayName = subject?.Name ?? "Unknown";
+            var message = subject?.AccessRequestMessage;
+
+            var ownerIds = await _dbContext.TenantMembers
+                .Where(tm => tm.TenantId == tenant.Id
+                    && tm.MemberRoles.Any(mr => mr.TenantRole.Slug == Core.Models.Authorization.TenantPermissions.SeedRoles.Owner))
+                .Select(tm => tm.SubjectId)
+                .ToListAsync();
+
+            foreach (var ownerId in ownerIds)
+            {
+                await notificationService.CreateNotificationAsync(
+                    ownerId.ToString(),
+                    InAppNotificationType.AnonymousLoginRequest,
+                    NotificationUrgency.Info,
+                    $"{displayName} has requested access",
+                    subtitle: message != null && message.Length > 100 ? message[..100] : message,
+                    sourceId: credResult.SubjectId.ToString(),
+                    actions:
+                    [
+                        new NotificationActionDto
+                        {
+                            ActionId = "review",
+                            Label = "Review",
+                            Variant = "primary",
+                        },
+                    ],
+                    metadata: new Dictionary<string, object>
+                    {
+                        ["navigateTo"] = "/settings/access-requests",
+                    });
+            }
+
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Access request passkey registration failed");
+            return Problem(detail: "Passkey registration failed", statusCode: 400, title: "Bad Request");
+        }
+    }
+
+    /// <summary>
+    /// Generate passkey registration options for an unauthenticated user accepting an invite.
+    /// Validates the invite, creates a new subject, and returns WebAuthn registration options.
+    /// </summary>
+    [HttpPost("invite/options")]
+    [AllowAnonymous]
+    [RemoteCommand]
+    [ProducesResponseType(typeof(PasskeyOptionsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PasskeyOptionsResponse>> InviteOptions(
+        [FromBody] InviteOptionsRequest request,
+        [FromServices] IMemberInviteService memberInviteService)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token) ||
+            string.IsNullOrWhiteSpace(request.Username) ||
+            string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            return Problem(detail: "Token, username, and display name are required", statusCode: 400, title: "Bad Request");
+        }
+
+        // Validate the invite
+        var invite = await memberInviteService.GetInviteByTokenAsync(request.Token);
+        if (invite == null || !invite.IsValid)
+            return NotFound();
+
+        var tenant = await _dbContext.Tenants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.IsDefault);
+
+        if (tenant == null)
+            return Problem(detail: "Default tenant not found", statusCode: 500, title: "Server Error");
+
+        // Create the subject
+        var subjectId = Guid.CreateVersion7();
+        var username = request.Username.Trim().ToLowerInvariant();
+
+        _dbContext.Subjects.Add(new SubjectEntity
+        {
+            Id = subjectId,
+            Name = request.DisplayName.Trim(),
+            Username = username,
+            IsActive = true,
+            IsSystemSubject = false,
+        });
+
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Invite: created subject {SubjectId} ({Username}) for invite acceptance",
+            subjectId, username);
+
+        // Generate passkey registration options
+        var result = await _passkeyService.GenerateRegistrationOptionsAsync(
+            subjectId, username, tenant.Id);
+
+        return Ok(new PasskeyOptionsResponse
+        {
+            Options = result.OptionsJson,
+            ChallengeToken = result.ChallengeToken,
+        });
+    }
+
+    /// <summary>
+    /// Complete passkey registration for an invite acceptance.
+    /// Verifies attestation, accepts the invite, generates recovery codes, and issues a session.
+    /// </summary>
+    [HttpPost("invite/complete")]
+    [AllowAnonymous]
+    [RemoteCommand]
+    [ProducesResponseType(typeof(SetupCompleteResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<SetupCompleteResponse>> InviteComplete(
+        [FromBody] InviteCompleteRequest request,
+        [FromServices] IMemberInviteService memberInviteService)
+    {
+        if (string.IsNullOrEmpty(request.ChallengeToken) || string.IsNullOrEmpty(request.Token))
+        {
+            return Problem(detail: "Challenge token and invite token are required", statusCode: 400, title: "Bad Request");
+        }
+
+        var tenant = await _dbContext.Tenants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(t => t.IsDefault);
+
+        if (tenant == null)
+            return Problem(detail: "Default tenant not found", statusCode: 500, title: "Server Error");
+
+        try
+        {
+            var credResult = await _passkeyService.CompleteRegistrationAsync(
+                request.AttestationResponseJson, request.ChallengeToken, tenant.Id);
+
+            // Accept the invite
+            var acceptResult = await memberInviteService.AcceptInviteAsync(request.Token, credResult.SubjectId);
+            if (!acceptResult.Success)
+            {
+                return Problem(detail: acceptResult.ErrorDescription ?? "Failed to accept invite", statusCode: 400, title: "Invite Error");
+            }
+
+            // Generate recovery codes
+            var recoveryCodes = await _recoveryCodeService.GenerateCodesAsync(credResult.SubjectId);
+
+            // Get subject details for token generation
+            var subject = await _subjectService.GetSubjectByIdAsync(credResult.SubjectId);
+            if (subject == null)
+                return Problem(detail: "Created subject not found", statusCode: 500, title: "Server Error");
+
+            var roles = await _subjectService.GetSubjectRolesAsync(credResult.SubjectId);
+            var permissions = await _subjectService.GetSubjectPermissionsAsync(credResult.SubjectId);
+
+            // Issue session
+            var subjectInfo = new SubjectInfo
+            {
+                Id = subject.Id,
+                Name = subject.Name,
+                Email = subject.Email,
+            };
+
+            var accessToken = _jwtService.GenerateAccessToken(subjectInfo, permissions, roles);
+            var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
+                credResult.SubjectId,
+                oidcSessionId: null,
+                deviceDescription: "Invite Passkey",
+                ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                userAgent: Request.Headers.UserAgent.ToString());
+
+            SetSessionCookies(accessToken, refreshToken);
+
+            _logger.LogInformation(
+                "Invite complete: subject {SubjectId} registered with passkey via invite",
+                credResult.SubjectId);
+
+            return Ok(new SetupCompleteResponse
+            {
+                Success = true,
+                RecoveryCodes = recoveryCodes,
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                ExpiresIn = (int)_jwtService.GetAccessTokenLifetime().TotalSeconds,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Invite passkey registration failed");
+            return Problem(detail: "Passkey registration failed", statusCode: 400, title: "Registration Failed");
         }
     }
 
@@ -823,6 +1108,7 @@ public class AuthStatusResponse
 {
     public bool SetupRequired { get; set; }
     public bool RecoveryMode { get; set; }
+    public bool AllowAccessRequests { get; set; }
 }
 
 /// <summary>
@@ -853,6 +1139,32 @@ public class SetupCompleteResponse
     public string AccessToken { get; set; } = string.Empty;
     public string? RefreshToken { get; set; }
     public int ExpiresIn { get; set; }
+}
+
+public class AccessRequestOptionsRequest
+{
+    public string DisplayName { get; set; } = string.Empty;
+    public string? Message { get; set; }
+}
+
+public class AccessRequestCompleteRequest
+{
+    public string AttestationResponseJson { get; set; } = string.Empty;
+    public string ChallengeToken { get; set; } = string.Empty;
+}
+
+public class InviteOptionsRequest
+{
+    public string Token { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+}
+
+public class InviteCompleteRequest
+{
+    public string Token { get; set; } = string.Empty;
+    public string AttestationResponseJson { get; set; } = string.Empty;
+    public string ChallengeToken { get; set; } = string.Empty;
 }
 
 #endregion

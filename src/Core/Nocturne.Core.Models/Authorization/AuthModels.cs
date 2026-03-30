@@ -46,8 +46,8 @@ public class AuthResult
 
 /// <summary>
 /// Authentication context containing user identity and permissions.
-/// MemberScopeMiddleware enriches this with MemberRole and applies scope
-/// restrictions for non-owner/admin roles (e.g., followers).
+/// MemberScopeMiddleware enriches this with effective permissions from
+/// the RBAC system (role permissions + direct permissions).
 /// </summary>
 public class AuthContext
 {
@@ -120,12 +120,6 @@ public class AuthContext
     /// When the authentication expires
     /// </summary>
     public DateTimeOffset? ExpiresAt { get; set; }
-
-    /// <summary>
-    /// The member's role within the resolved tenant (owner/admin/caretaker/follower).
-    /// Set by MemberScopeMiddleware after resolving the tenant membership.
-    /// </summary>
-    public string? MemberRole { get; set; }
 
     /// <summary>
     /// When true, data requests should only return data from the last 24 hours

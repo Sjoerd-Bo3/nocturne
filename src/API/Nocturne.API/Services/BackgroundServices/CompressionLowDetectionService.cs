@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
 
@@ -693,7 +694,8 @@ public class CompressionLowDetectionService : BackgroundService, ICompressionLow
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
 
         var ownerSubjectId = await context.TenantMembers.AsNoTracking()
-            .Where(tm => tm.TenantId == tenantId && tm.Role == TenantRole.Owner)
+            .Where(tm => tm.TenantId == tenantId
+                && tm.MemberRoles.Any(mr => mr.TenantRole.Slug == TenantPermissions.SeedRoles.Owner))
             .Select(tm => tm.SubjectId)
             .FirstOrDefaultAsync(cancellationToken);
 

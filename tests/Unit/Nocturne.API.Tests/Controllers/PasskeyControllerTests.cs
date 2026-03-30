@@ -69,6 +69,8 @@ public class PasskeyControllerTests : IDisposable
 
         var auditService = new Mock<IAuthAuditService>();
 
+        var tenantService = new Mock<ITenantService>();
+
         _controller = new PasskeyController(
             _passkeyService.Object,
             _recoveryCodeService.Object,
@@ -77,6 +79,7 @@ public class PasskeyControllerTests : IDisposable
             _subjectService.Object,
             auditService.Object,
             _tenantAccessor.Object,
+            tenantService.Object,
             _dbContext,
             oidcOptions,
             logger.Object);
@@ -283,7 +286,6 @@ public class PasskeyControllerTests : IDisposable
             .Where(tm => tm.TenantId == defaultTenant.Id)
             .ToListAsync();
         members.Should().HaveCount(1);
-        members[0].Role.Should().Be(TenantRole.Owner);
         members[0].SubjectId.Should().Be(subjects[0].Id);
     }
 

@@ -17,6 +17,7 @@ public partial class TenantService : ITenantService
     private readonly IMemoryCache _cache;
     private readonly MultitenancyConfiguration _config;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ITenantRoleService _roleService;
 
     private static readonly HashSet<string> ReservedSlugs = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -31,16 +32,18 @@ public partial class TenantService : ITenantService
         IDbContextFactory<NocturneDbContext> factory,
         IMemoryCache cache,
         IOptions<MultitenancyConfiguration> config,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ITenantRoleService roleService)
     {
         _factory = factory;
         _cache = cache;
         _config = config.Value;
         _httpClientFactory = httpClientFactory;
+        _roleService = roleService;
     }
 
     public async Task<TenantDto> CreateAsync(
-        string slug, string displayName, string? apiSecret = null, CancellationToken ct = default)
+        string slug, string displayName, Guid creatorSubjectId, string? apiSecret = null, CancellationToken ct = default)
     {
         await using var context = await _factory.CreateDbContextAsync(ct);
 
@@ -54,6 +57,15 @@ public partial class TenantService : ITenantService
 
         context.Tenants.Add(tenant);
         await context.SaveChangesAsync(ct);
+
+        // Seed default roles for this tenant
+        await _roleService.SeedRolesForTenantAsync(tenant.Id, ct);
+
+        // Assign creator as owner
+        var ownerRole = await context.TenantRoles
+            .FirstAsync(r => r.TenantId == tenant.Id && r.Slug == "owner", ct);
+        await AddMemberAsync(tenant.Id, creatorSubjectId, [ownerRole.Id], ct: ct);
+
         return ToDto(tenant);
     }
 
@@ -71,17 +83,33 @@ public partial class TenantService : ITenantService
         var tenant = await context.Tenants.AsNoTracking()
             .Include(t => t.Members)
                 .ThenInclude(m => m.Subject)
+            .Include(t => t.Members)
+                .ThenInclude(m => m.MemberRoles)
+                    .ThenInclude(mr => mr.TenantRole)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
         if (tenant == null) return null;
 
         return new TenantDetailDto(
             tenant.Id, tenant.Slug, tenant.DisplayName, tenant.IsActive, tenant.IsDefault, tenant.SysCreatedAt,
-            tenant.Members.Select(m => new TenantMemberDto(m.SubjectId, m.Subject?.Name, m.Role, m.SysCreatedAt)).ToList());
+            tenant.Members
+                .Where(m => m.RevokedAt == null)
+                .Select(m => new TenantMemberDto(
+                    m.Id,
+                    m.SubjectId,
+                    m.Subject?.Name,
+                    m.MemberRoles.Select(mr => new TenantMemberRoleDto(
+                        mr.TenantRoleId, mr.TenantRole.Name, mr.TenantRole.Slug)).ToList(),
+                    m.DirectPermissions,
+                    m.Label,
+                    m.LimitTo24Hours,
+                    m.LastUsedAt,
+                    m.SysCreatedAt))
+                .ToList());
     }
 
     public async Task<TenantDto> UpdateAsync(
-        Guid id, string displayName, bool isActive, CancellationToken ct = default)
+        Guid id, string displayName, bool isActive, bool? allowAccessRequests = null, CancellationToken ct = default)
     {
         await using var context = await _factory.CreateDbContextAsync(ct);
         var tenant = await context.Tenants.FindAsync([id], ct)
@@ -89,6 +117,8 @@ public partial class TenantService : ITenantService
 
         tenant.DisplayName = displayName;
         tenant.IsActive = isActive;
+        if (allowAccessRequests.HasValue)
+            tenant.AllowAccessRequests = allowAccessRequests.Value;
         await context.SaveChangesAsync(ct);
 
         // Invalidate cached tenant context
@@ -100,7 +130,8 @@ public partial class TenantService : ITenantService
     }
 
     public async Task AddMemberAsync(
-        Guid tenantId, Guid subjectId, string role, CancellationToken ct = default)
+        Guid tenantId, Guid subjectId, List<Guid> roleIds, List<string>? directPermissions = null,
+        string? label = null, bool limitTo24Hours = false, CancellationToken ct = default)
     {
         await using var context = await _factory.CreateDbContextAsync(ct);
 
@@ -111,12 +142,32 @@ public partial class TenantService : ITenantService
         if (exists)
             return;
 
-        context.TenantMembers.Add(new TenantMemberEntity
+        var member = new TenantMemberEntity
         {
+            Id = Guid.CreateVersion7(),
             TenantId = tenantId,
             SubjectId = subjectId,
-            Role = role,
-        });
+            DirectPermissions = directPermissions,
+            Label = label,
+            LimitTo24Hours = limitTo24Hours,
+            SysCreatedAt = DateTime.UtcNow,
+            SysUpdatedAt = DateTime.UtcNow,
+        };
+
+        context.TenantMembers.Add(member);
+
+        // Create role assignments
+        var now = DateTime.UtcNow;
+        foreach (var roleId in roleIds)
+        {
+            context.TenantMemberRoles.Add(new TenantMemberRoleEntity
+            {
+                Id = Guid.CreateVersion7(),
+                TenantMemberId = member.Id,
+                TenantRoleId = roleId,
+                SysCreatedAt = now,
+            });
+        }
 
         try
         {

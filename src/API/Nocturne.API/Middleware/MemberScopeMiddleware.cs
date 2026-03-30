@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Nocturne.API.Extensions;
-using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
@@ -11,8 +10,9 @@ namespace Nocturne.API.Middleware;
 
 /// <summary>
 /// Middleware that resolves the authenticated user's tenant membership and applies
-/// role-based scope restrictions. For followers, scopes are narrowed to the
-/// intersection of their granted scopes and the membership's effective scopes.
+/// RBAC-based permission restrictions. Effective permissions are the union of all
+/// role permissions + direct permissions. For non-superusers, effective permissions
+/// are intersected with the auth token's granted scopes.
 /// Must run after AuthenticationMiddleware.
 /// </summary>
 public class MemberScopeMiddleware
@@ -37,10 +37,11 @@ public class MemberScopeMiddleware
             return;
         }
 
-        // ApiSecret auth grants admin on the resolved tenant — no membership lookup needed
+        // ApiSecret auth grants superuser on the resolved tenant — no membership lookup needed
         if (authContext.AuthType == AuthType.ApiSecret)
         {
-            authContext.MemberRole = MembershipScopes.RoleAdmin;
+            var superuserScopes = new HashSet<string> { "*" };
+            context.Items["GrantedScopes"] = (IReadOnlySet<string>)superuserScopes;
             await _next(context);
             return;
         }
@@ -49,17 +50,11 @@ public class MemberScopeMiddleware
 
         var membership = await dbContext.TenantMembers
             .AsNoTracking()
+            .Include(tm => tm.MemberRoles)
+                .ThenInclude(mr => mr.TenantRole)
             .Where(tm => tm.SubjectId == authContext.SubjectId.Value
                          && tm.TenantId == authContext.TenantId.Value
                          && tm.RevokedAt == null)
-            .Select(tm => new
-            {
-                tm.Id,
-                tm.Role,
-                tm.Scopes,
-                tm.LimitTo24Hours,
-                tm.LastUsedAt
-            })
             .FirstOrDefaultAsync();
 
         if (membership == null)
@@ -69,16 +64,21 @@ public class MemberScopeMiddleware
             return;
         }
 
-        // Set the member role on auth context
-        authContext.MemberRole = membership.Role;
+        // Resolve effective permissions: union of role permissions + direct permissions
+        var rolePermissions = membership.MemberRoles
+            .SelectMany(mr => mr.TenantRole.Permissions);
+        var directPermissions = membership.DirectPermissions ?? [];
+        var effectivePermissions = rolePermissions.Union(directPermissions).Distinct().ToHashSet();
 
-        // For followers, restrict scopes and permissions
-        if (membership.Role == MembershipScopes.RoleFollower)
+        if (effectivePermissions.Contains("*"))
         {
-            var effectiveScopes = MembershipScopes.Resolve(membership.Role, membership.Scopes);
-            var normalizedMemberScopes = OAuthScopes.Normalize(effectiveScopes);
-
-            // Intersect: keep only the user's granted scopes that the membership allows
+            // Superuser — grant all scopes directly
+            context.Items["GrantedScopes"] = (IReadOnlySet<string>)effectivePermissions;
+        }
+        else
+        {
+            // Intersect with auth token scopes
+            var normalizedMemberScopes = OAuthScopes.Normalize(effectivePermissions.ToList());
             var currentScopes = context.GetGrantedScopes();
             var restrictedScopes = normalizedMemberScopes
                 .Where(memberScope => OAuthScopes.SatisfiesScope(currentScopes, memberScope))
@@ -91,13 +91,13 @@ public class MemberScopeMiddleware
             var permissionTrie = new PermissionTrie();
             permissionTrie.Add(restrictedPermissions);
             context.Items["PermissionTrie"] = permissionTrie;
-
-            authContext.LimitTo24Hours = membership.LimitTo24Hours;
-
-            _logger.LogDebug(
-                "Follower {SubjectId} on tenant {TenantId} restricted to {ScopeCount} scopes (LimitTo24Hours={LimitTo24Hours})",
-                authContext.SubjectId, authContext.TenantId, restrictedScopes.Count, membership.LimitTo24Hours);
         }
+
+        authContext.LimitTo24Hours = membership.LimitTo24Hours;
+
+        _logger.LogDebug(
+            "Member {SubjectId} on tenant {TenantId} resolved with {PermCount} effective permissions (LimitTo24Hours={LimitTo24Hours})",
+            authContext.SubjectId, authContext.TenantId, effectivePermissions.Count, membership.LimitTo24Hours);
 
         // Fire-and-forget LastUsedAt update (debounced: only if > 5 min since last update)
         if (membership.LastUsedAt == null ||

@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Nocturne.Core.Contracts.Multitenancy;
+using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
 
@@ -41,15 +43,32 @@ public static class DefaultTenantSeeder
         var tenantId = defaultTenant.Id;
         logger.LogInformation("Created default tenant with ID {TenantId}", tenantId);
 
+        // Seed default roles for the tenant
+        var roleService = scope.ServiceProvider.GetRequiredService<ITenantRoleService>();
+        await roleService.SeedRolesForTenantAsync(tenantId);
+
+        var ownerRole = await context.TenantRoles
+            .FirstAsync(r => r.TenantId == tenantId && r.Slug == TenantPermissions.SeedRoles.Owner);
+
         // Assign all existing subjects as owners of the default tenant
         var subjects = await context.Subjects.ToListAsync();
         foreach (var subject in subjects)
         {
-            context.TenantMembers.Add(new TenantMemberEntity
+            var member = new TenantMemberEntity
             {
+                Id = Guid.CreateVersion7(),
                 TenantId = tenantId,
                 SubjectId = subject.Id,
-                Role = TenantRole.Owner,
+                SysCreatedAt = DateTime.UtcNow,
+                SysUpdatedAt = DateTime.UtcNow,
+            };
+            context.TenantMembers.Add(member);
+            context.TenantMemberRoles.Add(new TenantMemberRoleEntity
+            {
+                Id = Guid.CreateVersion7(),
+                TenantMemberId = member.Id,
+                TenantRoleId = ownerRole.Id,
+                SysCreatedAt = DateTime.UtcNow,
             });
         }
         await context.SaveChangesAsync();

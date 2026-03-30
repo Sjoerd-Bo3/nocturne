@@ -56,8 +56,8 @@ public class MyTenantsController : ControllerBase
         if (!validation.IsValid)
             return Problem(detail: validation.Message, statusCode: 400, title: "Bad Request");
 
-        var tenant = await _tenantService.CreateAsync(request.Slug, request.DisplayName, request.ApiSecret, ct);
-        await _tenantService.AddMemberAsync(tenant.Id, authContext.SubjectId.Value, "owner", ct);
+        var tenant = await _tenantService.CreateAsync(
+            request.Slug, request.DisplayName, authContext.SubjectId.Value, request.ApiSecret, ct);
 
         return Created($"/api/v4/me/tenants", tenant);
     }
