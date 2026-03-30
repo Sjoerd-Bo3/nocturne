@@ -92,6 +92,7 @@
         request: {
           roleIds: roleIds.length > 0 ? roleIds : undefined,
           directPermissions: directPerms.length > 0 ? directPerms : undefined,
+          limitTo24Hours: limitTo24Hours[subjectId] ?? false,
         },
       });
       successMessage = "Access request approved.";
