@@ -73,8 +73,9 @@ scripts/
 tests/
 
 
-# Keep only what's needed for the API build
+# Keep only what's needed for API and Web builds
 !src/API/
 !src/Core/
 !src/Infrastructure/
 !src/Connectors/
+!src/Web/
