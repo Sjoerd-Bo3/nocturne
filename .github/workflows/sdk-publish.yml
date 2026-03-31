@@ -124,6 +124,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
+    environment: npm-publish
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -159,9 +161,7 @@ jobs:
       - name: Publish to npm
         if: startsWith(github.ref, 'refs/tags/v')
         working-directory: sdk/typescript/out
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
   publish-kotlin:
     needs: generate-spec
