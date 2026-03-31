@@ -1,9 +1,9 @@
-using Nocturne.Core.Contracts.Treatments;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services.Treatments;
 
-public class SignalRTreatmentEventSink : ITreatmentEventSink
+public class SignalRTreatmentEventSink : IDataEventSink<Treatment>
 {
     private readonly ISignalRBroadcastService _broadcast;
     private readonly ILogger<SignalRTreatmentEventSink> _logger;
@@ -49,7 +49,7 @@ public class SignalRTreatmentEventSink : ITreatmentEventSink
         }
     }
 
-    public async Task OnDeletedAsync(Treatment treatment, CancellationToken ct)
+    public async Task OnDeletedAsync(Treatment? treatment, CancellationToken ct)
     {
         try
         {

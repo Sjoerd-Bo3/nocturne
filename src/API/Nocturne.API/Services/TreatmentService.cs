@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
@@ -13,7 +14,7 @@ public class TreatmentService : ITreatmentService
     private readonly ITreatmentStore _store;
     private readonly ITreatmentRepository _repository;
     private readonly ITreatmentCache _cache;
-    private readonly ITreatmentEventSink _events;
+    private readonly IDataEventSink<Treatment> _events;
     private readonly IPatientInsulinRepository _insulinRepo;
     private readonly ILogger<TreatmentService> _logger;
 
@@ -35,7 +36,7 @@ public class TreatmentService : ITreatmentService
         ITreatmentStore store,
         ITreatmentRepository repository,
         ITreatmentCache cache,
-        ITreatmentEventSink events,
+        IDataEventSink<Treatment> events,
         IPatientInsulinRepository insulinRepo,
         ILogger<TreatmentService> logger)
     {

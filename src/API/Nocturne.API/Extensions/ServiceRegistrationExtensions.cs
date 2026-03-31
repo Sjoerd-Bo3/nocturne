@@ -15,6 +15,7 @@ using Nocturne.API.Services.BackgroundServices;
 using Nocturne.API.Services.ConnectorPublishing;
 using Nocturne.API.Services.Effects;
 using Nocturne.API.Services.Entries;
+using Nocturne.API.Services.Treatments;
 using Nocturne.API.Services.V4;
 using Nocturne.API.Multitenancy;
 using Nocturne.Connectors.Core.Extensions;
@@ -283,7 +284,11 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<ITreatmentService, TreatmentService>();
         services.AddScoped<ITreatmentStore, Nocturne.API.Services.Treatments.DualPathTreatmentStore>();
         services.AddScoped<ITreatmentCache, Nocturne.API.Services.Treatments.TreatmentCacheAdapter>();
-        services.AddScoped<ITreatmentEventSink, Nocturne.API.Services.Treatments.SignalRTreatmentEventSink>();
+        services.AddScoped<SignalRTreatmentEventSink>();
+        services.AddScoped<IDataEventSink<Treatment>>(sp =>
+            new CompositeDataEventSink<Treatment>(
+                [sp.GetRequiredService<SignalRTreatmentEventSink>()],
+                sp.GetService<ILogger<CompositeDataEventSink<Treatment>>>()));
         services.AddScoped<IWriteSideEffects, WriteSideEffectsService>();
         services.AddScoped<IEntryService, EntryService>();
         services.AddScoped<IEntryStore, Nocturne.API.Services.Entries.DualPathEntryStore>();

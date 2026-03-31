@@ -5,6 +5,7 @@ using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
@@ -19,7 +20,7 @@ public class TreatmentServiceTests
     private readonly Mock<ITreatmentStore> _mockStore;
     private readonly Mock<ITreatmentRepository> _mockRepo;
     private readonly Mock<ITreatmentCache> _mockCache;
-    private readonly Mock<ITreatmentEventSink> _mockEvents;
+    private readonly Mock<IDataEventSink<Treatment>> _mockEvents;
     private readonly Mock<IPatientInsulinRepository> _mockInsulinRepo;
     private readonly Mock<ILogger<TreatmentService>> _mockLogger;
     private readonly TreatmentService _treatmentService;
@@ -29,7 +30,7 @@ public class TreatmentServiceTests
         _mockStore = new Mock<ITreatmentStore>();
         _mockRepo = new Mock<ITreatmentRepository>();
         _mockCache = new Mock<ITreatmentCache>();
-        _mockEvents = new Mock<ITreatmentEventSink>();
+        _mockEvents = new Mock<IDataEventSink<Treatment>>();
         _mockInsulinRepo = new Mock<IPatientInsulinRepository>();
         _mockLogger = new Mock<ILogger<TreatmentService>>();
         _treatmentService = new TreatmentService(
