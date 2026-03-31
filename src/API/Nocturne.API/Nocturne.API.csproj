@@ -103,7 +103,7 @@
       <WebMonorepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../../Web'))</WebMonorepoRoot>
     </PropertyGroup>
     <Message Importance="high" Text="Generating remote functions from OpenAPI spec..." />
-    <Exec Command="pnpm --filter @nocturne/remote-function-codegen generate" WorkingDirectory="$(WebMonorepoRoot)" ContinueOnError="false" />
+    <Exec Command="pnpm run generate-remote-functions" WorkingDirectory="$(WebMonorepoRoot)" ContinueOnError="false" />
     <Message Importance="high" Text="Remote function generation complete." />
   </Target>
 </Project>
