@@ -25,7 +25,10 @@ namespace Nocturne.Connectors.Nightscout.Configurations;
         SyncDataType.BolusCalculations,
         SyncDataType.Notes,
         SyncDataType.DeviceEvents,
-        SyncDataType.Profiles
+        SyncDataType.Profiles,
+        SyncDataType.DeviceStatus,
+        SyncDataType.Food,
+        SyncDataType.Activity
     ]
 )]
 public class NightscoutConnectorConfiguration : BaseConnectorConfiguration

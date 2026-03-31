@@ -44,7 +44,10 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
         SyncDataType.BolusCalculations,
         SyncDataType.Notes,
         SyncDataType.DeviceEvents,
-        SyncDataType.Profiles
+        SyncDataType.Profiles,
+        SyncDataType.DeviceStatus,
+        SyncDataType.Food,
+        SyncDataType.Activity
     ];
 
     public override async Task<bool> AuthenticateAsync()
@@ -236,6 +239,97 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
             }
         }
 
+        // Handle DeviceStatus
+        if (activeTypes.Contains(SyncDataType.DeviceStatus))
+        {
+            try
+            {
+                var deviceStatuses = await FetchDeviceStatusAsync(request.From, request.To);
+                var deviceStatusList = deviceStatuses.ToList();
+                result.ItemsSynced[SyncDataType.DeviceStatus] = deviceStatusList.Count;
+                if (deviceStatusList.Count > 0)
+                {
+                    var lastTime = deviceStatusList
+                        .Select(d => DateTimeOffset.TryParse(d.CreatedAt, out var dto) ? dto.UtcDateTime : (DateTime?)null)
+                        .Where(dt => dt.HasValue)
+                        .Max();
+                    result.LastEntryTimes[SyncDataType.DeviceStatus] = lastTime;
+                    var publishSuccess = await PublishDeviceStatusAsync(
+                        deviceStatusList, config, cancellationToken);
+                    if (!publishSuccess)
+                    {
+                        result.Success = false;
+                        result.Errors.Add("DeviceStatus publish failed");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Errors.Add($"Failed to sync DeviceStatus: {ex.Message}");
+                _logger.LogError(ex, "Failed to sync DeviceStatus for {Connector}", ConnectorSource);
+            }
+        }
+
+        // Handle Food
+        if (activeTypes.Contains(SyncDataType.Food))
+        {
+            try
+            {
+                var foods = await FetchFoodAsync();
+                var foodList = foods.ToList();
+                result.ItemsSynced[SyncDataType.Food] = foodList.Count;
+                if (foodList.Count > 0)
+                {
+                    var publishSuccess = await PublishFoodDataAsync(
+                        foodList, config, cancellationToken);
+                    if (!publishSuccess)
+                    {
+                        result.Success = false;
+                        result.Errors.Add("Food publish failed");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Errors.Add($"Failed to sync Food: {ex.Message}");
+                _logger.LogError(ex, "Failed to sync Food for {Connector}", ConnectorSource);
+            }
+        }
+
+        // Handle Activity
+        if (activeTypes.Contains(SyncDataType.Activity))
+        {
+            try
+            {
+                var activities = await FetchActivityAsync(request.From, request.To);
+                var activityList = activities.ToList();
+                result.ItemsSynced[SyncDataType.Activity] = activityList.Count;
+                if (activityList.Count > 0)
+                {
+                    var lastTime = activityList
+                        .Select(a => DateTimeOffset.TryParse(a.CreatedAt, out var dto) ? dto.UtcDateTime : (DateTime?)null)
+                        .Where(dt => dt.HasValue)
+                        .Max();
+                    result.LastEntryTimes[SyncDataType.Activity] = lastTime;
+                    var publishSuccess = await PublishActivityDataAsync(
+                        activityList, config, cancellationToken);
+                    if (!publishSuccess)
+                    {
+                        result.Success = false;
+                        result.Errors.Add("Activity publish failed");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Errors.Add($"Failed to sync Activity: {ex.Message}");
+                _logger.LogError(ex, "Failed to sync Activity for {Connector}", ConnectorSource);
+            }
+        }
+
         result.EndTime = DateTimeOffset.UtcNow;
         return result;
     }
@@ -380,6 +474,130 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
         return profiles;
     }
 
+    private async Task<IEnumerable<DeviceStatus>> FetchDeviceStatusAsync(
+        DateTime? from, DateTime? to)
+    {
+        var allStatuses = new List<DeviceStatus>();
+        var currentTo = to;
+
+        while (true)
+        {
+            var statuses = await FetchDataAsync<DeviceStatus[]>(
+                BuildDeviceStatusUrl(from, currentTo),
+                "FetchDeviceStatus");
+
+            if (statuses == null || statuses.Length == 0)
+                break;
+
+            allStatuses.AddRange(statuses);
+
+            if (statuses.Length < _config.MaxCount)
+                break;
+
+            var oldestDate = statuses
+                .Select(d => DateTimeOffset.TryParse(d.CreatedAt, out var dto) ? dto.UtcDateTime : (DateTime?)null)
+                .Where(dt => dt.HasValue)
+                .Min();
+
+            if (!oldestDate.HasValue)
+                break;
+
+            if (currentTo.HasValue && oldestDate.Value >= currentTo.Value)
+                break;
+
+            currentTo = oldestDate.Value.AddMilliseconds(-1);
+
+            if (from.HasValue && currentTo < from)
+                break;
+
+            _logger.LogDebug(
+                "[{ConnectorSource}] Paginating device statuses, fetched {Count} so far, next page before {Before:yyyy-MM-dd HH:mm:ss}",
+                ConnectorSource,
+                allStatuses.Count,
+                currentTo);
+        }
+
+        _logger.LogInformation(
+            "[{ConnectorSource}] Retrieved {Count} device statuses from Nightscout",
+            ConnectorSource,
+            allStatuses.Count);
+
+        return allStatuses;
+    }
+
+    private async Task<IEnumerable<Food>> FetchFoodAsync()
+    {
+        var foods = await FetchDataAsync<Food[]>(
+            $"/api/v1/food.json?count={_config.MaxCount}",
+            "FetchFood");
+
+        if (foods == null || foods.Length == 0)
+        {
+            _logger.LogInformation(
+                "[{ConnectorSource}] No food records found on Nightscout instance",
+                ConnectorSource);
+            return [];
+        }
+
+        _logger.LogInformation(
+            "[{ConnectorSource}] Retrieved {Count} food records from Nightscout",
+            ConnectorSource,
+            foods.Length);
+
+        return foods;
+    }
+
+    private async Task<IEnumerable<Activity>> FetchActivityAsync(
+        DateTime? from, DateTime? to)
+    {
+        var allActivities = new List<Activity>();
+        var currentTo = to;
+
+        while (true)
+        {
+            var activities = await FetchDataAsync<Activity[]>(
+                BuildActivityUrl(from, currentTo),
+                "FetchActivity");
+
+            if (activities == null || activities.Length == 0)
+                break;
+
+            allActivities.AddRange(activities);
+
+            if (activities.Length < _config.MaxCount)
+                break;
+
+            var oldestDate = activities
+                .Select(a => DateTimeOffset.TryParse(a.CreatedAt, out var dto) ? dto.UtcDateTime : (DateTime?)null)
+                .Where(dt => dt.HasValue)
+                .Min();
+
+            if (!oldestDate.HasValue)
+                break;
+
+            if (currentTo.HasValue && oldestDate.Value >= currentTo.Value)
+                break;
+
+            currentTo = oldestDate.Value.AddMilliseconds(-1);
+
+            if (from.HasValue && currentTo < from)
+                break;
+
+            _logger.LogDebug(
+                "[{ConnectorSource}] Paginating activities, fetched {Count} so far, next page before {Before:yyyy-MM-dd HH:mm:ss}",
+                ConnectorSource,
+                allActivities.Count,
+                currentTo);
+        }
+
+        _logger.LogInformation(
+            "[{ConnectorSource}] Retrieved {Count} activities from Nightscout",
+            ConnectorSource,
+            allActivities.Count);
+
+        return allActivities;
+    }
+
     private async Task<T?> FetchDataAsync<T>(string url, string operationName) where T : class
     {
         await _rateLimitingStrategy.ApplyDelayAsync(0);
@@ -429,6 +647,32 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
     private string BuildTreatmentsUrl(DateTime? from, DateTime? to)
     {
         var url = $"/api/v1/treatments.json?count={_config.MaxCount}";
+
+        if (from.HasValue)
+            url += $"&find[created_at][$gte]={from.Value.ToUniversalTime():o}";
+
+        if (to.HasValue)
+            url += $"&find[created_at][$lte]={to.Value.ToUniversalTime():o}";
+
+        return url;
+    }
+
+    private string BuildDeviceStatusUrl(DateTime? from, DateTime? to)
+    {
+        var url = $"/api/v1/devicestatus.json?count={_config.MaxCount}";
+
+        if (from.HasValue)
+            url += $"&find[created_at][$gte]={from.Value.ToUniversalTime():o}";
+
+        if (to.HasValue)
+            url += $"&find[created_at][$lte]={to.Value.ToUniversalTime():o}";
+
+        return url;
+    }
+
+    private string BuildActivityUrl(DateTime? from, DateTime? to)
+    {
+        var url = $"/api/v1/activity.json?count={_config.MaxCount}";
 
         if (from.HasValue)
             url += $"&find[created_at][$gte]={from.Value.ToUniversalTime():o}";
