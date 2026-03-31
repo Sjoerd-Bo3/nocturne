@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Core.Contracts.Repositories;
@@ -32,6 +33,7 @@ public class DeviceStatusServiceTests
         _deviceStatusService = new DeviceStatusService(
             _mockDeviceStatusRepository.Object,
             _mockSideEffects.Object,
+            Mock.Of<IDataEventSink<DeviceStatus>>(),
             _mockCacheService.Object,
             MockTenantAccessor.Create().Object,
             _mockLogger.Object

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Models;
 using Nocturne.Core.Contracts.Repositories;
 using Xunit;
@@ -31,6 +32,7 @@ public class FoodServiceTests
             _mockFoodRepository.Object,
             _mockDocumentProcessingService.Object,
             _mockSideEffects.Object,
+            Mock.Of<IDataEventSink<Food>>(),
             _mockLogger.Object
         );
     }
@@ -47,6 +49,7 @@ public class FoodServiceTests
             _mockFoodRepository.Object,
             _mockDocumentProcessingService.Object,
             _mockSideEffects.Object,
+            Mock.Of<IDataEventSink<Food>>(),
             _mockLogger.Object
         );
 
@@ -65,6 +68,7 @@ public class FoodServiceTests
                 null!,
                 _mockDocumentProcessingService.Object,
                 _mockSideEffects.Object,
+                Mock.Of<IDataEventSink<Food>>(),
                 _mockLogger.Object
             )
         );
@@ -81,6 +85,7 @@ public class FoodServiceTests
                 _mockFoodRepository.Object,
                 null!,
                 _mockSideEffects.Object,
+                Mock.Of<IDataEventSink<Food>>(),
                 _mockLogger.Object
             )
         );
@@ -97,6 +102,7 @@ public class FoodServiceTests
                 _mockFoodRepository.Object,
                 _mockDocumentProcessingService.Object,
                 null!,
+                Mock.Of<IDataEventSink<Food>>(),
                 _mockLogger.Object
             )
         );
@@ -113,6 +119,7 @@ public class FoodServiceTests
                 _mockFoodRepository.Object,
                 _mockDocumentProcessingService.Object,
                 _mockSideEffects.Object,
+                Mock.Of<IDataEventSink<Food>>(),
                 null!
             )
         );

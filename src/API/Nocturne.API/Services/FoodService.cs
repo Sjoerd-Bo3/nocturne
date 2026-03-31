@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Models;
 using Nocturne.Core.Contracts.Repositories;
 
@@ -15,6 +16,7 @@ public class FoodService : IFoodService
     private readonly IFoodRepository _food;
     private readonly IDocumentProcessingService _documentProcessingService;
     private readonly IWriteSideEffects _sideEffects;
+    private readonly IDataEventSink<Food> _events;
     private readonly ILogger<FoodService> _logger;
     private const string CollectionName = "food";
 
@@ -22,6 +24,7 @@ public class FoodService : IFoodService
         IFoodRepository food,
         IDocumentProcessingService documentProcessingService,
         IWriteSideEffects sideEffects,
+        IDataEventSink<Food> events,
         ILogger<FoodService> logger
     )
     {
@@ -33,6 +36,9 @@ public class FoodService : IFoodService
         _sideEffects =
             sideEffects
             ?? throw new ArgumentNullException(nameof(sideEffects));
+        _events =
+            events
+            ?? throw new ArgumentNullException(nameof(events));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -102,6 +108,7 @@ public class FoodService : IFoodService
             var resultList = createdFoods.ToList();
 
             await _sideEffects.OnCreatedAsync(CollectionName, resultList, cancellationToken: cancellationToken);
+            await _events.OnCreatedAsync(resultList, cancellationToken);
 
             _logger.LogDebug("Successfully created {Count} food records", resultList.Count);
             return resultList;
@@ -255,6 +262,7 @@ public class FoodService : IFoodService
             if (updatedFood != null)
             {
                 await _sideEffects.OnUpdatedAsync(CollectionName, updatedFood, cancellationToken: cancellationToken);
+                await _events.OnUpdatedAsync(updatedFood, cancellationToken);
                 _logger.LogDebug("Successfully updated food record with ID: {Id}", id);
             }
 
@@ -282,6 +290,7 @@ public class FoodService : IFoodService
             if (deleted)
             {
                 await _sideEffects.OnDeletedAsync<Food>(CollectionName, null, cancellationToken: cancellationToken);
+                await _events.OnDeletedAsync(null, cancellationToken);
                 _logger.LogDebug("Successfully deleted food record with ID: {Id}", id);
             }
 
@@ -312,6 +321,7 @@ public class FoodService : IFoodService
             if (deletedCount > 0)
             {
                 await _sideEffects.OnBulkDeletedAsync(CollectionName, deletedCount, cancellationToken: cancellationToken);
+                await _events.OnBulkDeletedAsync(deletedCount, cancellationToken);
                 _logger.LogDebug("Successfully bulk deleted {Count} food records", deletedCount);
             }
 

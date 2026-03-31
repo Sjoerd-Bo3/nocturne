@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
@@ -37,6 +38,7 @@ public class ProfileDataServiceTests
         _profileDataService = new ProfileDataService(
             _mockProfileRepository.Object,
             _mockSideEffects.Object,
+            Mock.Of<IDataEventSink<Profile>>(),
             _mockCacheService.Object,
             _mockCacheConfig.Object,
             MockTenantAccessor.Create().Object,

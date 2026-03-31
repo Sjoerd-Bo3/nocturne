@@ -300,11 +300,23 @@ public static class ServiceRegistrationExtensions
                 sp.GetService<ILogger<CompositeDataEventSink<Entry>>>()));
         services.AddScoped<IStateSpanService, StateSpanService>();
         services.AddScoped<IDeviceStatusService, DeviceStatusService>();
+        services.AddScoped<IDataEventSink<DeviceStatus>>(sp =>
+            new CompositeDataEventSink<DeviceStatus>(
+                [],
+                sp.GetService<ILogger<CompositeDataEventSink<DeviceStatus>>>()));
         services.AddScoped<IBatteryService, BatteryService>();
         services.AddScoped<IProfileDataService, ProfileDataService>();
+        services.AddScoped<IDataEventSink<Profile>>(sp =>
+            new CompositeDataEventSink<Profile>(
+                [],
+                sp.GetService<ILogger<CompositeDataEventSink<Profile>>>()));
 
         // Food services
         services.AddScoped<IFoodService, FoodService>();
+        services.AddScoped<IDataEventSink<Food>>(sp =>
+            new CompositeDataEventSink<Food>(
+                [],
+                sp.GetService<ILogger<CompositeDataEventSink<Food>>>()));
         services.AddScoped<IConnectorFoodEntryService, ConnectorFoodEntryService>();
         services.AddScoped<ITreatmentFoodService, TreatmentFoodService>();
         services.AddScoped<IUserFoodFavoriteService, UserFoodFavoriteService>();
@@ -313,6 +325,10 @@ public static class ServiceRegistrationExtensions
 
         // Activity and health metric services
         services.AddScoped<IActivityService, ActivityService>();
+        services.AddScoped<IDataEventSink<Activity>>(sp =>
+            new CompositeDataEventSink<Activity>(
+                [],
+                sp.GetService<ILogger<CompositeDataEventSink<Activity>>>()));
         services.AddScoped<IHeartRateService, HeartRateService>();
         services.AddScoped<IStepCountService, StepCountService>();
 

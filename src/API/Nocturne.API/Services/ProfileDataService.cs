@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
@@ -17,6 +18,7 @@ public class ProfileDataService : IProfileDataService
 {
     private readonly IProfileRepository _profiles;
     private readonly IWriteSideEffects _sideEffects;
+    private readonly IDataEventSink<Profile> _events;
     private readonly ICacheService _cacheService;
     private readonly CacheConfiguration _cacheConfig;
     private readonly ITenantAccessor _tenantAccessor;
@@ -28,6 +30,7 @@ public class ProfileDataService : IProfileDataService
     public ProfileDataService(
         IProfileRepository profiles,
         IWriteSideEffects sideEffects,
+        IDataEventSink<Profile> events,
         ICacheService cacheService,
         IOptions<CacheConfiguration> cacheConfig,
         ITenantAccessor tenantAccessor,
@@ -36,6 +39,7 @@ public class ProfileDataService : IProfileDataService
     {
         _profiles = profiles;
         _sideEffects = sideEffects;
+        _events = events;
         _cacheService = cacheService;
         _cacheConfig = cacheConfig.Value;
         _tenantAccessor = tenantAccessor;
@@ -153,6 +157,8 @@ public class ProfileDataService : IProfileDataService
             cancellationToken: cancellationToken
         );
 
+        await _events.OnCreatedAsync(createdProfiles.ToList(), cancellationToken);
+
         return createdProfiles;
     }
 
@@ -176,6 +182,8 @@ public class ProfileDataService : IProfileDataService
                 updatedProfile,
                 cancellationToken: cancellationToken
             );
+
+            await _events.OnUpdatedAsync(updatedProfile, cancellationToken);
         }
 
         return updatedProfile;
@@ -199,6 +207,8 @@ public class ProfileDataService : IProfileDataService
                 profileToDelete,
                 cancellationToken: cancellationToken
             );
+
+            await _events.OnDeletedAsync(profileToDelete, cancellationToken);
         }
 
         return deleted;

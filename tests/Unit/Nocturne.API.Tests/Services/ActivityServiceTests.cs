@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 using Xunit;
@@ -44,6 +45,7 @@ public class ActivityServiceTests
             _mockStateSpanService.Object,
             _mockDocumentProcessingService.Object,
             _mockSignalRBroadcastService.Object,
+            Mock.Of<IDataEventSink<Activity>>(),
             _mockActivityDecomposer.Object,
             _mockHeartRateService.Object,
             _mockStepCountService.Object,
@@ -586,6 +588,7 @@ public class ActivityServiceTests
                 null!,
                 _mockDocumentProcessingService.Object,
                 _mockSignalRBroadcastService.Object,
+                Mock.Of<IDataEventSink<Activity>>(),
                 _mockActivityDecomposer.Object,
                 _mockHeartRateService.Object,
                 _mockStepCountService.Object,
@@ -604,6 +607,7 @@ public class ActivityServiceTests
                 _mockStateSpanService.Object,
                 null!,
                 _mockSignalRBroadcastService.Object,
+                Mock.Of<IDataEventSink<Activity>>(),
                 _mockActivityDecomposer.Object,
                 _mockHeartRateService.Object,
                 _mockStepCountService.Object,
@@ -622,6 +626,7 @@ public class ActivityServiceTests
                 _mockStateSpanService.Object,
                 _mockDocumentProcessingService.Object,
                 null!,
+                Mock.Of<IDataEventSink<Activity>>(),
                 _mockActivityDecomposer.Object,
                 _mockHeartRateService.Object,
                 _mockStepCountService.Object,
@@ -639,6 +644,7 @@ public class ActivityServiceTests
                 _mockStateSpanService.Object,
                 _mockDocumentProcessingService.Object,
                 _mockSignalRBroadcastService.Object,
+                Mock.Of<IDataEventSink<Activity>>(),
                 null!,
                 _mockHeartRateService.Object,
                 _mockStepCountService.Object,
@@ -656,6 +662,7 @@ public class ActivityServiceTests
                 _mockStateSpanService.Object,
                 _mockDocumentProcessingService.Object,
                 _mockSignalRBroadcastService.Object,
+                Mock.Of<IDataEventSink<Activity>>(),
                 _mockActivityDecomposer.Object,
                 null!,
                 _mockStepCountService.Object,
@@ -673,6 +680,7 @@ public class ActivityServiceTests
                 _mockStateSpanService.Object,
                 _mockDocumentProcessingService.Object,
                 _mockSignalRBroadcastService.Object,
+                Mock.Of<IDataEventSink<Activity>>(),
                 _mockActivityDecomposer.Object,
                 _mockHeartRateService.Object,
                 null!,
@@ -691,6 +699,7 @@ public class ActivityServiceTests
                 _mockStateSpanService.Object,
                 _mockDocumentProcessingService.Object,
                 _mockSignalRBroadcastService.Object,
+                Mock.Of<IDataEventSink<Activity>>(),
                 _mockActivityDecomposer.Object,
                 _mockHeartRateService.Object,
                 _mockStepCountService.Object,

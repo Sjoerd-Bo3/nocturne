@@ -1,5 +1,6 @@
 using Nocturne.API.Services.V4;
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Models;
 
@@ -15,6 +16,7 @@ public class ActivityService : IActivityService
     private readonly IStateSpanService _stateSpanService;
     private readonly IDocumentProcessingService _documentProcessingService;
     private readonly ISignalRBroadcastService _signalRBroadcastService;
+    private readonly IDataEventSink<Activity> _events;
     private readonly IActivityDecomposer _activityDecomposer;
     private readonly IHeartRateService _heartRateService;
     private readonly IStepCountService _stepCountService;
@@ -24,6 +26,7 @@ public class ActivityService : IActivityService
         IStateSpanService stateSpanService,
         IDocumentProcessingService documentProcessingService,
         ISignalRBroadcastService signalRBroadcastService,
+        IDataEventSink<Activity> events,
         IActivityDecomposer activityDecomposer,
         IHeartRateService heartRateService,
         IStepCountService stepCountService,
@@ -38,6 +41,8 @@ public class ActivityService : IActivityService
         _signalRBroadcastService =
             signalRBroadcastService
             ?? throw new ArgumentNullException(nameof(signalRBroadcastService));
+        _events =
+            events ?? throw new ArgumentNullException(nameof(events));
         _activityDecomposer =
             activityDecomposer ?? throw new ArgumentNullException(nameof(activityDecomposer));
         _heartRateService =
@@ -210,6 +215,8 @@ public class ActivityService : IActivityService
                     "activity",
                     new { collection = "activity", data = results, count = results.Count }
                 );
+
+                await _events.OnCreatedAsync(results, cancellationToken);
             }
 
             _logger.LogDebug(
@@ -250,6 +257,8 @@ public class ActivityService : IActivityService
                     "activity",
                     new { collection = "activity", data = updatedActivity, id = id }
                 );
+
+                await _events.OnUpdatedAsync(updatedActivity, cancellationToken);
 
                 _logger.LogDebug("Successfully updated activity record with ID: {Id}", id);
             }
@@ -295,6 +304,8 @@ public class ActivityService : IActivityService
                     "activity",
                     new { collection = "activity", id = id }
                 );
+
+                await _events.OnDeletedAsync(null, cancellationToken);
 
                 _logger.LogDebug("Successfully deleted activity record with ID: {Id}", id);
             }

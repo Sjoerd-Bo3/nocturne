@@ -1,4 +1,5 @@
 using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
@@ -13,6 +14,7 @@ public class DeviceStatusService : IDeviceStatusService
 {
     private readonly IDeviceStatusRepository _deviceStatuses;
     private readonly IWriteSideEffects _sideEffects;
+    private readonly IDataEventSink<DeviceStatus> _events;
     private readonly ICacheService _cacheService;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<DeviceStatusService> _logger;
@@ -24,6 +26,7 @@ public class DeviceStatusService : IDeviceStatusService
     public DeviceStatusService(
         IDeviceStatusRepository deviceStatuses,
         IWriteSideEffects sideEffects,
+        IDataEventSink<DeviceStatus> events,
         ICacheService cacheService,
         ITenantAccessor tenantAccessor,
         ILogger<DeviceStatusService> logger
@@ -31,6 +34,7 @@ public class DeviceStatusService : IDeviceStatusService
     {
         _deviceStatuses = deviceStatuses;
         _sideEffects = sideEffects;
+        _events = events;
         _cacheService = cacheService;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
@@ -120,6 +124,8 @@ public class DeviceStatusService : IDeviceStatusService
             cancellationToken: cancellationToken
         );
 
+        await _events.OnCreatedAsync(createdDeviceStatus.ToList(), cancellationToken);
+
         return createdDeviceStatus;
     }
 
@@ -143,6 +149,8 @@ public class DeviceStatusService : IDeviceStatusService
                 updatedDeviceStatus,
                 cancellationToken: cancellationToken
             );
+
+            await _events.OnUpdatedAsync(updatedDeviceStatus, cancellationToken);
         }
 
         return updatedDeviceStatus;
@@ -175,6 +183,8 @@ public class DeviceStatusService : IDeviceStatusService
                 deviceStatusToDelete,
                 cancellationToken: cancellationToken
             );
+
+            await _events.OnDeletedAsync(deviceStatusToDelete, cancellationToken);
         }
 
         return deleted;
@@ -196,6 +206,8 @@ public class DeviceStatusService : IDeviceStatusService
             deletedCount,
             cancellationToken: cancellationToken
         );
+
+        await _events.OnBulkDeletedAsync(deletedCount, cancellationToken);
 
         return deletedCount;
     }
