@@ -2,18 +2,14 @@
 **/node_modules/
 node_modules/
 
-# Ignore build outputs
+# Ignore .NET build outputs
 **/bin/
 **/obj/
-**/dist/
-**/build/
-**/out/
 **/target/
 
 # Ignore package manager files
 package-lock.json
 yarn.lock
-pnpm-lock.yaml
 
 # Ignore IDE and editor files
 .vs/
