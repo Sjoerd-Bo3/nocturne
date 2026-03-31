@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Nocturne.API.Configuration;
+using Nocturne.API.Services.Compatibility;
 using Nocturne.Connectors.Nightscout.Configurations;
 using Nocturne.Connectors.Nightscout.Services.WriteBack;
 using Nocturne.Core.Contracts;
@@ -19,19 +22,25 @@ public class NightscoutTransitionController : ControllerBase
     private readonly NightscoutConnectorConfiguration? _nightscoutConfig;
     private readonly NightscoutCircuitBreaker? _circuitBreaker;
     private readonly IConnectorConfigurationService _connectorConfigService;
+    private readonly CompatibilityProxyConfiguration _proxyConfiguration;
+    private readonly IDiscrepancyPersistenceService? _persistenceService;
     private readonly ILogger<NightscoutTransitionController> _logger;
 
     public NightscoutTransitionController(
         IConnectorConfigurationService connectorConfigService,
+        IOptions<CompatibilityProxyConfiguration> proxyConfiguration,
         ILogger<NightscoutTransitionController> logger,
         NightscoutConnectorConfiguration? nightscoutConfig = null,
-        NightscoutCircuitBreaker? circuitBreaker = null
+        NightscoutCircuitBreaker? circuitBreaker = null,
+        IDiscrepancyPersistenceService? persistenceService = null
     )
     {
         _connectorConfigService = connectorConfigService;
+        _proxyConfiguration = proxyConfiguration.Value;
         _logger = logger;
         _nightscoutConfig = nightscoutConfig;
         _circuitBreaker = circuitBreaker;
+        _persistenceService = persistenceService;
     }
 
     /// <summary>
@@ -47,11 +56,14 @@ public class NightscoutTransitionController : ControllerBase
     {
         try
         {
+            var compatibility = await BuildCompatibilityInfoAsync(cancellationToken);
+
             var status = new NightscoutTransitionStatus
             {
                 Migration = await BuildMigrationStatusAsync(cancellationToken),
                 WriteBack = BuildWriteBackHealth(),
-                Recommendation = await BuildRecommendationAsync(cancellationToken)
+                Compatibility = compatibility,
+                Recommendation = await BuildRecommendationAsync(compatibility, cancellationToken)
             };
 
             return Ok(status);
@@ -107,7 +119,33 @@ public class NightscoutTransitionController : ControllerBase
         return info;
     }
 
-    private async Task<DisconnectRecommendation> BuildRecommendationAsync(CancellationToken ct)
+    private async Task<CompatibilityInfo?> BuildCompatibilityInfoAsync(CancellationToken ct)
+    {
+        if (!_proxyConfiguration.Enabled || _persistenceService is null)
+            return null;
+
+        try
+        {
+            var metrics = await _persistenceService.GetCompatibilityMetricsAsync(
+                cancellationToken: ct);
+
+            return new CompatibilityInfo
+            {
+                ProxyEnabled = true,
+                CompatibilityScore = metrics.TotalRequests > 0 ? metrics.CompatibilityScore : null,
+                TotalComparisons = metrics.TotalRequests,
+                Discrepancies = metrics.MajorDifferences + metrics.CriticalDifferences,
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to retrieve compatibility metrics for transition status");
+            return new CompatibilityInfo { ProxyEnabled = true };
+        }
+    }
+
+    private async Task<DisconnectRecommendation> BuildRecommendationAsync(
+        CompatibilityInfo? compatibility, CancellationToken ct)
     {
         var recommendation = new DisconnectRecommendation();
 
@@ -144,7 +182,17 @@ public class NightscoutTransitionController : ControllerBase
             return recommendation;
         }
 
-        recommendation.Status = "safe";
+        // Check compatibility score if proxy is enabled
+        if (compatibility is { ProxyEnabled: true, CompatibilityScore: < 95.0 })
+        {
+            recommendation.Status = recommendation.Status == "not-ready" ? "not-ready" : "almost-ready";
+            recommendation.Blockers.Add(
+                $"API response compatibility is {compatibility.CompatibilityScore:F1}% — investigate discrepancies");
+        }
+
+        if (recommendation.Blockers.Count == 0)
+            recommendation.Status = "safe";
+
         return recommendation;
     }
 }

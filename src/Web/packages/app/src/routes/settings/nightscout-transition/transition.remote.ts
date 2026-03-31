@@ -29,9 +29,17 @@ export interface DisconnectRecommendation {
 	stabilityDaysRemaining: number | null;
 }
 
+export interface CompatibilityInfo {
+	proxyEnabled: boolean;
+	compatibilityScore: number | null;
+	totalComparisons: number;
+	discrepancies: number;
+}
+
 export interface NightscoutTransitionStatus {
 	migration: MigrationStatusInfo;
 	writeBack: WriteBackHealthInfo;
+	compatibility: CompatibilityInfo | null;
 	recommendation: DisconnectRecommendation;
 }
 

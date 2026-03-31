@@ -20,6 +20,7 @@
 		ShieldCheck,
 		ShieldAlert,
 		Clock,
+		BarChart3,
 	} from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import {
@@ -81,6 +82,22 @@
 			default:
 				return 'Not Ready';
 		}
+	});
+
+	const compatibilityBadgeVariant = $derived.by(() => {
+		const score = status?.compatibility?.compatibilityScore;
+		if (score == null) return 'secondary' as const;
+		if (score >= 95) return 'default' as const;
+		if (score >= 80) return 'secondary' as const;
+		return 'destructive' as const;
+	});
+
+	const compatibilityBadgeLabel = $derived.by(() => {
+		const score = status?.compatibility?.compatibilityScore;
+		if (score == null) return 'No Data';
+		if (score >= 95) return 'High';
+		if (score >= 80) return 'Medium';
+		return 'Low';
 	});
 </script>
 
@@ -216,6 +233,57 @@
 				</div>
 			</CardContent>
 		</Card>
+
+		<!-- API Compatibility -->
+		{#if status.compatibility}
+			<Card>
+				<CardHeader>
+					<div class="flex items-center justify-between">
+						<CardTitle class="flex items-center gap-2">
+							<ShieldCheck class="h-5 w-5" />
+							API Compatibility
+						</CardTitle>
+						<Badge variant={compatibilityBadgeVariant}>
+							{#if compatibilityBadgeVariant === 'default'}
+								<CheckCircle2 class="h-3 w-3" />
+							{:else if compatibilityBadgeVariant === 'destructive'}
+								<AlertCircle class="h-3 w-3" />
+							{:else}
+								<BarChart3 class="h-3 w-3" />
+							{/if}
+							{compatibilityBadgeLabel}
+						</Badge>
+					</div>
+					<CardDescription>
+						Background comparison of Nocturne responses against your Nightscout instance
+					</CardDescription>
+				</CardHeader>
+				<CardContent class="space-y-4">
+					<div class="grid grid-cols-3 gap-3">
+						<div class="rounded-lg border p-3">
+							<p class="text-sm text-muted-foreground">Score</p>
+							<p class="text-2xl font-semibold tabular-nums">
+								{status.compatibility.compatibilityScore != null
+									? `${status.compatibility.compatibilityScore.toFixed(1)}%`
+									: '--'}
+							</p>
+						</div>
+						<div class="rounded-lg border p-3">
+							<p class="text-sm text-muted-foreground">Comparisons</p>
+							<p class="text-xl font-semibold tabular-nums">
+								{status.compatibility.totalComparisons.toLocaleString()}
+							</p>
+						</div>
+						<div class="rounded-lg border p-3">
+							<p class="text-sm text-muted-foreground">Discrepancies</p>
+							<p class="text-xl font-semibold tabular-nums text-red-600 dark:text-red-400">
+								{status.compatibility.discrepancies.toLocaleString()}
+							</p>
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+		{/if}
 
 		<!-- Safe to Disconnect -->
 		<Card>

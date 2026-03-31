@@ -4,7 +4,16 @@ public class NightscoutTransitionStatus
 {
     public MigrationStatusInfo Migration { get; set; } = new();
     public WriteBackHealthInfo WriteBack { get; set; } = new();
+    public CompatibilityInfo? Compatibility { get; set; }
     public DisconnectRecommendation Recommendation { get; set; } = new();
+}
+
+public class CompatibilityInfo
+{
+    public bool ProxyEnabled { get; set; }
+    public double? CompatibilityScore { get; set; }
+    public int TotalComparisons { get; set; }
+    public int Discrepancies { get; set; }
 }
 
 public class MigrationStatusInfo
