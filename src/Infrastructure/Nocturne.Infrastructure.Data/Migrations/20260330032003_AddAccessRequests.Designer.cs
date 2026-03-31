@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Nocturne.Infrastructure.Data;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Nocturne.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(NocturneDbContext))]
-    partial class NocturneDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260330032003_AddAccessRequests")]
+    partial class AddAccessRequests
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2132,10 +2135,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_subject_id");
 
-                    b.PrimitiveCollection<string>("DirectPermissions")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("direct_permissions");
-
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expires_at");
@@ -2157,10 +2156,15 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("revoked_at");
 
-                    b.PrimitiveCollection<string>("RoleIds")
+                    b.Property<string>("Role")
                         .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("role");
+
+                    b.PrimitiveCollection<string>("Scopes")
                         .HasColumnType("jsonb")
-                        .HasColumnName("role_ids");
+                        .HasColumnName("scopes");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
@@ -3669,10 +3673,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_from_invite_id");
 
-                    b.PrimitiveCollection<string>("DirectPermissions")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("direct_permissions");
-
                     b.Property<string>("Label")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
@@ -3698,6 +3698,16 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("revoked_at");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("role");
+
+                    b.PrimitiveCollection<string>("Scopes")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("scopes");
 
                     b.Property<Guid>("SubjectId")
                         .HasColumnType("uuid")
@@ -3728,94 +3738,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                         .HasFilter("revoked_at IS NULL");
 
                     b.ToTable("tenant_members");
-                });
-
-            modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.TenantMemberRoleEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("SysCreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("sys_created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("TenantMemberId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_member_id");
-
-                    b.Property<Guid>("TenantRoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_role_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantRoleId");
-
-                    b.HasIndex("TenantMemberId", "TenantRoleId")
-                        .IsUnique();
-
-                    b.ToTable("tenant_member_roles");
-                });
-
-            modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.TenantRoleEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsSystem")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_system");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("name");
-
-                    b.PrimitiveCollection<string>("Permissions")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("permissions");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("slug");
-
-                    b.Property<DateTime>("SysCreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("sys_created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<DateTime>("SysUpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("sys_updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "Slug")
-                        .IsUnique();
-
-                    b.ToTable("tenant_roles");
                 });
 
             modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.TotpCredentialEntity", b =>
@@ -6832,36 +6754,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.TenantMemberRoleEntity", b =>
-                {
-                    b.HasOne("Nocturne.Infrastructure.Data.Entities.TenantMemberEntity", "TenantMember")
-                        .WithMany("MemberRoles")
-                        .HasForeignKey("TenantMemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Nocturne.Infrastructure.Data.Entities.TenantRoleEntity", "TenantRole")
-                        .WithMany("MemberRoles")
-                        .HasForeignKey("TenantRoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("TenantMember");
-
-                    b.Navigation("TenantRole");
-                });
-
-            modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.TenantRoleEntity", b =>
-                {
-                    b.HasOne("Nocturne.Infrastructure.Data.Entities.TenantEntity", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-                });
-
             modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.TotpCredentialEntity", b =>
                 {
                     b.HasOne("Nocturne.Infrastructure.Data.Entities.SubjectEntity", "Subject")
@@ -7362,16 +7254,6 @@ namespace Nocturne.Infrastructure.Data.Migrations
             modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.TenantEntity", b =>
                 {
                     b.Navigation("Members");
-                });
-
-            modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.TenantMemberEntity", b =>
-                {
-                    b.Navigation("MemberRoles");
-                });
-
-            modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.TenantRoleEntity", b =>
-                {
-                    b.Navigation("MemberRoles");
                 });
 
             modelBuilder.Entity("Nocturne.Infrastructure.Data.Entities.TrackerDefinitionEntity", b =>
