@@ -3,6 +3,7 @@ using Moq;
 using Nocturne.API.Services;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Entries;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 using Xunit;
@@ -18,7 +19,7 @@ public class EntryServiceTests
     private readonly Mock<IEntryStore> _store = new();
     private readonly Mock<IEntryRepository> _repository = new();
     private readonly Mock<IEntryCache> _cache = new();
-    private readonly Mock<IEntryEventSink> _events = new();
+    private readonly Mock<IDataEventSink<Entry>> _events = new();
     private readonly EntryService _sut;
 
     public EntryServiceTests()

@@ -1,5 +1,6 @@
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Entries;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Core.Models;
 
@@ -13,14 +14,14 @@ public class EntryService : IEntryService
     private readonly IEntryStore _store;
     private readonly IEntryRepository _repository;
     private readonly IEntryCache _cache;
-    private readonly IEntryEventSink _events;
+    private readonly IDataEventSink<Entry> _events;
     private readonly ILogger<EntryService> _logger;
 
     public EntryService(
         IEntryStore store,
         IEntryRepository repository,
         IEntryCache cache,
-        IEntryEventSink events,
+        IDataEventSink<Entry> events,
         ILogger<EntryService> logger)
     {
         _store = store;

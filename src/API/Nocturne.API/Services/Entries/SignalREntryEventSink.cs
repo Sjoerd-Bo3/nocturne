@@ -1,5 +1,5 @@
 using Nocturne.Core.Contracts;
-using Nocturne.Core.Contracts.Entries;
+using Nocturne.Core.Contracts.Events;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Keys;
@@ -10,7 +10,7 @@ namespace Nocturne.API.Services.Entries;
 /// Entry event sink that translates write events into cache invalidation
 /// and SignalR broadcasts via IWriteSideEffects.
 /// </summary>
-public class SignalREntryEventSink : IEntryEventSink
+public class SignalREntryEventSink : IDataEventSink<Entry>
 {
     private readonly IWriteSideEffects _sideEffects;
     private readonly ITenantAccessor _tenantAccessor;
