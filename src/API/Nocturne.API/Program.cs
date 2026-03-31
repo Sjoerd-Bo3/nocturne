@@ -253,6 +253,9 @@ app.UseAuthorization();
 // Add rate limiting
 app.UseRateLimiter();
 
+// Add compatibility proxy middleware (background comparison against Nightscout for v1/v2/v3 GET requests)
+app.UseMiddleware<CompatibilityProxyMiddleware>();
+
 // Map native API controllers
 app.MapControllers();
 
