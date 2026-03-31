@@ -1,0 +1,10 @@
+generatorName: python
+outputDir: ./out
+globalProperties:
+  skipFormModel: true
+additionalProperties:
+  packageName: nocturne_sdk
+  projectName: nocturne-sdk
+  packageVersion: "0.1.0"
+  packageUrl: https://github.com/nightscout/nocturne
+  licenseName: AGPL-3.0-only
