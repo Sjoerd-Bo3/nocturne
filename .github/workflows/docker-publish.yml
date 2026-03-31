@@ -103,6 +103,13 @@ jobs:
             -p:ContainerRepository=${{ env.IMAGE_REPOSITORY }}/nocturne-api \
             -p:ContainerImageTag=${{ steps.version.outputs.version }}
 
+      # Generate API client, Zod schemas, and remote functions for the web build.
+      # These files are gitignored (regenerated on every build) so we must produce
+      # them here before the Docker build which needs them.
+      - name: Generate API client for web build
+        working-directory: src/API/Nocturne.API
+        run: dotnet build -c Release
+
       # Build web app using standard Docker build (Node.js/Vite apps don't use .NET container publishing)
       - name: Build and push Nocturne.Web container
         if: github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false)
