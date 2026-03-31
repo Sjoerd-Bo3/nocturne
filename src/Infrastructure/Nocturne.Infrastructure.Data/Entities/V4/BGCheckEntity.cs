@@ -102,6 +102,9 @@ public class BGCheckEntity : ITenantScoped
     [MaxLength(32)]
     public string? Units { get; set; }
 
+    /// <summary>
+    /// Unique identifier for synchronization across platforms and devices.
+    /// </summary>
     [Column("sync_identifier")]
     [MaxLength(256)]
     public string? SyncIdentifier { get; set; }

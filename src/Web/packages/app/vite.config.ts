@@ -70,6 +70,13 @@ export default defineConfig(({ mode }) => {
         },
       },
     ],
+    build: {
+      rollupOptions: {
+        // Native modules from @nocturne/bot's Discord.js dependency chain
+        // that cannot be bundled by Rollup
+        external: ["zlib-sync"],
+      },
+    },
     server: {
       host: "0.0.0.0",
       port: parseInt(process.env.PORT || "1612", 10),

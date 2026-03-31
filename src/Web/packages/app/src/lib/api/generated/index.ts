@@ -5,7 +5,7 @@ export { revoke } from './directgrants.generated.remote';
 export * from './metadatas.generated.remote';
 export * from './oauths.generated.remote';
 export * from './oidcs.generated.remote';
-export { registerOptions, registerComplete, discoverableLoginOptions, loginOptions, loginComplete, recoveryVerify, regenerateRecoveryCodes, getRecoveryStatus, getRecoveryModeStatus, getAuthStatus, setupOptions, setupComplete } from './passkeys.generated.remote';
+export { registerOptions, registerComplete, discoverableLoginOptions, loginOptions, loginComplete, recoveryVerify, regenerateRecoveryCodes, getRecoveryStatus, getRecoveryModeStatus, getAuthStatus, setupOptions, setupComplete, accessRequestOptions, accessRequestComplete, inviteOptions, inviteComplete } from './passkeys.generated.remote';
 export { setup, verifySetup, login } from './totps.generated.remote';
 export * from './alertSounds.generated.remote';
 export { validateInvite, redeemInvite } from './alertInvites.generated.remote';
@@ -31,6 +31,7 @@ export { getFoodEntry, acceptMatch, dismissMatch } from './mealMatchings.generat
 export * from './memberinvites.generated.remote';
 // './meterGlucoses.generated.remote' - all exports collide, import directly
 export { testConnection, startMigration, cancelMigration, getHistory, getPendingConfig, getSources } from './migrations.generated.remote';
+export * from './mypermissions.generated.remote';
 export * from './mytenants.generated.remote';
 // './notes.generated.remote' - all exports collide, import directly
 export * from './notifications.generated.remote';
@@ -40,6 +41,7 @@ export { getPredictions } from './predictions.generated.remote';
 export * from './profiles.generated.remote';
 // './pumpSnapshots.generated.remote' - all exports collide, import directly
 export * from './retrospectives.generated.remote';
+export { getRoles } from './roles.generated.remote';
 // './sensorGlucoses.generated.remote' - all exports collide, import directly
 export * from './services.generated.remote';
 export * from './statespans.generated.remote';
@@ -48,8 +50,9 @@ export * from './trackers.generated.remote';
 export * from './treatments.generated.remote';
 // './uploaderSnapshots.generated.remote' - all exports collide, import directly
 export * from './userPreferences.generated.remote';
-export * from './authorizations.generated.remote';
+export { getAllPermissions, getPermissionTrie, getAllSubjects, createSubject, updateSubject, deleteSubject, getAllRoles } from './authorizations.generated.remote';
 // './connectorStatus.generated.remote' - all exports collide, import directly
 export * from './statistics.generated.remote';
+export * from './accessrequests.generated.remote';
 export { addMember, removeMember, listInvites } from './tenants.generated.remote';
 export * from './configurations.generated.remote';

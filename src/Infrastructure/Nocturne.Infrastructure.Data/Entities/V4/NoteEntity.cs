@@ -102,6 +102,9 @@ public class NoteEntity : ITenantScoped
     [Column("is_announcement")]
     public bool IsAnnouncement { get; set; }
 
+    /// <summary>
+    /// Unique identifier for synchronization across platforms and devices.
+    /// </summary>
     [Column("sync_identifier")]
     [MaxLength(256)]
     public string? SyncIdentifier { get; set; }

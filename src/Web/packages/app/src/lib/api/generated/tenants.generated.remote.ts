@@ -138,7 +138,8 @@ export const revokeInvite = command(z.object({ id: z.string(), inviteId: z.strin
   try {
     await apiClient.tenant.revokeInvite(id, inviteId);
     await Promise.all([
-      getById(id).refresh()
+      getById(id).refresh(),
+      listInvites(id).refresh()
     ]);
     return { success: true };
   } catch (err) {

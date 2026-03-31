@@ -96,6 +96,9 @@ public class DeviceEventEntity : ITenantScoped
     [MaxLength(4096)]
     public string? Notes { get; set; }
 
+    /// <summary>
+    /// Unique identifier for synchronization across platforms and devices.
+    /// </summary>
     [Column("sync_identifier")]
     [MaxLength(256)]
     public string? SyncIdentifier { get; set; }

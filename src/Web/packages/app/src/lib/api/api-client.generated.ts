@@ -52,6 +52,7 @@ import {
   MetadataClient,
   MeterGlucoseClient,
   MigrationClient,
+  MyPermissionsClient,
   MyTenantsClient,
   NoteClient,
   NotificationsClient,
@@ -149,6 +150,7 @@ export class ApiClient {
   public readonly metadata: MetadataClient;
   public readonly meterGlucose: MeterGlucoseClient;
   public readonly migration: MigrationClient;
+  public readonly myPermissions: MyPermissionsClient;
   public readonly myTenants: MyTenantsClient;
   public readonly notes: NoteClient;
   public readonly notifications: NotificationsClient;
@@ -246,6 +248,7 @@ export class ApiClient {
     this.metadata = new MetadataClient(apiBaseUrl, http);
     this.meterGlucose = new MeterGlucoseClient(apiBaseUrl, http);
     this.migration = new MigrationClient(apiBaseUrl, http);
+    this.myPermissions = new MyPermissionsClient(apiBaseUrl, http);
     this.myTenants = new MyTenantsClient(apiBaseUrl, http);
     this.notes = new NoteClient(apiBaseUrl, http);
     this.notifications = new NotificationsClient(apiBaseUrl, http);

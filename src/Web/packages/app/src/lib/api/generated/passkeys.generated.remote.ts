@@ -5,8 +5,8 @@
 import { getRequestEvent, query, command } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
-import { PasskeyRegisterOptionsRequestSchema, PasskeyRegisterCompleteRequestSchema, PasskeyLoginOptionsRequestSchema, PasskeyLoginCompleteRequestSchema, RecoveryVerifyRequestSchema, SetupOptionsRequestSchema, SetupCompleteRequestSchema } from '$lib/api/generated/schemas';
-import { type PasskeyRegisterOptionsRequest, type PasskeyRegisterCompleteRequest, type PasskeyLoginOptionsRequest, type PasskeyLoginCompleteRequest, type RecoveryVerifyRequest, type SetupOptionsRequest, type SetupCompleteRequest } from '$api';
+import { PasskeyRegisterOptionsRequestSchema, PasskeyRegisterCompleteRequestSchema, PasskeyLoginOptionsRequestSchema, PasskeyLoginCompleteRequestSchema, RecoveryVerifyRequestSchema, SetupOptionsRequestSchema, SetupCompleteRequestSchema, AccessRequestOptionsRequestSchema, AccessRequestCompleteRequestSchema, InviteOptionsRequestSchema, InviteCompleteRequestSchema } from '$lib/api/generated/schemas';
+import { type PasskeyRegisterOptionsRequest, type PasskeyRegisterCompleteRequest, type PasskeyLoginOptionsRequest, type PasskeyLoginCompleteRequest, type RecoveryVerifyRequest, type SetupOptionsRequest, type SetupCompleteRequest, type AccessRequestOptionsRequest, type AccessRequestCompleteRequest, type InviteOptionsRequest, type InviteCompleteRequest } from '$api';
 
 /** Generate registration options for a new passkey credential */
 export const registerOptions = command(PasskeyRegisterOptionsRequestSchema, async (request) => {
@@ -226,5 +226,65 @@ export const setupComplete = command(SetupCompleteRequestSchema, async (request)
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in passkey.setupComplete:', err);
     throw error(500, 'Failed to setup complete');
+  }
+});
+
+export const accessRequestOptions = command(AccessRequestOptionsRequestSchema, async (request) => {
+  const apiClient = getRequestEvent().locals.apiClient;
+  try {
+    const result = await apiClient.passkey.accessRequestOptions(request as AccessRequestOptionsRequest);
+    return result;
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in passkey.accessRequestOptions:', err);
+    throw error(500, 'Failed to access request options');
+  }
+});
+
+export const accessRequestComplete = command(AccessRequestCompleteRequestSchema, async (request) => {
+  const apiClient = getRequestEvent().locals.apiClient;
+  try {
+    await apiClient.passkey.accessRequestComplete(request as AccessRequestCompleteRequest);
+    return { success: true };
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in passkey.accessRequestComplete:', err);
+    throw error(500, 'Failed to access request complete');
+  }
+});
+
+/** Generate passkey registration options for an unauthenticated user accepting an invite.
+Validates the invite, creates a new subject, and returns WebAuthn registration options. */
+export const inviteOptions = command(InviteOptionsRequestSchema, async (request) => {
+  const apiClient = getRequestEvent().locals.apiClient;
+  try {
+    const result = await apiClient.passkey.inviteOptions(request as InviteOptionsRequest);
+    return result;
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in passkey.inviteOptions:', err);
+    throw error(500, 'Failed to invite options');
+  }
+});
+
+/** Complete passkey registration for an invite acceptance.
+Verifies attestation, accepts the invite, generates recovery codes, and issues a session. */
+export const inviteComplete = command(InviteCompleteRequestSchema, async (request) => {
+  const apiClient = getRequestEvent().locals.apiClient;
+  try {
+    const result = await apiClient.passkey.inviteComplete(request as InviteCompleteRequest);
+    return result;
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in passkey.inviteComplete:', err);
+    throw error(500, 'Failed to invite complete');
   }
 });

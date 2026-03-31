@@ -9,6 +9,10 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// </summary>
 public static class TreatmentEntityConfiguration
 {
+    /// <summary>
+    /// Configures the owned types for TreatmentEntity within the provided ModelBuilder.
+    /// </summary>
+    /// <param name="modelBuilder">The ModelBuilder to configure.</param>
     public static void ConfigureOwnedTypes(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<TreatmentEntity>(entity =>

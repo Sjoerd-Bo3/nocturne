@@ -88,16 +88,28 @@ public class CarbIntakeEntity : ITenantScoped
     [Column("carbs")]
     public double Carbs { get; set; }
 
+    /// <summary>
+    /// Unique identifier for synchronization across platforms and devices.
+    /// </summary>
     [Column("sync_identifier")]
     [MaxLength(256)]
     public string? SyncIdentifier { get; set; }
 
+    /// <summary>
+    /// The time at which the carbohydrates were consumed according to the device record.
+    /// </summary>
     [Column("carb_time")]
     public double? CarbTime { get; set; }
 
+    /// <summary>
+    /// Expected duration for carbohydrate absorption in minutes.
+    /// </summary>
     [Column("absorption_time")]
     public int? AbsorptionTime { get; set; }
 
+    /// <summary>
+    /// Foreign key to the associated Bolus record.
+    /// </summary>
     [Column("bolus_id")]
     public Guid? BolusId { get; set; }
 

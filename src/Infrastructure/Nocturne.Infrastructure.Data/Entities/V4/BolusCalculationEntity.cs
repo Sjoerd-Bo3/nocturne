@@ -126,21 +126,39 @@ public class BolusCalculationEntity : ITenantScoped
     [MaxLength(32)]
     public string? CalculationType { get; set; }
 
+    /// <summary>
+    /// Recommended amount of insulin for carbohydrates.
+    /// </summary>
     [Column("insulin_recommendation_for_carbs")]
     public double? InsulinRecommendationForCarbs { get; set; }
 
+    /// <summary>
+    /// Total amount of insulin programmed for delivery.
+    /// </summary>
     [Column("insulin_programmed")]
     public double? InsulinProgrammed { get; set; }
 
+    /// <summary>
+    /// The amount of insulin entered by the user.
+    /// </summary>
     [Column("entered_insulin")]
     public double? EnteredInsulin { get; set; }
 
+    /// <summary>
+    /// Portion of dual/square bolus to be delivered immediately.
+    /// </summary>
     [Column("split_now")]
     public double? SplitNow { get; set; }
 
+    /// <summary>
+    /// Extended portion of dual/square bolus.
+    /// </summary>
     [Column("split_ext")]
     public double? SplitExt { get; set; }
 
+    /// <summary>
+    /// Amount of insulin delivered as a pre-bolus.
+    /// </summary>
     [Column("pre_bolus")]
     public double? PreBolus { get; set; }
 

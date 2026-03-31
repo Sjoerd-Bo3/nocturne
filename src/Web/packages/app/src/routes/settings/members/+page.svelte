@@ -34,11 +34,11 @@
     removeMember,
   } from "$api/generated/tenants.generated.remote";
   import { getMultitenancyInfo } from "$api/generated/metadatas.generated.remote";
+  import { getRoles } from "$lib/api/generated/roles.generated.remote";
   import {
-    getRoles,
     setMemberRoles,
     setMemberPermissions,
-  } from "$lib/api/generated/roles.generated.remote";
+  } from "$lib/api/generated/memberinvites.generated.remote";
 
   const effectivePermissions: string[] = $derived(
     (page.data as any).effectivePermissions ?? [],

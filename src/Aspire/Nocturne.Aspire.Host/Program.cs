@@ -151,11 +151,6 @@ class Program
             .WithHttpsEndpoint(port: 1613, name: "api")
             .WithHttpsDeveloperCertificate()
             .PublishAsDockerComposeService((_, _) => { })
-            .WithContainerBuildOptions(options =>
-            {
-                options.TargetPlatform =
-                    ContainerTargetPlatform.LinuxAmd64 | ContainerTargetPlatform.LinuxArm64;
-            })
             .WithRemoteImageName("ghcr.io/nightscout/nocturne/api")
             .WithRemoteImageTag("latest");
 #pragma warning restore ASPIRECERTIFICATES001
@@ -227,92 +222,112 @@ class Program
             // The parameters above are defined for visibility in Aspire dashboard and secret management
         }
 
-        var bridgePackagePath = Path.Combine(solutionRoot, "src", "Web", "packages", "bridge");
-        var bridge = builder.AddPnpmApp(
-            "nocturne-bridge-build",
-            bridgePackagePath,
-            scriptName: "build"
-        ).ExcludeFromManifest();
-
         // Add the SvelteKit web application (with integrated WebSocket bridge)
+        // ViteAppResource is not supported by the Docker Compose publisher (Aspire #12697),
+        // so we use AddViteApp for local dev and AddDockerfile for publishing.
         var webPackagePath = Path.Combine(solutionRoot, "src", "Web", "packages", "app");
+        var webDockerContextPath = Path.Combine(solutionRoot, "src", "Web");
+
+        // Common web environment configuration applied to both run and publish modes
+        IResourceBuilder<T> ConfigureWebEnvironment<T>(IResourceBuilder<T> resource)
+            where T : IResourceWithEnvironment, IResourceWithEndpoints
+        {
+            return resource
+                .WithReference(api)
+                .WithEnvironment("PUBLIC_API_URL", api.GetEndpoint("api"))
+                .WithEnvironment("NOCTURNE_API_URL", api.GetEndpoint("api"))
+                .WithEnvironment(ServiceNames.ConfigKeys.ApiSecret, apiSecret)
+                .WithEnvironment(
+                    "PUBLIC_WEBSOCKET_RECONNECT_ATTEMPTS",
+                    builder.Configuration["WebSocket:ReconnectAttempts"] ?? "5"
+                )
+                .WithEnvironment(
+                    "PUBLIC_WEBSOCKET_MAX_RECONNECT_DELAY",
+                    builder.Configuration["WebSocket:MaxReconnectDelay"] ?? "30000"
+                )
+                .WithEnvironment(
+                    "PUBLIC_WEBSOCKET_RECONNECT_DELAY",
+                    builder.Configuration["WebSocket:ReconnectDelay"] ?? "1000"
+                )
+                .WithEnvironment(
+                    "PUBLIC_WEBSOCKET_PING_TIMEOUT",
+                    builder.Configuration["WebSocket:PingTimeout"] ?? "15000"
+                )
+                .WithEnvironment(
+                    "PUBLIC_WEBSOCKET_PING_INTERVAL",
+                    builder.Configuration["WebSocket:PingInterval"] ?? "20000"
+                )
+                .WithEnvironment(
+                    "PUBLIC_DEFAULT_LANGUAGE",
+                    builder.Configuration["Language:DefaultLanguage"] ?? "en"
+                )
+                .WithEnvironment(
+                    "COOKIE_ACCESS_TOKEN_NAME",
+                    builder.Configuration["Oidc:Cookie:AccessTokenName"] ?? ".Nocturne.AccessToken"
+                )
+                .WithEnvironment(
+                    "COOKIE_REFRESH_TOKEN_NAME",
+                    builder.Configuration["Oidc:Cookie:RefreshTokenName"] ?? ".Nocturne.RefreshToken"
+                )
+                .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT",
+                    Environment.GetEnvironmentVariable("DOTNET_DASHBOARD_OTLP_ENDPOINT_URL") ?? "")
+                .WithEnvironment("OTEL_SERVICE_NAME", "nocturne-web")
+                .WithEnvironment("DISCORD_BOT_TOKEN",
+                    builder.Configuration["ChatBot:DISCORD_BOT_TOKEN"] ?? "")
+                .WithEnvironment("TELEGRAM_BOT_TOKEN",
+                    builder.Configuration["ChatBot:TELEGRAM_BOT_TOKEN"] ?? "")
+                .WithEnvironment("SLACK_BOT_TOKEN",
+                    builder.Configuration["ChatBot:SLACK_BOT_TOKEN"] ?? "")
+                .WithEnvironment("SLACK_SIGNING_SECRET",
+                    builder.Configuration["ChatBot:SLACK_SIGNING_SECRET"] ?? "")
+                .WithEnvironment("WHATSAPP_ACCESS_TOKEN",
+                    builder.Configuration["ChatBot:WHATSAPP_ACCESS_TOKEN"] ?? "")
+                .WithEnvironment("WHATSAPP_VERIFY_TOKEN",
+                    builder.Configuration["ChatBot:WHATSAPP_VERIFY_TOKEN"] ?? "");
+        }
 
 #pragma warning disable ASPIRECERTIFICATES001
-        var web = JavaScriptHostingExtensions
-            .AddViteApp(builder, ServiceNames.NocturneWeb, webPackagePath)
-            .WithPnpm()
-            .WithHttpsEndpoint(env: "PORT", port: 1612)
-            .WithHttpsDeveloperCertificate()
-            .WithDeveloperCertificateTrust(true)
-            .WaitFor(api)
-            .WaitFor(bridge)
-            .WithReference(api)
-            .WithReference(bridge)
-            .WithEnvironment("PUBLIC_API_URL", api.GetEndpoint("api"))
-            .WithEnvironment("NOCTURNE_API_URL", api.GetEndpoint("api"))
-            .WithEnvironment(ServiceNames.ConfigKeys.ApiSecret, apiSecret)
-            .WithEnvironment(
-                "PUBLIC_WEBSOCKET_RECONNECT_ATTEMPTS",
-                builder.Configuration["WebSocket:ReconnectAttempts"] ?? "5"
-            )
-            .WithEnvironment(
-                "PUBLIC_WEBSOCKET_MAX_RECONNECT_DELAY",
-                builder.Configuration["WebSocket:MaxReconnectDelay"] ?? "30000"
-            )
-            .WithEnvironment(
-                "PUBLIC_WEBSOCKET_RECONNECT_DELAY",
-                builder.Configuration["WebSocket:ReconnectDelay"] ?? "1000"
-            )
-            .WithEnvironment(
-                "PUBLIC_WEBSOCKET_PING_TIMEOUT",
-                builder.Configuration["WebSocket:PingTimeout"] ?? "15000"
-            )
-            .WithEnvironment(
-                "PUBLIC_WEBSOCKET_PING_INTERVAL",
-                builder.Configuration["WebSocket:PingInterval"] ?? "20000"
-            )
-            // Default language for the application
-            .WithEnvironment(
-                "PUBLIC_DEFAULT_LANGUAGE",
-                builder.Configuration["Language:DefaultLanguage"] ?? "en"
-            )
-            // Cookie names for authentication - must match API's Oidc:Cookie configuration
-            .WithEnvironment(
-                "COOKIE_ACCESS_TOKEN_NAME",
-                builder.Configuration["Oidc:Cookie:AccessTokenName"] ?? ".Nocturne.AccessToken"
-            )
-            .WithEnvironment(
-                "COOKIE_REFRESH_TOKEN_NAME",
-                builder.Configuration["Oidc:Cookie:RefreshTokenName"] ?? ".Nocturne.RefreshToken"
-            )
-            // OpenTelemetry configuration — send traces to the Aspire dashboard OTLP endpoint
-            .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT",
-                Environment.GetEnvironmentVariable("DOTNET_DASHBOARD_OTLP_ENDPOINT_URL") ?? "")
-            .WithEnvironment("OTEL_SERVICE_NAME", "nocturne-web")
-            // Chat bot platform tokens (from appsettings ChatBot section)
-            .WithEnvironment("DISCORD_BOT_TOKEN",
-                builder.Configuration["ChatBot:DISCORD_BOT_TOKEN"] ?? "")
-            .WithEnvironment("TELEGRAM_BOT_TOKEN",
-                builder.Configuration["ChatBot:TELEGRAM_BOT_TOKEN"] ?? "")
-            .WithEnvironment("SLACK_BOT_TOKEN",
-                builder.Configuration["ChatBot:SLACK_BOT_TOKEN"] ?? "")
-            .WithEnvironment("SLACK_SIGNING_SECRET",
-                builder.Configuration["ChatBot:SLACK_SIGNING_SECRET"] ?? "")
-            .WithEnvironment("WHATSAPP_ACCESS_TOKEN",
-                builder.Configuration["ChatBot:WHATSAPP_ACCESS_TOKEN"] ?? "")
-            .PublishAsDockerComposeService((_, _) => { })
-            .WithContainerBuildOptions(options =>
-            {
-                // TargetPlatform for both amd64 and arm64 architectures
-                options.TargetPlatform =
-                    ContainerTargetPlatform.LinuxAmd64 | ContainerTargetPlatform.LinuxArm64;
-            })
-            .WithRemoteImageName("ghcr.io/nightscout/nocturne/web")
-            .WithRemoteImageTag("latest");
+        IResourceBuilder<IResourceWithEndpoints> web;
+
+        if (builder.ExecutionContext.IsRunMode)
+        {
+            var bridgePackagePath = Path.Combine(solutionRoot, "src", "Web", "packages", "bridge");
+            var bridge = builder.AddPnpmApp(
+                "nocturne-bridge-build",
+                bridgePackagePath,
+                scriptName: "build"
+            );
+
+            var viteWeb = JavaScriptHostingExtensions
+                .AddViteApp(builder, ServiceNames.NocturneWeb, webPackagePath)
+                .WithPnpm()
+                .WithHttpsEndpoint(env: "PORT", port: 1612)
+                .WithHttpsDeveloperCertificate()
+                .WithDeveloperCertificateTrust(true)
+                .WaitFor(api)
+                .WaitFor(bridge)
+                .WithReference(bridge);
+
+            ConfigureWebEnvironment(viteWeb);
+            bridge.WithParentRelationship(viteWeb);
+            apiSecret.WithParentRelationship(viteWeb);
+            web = viteWeb;
+        }
+        else
+        {
+            var dockerWeb = builder.AddDockerfile(ServiceNames.NocturneWeb, webDockerContextPath)
+                .WithHttpsEndpoint(env: "PORT", port: 1612)
+                .WaitFor(api)
+                .PublishAsDockerComposeService((_, _) => { })
+                .WithRemoteImageName("ghcr.io/nightscout/nocturne/web")
+                .WithRemoteImageTag("latest");
+
+            ConfigureWebEnvironment(dockerWeb);
+            apiSecret.WithParentRelationship(dockerWeb);
+            web = dockerWeb;
+        }
 
 #pragma warning restore ASPIRECERTIFICATES001
-        apiSecret.WithParentRelationship(web);
-        bridge.WithParentRelationship(web);
 
         // API needs WEB_URL to POST chat bot alert dispatches to the SvelteKit app
         api.WithEnvironment("WEB_URL", web.GetEndpoint("https"));

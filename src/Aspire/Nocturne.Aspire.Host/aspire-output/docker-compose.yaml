@@ -28,8 +28,6 @@ services:
   nocturne-api:
     image: "${NOCTURNE_API_IMAGE}"
     environment:
-      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
-      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       HTTPS_PORTS: "${NOCTURNE_API_PORT}"
@@ -41,7 +39,9 @@ services:
       NOCTURNE_POSTGRES_URI: "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@nocturne-postgres-server:5432/nocturne-rhys"
       NOCTURNE_POSTGRES_JDBCCONNECTIONSTRING: "jdbc:postgresql://nocturne-postgres-server:5432/nocturne-rhys"
       NOCTURNE_POSTGRES_DATABASENAME: "nocturne-rhys"
+      API_SECRET: "${API_SECRET}"
       DemoService__Enabled: "false"
+      WEB_URL: "https://nocturne-web:1612"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "nocturne-api"
@@ -52,18 +52,47 @@ services:
         condition: "service_started"
     networks:
       - "aspire"
-  watchtower:
-    image: "ghcr.io/nicholas-fedor/watchtower:latest"
+  nocturne-web:
+    image: "${NOCTURNE_WEB_IMAGE}"
     environment:
-      WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_POLL_INTERVAL: "86400"
-      WATCHTOWER_INCLUDE_STOPPED: "false"
-      WATCHTOWER_REVIVE_STOPPED: "false"
-    volumes:
-      - type: "bind"
-        target: "/var/run/docker.sock"
-        source: "/var/run/docker.sock"
-        read_only: false
+      PORT: "1612"
+      NOCTURNE_API_API: "https://nocturne-api:${NOCTURNE_API_PORT}"
+      PUBLIC_API_URL: "https://nocturne-api:${NOCTURNE_API_PORT}"
+      NOCTURNE_API_URL: "https://nocturne-api:${NOCTURNE_API_PORT}"
+      API_SECRET: "${API_SECRET}"
+      PUBLIC_WEBSOCKET_RECONNECT_ATTEMPTS: "5"
+      PUBLIC_WEBSOCKET_MAX_RECONNECT_DELAY: "30000"
+      PUBLIC_WEBSOCKET_RECONNECT_DELAY: "1000"
+      PUBLIC_WEBSOCKET_PING_TIMEOUT: "15000"
+      PUBLIC_WEBSOCKET_PING_INTERVAL: "20000"
+      PUBLIC_DEFAULT_LANGUAGE: "en"
+      COOKIE_ACCESS_TOKEN_NAME: ".Nocturne.AccessToken"
+      COOKIE_REFRESH_TOKEN_NAME: ".Nocturne.RefreshToken"
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      OTEL_SERVICE_NAME: "nocturne-web"
+      DISCORD_BOT_TOKEN: ""
+      TELEGRAM_BOT_TOKEN: ""
+      SLACK_BOT_TOKEN: ""
+      SLACK_SIGNING_SECRET: ""
+      WHATSAPP_ACCESS_TOKEN: ""
+      WHATSAPP_VERIFY_TOKEN: ""
+    expose:
+      - "1612"
+    depends_on:
+      nocturne-api:
+        condition: "service_started"
+    networks:
+      - "aspire"
+  scalar:
+    image: "scalarapi/aspire-api-reference:0.8.0"
+    environment:
+      API_REFERENCE_CONFIG: "W3sicHJveHlVcmwiOiIvc2NhbGFyLXByb3h5Iiwic2VydmVycyI6W3sidXJsIjoiaHR0cHM6Ly9ub2N0dXJuZS1hcGkiLCJkZXNjcmlwdGlvbiI6Im5vY3R1cm5lLWFwaSJ9XSwidGhlbWUiOiJNYXJzIiwiZmF2aWNvbiI6ImZhdmljb24uc3ZnIiwiX2ludGVncmF0aW9uIjoiZG90bmV0Iiwic291cmNlcyI6W3sidGl0bGUiOiJub2N0dXJuZS1hcGkgfCBOb2N0dXJuZSBBUEkiLCJ1cmwiOiJodHRwczovL25vY3R1cm5lLWFwaS9vcGVuYXBpL3YxLmpzb24ifV19XQ=="
+      CDN_URL: "scalar.js"
+      ALLOW_SELF_SIGNED_CERTIFICATES: "False"
+      DEFAULT_PROXY: "True"
+      NOCTURNE_API_API: "https://nocturne-api:${NOCTURNE_API_PORT}"
+    expose:
+      - "8080"
     networks:
       - "aspire"
 networks:

@@ -5,6 +5,8 @@
 import { getRequestEvent, query, command } from '$app/server';
 import { error, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
+import { SetMemberRolesRequestSchema, SetMemberPermissionsRequestSchema } from '$lib/api/generated/schemas';
+import { type SetMemberRolesRequest, type SetMemberPermissionsRequest } from '$api';
 
 /** Get invite info for the accept page (anonymous). */
 export const getInviteInfo = query(z.string(), async (token) => {
@@ -49,7 +51,7 @@ export const getMembers = query(async () => {
   }
 });
 
-/** List followers of the current tenant (members with follower role). */
+/** List followers of the current tenant (members with the follower role). */
 export const getFollowers = query(async () => {
   const apiClient = getRequestEvent().locals.apiClient;
   try {
@@ -60,5 +62,55 @@ export const getFollowers = query(async () => {
     if (status === 403) throw error(403, 'Forbidden');
     console.error('Error in memberInvites.getFollowers:', err);
     throw error(500, 'Failed to get followers');
+  }
+});
+
+/** Set roles for a member (replaces all role assignments). */
+export const setMemberRoles = command(z.object({ id: z.string(), request: SetMemberRolesRequestSchema }), async ({ id, request }) => {
+  const apiClient = getRequestEvent().locals.apiClient;
+  try {
+    await apiClient.memberInvites.setMemberRoles(id, request as SetMemberRolesRequest);
+    await Promise.all([
+      getMembers(undefined).refresh()
+    ]);
+    return { success: true };
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in memberInvites.setMemberRoles:', err);
+    throw error(500, 'Failed to set member roles');
+  }
+});
+
+/** Set direct permissions for a member. */
+export const setMemberPermissions = command(z.object({ id: z.string(), request: SetMemberPermissionsRequestSchema }), async ({ id, request }) => {
+  const apiClient = getRequestEvent().locals.apiClient;
+  try {
+    await apiClient.memberInvites.setMemberPermissions(id, request as SetMemberPermissionsRequest);
+    await Promise.all([
+      getMembers(undefined).refresh()
+    ]);
+    return { success: true };
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in memberInvites.setMemberPermissions:', err);
+    throw error(500, 'Failed to set member permissions');
+  }
+});
+
+/** Get effective permissions for a member (union of role permissions + direct permissions). */
+export const getEffectivePermissions = query(z.string(), async (id) => {
+  const apiClient = getRequestEvent().locals.apiClient;
+  try {
+    return await apiClient.memberInvites.getEffectivePermissions(id);
+  } catch (err) {
+    const status = (err as any)?.status;
+    if (status === 401) { const { url } = getRequestEvent(); throw redirect(302, `/auth/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`); }
+    if (status === 403) throw error(403, 'Forbidden');
+    console.error('Error in memberInvites.getEffectivePermissions:', err);
+    throw error(500, 'Failed to get effective permissions');
   }
 });

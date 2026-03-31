@@ -126,27 +126,48 @@ public class BolusEntity : ITenantScoped
     [Column("duration")]
     public double? Duration { get; set; }
 
+    /// <summary>
+    /// Unique identifier for synchronization across platforms and devices.
+    /// </summary>
     [Column("sync_identifier")]
     [MaxLength(256)]
     public string? SyncIdentifier { get; set; }
 
+    /// <summary>
+    /// The type of insulin delivered.
+    /// </summary>
     [Column("insulin_type")]
     [MaxLength(128)]
     public string? InsulinType { get; set; }
 
+    /// <summary>
+    /// Estimated unabsorbed insulin.
+    /// </summary>
     [Column("unabsorbed")]
     public double? Unabsorbed { get; set; }
 
+    /// <summary>
+    /// Foreign key to the Device table.
+    /// </summary>
     [Column("device_id")]
     public Guid? DeviceId { get; set; }
 
+    /// <summary>
+    /// Pump-specific record identifier for deduplication.
+    /// </summary>
     [Column("pump_record_id")]
     [MaxLength(256)]
     public string? PumpRecordId { get; set; }
 
+    /// <summary>
+    /// Foreign key to the BolusCalculation table.
+    /// </summary>
     [Column("bolus_calculation_id")]
     public Guid? BolusCalculationId { get; set; }
 
+    /// <summary>
+    /// Foreign key to the ApsSnapshot table.
+    /// </summary>
     [Column("aps_snapshot_id")]
     public Guid? ApsSnapshotId { get; set; }
 
