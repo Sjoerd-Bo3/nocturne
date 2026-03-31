@@ -11,3 +11,4 @@ additionalProperties:
   useSingleRequestParameter: false
   prefixParameterInterfaces: true
   licenseName: AGPL-3.0-only
+  modelPropertyNaming: original
