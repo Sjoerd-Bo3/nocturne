@@ -12,6 +12,8 @@ public static class MeterGlucoseMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of MeterGlucoseEntity.</returns>
     public static MeterGlucoseEntity ToEntity(MeterGlucose model)
     {
         return new MeterGlucoseEntity
@@ -36,6 +38,8 @@ public static class MeterGlucoseMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of MeterGlucose domain model.</returns>
     public static MeterGlucose ToDomainModel(MeterGlucoseEntity entity)
     {
         return new MeterGlucose
@@ -60,6 +64,8 @@ public static class MeterGlucoseMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(MeterGlucoseEntity entity, MeterGlucose model)
     {
         entity.Timestamp = model.Timestamp;

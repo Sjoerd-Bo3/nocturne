@@ -6,17 +6,37 @@ using Nocturne.Infrastructure.Data.Mappers.V4;
 
 namespace Nocturne.Infrastructure.Data.Repositories.V4;
 
+/// <summary>
+/// Repository for managing therapy settings in the database.
+/// </summary>
 public class TherapySettingsRepository : ITherapySettingsRepository
 {
     private readonly NocturneDbContext _context;
     private readonly ILogger<TherapySettingsRepository> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TherapySettingsRepository"/> class.
+    /// </summary>
+    /// <param name="context">The database context.</param>
+    /// <param name="logger">The logger instance.</param>
     public TherapySettingsRepository(NocturneDbContext context, ILogger<TherapySettingsRepository> logger)
     {
         _context = context;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Gets therapy settings based on filter criteria.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="device">Optional device filter.</param>
+    /// <param name="source">Optional data source filter.</param>
+    /// <param name="limit">The maximum number of records to return.</param>
+    /// <param name="offset">The number of records to skip.</param>
+    /// <param name="descending">Whether to sort by timestamp in descending order.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of therapy settings.</returns>
     public async Task<IEnumerable<TherapySettings>> GetAsync(
         DateTime? from,
         DateTime? to,
@@ -42,18 +62,36 @@ public class TherapySettingsRepository : ITherapySettingsRepository
         return entities.Select(TherapySettingsMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Gets therapy settings by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The therapy settings, or null if not found.</returns>
     public async Task<TherapySettings?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var entity = await _context.TherapySettings.FindAsync([id], ct);
         return entity is null ? null : TherapySettingsMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Gets therapy settings by its legacy (MongoDB) identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The therapy settings, or null if not found.</returns>
     public async Task<TherapySettings?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
         var entity = await _context.TherapySettings.FirstOrDefaultAsync(e => e.LegacyId == legacyId, ct);
         return entity is null ? null : TherapySettingsMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Gets therapy settings by profile name.
+    /// </summary>
+    /// <param name="profileName">The name of the profile.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of therapy settings.</returns>
     public async Task<IEnumerable<TherapySettings>> GetByProfileNameAsync(
         string profileName,
         CancellationToken ct = default
@@ -67,6 +105,12 @@ public class TherapySettingsRepository : ITherapySettingsRepository
         return entities.Select(TherapySettingsMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Creates a new therapy settings record.
+    /// </summary>
+    /// <param name="model">The therapy settings to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The created therapy settings.</returns>
     public async Task<TherapySettings> CreateAsync(TherapySettings model, CancellationToken ct = default)
     {
         var entity = TherapySettingsMapper.ToEntity(model);
@@ -75,6 +119,13 @@ public class TherapySettingsRepository : ITherapySettingsRepository
         return TherapySettingsMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Updates an existing therapy settings record.
+    /// </summary>
+    /// <param name="id">The unique identifier of the settings to update.</param>
+    /// <param name="model">The updated settings data.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The updated therapy settings.</returns>
     public async Task<TherapySettings> UpdateAsync(Guid id, TherapySettings model, CancellationToken ct = default)
     {
         var entity =
@@ -85,6 +136,11 @@ public class TherapySettingsRepository : ITherapySettingsRepository
         return TherapySettingsMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Deletes therapy settings by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var entity =
@@ -94,11 +150,23 @@ public class TherapySettingsRepository : ITherapySettingsRepository
         await _context.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Deletes therapy settings by legacy identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
         return await _context.TherapySettings.Where(e => e.LegacyId == legacyId).ExecuteDeleteAsync(ct);
     }
 
+    /// <summary>
+    /// Deletes therapy settings by legacy identifier prefix.
+    /// </summary>
+    /// <param name="prefix">The legacy identifier prefix.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteByLegacyIdPrefixAsync(string prefix, CancellationToken ct = default)
     {
         return await _context
@@ -106,6 +174,13 @@ public class TherapySettingsRepository : ITherapySettingsRepository
             .ExecuteDeleteAsync(ct);
     }
 
+    /// <summary>
+    /// Counts therapy settings within a timestamp range.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The count of matching records.</returns>
     public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.TherapySettings.AsNoTracking().AsQueryable();
@@ -116,6 +191,12 @@ public class TherapySettingsRepository : ITherapySettingsRepository
         return await query.CountAsync(ct);
     }
 
+    /// <summary>
+    /// Gets therapy settings by correlation identifier.
+    /// </summary>
+    /// <param name="correlationId">The correlation identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of therapy settings.</returns>
     public async Task<IEnumerable<TherapySettings>> GetByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken ct = default
@@ -128,6 +209,12 @@ public class TherapySettingsRepository : ITherapySettingsRepository
         return entities.Select(TherapySettingsMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Performs a bulk creation of therapy settings records, handling deduplication.
+    /// </summary>
+    /// <param name="records">The collection of records to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of created settings.</returns>
     public async Task<IEnumerable<TherapySettings>> BulkCreateAsync(
         IEnumerable<TherapySettings> records,
         CancellationToken ct = default

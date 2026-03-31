@@ -9,6 +9,12 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("compression_low_suggestions")]
 public class CompressionLowSuggestionEntity : ITenantScoped
 {
+    /// <summary>
+    /// Identifier of the tenant this suggestion belongs to
+    /// </summary>
+    /// <summary>
+    /// The unique identifier of the tenant this record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

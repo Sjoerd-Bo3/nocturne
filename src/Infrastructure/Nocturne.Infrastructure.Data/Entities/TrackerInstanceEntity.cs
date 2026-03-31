@@ -11,6 +11,9 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("tracker_instances")]
 public class TrackerInstanceEntity : ITenantScoped
 {
+    /// <summary>
+    /// Identifier of the tenant this tracker instance belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

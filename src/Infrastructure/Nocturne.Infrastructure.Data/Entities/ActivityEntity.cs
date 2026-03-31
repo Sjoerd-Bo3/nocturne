@@ -10,6 +10,9 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("activities")]
 public class ActivityEntity : ITenantScoped
 {
+    /// <summary>
+    /// The unique identifier of the tenant this activity belongs to
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

@@ -13,6 +13,10 @@ public class AlertTrackerRepository : IAlertTrackerRepository
 {
     private readonly NocturneDbContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AlertTrackerRepository"/> class.
+    /// </summary>
+    /// <param name="context">The database context.</param>
     public AlertTrackerRepository(NocturneDbContext context)
     {
         _context = context;
@@ -21,6 +25,9 @@ public class AlertTrackerRepository : IAlertTrackerRepository
     /// <summary>
     /// Get the tracker state for a specific alert rule.
     /// </summary>
+    /// <param name="alertRuleId">The unique identifier of the alert rule.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The tracker state, or null if not found.</returns>
     public virtual async Task<AlertTrackerState?> GetTrackerStateAsync(
         Guid alertRuleId,
         CancellationToken ct = default)
@@ -34,6 +41,8 @@ public class AlertTrackerRepository : IAlertTrackerRepository
     /// <summary>
     /// Insert or update the tracker state for a rule.
     /// </summary>
+    /// <param name="state">The tracker state to upsert.</param>
+    /// <param name="ct">The cancellation token.</param>
     public virtual async Task UpsertTrackerStateAsync(
         AlertTrackerState state,
         CancellationToken ct = default)
@@ -66,6 +75,9 @@ public class AlertTrackerRepository : IAlertTrackerRepository
     /// <summary>
     /// Get the alert rule configuration.
     /// </summary>
+    /// <param name="alertRuleId">The unique identifier of the alert rule.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The alert rule, or null if not found.</returns>
     public virtual async Task<AlertRule?> GetRuleAsync(
         Guid alertRuleId,
         CancellationToken ct = default)
@@ -79,6 +91,10 @@ public class AlertTrackerRepository : IAlertTrackerRepository
     /// <summary>
     /// Create a new excursion record and return it.
     /// </summary>
+    /// <param name="alertRuleId">The unique identifier of the alert rule.</param>
+    /// <param name="startedAt">The timestamp when the excursion started.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The created alert excursion.</returns>
     public virtual async Task<AlertExcursion> CreateExcursionAsync(
         Guid alertRuleId,
         DateTime startedAt,
@@ -99,6 +115,9 @@ public class AlertTrackerRepository : IAlertTrackerRepository
     /// <summary>
     /// Close an excursion by setting its EndedAt timestamp.
     /// </summary>
+    /// <param name="excursionId">The unique identifier of the excursion.</param>
+    /// <param name="endedAt">The timestamp when the excursion ended.</param>
+    /// <param name="ct">The cancellation token.</param>
     public virtual async Task CloseExcursionAsync(
         Guid excursionId,
         DateTime endedAt,
@@ -117,6 +136,9 @@ public class AlertTrackerRepository : IAlertTrackerRepository
     /// <summary>
     /// Record the start of hysteresis on an excursion.
     /// </summary>
+    /// <param name="excursionId">The unique identifier of the excursion.</param>
+    /// <param name="hysteresisStartedAt">The timestamp when hysteresis started.</param>
+    /// <param name="ct">The cancellation token.</param>
     public virtual async Task SetHysteresisStartedAsync(
         Guid excursionId,
         DateTime hysteresisStartedAt,
@@ -135,6 +157,8 @@ public class AlertTrackerRepository : IAlertTrackerRepository
     /// <summary>
     /// Clear the hysteresis timestamp on an excursion (when resuming from hysteresis).
     /// </summary>
+    /// <param name="excursionId">The unique identifier of the excursion.</param>
+    /// <param name="ct">The cancellation token.</param>
     public virtual async Task ClearHysteresisAsync(
         Guid excursionId,
         CancellationToken ct = default)

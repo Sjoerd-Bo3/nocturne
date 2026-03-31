@@ -12,6 +12,9 @@ namespace Nocturne.Infrastructure.Data.Entities.V4;
 [Table("bg_checks")]
 public class BGCheckEntity : ITenantScoped
 {
+    /// <summary>
+    /// The unique identifier of the tenant this record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

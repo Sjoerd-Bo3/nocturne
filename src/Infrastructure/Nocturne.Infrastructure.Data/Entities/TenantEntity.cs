@@ -10,6 +10,9 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("tenants")]
 public class TenantEntity
 {
+    /// <summary>
+    /// Unique identifier for the tenant
+    /// </summary>
     [Key]
     public Guid Id { get; set; }
 
@@ -93,12 +96,20 @@ public class TenantEntity
     [Column("allow_access_requests")]
     public bool AllowAccessRequests { get; set; } = true;
 
+    /// <summary>
+    /// When the tenant record was created
+    /// </summary>
     [Column("sys_created_at")]
     public DateTime SysCreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// When the tenant record was last updated
+    /// </summary>
     [Column("sys_updated_at")]
     public DateTime SysUpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
+    /// <summary>
+    /// Collection of members belonging to this tenant
+    /// </summary>
     public ICollection<TenantMemberEntity> Members { get; set; } = [];
 }

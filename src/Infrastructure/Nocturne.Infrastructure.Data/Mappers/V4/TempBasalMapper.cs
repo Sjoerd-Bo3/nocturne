@@ -12,6 +12,8 @@ public static class TempBasalMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of TempBasalEntity.</returns>
     public static TempBasalEntity ToEntity(TempBasal model)
     {
         return new TempBasalEntity
@@ -42,6 +44,8 @@ public static class TempBasalMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of TempBasal domain model.</returns>
     public static TempBasal ToDomainModel(TempBasalEntity entity)
     {
         return new TempBasal
@@ -74,6 +78,8 @@ public static class TempBasalMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(TempBasalEntity entity, TempBasal model)
     {
         entity.StartTimestamp = model.StartTimestamp;

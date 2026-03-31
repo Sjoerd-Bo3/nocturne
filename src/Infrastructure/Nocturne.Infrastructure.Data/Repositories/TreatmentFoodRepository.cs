@@ -25,6 +25,9 @@ public class TreatmentFoodRepository : ITreatmentFoodRepository
     /// <summary>
     /// Get food breakdown entries for a carb intake record.
     /// </summary>
+    /// <param name="carbIntakeId">The unique identifier of the carb intake record.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of food breakdown entries.</returns>
     public async Task<IReadOnlyList<TreatmentFood>> GetByCarbIntakeIdAsync(
         Guid carbIntakeId,
         CancellationToken cancellationToken = default
@@ -46,6 +49,9 @@ public class TreatmentFoodRepository : ITreatmentFoodRepository
     /// <summary>
     /// Get food breakdown entries for multiple carb intake records.
     /// </summary>
+    /// <param name="carbIntakeIds">A collection of carb intake record identifiers.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of food breakdown entries matching the IDs.</returns>
     public async Task<IReadOnlyList<TreatmentFood>> GetByCarbIntakeIdsAsync(
         IEnumerable<Guid> carbIntakeIds,
         CancellationToken cancellationToken = default
@@ -73,6 +79,9 @@ public class TreatmentFoodRepository : ITreatmentFoodRepository
     /// <summary>
     /// Create a food breakdown entry.
     /// </summary>
+    /// <param name="entry">The food breakdown entry to create.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The created food breakdown entry.</returns>
     public async Task<TreatmentFood> CreateAsync(
         TreatmentFood entry,
         CancellationToken cancellationToken = default
@@ -94,6 +103,9 @@ public class TreatmentFoodRepository : ITreatmentFoodRepository
     /// <summary>
     /// Update a food breakdown entry.
     /// </summary>
+    /// <param name="entry">The food breakdown entry with updated data.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated food breakdown entry, or null if not found.</returns>
     public async Task<TreatmentFood?> UpdateAsync(
         TreatmentFood entry,
         CancellationToken cancellationToken = default
@@ -123,6 +135,9 @@ public class TreatmentFoodRepository : ITreatmentFoodRepository
     /// <summary>
     /// Delete a food breakdown entry.
     /// </summary>
+    /// <param name="id">The unique identifier of the entry to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the entry was deleted, otherwise false.</returns>
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await _context
@@ -142,6 +157,9 @@ public class TreatmentFoodRepository : ITreatmentFoodRepository
     /// <summary>
     /// Count how many food attribution entries reference a specific food.
     /// </summary>
+    /// <param name="foodId">The food unique identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The total number of referencing entries.</returns>
     public async Task<int> CountByFoodIdAsync(
         Guid foodId,
         CancellationToken cancellationToken = default
@@ -156,6 +174,9 @@ public class TreatmentFoodRepository : ITreatmentFoodRepository
     /// <summary>
     /// Clear food references for a specific food (set FoodId to null), keeping the attribution entries as "Other".
     /// </summary>
+    /// <param name="foodId">The food unique identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of records updated.</returns>
     public async Task<int> ClearFoodReferencesByFoodIdAsync(
         Guid foodId,
         CancellationToken cancellationToken = default
@@ -173,6 +194,9 @@ public class TreatmentFoodRepository : ITreatmentFoodRepository
     /// <summary>
     /// Delete all food attribution entries that reference a specific food.
     /// </summary>
+    /// <param name="foodId">The food unique identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of records deleted.</returns>
     public async Task<int> DeleteByFoodIdAsync(
         Guid foodId,
         CancellationToken cancellationToken = default
@@ -187,6 +211,9 @@ public class TreatmentFoodRepository : ITreatmentFoodRepository
     /// <summary>
     /// Get recently used foods ordered by last usage.
     /// </summary>
+    /// <param name="limit">The maximum number of foods to return.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of recently used foods.</returns>
     public async Task<IReadOnlyList<Food>> GetRecentFoodsAsync(
         int limit,
         CancellationToken cancellationToken = default

@@ -12,6 +12,9 @@ namespace Nocturne.Infrastructure.Data.Entities.V4;
 [Table("temp_basals")]
 public class TempBasalEntity : ITenantScoped
 {
+    /// <summary>
+    /// The unique identifier of the tenant this record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 
@@ -117,6 +120,9 @@ public class TempBasalEntity : ITenantScoped
     [MaxLength(256)]
     public string? PumpRecordId { get; set; }
 
+    /// <summary>
+    /// Foreign key to the ApsSnapshot table if this temp basal was enacted by an algorithm
+    /// </summary>
     [Column("aps_snapshot_id")]
     public Guid? ApsSnapshotId { get; set; }
 

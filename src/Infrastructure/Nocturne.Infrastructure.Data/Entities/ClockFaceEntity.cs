@@ -10,6 +10,9 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("clock_faces")]
 public class ClockFaceEntity : ITenantScoped
 {
+    /// <summary>
+    /// Identifier of the tenant this clock face belongs to
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

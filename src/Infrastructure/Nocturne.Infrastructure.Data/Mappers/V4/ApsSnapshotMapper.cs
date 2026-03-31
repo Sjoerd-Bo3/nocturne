@@ -12,6 +12,8 @@ public static class ApsSnapshotMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of ApsSnapshotEntity.</returns>
     public static ApsSnapshotEntity ToEntity(ApsSnapshot model)
     {
         return new ApsSnapshotEntity
@@ -54,6 +56,8 @@ public static class ApsSnapshotMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of ApsSnapshot domain model.</returns>
     public static ApsSnapshot ToDomainModel(ApsSnapshotEntity entity)
     {
         return new ApsSnapshot
@@ -96,6 +100,8 @@ public static class ApsSnapshotMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(ApsSnapshotEntity entity, ApsSnapshot model)
     {
         entity.Timestamp = model.Timestamp;

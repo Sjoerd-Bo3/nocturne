@@ -7,5 +7,8 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// </summary>
 public interface ITenantScoped
 {
+    /// <summary>
+    /// The unique identifier of the tenant this entity belongs to.
+    /// </summary>
     Guid TenantId { get; set; }
 }

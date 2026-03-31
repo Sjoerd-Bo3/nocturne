@@ -12,6 +12,9 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("tracker_notification_thresholds")]
 public class TrackerNotificationThresholdEntity : ITenantScoped
 {
+    /// <summary>
+    /// Identifier of the tenant this notification threshold belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

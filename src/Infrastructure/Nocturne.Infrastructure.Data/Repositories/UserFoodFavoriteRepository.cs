@@ -25,6 +25,9 @@ public class UserFoodFavoriteRepository : IUserFoodFavoriteRepository
     /// <summary>
     /// Get favorite food entities for a user.
     /// </summary>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of favorite foods.</returns>
     public async Task<IReadOnlyList<Food>> GetFavoriteFoodsAsync(
         string userId,
         CancellationToken cancellationToken = default
@@ -45,6 +48,10 @@ public class UserFoodFavoriteRepository : IUserFoodFavoriteRepository
     /// <summary>
     /// Check if a food is a favorite for the user.
     /// </summary>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="foodId">The unique identifier of the food.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the food is a favorite, otherwise false.</returns>
     public async Task<bool> IsFavoriteAsync(
         string userId,
         Guid foodId,
@@ -60,6 +67,10 @@ public class UserFoodFavoriteRepository : IUserFoodFavoriteRepository
     /// <summary>
     /// Add a favorite entry for a user.
     /// </summary>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="foodId">The unique identifier of the food to favorite.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The added favorite record, or null if it already exists.</returns>
     public async Task<UserFoodFavorite?> AddFavoriteAsync(
         string userId,
         Guid foodId,
@@ -87,6 +98,10 @@ public class UserFoodFavoriteRepository : IUserFoodFavoriteRepository
     /// <summary>
     /// Remove a favorite entry for a user.
     /// </summary>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="foodId">The unique identifier of the food to unfavorite.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the favorite was removed, otherwise false.</returns>
     public async Task<bool> RemoveFavoriteAsync(
         string userId,
         Guid foodId,

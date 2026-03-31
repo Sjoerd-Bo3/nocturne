@@ -12,6 +12,9 @@ namespace Nocturne.Infrastructure.Data.Entities.V4;
 [Table("target_range_schedules")]
 public class TargetRangeScheduleEntity : ITenantScoped
 {
+    /// <summary>
+    /// The unique identifier of the tenant this record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

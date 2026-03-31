@@ -12,6 +12,8 @@ public static class BolusCalculationMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of BolusCalculationEntity.</returns>
     public static BolusCalculationEntity ToEntity(BolusCalculation model)
     {
         return new BolusCalculationEntity
@@ -48,6 +50,8 @@ public static class BolusCalculationMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of BolusCalculation domain model.</returns>
     public static BolusCalculation ToDomainModel(BolusCalculationEntity entity)
     {
         return new BolusCalculation
@@ -84,6 +88,8 @@ public static class BolusCalculationMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(BolusCalculationEntity entity, BolusCalculation model)
     {
         entity.Timestamp = model.Timestamp;

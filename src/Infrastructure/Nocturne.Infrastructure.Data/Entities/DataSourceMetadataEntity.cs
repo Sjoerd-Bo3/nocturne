@@ -11,6 +11,12 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("data_source_metadata")]
 public class DataSourceMetadataEntity : ITenantScoped
 {
+    /// <summary>
+    /// Identifier of the tenant this metadata belongs to
+    /// </summary>
+    /// <summary>
+    /// The unique identifier of the tenant this record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

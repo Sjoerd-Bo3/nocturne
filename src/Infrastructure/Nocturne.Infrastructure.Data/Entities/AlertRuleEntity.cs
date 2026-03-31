@@ -10,16 +10,28 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("alert_rules")]
 public class AlertRuleEntity : ITenantScoped
 {
+    /// <summary>
+    /// Unique identifier for the alert rule
+    /// </summary>
     [Key]
     public Guid Id { get; set; }
 
+    /// <summary>
+    /// Identifier of the tenant this alert rule belongs to
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 
+    /// <summary>
+    /// Display name of the alert rule
+    /// </summary>
     [Column("name")]
     [MaxLength(128)]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Detailed description of the alert rule
+    /// </summary>
     [Column("description")]
     [MaxLength(512)]
     public string? Description { get; set; }
@@ -63,19 +75,39 @@ public class AlertRuleEntity : ITenantScoped
     [Column("client_configuration", TypeName = "jsonb")]
     public string ClientConfiguration { get; set; } = "{}";
 
+    /// <summary>
+    /// Whether the alert rule is currently active
+    /// </summary>
     [Column("is_enabled")]
     public bool IsEnabled { get; set; } = true;
 
+    /// <summary>
+    /// Order in which the rule should be processed or displayed
+    /// </summary>
     [Column("sort_order")]
     public int SortOrder { get; set; }
 
+    /// <summary>
+    /// When the alert rule was created
+    /// </summary>
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// When the alert rule was last updated
+    /// </summary>
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation
+
+    /// <summary>
+    /// Collection of schedules associated with this alert rule
+    /// </summary>
     public ICollection<AlertScheduleEntity> Schedules { get; set; } = [];
+
+    /// <summary>
+    /// Current state tracker for this alert rule
+    /// </summary>
     public AlertTrackerStateEntity? TrackerState { get; set; }
 }

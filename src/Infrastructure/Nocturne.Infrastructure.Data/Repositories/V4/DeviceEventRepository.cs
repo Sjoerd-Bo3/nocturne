@@ -8,12 +8,22 @@ using Nocturne.Infrastructure.Data.Mappers.V4;
 
 namespace Nocturne.Infrastructure.Data.Repositories.V4;
 
+/// <summary>
+/// Repository for managing device event records in the database.
+/// Includes support for cross-connector deduplication.
+/// </summary>
 public class DeviceEventRepository : IDeviceEventRepository
 {
     private readonly NocturneDbContext _context;
     private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<DeviceEventRepository> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DeviceEventRepository"/> class.
+    /// </summary>
+    /// <param name="context">The database context.</param>
+    /// <param name="deduplicationService">The deduplication service.</param>
+    /// <param name="logger">The logger instance.</param>
     public DeviceEventRepository(
         NocturneDbContext context,
         IDeduplicationService deduplicationService,
@@ -24,6 +34,20 @@ public class DeviceEventRepository : IDeviceEventRepository
         _logger = logger;
     }
 
+    /// <summary>
+    /// Gets device event records based on filter criteria.
+    /// Deduplicates records using the <see cref="IDeduplicationService"/>.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="device">Optional device filter.</param>
+    /// <param name="source">Optional data source filter.</param>
+    /// <param name="limit">The maximum number of records to return.</param>
+    /// <param name="offset">The number of records to skip.</param>
+    /// <param name="descending">Whether to sort by timestamp in descending order.</param>
+    /// <param name="nativeOnly">Whether to return only native records.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of device events.</returns>
     public async Task<IEnumerable<DeviceEvent>> GetAsync(
         DateTime? from,
         DateTime? to,
@@ -59,12 +83,24 @@ public class DeviceEventRepository : IDeviceEventRepository
         return entities.Select(DeviceEventMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Gets a device event record by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The device event, or null if not found.</returns>
     public async Task<DeviceEvent?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var entity = await _context.DeviceEvents.FindAsync([id], ct);
         return entity is null ? null : DeviceEventMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Gets a device event record by its legacy (MongoDB) identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The device event, or null if not found.</returns>
     public async Task<DeviceEvent?> GetByLegacyIdAsync(
         string legacyId,
         CancellationToken ct = default
@@ -77,6 +113,12 @@ public class DeviceEventRepository : IDeviceEventRepository
         return entity is null ? null : DeviceEventMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Creates a new device event record.
+    /// </summary>
+    /// <param name="model">The device event to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The created device event.</returns>
     public async Task<DeviceEvent> CreateAsync(DeviceEvent model, CancellationToken ct = default)
     {
         var entity = DeviceEventMapper.ToEntity(model);
@@ -85,6 +127,13 @@ public class DeviceEventRepository : IDeviceEventRepository
         return DeviceEventMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Updates an existing device event record.
+    /// </summary>
+    /// <param name="id">The unique identifier of the record to update.</param>
+    /// <param name="model">The updated record data.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The updated device event.</returns>
     public async Task<DeviceEvent> UpdateAsync(
         Guid id,
         DeviceEvent model,
@@ -99,6 +148,11 @@ public class DeviceEventRepository : IDeviceEventRepository
         return DeviceEventMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Deletes a device event record by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var entity =
@@ -108,6 +162,13 @@ public class DeviceEventRepository : IDeviceEventRepository
         await _context.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Counts device event records within a timestamp range.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The count of matching records.</returns>
     public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.DeviceEvents.AsNoTracking().AsQueryable();
@@ -118,6 +179,12 @@ public class DeviceEventRepository : IDeviceEventRepository
         return await query.CountAsync(ct);
     }
 
+    /// <summary>
+    /// Gets device event records by correlation identifier.
+    /// </summary>
+    /// <param name="correlationId">The correlation identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of device events.</returns>
     public async Task<IEnumerable<DeviceEvent>> GetByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken ct = default
@@ -130,6 +197,12 @@ public class DeviceEventRepository : IDeviceEventRepository
         return entities.Select(DeviceEventMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Deletes a device event record by its legacy identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
         return await _context
@@ -137,6 +210,12 @@ public class DeviceEventRepository : IDeviceEventRepository
             .ExecuteDeleteAsync(ct);
     }
 
+    /// <summary>
+    /// Performs a bulk creation of device event records, handling deduplication.
+    /// </summary>
+    /// <param name="records">The collection of records to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of created records.</returns>
     public async Task<IEnumerable<DeviceEvent>> BulkCreateAsync(
         IEnumerable<DeviceEvent> records,
         CancellationToken ct = default
@@ -216,6 +295,12 @@ public class DeviceEventRepository : IDeviceEventRepository
         return entities.Select(DeviceEventMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Gets the latest device event of a specific type.
+    /// </summary>
+    /// <param name="eventType">The type of device event.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The latest device event, or null if none found.</returns>
     public async Task<DeviceEvent?> GetLatestByEventTypeAsync(DeviceEventType eventType, CancellationToken ct = default)
     {
         var eventTypeString = eventType.ToString();
@@ -228,6 +313,12 @@ public class DeviceEventRepository : IDeviceEventRepository
         return entity is null ? null : DeviceEventMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Gets the latest device event from a set of event types.
+    /// </summary>
+    /// <param name="eventTypes">The types of device events to search for.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The latest device event, or null if none found.</returns>
     public async Task<DeviceEvent?> GetLatestByEventTypesAsync(DeviceEventType[] eventTypes, CancellationToken ct = default)
     {
         var eventTypeStrings = eventTypes.Select(t => t.ToString()).ToList();

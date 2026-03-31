@@ -13,6 +13,8 @@ public static class TherapySettingsMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of TherapySettingsEntity.</returns>
     public static TherapySettingsEntity ToEntity(TherapySettings model)
     {
         return new TherapySettingsEntity
@@ -56,6 +58,8 @@ public static class TherapySettingsMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of TherapySettings domain model.</returns>
     public static TherapySettings ToDomainModel(TherapySettingsEntity entity)
     {
         return new TherapySettings
@@ -99,6 +103,8 @@ public static class TherapySettingsMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(TherapySettingsEntity entity, TherapySettings model)
     {
         entity.Timestamp = model.Timestamp;

@@ -17,6 +17,9 @@ public class AlertTrackerStateEntity : ITenantScoped
     [Column("alert_rule_id")]
     public Guid AlertRuleId { get; set; }
 
+    /// <summary>
+    /// Identifier of the tenant this tracker state belongs to
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 
@@ -39,10 +42,21 @@ public class AlertTrackerStateEntity : ITenantScoped
     [Column("active_excursion_id")]
     public Guid? ActiveExcursionId { get; set; }
 
+    /// <summary>
+    /// When the tracker state was last updated
+    /// </summary>
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation
+
+    /// <summary>
+    /// Navigation property to the associated alert rule
+    /// </summary>
     public AlertRuleEntity? AlertRule { get; set; }
+
+    /// <summary>
+    /// Navigation property to the currently active excursion
+    /// </summary>
     public AlertExcursionEntity? ActiveExcursion { get; set; }
 }

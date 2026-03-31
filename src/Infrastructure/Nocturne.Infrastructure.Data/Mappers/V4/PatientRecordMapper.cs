@@ -11,6 +11,8 @@ public static class PatientRecordMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of PatientRecordEntity.</returns>
     public static PatientRecordEntity ToEntity(PatientRecord model)
     {
         return new PatientRecordEntity
@@ -31,6 +33,8 @@ public static class PatientRecordMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of PatientRecord domain model.</returns>
     public static PatientRecord ToDomainModel(PatientRecordEntity entity)
     {
         return new PatientRecord
@@ -54,6 +58,8 @@ public static class PatientRecordMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(PatientRecordEntity entity, PatientRecord model)
     {
         entity.DiabetesType = model.DiabetesType?.ToString();

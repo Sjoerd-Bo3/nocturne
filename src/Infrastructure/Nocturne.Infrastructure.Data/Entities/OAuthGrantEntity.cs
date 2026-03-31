@@ -119,6 +119,13 @@ public class OAuthGrantEntity
 /// </summary>
 public static class OAuthGrantTypes
 {
+    /// <summary>
+    /// Grant type for third-party application approvals.
+    /// </summary>
     public const string App = OAuthScopes.GrantTypeApp;
+
+    /// <summary>
+    /// Grant type for direct, programmatic API token approvals.
+    /// </summary>
     public const string Direct = OAuthScopes.GrantTypeDirect;
 }

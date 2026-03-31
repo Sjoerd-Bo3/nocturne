@@ -8,12 +8,22 @@ using Nocturne.Infrastructure.Data.Mappers.V4;
 
 namespace Nocturne.Infrastructure.Data.Repositories.V4;
 
+/// <summary>
+/// Repository for managing carbohydrate intake records in the database.
+/// Includes support for cross-connector deduplication.
+/// </summary>
 public class CarbIntakeRepository : ICarbIntakeRepository
 {
     private readonly NocturneDbContext _context;
     private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<CarbIntakeRepository> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CarbIntakeRepository"/> class.
+    /// </summary>
+    /// <param name="context">The database context.</param>
+    /// <param name="deduplicationService">The deduplication service.</param>
+    /// <param name="logger">The logger instance.</param>
     public CarbIntakeRepository(
         NocturneDbContext context,
         IDeduplicationService deduplicationService,
@@ -24,6 +34,20 @@ public class CarbIntakeRepository : ICarbIntakeRepository
         _logger = logger;
     }
 
+    /// <summary>
+    /// Gets carbohydrate intake records based on filter criteria.
+    /// Deduplicates records using the <see cref="IDeduplicationService"/>.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="device">Optional device filter.</param>
+    /// <param name="source">Optional data source filter.</param>
+    /// <param name="limit">The maximum number of records to return.</param>
+    /// <param name="offset">The number of records to skip.</param>
+    /// <param name="descending">Whether to sort by timestamp in descending order.</param>
+    /// <param name="nativeOnly">Whether to return only native records.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of carbohydrate intakes.</returns>
     public async Task<IEnumerable<CarbIntake>> GetAsync(
         DateTime? from,
         DateTime? to,
@@ -59,12 +83,24 @@ public class CarbIntakeRepository : ICarbIntakeRepository
         return entities.Select(CarbIntakeMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Gets a carbohydrate intake record by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The carbohydrate intake, or null if not found.</returns>
     public async Task<CarbIntake?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var entity = await _context.CarbIntakes.FindAsync([id], ct);
         return entity is null ? null : CarbIntakeMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Gets a carbohydrate intake record by its legacy (MongoDB) identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The carbohydrate intake, or null if not found.</returns>
     public async Task<CarbIntake?> GetByLegacyIdAsync(
         string legacyId,
         CancellationToken ct = default
@@ -77,6 +113,12 @@ public class CarbIntakeRepository : ICarbIntakeRepository
         return entity is null ? null : CarbIntakeMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Creates a new carbohydrate intake record.
+    /// </summary>
+    /// <param name="model">The carbohydrate intake to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The created carbohydrate intake.</returns>
     public async Task<CarbIntake> CreateAsync(CarbIntake model, CancellationToken ct = default)
     {
         var entity = CarbIntakeMapper.ToEntity(model);
@@ -85,6 +127,13 @@ public class CarbIntakeRepository : ICarbIntakeRepository
         return CarbIntakeMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Updates an existing carbohydrate intake record.
+    /// </summary>
+    /// <param name="id">The unique identifier of the record to update.</param>
+    /// <param name="model">The updated record data.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The updated carbohydrate intake.</returns>
     public async Task<CarbIntake> UpdateAsync(
         Guid id,
         CarbIntake model,
@@ -99,6 +148,11 @@ public class CarbIntakeRepository : ICarbIntakeRepository
         return CarbIntakeMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Deletes a carbohydrate intake record by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var entity =
@@ -108,6 +162,13 @@ public class CarbIntakeRepository : ICarbIntakeRepository
         await _context.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Counts carbohydrate intake records within a timestamp range.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The count of matching records.</returns>
     public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.CarbIntakes.AsNoTracking().AsQueryable();
@@ -118,6 +179,12 @@ public class CarbIntakeRepository : ICarbIntakeRepository
         return await query.CountAsync(ct);
     }
 
+    /// <summary>
+    /// Gets carbohydrate intake records by correlation identifier.
+    /// </summary>
+    /// <param name="correlationId">The correlation identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of carbohydrate intakes.</returns>
     public async Task<IEnumerable<CarbIntake>> GetByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken ct = default
@@ -130,11 +197,23 @@ public class CarbIntakeRepository : ICarbIntakeRepository
         return entities.Select(CarbIntakeMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Deletes a carbohydrate intake record by its legacy identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
         return await _context.CarbIntakes.Where(e => e.LegacyId == legacyId).ExecuteDeleteAsync(ct);
     }
 
+    /// <summary>
+    /// Performs a bulk creation of carbohydrate intake records, handling deduplication.
+    /// </summary>
+    /// <param name="records">The collection of records to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of created records.</returns>
     public async Task<IEnumerable<CarbIntake>> BulkCreateAsync(
         IEnumerable<CarbIntake> records,
         CancellationToken ct = default

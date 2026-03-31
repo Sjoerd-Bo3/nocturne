@@ -24,6 +24,27 @@ public class DiscrepancyAnalysisRepository : IDiscrepancyAnalysisRepository
     /// <summary>
     /// Store a discrepancy analysis result
     /// </summary>
+    /// <param name="correlationId">The unique correlation identifier for the request.</param>
+    /// <param name="analysisTimestamp">The timestamp when the analysis was performed.</param>
+    /// <param name="requestMethod">The HTTP request method (e.g., GET, POST).</param>
+    /// <param name="requestPath">The endpoint path.</param>
+    /// <param name="overallMatch">The overall match level as an integer.</param>
+    /// <param name="statusCodeMatch">Whether the HTTP status codes matched.</param>
+    /// <param name="bodyMatch">Whether the response bodies matched.</param>
+    /// <param name="nightscoutStatusCode">The status code returned by Nightscout.</param>
+    /// <param name="nocturneStatusCode">The status code returned by Nocturne.</param>
+    /// <param name="nightscoutResponseTimeMs">Nightscout response time in milliseconds.</param>
+    /// <param name="nocturneResponseTimeMs">Nocturne response time in milliseconds.</param>
+    /// <param name="totalProcessingTimeMs">Total time spent performing the analysis.</param>
+    /// <param name="summary">A brief summary of the analysis results.</param>
+    /// <param name="selectedResponseTarget">The response target that was eventually selected.</param>
+    /// <param name="selectionReason">The reason for selecting that response target.</param>
+    /// <param name="discrepancies">A list of detected discrepancies.</param>
+    /// <param name="nightscoutMissing">Whether the Nightscout response was missing.</param>
+    /// <param name="nocturneMissing">Whether the Nocturne response was missing.</param>
+    /// <param name="errorMessage">Any error message encountered during analysis.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The unique identifier of the stored analysis record.</returns>
     public async Task<Guid> StoreAnalysisAsync(
         string correlationId,
         DateTimeOffset analysisTimestamp,
@@ -100,6 +121,14 @@ public class DiscrepancyAnalysisRepository : IDiscrepancyAnalysisRepository
     /// <summary>
     /// Get analyses with filtering and pagination
     /// </summary>
+    /// <param name="requestPath">Optional endpoint path filter.</param>
+    /// <param name="overallMatch">Optional match level filter.</param>
+    /// <param name="fromDate">Optional start date filter.</param>
+    /// <param name="toDate">Optional end date filter.</param>
+    /// <param name="count">The maximum number of records to return.</param>
+    /// <param name="skip">The number of records to skip.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of matching discrepancy analysis entities.</returns>
     public async Task<IEnumerable<DiscrepancyAnalysisEntity>> GetAnalysesAsync(
         string? requestPath = null,
         int? overallMatch = null,
@@ -143,6 +172,10 @@ public class DiscrepancyAnalysisRepository : IDiscrepancyAnalysisRepository
     /// <summary>
     /// Get compatibility metrics for dashboard
     /// </summary>
+    /// <param name="fromDate">Optional start date for metrics calculation.</param>
+    /// <param name="toDate">Optional end date for metrics calculation.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The calculated compatibility metrics.</returns>
     public async Task<CompatibilityMetrics> GetCompatibilityMetricsAsync(
         DateTimeOffset? fromDate = null,
         DateTimeOffset? toDate = null,
@@ -207,6 +240,10 @@ public class DiscrepancyAnalysisRepository : IDiscrepancyAnalysisRepository
     /// <summary>
     /// Get endpoint-specific metrics
     /// </summary>
+    /// <param name="fromDate">Optional start date for metrics calculation.</param>
+    /// <param name="toDate">Optional end date for metrics calculation.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of metrics for each endpoint.</returns>
     public async Task<IEnumerable<EndpointMetrics>> GetEndpointMetricsAsync(
         DateTimeOffset? fromDate = null,
         DateTimeOffset? toDate = null,
@@ -270,6 +307,9 @@ public class DiscrepancyAnalysisRepository : IDiscrepancyAnalysisRepository
     /// <summary>
     /// Delete old analyses based on retention policy
     /// </summary>
+    /// <param name="cutoffDate">The date before which records should be deleted.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteOldAnalysesAsync(
         DateTimeOffset cutoffDate,
         CancellationToken cancellationToken = default

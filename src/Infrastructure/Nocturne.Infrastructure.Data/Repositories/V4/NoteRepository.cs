@@ -8,12 +8,22 @@ using Nocturne.Infrastructure.Data.Mappers.V4;
 
 namespace Nocturne.Infrastructure.Data.Repositories.V4;
 
+/// <summary>
+/// Repository for managing note records in the database.
+/// Includes support for cross-connector deduplication.
+/// </summary>
 public class NoteRepository : INoteRepository
 {
     private readonly NocturneDbContext _context;
     private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<NoteRepository> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NoteRepository"/> class.
+    /// </summary>
+    /// <param name="context">The database context.</param>
+    /// <param name="deduplicationService">The deduplication service.</param>
+    /// <param name="logger">The logger instance.</param>
     public NoteRepository(
         NocturneDbContext context,
         IDeduplicationService deduplicationService,
@@ -24,6 +34,20 @@ public class NoteRepository : INoteRepository
         _logger = logger;
     }
 
+    /// <summary>
+    /// Gets note records based on filter criteria.
+    /// Deduplicates records using the <see cref="IDeduplicationService"/>.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="device">Optional device filter.</param>
+    /// <param name="source">Optional data source filter.</param>
+    /// <param name="limit">The maximum number of records to return.</param>
+    /// <param name="offset">The number of records to skip.</param>
+    /// <param name="descending">Whether to sort by timestamp in descending order.</param>
+    /// <param name="nativeOnly">Whether to return only native records.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of notes.</returns>
     public async Task<IEnumerable<Note>> GetAsync(
         DateTime? from,
         DateTime? to,
@@ -59,18 +83,36 @@ public class NoteRepository : INoteRepository
         return entities.Select(NoteMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Gets a note record by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The note record, or null if not found.</returns>
     public async Task<Note?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var entity = await _context.Notes.FindAsync([id], ct);
         return entity is null ? null : NoteMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Gets a note record by its legacy identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The note record, or null if not found.</returns>
     public async Task<Note?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
         var entity = await _context.Notes.FirstOrDefaultAsync(e => e.LegacyId == legacyId, ct);
         return entity is null ? null : NoteMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Creates a new note record.
+    /// </summary>
+    /// <param name="model">The note to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The created note record.</returns>
     public async Task<Note> CreateAsync(Note model, CancellationToken ct = default)
     {
         var entity = NoteMapper.ToEntity(model);
@@ -79,6 +121,13 @@ public class NoteRepository : INoteRepository
         return NoteMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Updates an existing note record.
+    /// </summary>
+    /// <param name="id">The unique identifier of the record to update.</param>
+    /// <param name="model">The updated record data.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The updated note record.</returns>
     public async Task<Note> UpdateAsync(Guid id, Note model, CancellationToken ct = default)
     {
         var entity =
@@ -89,6 +138,11 @@ public class NoteRepository : INoteRepository
         return NoteMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Deletes a note record by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var entity =
@@ -98,6 +152,13 @@ public class NoteRepository : INoteRepository
         await _context.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Counts note records within a timestamp range.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The count of matching records.</returns>
     public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.Notes.AsNoTracking().AsQueryable();
@@ -108,6 +169,12 @@ public class NoteRepository : INoteRepository
         return await query.CountAsync(ct);
     }
 
+    /// <summary>
+    /// Gets note records by correlation identifier.
+    /// </summary>
+    /// <param name="correlationId">The correlation identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of notes.</returns>
     public async Task<IEnumerable<Note>> GetByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken ct = default
@@ -120,11 +187,23 @@ public class NoteRepository : INoteRepository
         return entities.Select(NoteMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Deletes a note record by its legacy identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
         return await _context.Notes.Where(e => e.LegacyId == legacyId).ExecuteDeleteAsync(ct);
     }
 
+    /// <summary>
+    /// Performs a bulk creation of note records, handling deduplication.
+    /// </summary>
+    /// <param name="records">The collection of records to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of created notes.</returns>
     public async Task<IEnumerable<Note>> BulkCreateAsync(
         IEnumerable<Note> records,
         CancellationToken ct = default

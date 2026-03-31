@@ -8,12 +8,22 @@ using Nocturne.Infrastructure.Data.Mappers.V4;
 
 namespace Nocturne.Infrastructure.Data.Repositories.V4;
 
+/// <summary>
+/// Repository for managing bolus records in the database.
+/// Includes support for cross-connector deduplication.
+/// </summary>
 public class BolusRepository : IBolusRepository
 {
     private readonly NocturneDbContext _context;
     private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<BolusRepository> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BolusRepository"/> class.
+    /// </summary>
+    /// <param name="context">The database context.</param>
+    /// <param name="deduplicationService">The deduplication service.</param>
+    /// <param name="logger">The logger instance.</param>
     public BolusRepository(
         NocturneDbContext context,
         IDeduplicationService deduplicationService,
@@ -24,6 +34,21 @@ public class BolusRepository : IBolusRepository
         _logger = logger;
     }
 
+    /// <summary>
+    /// Gets bolus records based on filter criteria.
+    /// Deduplicates records using the <see cref="IDeduplicationService"/>.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="device">Optional device filter.</param>
+    /// <param name="source">Optional data source filter.</param>
+    /// <param name="limit">The maximum number of records to return.</param>
+    /// <param name="offset">The number of records to skip.</param>
+    /// <param name="descending">Whether to sort by timestamp in descending order.</param>
+    /// <param name="nativeOnly">Whether to return only native records.</param>
+    /// <param name="kind">Optional bolus kind filter.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of bolus records.</returns>
     public async Task<IEnumerable<Bolus>> GetAsync(
         DateTime? from,
         DateTime? to,
@@ -62,18 +87,36 @@ public class BolusRepository : IBolusRepository
         return entities.Select(BolusMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Gets a bolus record by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The bolus record, or null if not found.</returns>
     public async Task<Bolus?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var entity = await _context.Boluses.FindAsync([id], ct);
         return entity is null ? null : BolusMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Gets a bolus record by its legacy (MongoDB) identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The bolus record, or null if not found.</returns>
     public async Task<Bolus?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
         var entity = await _context.Boluses.FirstOrDefaultAsync(e => e.LegacyId == legacyId, ct);
         return entity is null ? null : BolusMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Creates a new bolus record.
+    /// </summary>
+    /// <param name="model">The bolus to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The created bolus record.</returns>
     public async Task<Bolus> CreateAsync(Bolus model, CancellationToken ct = default)
     {
         var entity = BolusMapper.ToEntity(model);
@@ -82,6 +125,13 @@ public class BolusRepository : IBolusRepository
         return BolusMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Updates an existing bolus record.
+    /// </summary>
+    /// <param name="id">The unique identifier of the record to update.</param>
+    /// <param name="model">The updated record data.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The updated bolus record.</returns>
     public async Task<Bolus> UpdateAsync(Guid id, Bolus model, CancellationToken ct = default)
     {
         var entity =
@@ -92,6 +142,11 @@ public class BolusRepository : IBolusRepository
         return BolusMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Deletes a bolus record by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var entity =
@@ -101,6 +156,13 @@ public class BolusRepository : IBolusRepository
         await _context.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Counts bolus records within a timestamp range.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The count of matching records.</returns>
     public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.Boluses.AsNoTracking().AsQueryable();
@@ -111,6 +173,12 @@ public class BolusRepository : IBolusRepository
         return await query.CountAsync(ct);
     }
 
+    /// <summary>
+    /// Gets bolus records by correlation identifier.
+    /// </summary>
+    /// <param name="correlationId">The correlation identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of bolus records.</returns>
     public async Task<IEnumerable<Bolus>> GetByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken ct = default
@@ -123,11 +191,23 @@ public class BolusRepository : IBolusRepository
         return entities.Select(BolusMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Deletes a bolus record by its legacy identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
         return await _context.Boluses.Where(e => e.LegacyId == legacyId).ExecuteDeleteAsync(ct);
     }
 
+    /// <summary>
+    /// Performs a bulk creation of bolus records, handling deduplication.
+    /// </summary>
+    /// <param name="records">The collection of records to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of created records.</returns>
     public async Task<IEnumerable<Bolus>> BulkCreateAsync(
         IEnumerable<Bolus> records,
         CancellationToken ct = default

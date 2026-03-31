@@ -11,6 +11,9 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("treatments")]
 public class TreatmentEntity : ITenantScoped, ISoftDeletable
 {
+    /// <summary>
+    /// Identifier of the tenant this treatment record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 
@@ -224,6 +227,9 @@ public class TreatmentEntity : ITenantScoped, ISoftDeletable
     [Column("sys_updated_at")]
     public DateTime SysUpdatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// When the treatment record was soft-deleted
+    /// </summary>
     [Column("deleted_at")]
     public DateTime? DeletedAt { get; set; }
 

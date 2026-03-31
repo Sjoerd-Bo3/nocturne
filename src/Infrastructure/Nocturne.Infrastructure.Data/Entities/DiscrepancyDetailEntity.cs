@@ -10,6 +10,12 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("discrepancy_details")]
 public class DiscrepancyDetailEntity : ITenantScoped
 {
+    /// <summary>
+    /// Identifier of the tenant this discrepancy detail belongs to
+    /// </summary>
+    /// <summary>
+    /// The unique identifier of the tenant this record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

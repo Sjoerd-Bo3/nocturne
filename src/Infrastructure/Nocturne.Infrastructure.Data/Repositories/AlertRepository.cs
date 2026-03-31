@@ -13,11 +13,21 @@ public class AlertRepository : IAlertRepository
 {
     private readonly IDbContextFactory<NocturneDbContext> _contextFactory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AlertRepository"/> class.
+    /// </summary>
+    /// <param name="contextFactory">The database context factory.</param>
     public AlertRepository(IDbContextFactory<NocturneDbContext> contextFactory)
     {
         _contextFactory = contextFactory;
     }
 
+    /// <summary>
+    /// Gets enabled alert rules for a specific tenant.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of enabled alert rule snapshots.</returns>
     public virtual async Task<IReadOnlyList<AlertRuleSnapshot>> GetEnabledRulesAsync(
         Guid tenantId, CancellationToken ct)
     {
@@ -34,6 +44,12 @@ public class AlertRepository : IAlertRepository
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Gets the alert schedules associated with a specific rule.
+    /// </summary>
+    /// <param name="ruleId">The unique identifier of the alert rule.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of alert schedule snapshots.</returns>
     public virtual async Task<IReadOnlyList<AlertScheduleSnapshot>> GetSchedulesForRuleAsync(
         Guid ruleId, CancellationToken ct)
     {
@@ -48,6 +64,12 @@ public class AlertRepository : IAlertRepository
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Gets the escalation steps for a specific alert schedule.
+    /// </summary>
+    /// <param name="scheduleId">The unique identifier of the alert schedule.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of escalation step snapshots.</returns>
     public virtual async Task<IReadOnlyList<AlertEscalationStepSnapshot>> GetEscalationStepsAsync(
         Guid scheduleId, CancellationToken ct)
     {
@@ -62,6 +84,12 @@ public class AlertRepository : IAlertRepository
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Creates a new alert instance record.
+    /// </summary>
+    /// <param name="request">The request containing alert instance details.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A snapshot of the created alert instance.</returns>
     public virtual async Task<AlertInstanceSnapshot> CreateInstanceAsync(
         CreateAlertInstanceRequest request, CancellationToken ct)
     {
@@ -88,6 +116,12 @@ public class AlertRepository : IAlertRepository
             entity.NextEscalationAt, entity.SnoozedUntil, entity.SnoozeCount);
     }
 
+    /// <summary>
+    /// Gets alert instances that are currently escalating and due for processing.
+    /// </summary>
+    /// <param name="asOf">The reference timestamp for determining if an escalation is due.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of alert instances due for escalation.</returns>
     public virtual async Task<IReadOnlyList<AlertInstanceSnapshot>> GetEscalatingInstancesDueAsync(
         DateTime asOf, CancellationToken ct)
     {
@@ -106,6 +140,12 @@ public class AlertRepository : IAlertRepository
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Gets all alert instances associated with a specific alert excursion.
+    /// </summary>
+    /// <param name="excursionId">The unique identifier of the alert excursion.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of alert instance snapshots.</returns>
     public virtual async Task<IReadOnlyList<AlertInstanceSnapshot>> GetInstancesForExcursionAsync(
         Guid excursionId, CancellationToken ct)
     {
@@ -121,6 +161,12 @@ public class AlertRepository : IAlertRepository
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Marks all active alert instances for a specific excursion as resolved.
+    /// </summary>
+    /// <param name="excursionId">The unique identifier of the alert excursion.</param>
+    /// <param name="resolvedAt">The timestamp when resolution occurred.</param>
+    /// <param name="ct">The cancellation token.</param>
     public virtual async Task ResolveInstancesForExcursionAsync(
         Guid excursionId, DateTime resolvedAt, CancellationToken ct)
     {
@@ -134,6 +180,11 @@ public class AlertRepository : IAlertRepository
                 .SetProperty(i => i.ResolvedAt, resolvedAt), ct);
     }
 
+    /// <summary>
+    /// Updates the state of an existing alert instance.
+    /// </summary>
+    /// <param name="request">The update request containing modified properties.</param>
+    /// <param name="ct">The cancellation token.</param>
     public virtual async Task UpdateInstanceAsync(
         UpdateAlertInstanceRequest request, CancellationToken ct)
     {
@@ -164,6 +215,11 @@ public class AlertRepository : IAlertRepository
         await context.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Marks pending deliveries as expired for a set of alert instances.
+    /// </summary>
+    /// <param name="instanceIds">The unique identifiers of the alert instances.</param>
+    /// <param name="ct">The cancellation token.</param>
     public virtual async Task ExpirePendingDeliveriesAsync(
         IReadOnlyList<Guid> instanceIds, CancellationToken ct)
     {
@@ -178,6 +234,12 @@ public class AlertRepository : IAlertRepository
                 .SetProperty(d => d.Status, "expired"), ct);
     }
 
+    /// <summary>
+    /// Counts the number of active alert excursions for a specific tenant.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The count of active excursions.</returns>
     public virtual async Task<int> CountActiveExcursionsAsync(
         Guid tenantId, CancellationToken ct)
     {
@@ -189,6 +251,11 @@ public class AlertRepository : IAlertRepository
             .CountAsync(ct);
     }
 
+    /// <summary>
+    /// Gets alert excursions that are currently in the hysteresis (recovery) period.
+    /// </summary>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of hysteresis excursion snapshots.</returns>
     public virtual async Task<IReadOnlyList<HysteresisExcursionSnapshot>> GetExcursionsInHysteresisAsync(
         CancellationToken ct)
     {
@@ -205,6 +272,13 @@ public class AlertRepository : IAlertRepository
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Closes an alert excursion that has completed its hysteresis period.
+    /// </summary>
+    /// <param name="excursionId">The unique identifier of the alert excursion.</param>
+    /// <param name="alertRuleId">The unique identifier of the associated alert rule.</param>
+    /// <param name="endedAt">The timestamp when the excursion ended.</param>
+    /// <param name="ct">The cancellation token.</param>
     public virtual async Task CloseHysteresisExcursionAsync(
         Guid excursionId, Guid alertRuleId, DateTime endedAt, CancellationToken ct)
     {
@@ -241,6 +315,12 @@ public class AlertRepository : IAlertRepository
         await context.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Gets basic context for a tenant's alert processing.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The tenant alert context, or null if not found.</returns>
     public virtual async Task<TenantAlertContext?> GetTenantAlertContextAsync(
         Guid tenantId, CancellationToken ct)
     {
@@ -255,6 +335,11 @@ public class AlertRepository : IAlertRepository
             .FirstOrDefaultAsync(ct);
     }
 
+    /// <summary>
+    /// Gets all enabled rules for signal loss detection.
+    /// </summary>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of signal loss rule snapshots.</returns>
     public virtual async Task<IReadOnlyList<SignalLossRuleSnapshot>> GetEnabledSignalLossRulesAsync(
         CancellationToken ct)
     {
@@ -267,6 +352,12 @@ public class AlertRepository : IAlertRepository
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Gets the most recent glucose trend rate for a specific tenant.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The trend rate, or null if no readings exist.</returns>
     public virtual async Task<double?> GetLatestTrendRateAsync(
         Guid tenantId, CancellationToken ct)
     {
@@ -280,6 +371,12 @@ public class AlertRepository : IAlertRepository
             .FirstOrDefaultAsync(ct);
     }
 
+    /// <summary>
+    /// Gets alert instances whose snooze period has expired.
+    /// </summary>
+    /// <param name="asOf">The reference timestamp for determining if a snooze has expired.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of expired snoozed instances.</returns>
     public virtual async Task<IReadOnlyList<SnoozedInstanceSnapshot>> GetExpiredSnoozedInstancesAsync(
         DateTime asOf, CancellationToken ct)
     {
@@ -305,6 +402,10 @@ public class AlertRepository : IAlertRepository
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Saves all changes made in this repository to the database.
+    /// </summary>
+    /// <param name="ct">The cancellation token.</param>
     public virtual async Task SaveChangesAsync(CancellationToken ct)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);

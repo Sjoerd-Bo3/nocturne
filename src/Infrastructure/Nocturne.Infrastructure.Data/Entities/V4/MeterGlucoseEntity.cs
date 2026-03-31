@@ -12,6 +12,9 @@ namespace Nocturne.Infrastructure.Data.Entities.V4;
 [Table("meter_glucose")]
 public class MeterGlucoseEntity : ITenantScoped
 {
+    /// <summary>
+    /// The unique identifier of the tenant this record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

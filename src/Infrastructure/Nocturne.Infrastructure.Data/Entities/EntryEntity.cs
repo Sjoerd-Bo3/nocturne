@@ -11,6 +11,12 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("entries")]
 public class EntryEntity : ITenantScoped, ISoftDeletable
 {
+    /// <summary>
+    /// Identifier of the tenant this entry belongs to
+    /// </summary>
+    /// <summary>
+    /// The unique identifier of the tenant this record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 
@@ -245,11 +251,15 @@ public class EntryEntity : ITenantScoped, ISoftDeletable
     [Column("sys_updated_at")]
     public DateTime SysUpdatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// When the entry was soft-deleted
+    /// </summary>
     [Column("deleted_at")]
     public DateTime? DeletedAt { get; set; }
 
     /// <summary>
-    /// Parses the Notes field if it contains valid JSON and extracts matching properties
+    /// Parses the Notes field if it contains valid JSON and extracts matching properties.
+    /// This is used to handle incoming data from sources that embed structured data in the notes field.
     /// </summary>
     public void ParseNotesJson()
     {

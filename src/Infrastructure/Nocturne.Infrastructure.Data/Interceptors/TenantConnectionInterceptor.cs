@@ -15,6 +15,14 @@ namespace Nocturne.Infrastructure.Data.Interceptors;
 /// </summary>
 public class TenantConnectionInterceptor : DbConnectionInterceptor
 {
+    /// <summary>
+    /// Executes asynchronously when a connection is opened.
+    /// Sets the PostgreSQL session variable for tenant isolation.
+    /// </summary>
+    /// <param name="connection">The database connection.</param>
+    /// <param name="eventData">Information about the connection event.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public override async Task ConnectionOpenedAsync(
         DbConnection connection,
         ConnectionEndEventData eventData,
@@ -28,6 +36,14 @@ public class TenantConnectionInterceptor : DbConnectionInterceptor
         }
     }
 
+    /// <summary>
+    /// Executes before a connection is closed.
+    /// Resets the PostgreSQL session variable.
+    /// </summary>
+    /// <param name="connection">The database connection.</param>
+    /// <param name="eventData">Information about the connection event.</param>
+    /// <param name="result">The interception result.</param>
+    /// <returns>The interception result.</returns>
     public override async ValueTask<InterceptionResult> ConnectionClosingAsync(
         DbConnection connection,
         ConnectionEventData eventData,

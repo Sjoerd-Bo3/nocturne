@@ -11,6 +11,12 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("connector_configurations")]
 public class ConnectorConfigurationEntity : ITenantScoped
 {
+    /// <summary>
+    /// Identifier of the tenant this connector configuration belongs to
+    /// </summary>
+    /// <summary>
+    /// The unique identifier of the tenant this record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

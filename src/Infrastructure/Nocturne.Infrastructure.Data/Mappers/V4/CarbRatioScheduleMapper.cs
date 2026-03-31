@@ -12,6 +12,8 @@ public static class CarbRatioScheduleMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of CarbRatioScheduleEntity.</returns>
     public static CarbRatioScheduleEntity ToEntity(CarbRatioSchedule model)
     {
         return new CarbRatioScheduleEntity
@@ -37,6 +39,8 @@ public static class CarbRatioScheduleMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of CarbRatioSchedule domain model.</returns>
     public static CarbRatioSchedule ToDomainModel(CarbRatioScheduleEntity entity)
     {
         return new CarbRatioSchedule
@@ -62,6 +66,8 @@ public static class CarbRatioScheduleMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(CarbRatioScheduleEntity entity, CarbRatioSchedule model)
     {
         entity.Timestamp = model.Timestamp;

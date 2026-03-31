@@ -12,6 +12,8 @@ public static class PumpSnapshotMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of PumpSnapshotEntity.</returns>
     public static PumpSnapshotEntity ToEntity(PumpSnapshot model)
     {
         return new PumpSnapshotEntity
@@ -43,6 +45,8 @@ public static class PumpSnapshotMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of PumpSnapshot domain model.</returns>
     public static PumpSnapshot ToDomainModel(PumpSnapshotEntity entity)
     {
         return new PumpSnapshot
@@ -74,6 +78,8 @@ public static class PumpSnapshotMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(PumpSnapshotEntity entity, PumpSnapshot model)
     {
         entity.Timestamp = model.Timestamp;

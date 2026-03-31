@@ -9,6 +9,9 @@ namespace Nocturne.Infrastructure.Data.Abstractions;
 /// </summary>
 public interface IDiscrepancyAnalysisRepository
 {
+    /// <summary>
+    /// Stores the results of a discrepancy analysis between Nightscout and Nocturne responses
+    /// </summary>
     Task<Guid> StoreAnalysisAsync(
         string correlationId,
         DateTimeOffset analysisTimestamp,
@@ -31,6 +34,9 @@ public interface IDiscrepancyAnalysisRepository
         string? errorMessage = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Retrieves a collection of discrepancy analyses based on filtering criteria
+    /// </summary>
     Task<IEnumerable<DiscrepancyAnalysisEntity>> GetAnalysesAsync(
         string? requestPath = null,
         int? overallMatch = null,
@@ -40,16 +46,25 @@ public interface IDiscrepancyAnalysisRepository
         int skip = 0,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Gets compatibility metrics for a specified date range
+    /// </summary>
     Task<CompatibilityMetrics> GetCompatibilityMetricsAsync(
         DateTimeOffset? fromDate = null,
         DateTimeOffset? toDate = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Gets metrics per endpoint for a specified date range
+    /// </summary>
     Task<IEnumerable<EndpointMetrics>> GetEndpointMetricsAsync(
         DateTimeOffset? fromDate = null,
         DateTimeOffset? toDate = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Deletes discrepancy analyses older than the specified cutoff date
+    /// </summary>
     Task<int> DeleteOldAnalysesAsync(
         DateTimeOffset cutoffDate,
         CancellationToken cancellationToken = default);

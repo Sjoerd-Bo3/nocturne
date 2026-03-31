@@ -10,6 +10,12 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("linked_records")]
 public class LinkedRecordEntity : ITenantScoped
 {
+    /// <summary>
+    /// Identifier of the tenant this linked record belongs to
+    /// </summary>
+    /// <summary>
+    /// The unique identifier of the tenant this record belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 

@@ -25,6 +25,10 @@ public class ProfileRepository : IProfileRepository
     /// <summary>
     /// Get profiles with optional pagination
     /// </summary>
+    /// <param name="count">The maximum number of profiles to return.</param>
+    /// <param name="skip">The number of profiles to skip.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of profiles.</returns>
     public async Task<IEnumerable<Profile>> GetProfilesAsync(
         int count = 10,
         int skip = 0,
@@ -43,6 +47,8 @@ public class ProfileRepository : IProfileRepository
     /// <summary>
     /// Get the most recent profile (current profile)
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The current profile, or null if none exist.</returns>
     public async Task<Profile?> GetCurrentProfileAsync(
         CancellationToken cancellationToken = default
     )
@@ -57,6 +63,9 @@ public class ProfileRepository : IProfileRepository
     /// <summary>
     /// Get a profile by ID
     /// </summary>
+    /// <param name="id">The unique identifier (GUID or legacy string ID).</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The profile, or null if not found.</returns>
     public async Task<Profile?> GetProfileByIdAsync(
         string id,
         CancellationToken cancellationToken = default
@@ -88,6 +97,12 @@ public class ProfileRepository : IProfileRepository
     /// <summary>
     /// Get profiles with advanced filtering support
     /// </summary>
+    /// <param name="count">The maximum number of profiles to return.</param>
+    /// <param name="skip">The number of profiles to skip.</param>
+    /// <param name="findQuery">Optional search query string.</param>
+    /// <param name="reverseResults">Whether to reverse the order of results.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of matching profiles.</returns>
     public async Task<IEnumerable<Profile>> GetProfilesWithAdvancedFilterAsync(
         int count = 10,
         int skip = 0,
@@ -121,6 +136,9 @@ public class ProfileRepository : IProfileRepository
     /// <summary>
     /// Get the profile that was active at the specified timestamp
     /// </summary>
+    /// <param name="timestamp">The unix milliseconds timestamp.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The profile active at that time, or a fallback if not found.</returns>
     public async Task<Profile?> GetProfileAtTimestampAsync(
         long timestamp,
         CancellationToken cancellationToken = default
@@ -145,6 +163,9 @@ public class ProfileRepository : IProfileRepository
     /// <summary>
     /// Create new profiles (uses upsert logic to handle duplicates)
     /// </summary>
+    /// <param name="profiles">The collection of profiles to create.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of created or updated profiles.</returns>
     public async Task<IEnumerable<Profile>> CreateProfilesAsync(
         IEnumerable<Profile> profiles,
         CancellationToken cancellationToken = default
@@ -189,6 +210,10 @@ public class ProfileRepository : IProfileRepository
     /// <summary>
     /// Update an existing profile
     /// </summary>
+    /// <param name="id">The unique identifier of the profile to update.</param>
+    /// <param name="profile">The updated profile data.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated profile, or null if not found.</returns>
     public async Task<Profile?> UpdateProfileAsync(
         string id,
         Profile profile,
@@ -208,6 +233,9 @@ public class ProfileRepository : IProfileRepository
     /// <summary>
     /// Delete a profile by ID
     /// </summary>
+    /// <param name="id">The unique identifier of the profile to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the profile was deleted, otherwise false.</returns>
     public async Task<bool> DeleteProfileAsync(
         string id,
         CancellationToken cancellationToken = default
@@ -225,6 +253,9 @@ public class ProfileRepository : IProfileRepository
     /// <summary>
     /// Count profiles matching criteria
     /// </summary>
+    /// <param name="findQuery">Optional search query string.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The total number of matching profiles.</returns>
     public async Task<long> CountProfilesAsync(
         string? findQuery = null,
         CancellationToken cancellationToken = default

@@ -25,6 +25,8 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Get all food entries
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of all food entries.</returns>
     public async Task<IEnumerable<Food>> GetFoodAsync(CancellationToken cancellationToken = default)
     {
         var entities = await _context.Foods.OrderBy(f => f.Name).ToListAsync(cancellationToken);
@@ -35,6 +37,9 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Get a specific food by ID
     /// </summary>
+    /// <param name="id">The unique identifier (GUID or legacy string ID).</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The food, or null if not found.</returns>
     public async Task<Food?> GetFoodByIdAsync(
         string id,
         CancellationToken cancellationToken = default
@@ -58,6 +63,9 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Get food entries by type
     /// </summary>
+    /// <param name="type">The type of food to filter by.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of food entries matching the type.</returns>
     public async Task<IEnumerable<Food>> GetFoodByTypeAsync(
         string type,
         CancellationToken cancellationToken = default
@@ -74,6 +82,12 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Get food entries with advanced filtering
     /// </summary>
+    /// <param name="count">The maximum number of entries to return.</param>
+    /// <param name="skip">The number of entries to skip.</param>
+    /// <param name="findQuery">Optional search query string.</param>
+    /// <param name="reverseResults">Whether to reverse the order of results.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of matching food entries.</returns>
     public async Task<IEnumerable<Food>> GetFoodWithAdvancedFilterAsync(
         int count = 10,
         int skip = 0,
@@ -107,6 +121,13 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Get food entries with advanced filtering including type filter
     /// </summary>
+    /// <param name="count">The maximum number of entries to return.</param>
+    /// <param name="skip">The number of entries to skip.</param>
+    /// <param name="findQuery">Optional search query string.</param>
+    /// <param name="type">Optional food type filter.</param>
+    /// <param name="reverseResults">Whether to reverse the order of results.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of matching food entries.</returns>
     public async Task<IEnumerable<Food>> GetFoodWithAdvancedFilterAsync(
         int count = 10,
         int skip = 0,
@@ -147,6 +168,9 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Create multiple food entries
     /// </summary>
+    /// <param name="foods">The collection of food entries to create.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of created food entries.</returns>
     public async Task<IEnumerable<Food>> CreateFoodAsync(
         IEnumerable<Food> foods,
         CancellationToken cancellationToken = default
@@ -185,6 +209,10 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Update an existing food entry
     /// </summary>
+    /// <param name="id">The unique identifier of the food to update.</param>
+    /// <param name="food">The updated food data.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated food, or null if not found.</returns>
     public async Task<Food?> UpdateFoodAsync(
         string id,
         Food food,
@@ -217,6 +245,9 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Delete a food entry by ID
     /// </summary>
+    /// <param name="id">The unique identifier of the food to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the food was deleted, otherwise false.</returns>
     public async Task<bool> DeleteFoodAsync(
         string id,
         CancellationToken cancellationToken = default
@@ -248,6 +279,9 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Bulk delete food entries with query
     /// </summary>
+    /// <param name="findQuery">The search query for deletion.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<long> BulkDeleteFoodAsync(
         string findQuery,
         CancellationToken cancellationToken = default
@@ -281,6 +315,9 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Count food entries
     /// </summary>
+    /// <param name="findQuery">Optional search query string.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The total number of matching food entries.</returns>
     public async Task<long> CountFoodAsync(
         string? findQuery = null,
         CancellationToken cancellationToken = default
@@ -305,6 +342,10 @@ public class FoodRepository : IFoodRepository
     /// <summary>
     /// Count food entries with type filter
     /// </summary>
+    /// <param name="findQuery">Optional search query string.</param>
+    /// <param name="type">Optional food type filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The total number of matching food entries.</returns>
     public async Task<long> CountFoodAsync(
         string? findQuery = null,
         string? type = null,

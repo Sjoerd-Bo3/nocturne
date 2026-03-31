@@ -12,6 +12,8 @@ public static class CarbIntakeMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of CarbIntakeEntity.</returns>
     public static CarbIntakeEntity ToEntity(CarbIntake model)
     {
         return new CarbIntakeEntity
@@ -40,6 +42,8 @@ public static class CarbIntakeMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of CarbIntake domain model.</returns>
     public static CarbIntake ToDomainModel(CarbIntakeEntity entity)
     {
         return new CarbIntake
@@ -68,6 +72,8 @@ public static class CarbIntakeMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(CarbIntakeEntity entity, CarbIntake model)
     {
         entity.Timestamp = model.Timestamp;

@@ -116,6 +116,22 @@ public class SubjectEntity
     [Column("preferred_language")]
     public string? PreferredLanguage { get; set; }
 
+    /// <summary>
+    /// Approval status for access requests (e.g., "Approved", "Pending", "Denied")
+    /// Defaults to "Approved" for existing subjects
+    /// </summary>
+    [Required]
+    [MaxLength(20)]
+    [Column("approval_status")]
+    public string ApprovalStatus { get; set; } = "Approved";
+
+    /// <summary>
+    /// Optional message submitted with an access request
+    /// </summary>
+    [MaxLength(500)]
+    [Column("access_request_message")]
+    public string? AccessRequestMessage { get; set; }
+
     // Navigation properties
 
     /// <summary>

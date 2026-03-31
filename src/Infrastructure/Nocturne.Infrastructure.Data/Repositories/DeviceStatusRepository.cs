@@ -61,6 +61,10 @@ public class DeviceStatusRepository : IDeviceStatusRepository
     /// <summary>
     /// Get device status entries with optional filtering and pagination
     /// </summary>
+    /// <param name="count">The maximum number of entries to return.</param>
+    /// <param name="skip">The number of entries to skip.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of device status records.</returns>
     public async Task<IEnumerable<DeviceStatus>> GetDeviceStatusAsync(
         int count = 10,
         int skip = 0,
@@ -80,6 +84,9 @@ public class DeviceStatusRepository : IDeviceStatusRepository
     /// <summary>
     /// Get a specific device status by ID
     /// </summary>
+    /// <param name="id">The unique identifier (GUID or legacy string ID).</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The device status, or null if not found.</returns>
     public async Task<DeviceStatus?> GetDeviceStatusByIdAsync(
         string id,
         CancellationToken cancellationToken = default
@@ -110,6 +117,12 @@ public class DeviceStatusRepository : IDeviceStatusRepository
     /// <summary>
     /// Get device status entries with advanced filtering support including find queries and reverse ordering
     /// </summary>
+    /// <param name="count">The maximum number of entries to return.</param>
+    /// <param name="skip">The number of entries to skip.</param>
+    /// <param name="findQuery">Optional MongoDB-style find query string.</param>
+    /// <param name="reverseResults">Whether to reverse the order of results.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of matching device status records.</returns>
     public async Task<IEnumerable<DeviceStatus>> GetDeviceStatusWithAdvancedFilterAsync(
         int count = 10,
         int skip = 0,
@@ -159,6 +172,9 @@ public class DeviceStatusRepository : IDeviceStatusRepository
     /// <summary>
     /// Create multiple device status entries, skipping duplicates
     /// </summary>
+    /// <param name="deviceStatuses">The collection of device status records to create.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of created device status records.</returns>
     public async Task<IEnumerable<DeviceStatus>> CreateDeviceStatusAsync(
         IEnumerable<DeviceStatus> deviceStatuses,
         CancellationToken cancellationToken = default
@@ -198,6 +214,10 @@ public class DeviceStatusRepository : IDeviceStatusRepository
     /// <summary>
     /// Update an existing device status by ID
     /// </summary>
+    /// <param name="id">The unique identifier of the device status to update.</param>
+    /// <param name="deviceStatus">The updated device status data.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated device status, or null if not found.</returns>
     public async Task<DeviceStatus?> UpdateDeviceStatusAsync(
         string id,
         DeviceStatus deviceStatus,
@@ -233,6 +253,9 @@ public class DeviceStatusRepository : IDeviceStatusRepository
     /// <summary>
     /// Delete a device status by ID
     /// </summary>
+    /// <param name="id">The unique identifier of the device status to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the device status was deleted, otherwise false.</returns>
     public async Task<bool> DeleteDeviceStatusAsync(
         string id,
         CancellationToken cancellationToken = default
@@ -266,6 +289,9 @@ public class DeviceStatusRepository : IDeviceStatusRepository
     /// <summary>
     /// Bulk delete device status entries using query filters
     /// </summary>
+    /// <param name="findQuery">The filter criteria for deletion.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<long> BulkDeleteDeviceStatusAsync(
         string findQuery,
         CancellationToken cancellationToken = default
@@ -308,6 +334,9 @@ public class DeviceStatusRepository : IDeviceStatusRepository
     /// <summary>
     /// Count device status entries matching specific criteria
     /// </summary>
+    /// <param name="findQuery">Optional MongoDB-style find query string.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The total number of matching device status records.</returns>
     public async Task<long> CountDeviceStatusAsync(
         string? findQuery = null,
         CancellationToken cancellationToken = default
@@ -341,6 +370,10 @@ public class DeviceStatusRepository : IDeviceStatusRepository
     /// <summary>
     /// Get device status records modified since a given timestamp (for incremental sync)
     /// </summary>
+    /// <param name="lastModifiedMills">The timestamp in unix milliseconds.</param>
+    /// <param name="limit">The maximum number of entries to return.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of device status records modified since the timestamp.</returns>
     public async Task<IEnumerable<DeviceStatus>> GetDeviceStatusModifiedSinceAsync(
         long lastModifiedMills,
         int limit = 500,

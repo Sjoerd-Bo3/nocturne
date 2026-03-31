@@ -42,6 +42,11 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Get treatments with optional filtering and pagination
     /// </summary>
+    /// <param name="eventType">Optional event type filter.</param>
+    /// <param name="count">The maximum number of treatments to return.</param>
+    /// <param name="skip">The number of treatments to skip.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of matching treatments.</returns>
     public async Task<IEnumerable<Treatment>> GetTreatmentsAsync(
         string? eventType = null,
         int count = 10,
@@ -70,6 +75,9 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Get a specific treatment by ID
     /// </summary>
+    /// <param name="id">The unique identifier (GUID or legacy string ID).</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The treatment, or null if not found.</returns>
     public async Task<Treatment?> GetTreatmentByIdAsync(
         string id,
         CancellationToken cancellationToken = default
@@ -95,6 +103,10 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Get treatments that are meal-related within a time range
     /// </summary>
+    /// <param name="from">The start timestamp.</param>
+    /// <param name="to">The end timestamp.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A list of meal-related treatments.</returns>
     public async Task<IReadOnlyList<Treatment>> GetMealTreatmentsInTimeRangeAsync(
         DateTimeOffset from,
         DateTimeOffset to,
@@ -115,6 +127,11 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Get all treatments within a time range
     /// </summary>
+    /// <param name="startMills">The start timestamp in unix milliseconds.</param>
+    /// <param name="endMills">The end timestamp in unix milliseconds.</param>
+    /// <param name="count">The maximum number of treatments to return.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of treatments within the range.</returns>
     public async Task<IEnumerable<Treatment>> GetTreatmentsByTimeRangeAsync(
         long startMills,
         long endMills,
@@ -133,6 +150,9 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Create a single treatment and link to canonical groups for deduplication
     /// </summary>
+    /// <param name="treatment">The treatment data to create.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The created treatment.</returns>
     public async Task<Treatment?> CreateTreatmentAsync(
         Treatment treatment,
         CancellationToken cancellationToken = default
@@ -145,6 +165,9 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Create new treatments and link to canonical groups for deduplication
     /// </summary>
+    /// <param name="treatments">The collection of treatments to create.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of created or updated treatments.</returns>
     public async Task<IEnumerable<Treatment>> CreateTreatmentsAsync(
         IEnumerable<Treatment> treatments,
         CancellationToken cancellationToken = default
@@ -225,6 +248,10 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Update an existing treatment
     /// </summary>
+    /// <param name="id">The unique identifier of the treatment to update.</param>
+    /// <param name="treatment">The updated treatment data.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated treatment, or null if not found.</returns>
     public async Task<Treatment?> UpdateTreatmentAsync(
         string id,
         Treatment treatment,
@@ -257,6 +284,9 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Delete a treatment
     /// </summary>
+    /// <param name="id">The unique identifier of the treatment to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the treatment was deleted, otherwise false.</returns>
     public async Task<bool> DeleteTreatmentAsync(
         string id,
         CancellationToken cancellationToken = default
@@ -288,6 +318,9 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Delete multiple treatments with optional filtering
     /// </summary>
+    /// <param name="eventType">Optional event type filter for deletion.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of treatments deleted.</returns>
     public async Task<long> DeleteTreatmentsAsync(
         string? eventType = null,
         CancellationToken cancellationToken = default
@@ -334,12 +367,16 @@ public class TreatmentRepository : ITreatmentRepository
     }
 
     /// <summary>
-    /// Get treatments with advanced filtering (simplified version for now)
+    /// Get treatments with advanced filtering
     /// </summary>
-    /// <remarks>
-    /// TODO: Complex MongoDB-style query parsing is not yet implemented.
-    /// Currently supports basic type and date filtering.
-    /// </remarks>
+    /// <param name="eventType">Optional event type filter.</param>
+    /// <param name="count">The maximum number of treatments to return.</param>
+    /// <param name="skip">The number of treatments to skip.</param>
+    /// <param name="findQuery">Optional MongoDB-style search query string.</param>
+    /// <param name="dateString">Optional date string filter.</param>
+    /// <param name="reverseResults">Whether to reverse the order of results.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of matching treatments.</returns>
     public async Task<IEnumerable<Treatment>> GetTreatmentsWithAdvancedFilterAsync(
         string? eventType = null,
         int count = 10,
@@ -414,6 +451,9 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Count treatments with optional filtering
     /// </summary>
+    /// <param name="findQuery">Optional search query string.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The total number of matching treatments.</returns>
     public async Task<long> CountTreatmentsAsync(
         string? findQuery = null,
         CancellationToken cancellationToken = default
@@ -489,6 +529,9 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Get the latest treatment timestamp for a specific data source
     /// </summary>
+    /// <param name="dataSource">The source identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The timestamp of the latest treatment, or null if none exist.</returns>
     public async Task<DateTime?> GetLatestTreatmentTimestampBySourceAsync(
         string dataSource,
         CancellationToken cancellationToken = default
@@ -509,6 +552,9 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Get the oldest treatment timestamp for a specific data source
     /// </summary>
+    /// <param name="dataSource">The source identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The timestamp of the oldest treatment, or null if none exist.</returns>
     public async Task<DateTime?> GetOldestTreatmentTimestampBySourceAsync(
         string dataSource,
         CancellationToken cancellationToken = default
@@ -529,6 +575,10 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Check for duplicate treatment in the database by ID or OriginalId
     /// </summary>
+    /// <param name="id">The primary identifier of the treatment.</param>
+    /// <param name="originalId">The legacy MongoDB identifier of the treatment.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The duplicate treatment if found, otherwise null.</returns>
     public async Task<Treatment?> CheckForDuplicateTreatmentAsync(
         string? id,
         string? originalId,
@@ -562,6 +612,9 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Delete all treatments with the specified data source
     /// </summary>
+    /// <param name="dataSource">The data source to filter by.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of records deleted.</returns>
     public async Task<long> DeleteTreatmentsByDataSourceAsync(
         string dataSource,
         CancellationToken cancellationToken = default
@@ -573,6 +626,9 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Bulk delete treatments using query filters
     /// </summary>
+    /// <param name="findQuery">The search query for deletion.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of records deleted.</returns>
     public async Task<long> BulkDeleteTreatmentsAsync(
         string findQuery,
         CancellationToken cancellationToken = default
@@ -601,6 +657,10 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Get treatments modified since a given timestamp (for incremental sync)
     /// </summary>
+    /// <param name="lastModifiedMills">The last modified timestamp in unix milliseconds.</param>
+    /// <param name="limit">The maximum number of treatments to return.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of modified treatments.</returns>
     public async Task<IEnumerable<Treatment>> GetTreatmentsModifiedSinceAsync(
         long lastModifiedMills,
         int limit = 500,
@@ -622,6 +682,10 @@ public class TreatmentRepository : ITreatmentRepository
     /// <summary>
     /// Patch a treatment by ID using JSON merge-patch semantics
     /// </summary>
+    /// <param name="id">The unique identifier of the treatment to patch.</param>
+    /// <param name="patchData">The JSON patch data.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The patched treatment, or null if not found.</returns>
     public async Task<Treatment?> PatchTreatmentAsync(
         string id,
         JsonElement patchData,

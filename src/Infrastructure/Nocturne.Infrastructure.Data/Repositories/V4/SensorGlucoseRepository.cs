@@ -8,12 +8,22 @@ using Nocturne.Infrastructure.Data.Mappers.V4;
 
 namespace Nocturne.Infrastructure.Data.Repositories.V4;
 
+/// <summary>
+/// Repository for managing sensor glucose (CGM) records in the database.
+/// Includes support for cross-connector deduplication.
+/// </summary>
 public class SensorGlucoseRepository : ISensorGlucoseRepository
 {
     private readonly NocturneDbContext _context;
     private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<SensorGlucoseRepository> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SensorGlucoseRepository"/> class.
+    /// </summary>
+    /// <param name="context">The database context.</param>
+    /// <param name="deduplicationService">The deduplication service.</param>
+    /// <param name="logger">The logger instance.</param>
     public SensorGlucoseRepository(
         NocturneDbContext context,
         IDeduplicationService deduplicationService,
@@ -25,6 +35,20 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
         _logger = logger;
     }
 
+    /// <summary>
+    /// Gets sensor glucose records based on filter criteria.
+    /// Deduplicates records using the <see cref="IDeduplicationService"/>.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="device">Optional device filter.</param>
+    /// <param name="source">Optional data source filter.</param>
+    /// <param name="limit">The maximum number of records to return.</param>
+    /// <param name="offset">The number of records to skip.</param>
+    /// <param name="descending">Whether to sort by timestamp in descending order.</param>
+    /// <param name="nativeOnly">Whether to return only native records.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of sensor glucose records.</returns>
     public async Task<IEnumerable<SensorGlucose>> GetAsync(
         DateTime? from,
         DateTime? to,
@@ -60,12 +84,24 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
         return entities.Select(SensorGlucoseMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Gets a sensor glucose record by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The sensor glucose record, or null if not found.</returns>
     public async Task<SensorGlucose?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var entity = await _context.SensorGlucose.FindAsync([id], ct);
         return entity is null ? null : SensorGlucoseMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Gets a sensor glucose record by its legacy identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The sensor glucose record, or null if not found.</returns>
     public async Task<SensorGlucose?> GetByLegacyIdAsync(
         string legacyId,
         CancellationToken ct = default
@@ -78,6 +114,12 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
         return entity is null ? null : SensorGlucoseMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Creates a new sensor glucose record.
+    /// </summary>
+    /// <param name="model">The sensor glucose record to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The created sensor glucose record.</returns>
     public async Task<SensorGlucose> CreateAsync(
         SensorGlucose model,
         CancellationToken ct = default
@@ -89,6 +131,13 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
         return SensorGlucoseMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Updates an existing sensor glucose record.
+    /// </summary>
+    /// <param name="id">The unique identifier of the record to update.</param>
+    /// <param name="model">The updated record data.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The updated sensor glucose record.</returns>
     public async Task<SensorGlucose> UpdateAsync(
         Guid id,
         SensorGlucose model,
@@ -103,6 +152,11 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
         return SensorGlucoseMapper.ToDomainModel(entity);
     }
 
+    /// <summary>
+    /// Deletes a sensor glucose record by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var entity =
@@ -112,6 +166,13 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
         await _context.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Counts sensor glucose records within a timestamp range.
+    /// </summary>
+    /// <param name="from">Optional start timestamp filter.</param>
+    /// <param name="to">Optional end timestamp filter.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The count of matching records.</returns>
     public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var query = _context.SensorGlucose.AsNoTracking().AsQueryable();
@@ -122,6 +183,12 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
         return await query.CountAsync(ct);
     }
 
+    /// <summary>
+    /// Gets sensor glucose records by correlation identifier.
+    /// </summary>
+    /// <param name="correlationId">The correlation identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of matching records.</returns>
     public async Task<IEnumerable<SensorGlucose>> GetByCorrelationIdAsync(
         Guid correlationId,
         CancellationToken ct = default
@@ -134,6 +201,12 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
         return entities.Select(SensorGlucoseMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Deletes a sensor glucose record by its legacy identifier.
+    /// </summary>
+    /// <param name="legacyId">The legacy identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
         return await _context
@@ -141,6 +214,12 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
             .ExecuteDeleteAsync(ct);
     }
 
+    /// <summary>
+    /// Performs a bulk creation of sensor glucose records, handling deduplication.
+    /// </summary>
+    /// <param name="records">The collection of records to create.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A collection of created records.</returns>
     public async Task<IEnumerable<SensorGlucose>> BulkCreateAsync(
         IEnumerable<SensorGlucose> records,
         CancellationToken ct = default
@@ -221,6 +300,12 @@ public class SensorGlucoseRepository : ISensorGlucoseRepository
         return entities.Select(SensorGlucoseMapper.ToDomainModel);
     }
 
+    /// <summary>
+    /// Gets the timestamp of the latest sensor glucose record.
+    /// </summary>
+    /// <param name="source">Optional data source filter.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The latest timestamp, or null if no records found.</returns>
     public async Task<DateTime?> GetLatestTimestampAsync(
         string? source = null,
         CancellationToken ct = default

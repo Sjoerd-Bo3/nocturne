@@ -12,6 +12,8 @@ public static class BGCheckMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of BGCheckEntity.</returns>
     public static BGCheckEntity ToEntity(BGCheck model)
     {
         return new BGCheckEntity
@@ -39,6 +41,8 @@ public static class BGCheckMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of BGCheck domain model.</returns>
     public static BGCheck ToDomainModel(BGCheckEntity entity)
     {
         return new BGCheck
@@ -66,6 +70,8 @@ public static class BGCheckMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(BGCheckEntity entity, BGCheck model)
     {
         entity.Timestamp = model.Timestamp;

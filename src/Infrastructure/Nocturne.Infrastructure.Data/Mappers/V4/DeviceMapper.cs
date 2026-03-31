@@ -12,6 +12,8 @@ public static class DeviceMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of DeviceEntity.</returns>
     public static DeviceEntity ToEntity(Device model)
     {
         return new DeviceEntity
@@ -31,6 +33,8 @@ public static class DeviceMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of Device domain model.</returns>
     public static Device ToDomainModel(DeviceEntity entity)
     {
         return new Device
@@ -52,6 +56,8 @@ public static class DeviceMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(DeviceEntity entity, Device model)
     {
         entity.Category = model.Category.ToString();

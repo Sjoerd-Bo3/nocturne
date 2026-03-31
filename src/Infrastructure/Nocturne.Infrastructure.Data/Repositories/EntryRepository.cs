@@ -41,6 +41,11 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Get entries with optional filtering and pagination
     /// </summary>
+    /// <param name="type">Optional entry type filter.</param>
+    /// <param name="count">The maximum number of entries to return.</param>
+    /// <param name="skip">The number of entries to skip.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of entries.</returns>
     public async Task<IEnumerable<Entry>> GetEntriesAsync(
         string? type = null,
         int count = 10,
@@ -69,6 +74,8 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Get the most recent entry
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The current entry, or null if none exists.</returns>
     public async Task<Entry?> GetCurrentEntryAsync(CancellationToken cancellationToken = default)
     {
         var entity = await _context
@@ -81,6 +88,9 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Get a specific entry by ID
     /// </summary>
+    /// <param name="id">The unique identifier (GUID or legacy string ID).</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The entry, or null if not found.</returns>
     public async Task<Entry?> GetEntryByIdAsync(
         string id,
         CancellationToken cancellationToken = default
@@ -106,6 +116,9 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Create new entries, skipping duplicates and linking to canonical groups
     /// </summary>
+    /// <param name="entries">The collection of entries to create.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of created entries.</returns>
     public async Task<IEnumerable<Entry>> CreateEntriesAsync(
         IEnumerable<Entry> entries,
         CancellationToken cancellationToken = default
@@ -221,6 +234,10 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Update an existing entry
     /// </summary>
+    /// <param name="id">The unique identifier of the entry to update.</param>
+    /// <param name="entry">The updated entry data.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated entry, or null if not found.</returns>
     public async Task<Entry?> UpdateEntryAsync(
         string id,
         Entry entry,
@@ -253,6 +270,9 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Delete an entry
     /// </summary>
+    /// <param name="id">The unique identifier of the entry to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>True if the entry was deleted, otherwise false.</returns>
     public async Task<bool> DeleteEntryAsync(
         string id,
         CancellationToken cancellationToken = default
@@ -284,6 +304,9 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Delete multiple entries with optional filtering
     /// </summary>
+    /// <param name="type">Optional entry type filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<long> DeleteEntriesAsync(
         string? type = null,
         CancellationToken cancellationToken = default
@@ -336,6 +359,14 @@ public class EntryRepository : IEntryRepository
     /// TODO: Complex MongoDB-style query parsing is not yet implemented.
     /// Currently supports basic type and date filtering.
     /// </remarks>
+    /// <param name="type">Optional entry type filter.</param>
+    /// <param name="count">The maximum number of entries to return.</param>
+    /// <param name="skip">The number of entries to skip.</param>
+    /// <param name="findQuery">Optional MongoDB-style find query string.</param>
+    /// <param name="dateString">Optional date string filter.</param>
+    /// <param name="reverseResults">Whether to reverse the order of results.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of entries.</returns>
     public async Task<IEnumerable<Entry>> GetEntriesWithAdvancedFilterAsync(
         string? type = null,
         int count = 10,
@@ -410,6 +441,10 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Count entries with optional filtering
     /// </summary>
+    /// <param name="findQuery">Optional MongoDB-style find query string.</param>
+    /// <param name="type">Optional entry type filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The total number of matching entries.</returns>
     public async Task<long> CountEntriesAsync(
         string? findQuery = null,
         string? type = null,
@@ -449,6 +484,9 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Create a single entry
     /// </summary>
+    /// <param name="entry">The entry to create.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The created entry, or null if creation failed.</returns>
     public async Task<Entry?> CreateEntryAsync(
         Entry entry,
         CancellationToken cancellationToken = default
@@ -461,6 +499,9 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Get the latest entry timestamp for a specific data source
     /// </summary>
+    /// <param name="dataSource">The data source filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The latest entry timestamp, or null if none found.</returns>
     public async Task<DateTime?> GetLatestEntryTimestampBySourceAsync(
         string dataSource,
         CancellationToken cancellationToken = default
@@ -481,6 +522,9 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Get the oldest entry timestamp for a specific data source
     /// </summary>
+    /// <param name="dataSource">The data source filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The oldest entry timestamp, or null if none found.</returns>
     public async Task<DateTime?> GetOldestEntryTimestampBySourceAsync(
         string dataSource,
         CancellationToken cancellationToken = default
@@ -501,6 +545,13 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Check for duplicate entries in the database within a time window
     /// </summary>
+    /// <param name="device">The device name.</param>
+    /// <param name="type">The entry type.</param>
+    /// <param name="sgv">The glucose value.</param>
+    /// <param name="mills">The timestamp in unix milliseconds.</param>
+    /// <param name="windowMinutes">The search window in minutes.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The duplicate entry if found, otherwise null.</returns>
     public async Task<Entry?> CheckForDuplicateEntryAsync(
         string? device,
         string type,
@@ -554,6 +605,9 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Delete all entries with the specified data source
     /// </summary>
+    /// <param name="dataSource">The data source filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<long> DeleteEntriesByDataSourceAsync(
         string dataSource,
         CancellationToken cancellationToken = default
@@ -565,6 +619,9 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Bulk delete entries using query filters
     /// </summary>
+    /// <param name="findQuery">The filter criteria for deletion.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
     public async Task<long> BulkDeleteEntriesAsync(
         string findQuery,
         CancellationToken cancellationToken = default
@@ -577,6 +634,10 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Get entries modified since a given timestamp (for incremental sync)
     /// </summary>
+    /// <param name="lastModifiedMills">The timestamp in unix milliseconds.</param>
+    /// <param name="limit">The maximum number of entries to return.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A collection of entries modified since the timestamp.</returns>
     public async Task<IEnumerable<Entry>> GetEntriesModifiedSinceAsync(
         long lastModifiedMills,
         int limit = 500,
@@ -598,6 +659,9 @@ public class EntryRepository : IEntryRepository
     /// <summary>
     /// Get statistics for entries from a specific data source
     /// </summary>
+    /// <param name="dataSource">The data source filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Statistics for the specified data source.</returns>
     public async Task<DataSourceStats> GetEntryStatsBySourceAsync(
         string dataSource,
         CancellationToken cancellationToken = default

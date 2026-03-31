@@ -11,6 +11,8 @@ public static class PatientInsulinMapper
     /// <summary>
     /// Convert domain model to database entity
     /// </summary>
+    /// <param name="model">The domain model to convert.</param>
+    /// <returns>A new instance of PatientInsulinEntity.</returns>
     public static PatientInsulinEntity ToEntity(PatientInsulin model)
     {
         return new PatientInsulinEntity
@@ -37,6 +39,8 @@ public static class PatientInsulinMapper
     /// <summary>
     /// Convert database entity to domain model
     /// </summary>
+    /// <param name="entity">The database entity to convert.</param>
+    /// <returns>A new instance of PatientInsulin domain model.</returns>
     public static PatientInsulin ToDomainModel(PatientInsulinEntity entity)
     {
         return new PatientInsulin
@@ -67,6 +71,8 @@ public static class PatientInsulinMapper
     /// <summary>
     /// Update existing entity with data from domain model
     /// </summary>
+    /// <param name="entity">The database entity to update.</param>
+    /// <param name="model">The domain model containing updated data.</param>
     public static void UpdateEntity(PatientInsulinEntity entity, PatientInsulin model)
     {
         entity.InsulinCategory = model.InsulinCategory.ToString();

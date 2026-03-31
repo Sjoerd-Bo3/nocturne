@@ -10,6 +10,9 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("tracker_presets")]
 public class TrackerPresetEntity : ITenantScoped
 {
+    /// <summary>
+    /// Identifier of the tenant this tracker preset belongs to.
+    /// </summary>
     [Column("tenant_id")]
     public Guid TenantId { get; set; }
 
