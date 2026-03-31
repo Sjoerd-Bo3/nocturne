@@ -385,6 +385,13 @@ jobs:
         working-directory: src/Web/packages/bridge
         run: pnpm run build
 
+      - name: Build bot package
+        working-directory: src/Web/packages/bot
+        run: pnpm run build
+
+      - name: Build solution
+        run: dotnet build -c Debug
+
       - name: Determine version tag
         id: version
         run: |
