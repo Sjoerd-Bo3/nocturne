@@ -125,8 +125,9 @@ jobs:
           # Install dependencies
           RUN pnpm install --frozen-lockfile
 
-          # Build bridge package first (required by app)
+          # Build workspace packages required by app
           RUN pnpm --filter @nocturne/bridge run build
+          RUN pnpm --filter @nocturne/bot run build
 
           # Set default build-time environment variables for SvelteKit
           ENV PUBLIC_API_URL=http://localhost:1612
