@@ -20,6 +20,7 @@ using Nocturne.API.Services.V4;
 using Nocturne.API.Multitenancy;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Connectors.Core.Interfaces;
+using Nocturne.Connectors.Nightscout.Services.WriteBack;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Entries;
 using Nocturne.Core.Contracts.Events;
@@ -287,7 +288,10 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<SignalRTreatmentEventSink>();
         services.AddScoped<IDataEventSink<Treatment>>(sp =>
             new CompositeDataEventSink<Treatment>(
-                [sp.GetRequiredService<SignalRTreatmentEventSink>()],
+                [
+                    sp.GetRequiredService<SignalRTreatmentEventSink>(),
+                    sp.GetRequiredService<NightscoutTreatmentWriteBackSink>()
+                ],
                 sp.GetService<ILogger<CompositeDataEventSink<Treatment>>>()));
         services.AddScoped<IWriteSideEffects, WriteSideEffectsService>();
         services.AddScoped<IEntryService, EntryService>();
@@ -296,26 +300,29 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<SignalREntryEventSink>();
         services.AddScoped<IDataEventSink<Entry>>(sp =>
             new CompositeDataEventSink<Entry>(
-                [sp.GetRequiredService<SignalREntryEventSink>()],
+                [
+                    sp.GetRequiredService<SignalREntryEventSink>(),
+                    sp.GetRequiredService<NightscoutEntryWriteBackSink>()
+                ],
                 sp.GetService<ILogger<CompositeDataEventSink<Entry>>>()));
         services.AddScoped<IStateSpanService, StateSpanService>();
         services.AddScoped<IDeviceStatusService, DeviceStatusService>();
         services.AddScoped<IDataEventSink<DeviceStatus>>(sp =>
             new CompositeDataEventSink<DeviceStatus>(
-                [],
+                [sp.GetRequiredService<NightscoutDeviceStatusWriteBackSink>()],
                 sp.GetService<ILogger<CompositeDataEventSink<DeviceStatus>>>()));
         services.AddScoped<IBatteryService, BatteryService>();
         services.AddScoped<IProfileDataService, ProfileDataService>();
         services.AddScoped<IDataEventSink<Profile>>(sp =>
             new CompositeDataEventSink<Profile>(
-                [],
+                [sp.GetRequiredService<NightscoutProfileWriteBackSink>()],
                 sp.GetService<ILogger<CompositeDataEventSink<Profile>>>()));
 
         // Food services
         services.AddScoped<IFoodService, FoodService>();
         services.AddScoped<IDataEventSink<Food>>(sp =>
             new CompositeDataEventSink<Food>(
-                [],
+                [sp.GetRequiredService<NightscoutFoodWriteBackSink>()],
                 sp.GetService<ILogger<CompositeDataEventSink<Food>>>()));
         services.AddScoped<IConnectorFoodEntryService, ConnectorFoodEntryService>();
         services.AddScoped<ITreatmentFoodService, TreatmentFoodService>();
@@ -327,7 +334,7 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<IActivityService, ActivityService>();
         services.AddScoped<IDataEventSink<Activity>>(sp =>
             new CompositeDataEventSink<Activity>(
-                [],
+                [sp.GetRequiredService<NightscoutActivityWriteBackSink>()],
                 sp.GetService<ILogger<CompositeDataEventSink<Activity>>>()));
         services.AddScoped<IHeartRateService, HeartRateService>();
         services.AddScoped<IStepCountService, StepCountService>();

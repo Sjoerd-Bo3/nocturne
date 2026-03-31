@@ -58,5 +58,9 @@ public enum ConnectorPropertyKey
     AppVersion,
 
     // MyFitnessPal-specific
-    LookbackDays
+    LookbackDays,
+
+    // Write-back
+    WriteBackEnabled,
+    WriteBackBatchSize
 }

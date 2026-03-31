@@ -46,4 +46,10 @@ public class NightscoutConnectorConfiguration : BaseConnectorConfiguration
 
     [ConnectorProperty(ConnectorPropertyKey.MaxCount, DefaultValue = "1000", MinValue = 100, MaxValue = 10000)]
     public int MaxCount { get; set; } = 1000;
+
+    [ConnectorProperty(ConnectorPropertyKey.WriteBackEnabled, DefaultValue = "false")]
+    public bool WriteBackEnabled { get; set; } = false;
+
+    [ConnectorProperty(ConnectorPropertyKey.WriteBackBatchSize, DefaultValue = "50", MinValue = 1, MaxValue = 500)]
+    public int WriteBackBatchSize { get; set; } = 50;
 }

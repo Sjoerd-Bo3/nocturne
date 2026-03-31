@@ -5,6 +5,7 @@ using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Connectors.Core.Services;
 using Nocturne.Connectors.Nightscout.Configurations;
 using Nocturne.Connectors.Nightscout.Services;
+using Nocturne.Connectors.Nightscout.Services.WriteBack;
 
 namespace Nocturne.Connectors.Nightscout;
 
@@ -30,6 +31,25 @@ public class NightscoutConnectorInstaller : IConnectorInstaller
             services.AddHttpClient<NightscoutConnectorService>();
 
         services.AddScoped<IConnectorSyncExecutor, NightscoutSyncExecutor>();
+
+        // Write-back sinks (circuit breaker is shared singleton, sinks are scoped)
+        services.AddSingleton<NightscoutCircuitBreaker>();
+
+        void RegisterWriteBackClient<TSink>() where TSink : class
+        {
+            if (!string.IsNullOrEmpty(nightscoutConfig.Url))
+                services.AddHttpClient<TSink>()
+                    .ConfigureConnectorClient(nightscoutConfig.Url);
+            else
+                services.AddHttpClient<TSink>();
+        }
+
+        RegisterWriteBackClient<NightscoutEntryWriteBackSink>();
+        RegisterWriteBackClient<NightscoutTreatmentWriteBackSink>();
+        RegisterWriteBackClient<NightscoutDeviceStatusWriteBackSink>();
+        RegisterWriteBackClient<NightscoutProfileWriteBackSink>();
+        RegisterWriteBackClient<NightscoutFoodWriteBackSink>();
+        RegisterWriteBackClient<NightscoutActivityWriteBackSink>();
     }
 }
 
