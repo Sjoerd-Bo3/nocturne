@@ -567,8 +567,9 @@ internal class ConnectorServiceWrapper<TConfig> : IConnectorService<IConnectorCo
     public Task<SyncResult> SyncDataAsync(
         SyncRequest request,
         IConnectorConfiguration config,
-        CancellationToken cancellationToken
-    ) => _innerService.SyncDataAsync(request, (TConfig)config, cancellationToken);
+        CancellationToken cancellationToken,
+        ISyncProgressReporter? progressReporter = null
+    ) => _innerService.SyncDataAsync(request, (TConfig)config, cancellationToken, progressReporter);
 
     public void Dispose() => _innerService.Dispose();
 }
