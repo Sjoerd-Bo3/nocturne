@@ -18,7 +18,8 @@ public class ConnectorSyncServiceTests
     {
         var ta = tenantAccessor ?? CreateTenantAccessor();
         var logger = NullLogger<ConnectorSyncService>.Instance;
-        return new ConnectorSyncService(serviceProvider, ta, logger);
+        var progressReporter = Mock.Of<ISyncProgressReporter>();
+        return new ConnectorSyncService(serviceProvider, ta, logger, progressReporter);
     }
 
     private static ITenantAccessor CreateTenantAccessor(TenantContext? context = null)
