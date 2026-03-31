@@ -257,7 +257,7 @@ public class ResponseComparisonService : IResponseComparisonService
         }
 
         // Check if response is too large for detailed comparison
-        var maxSize = _configuration.Value.MaxResponseSizeForComparison;
+        const long maxSize = 10 * 1024 * 1024; // 10MB
         if (nightscoutBody.Length > maxSize || nocturneBody.Length > maxSize)
         {
             result.BodyMatch = nightscoutBody.SequenceEqual(nocturneBody);

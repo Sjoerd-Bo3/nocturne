@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Nocturne.API.Configuration;
 using Nocturne.API.Services.Compatibility;
+using Nocturne.Connectors.Nightscout.Configurations;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Abstractions;
 
@@ -18,6 +19,7 @@ public class CompatibilityController : ControllerBase
     private readonly IDiscrepancyAnalysisRepository _repository;
 
     private readonly CompatibilityProxyConfiguration _configuration;
+    private readonly NightscoutConnectorConfiguration? _nightscoutConfig;
     private readonly ILogger<CompatibilityController> _logger;
 
     /// <summary>
@@ -27,13 +29,15 @@ public class CompatibilityController : ControllerBase
         IDiscrepancyPersistenceService persistenceService,
         IDiscrepancyAnalysisRepository repository,
         IOptions<CompatibilityProxyConfiguration> configuration,
-        ILogger<CompatibilityController> logger
+        ILogger<CompatibilityController> logger,
+        NightscoutConnectorConfiguration? nightscoutConfig = null
     )
     {
         _persistenceService = persistenceService;
         _repository = repository;
 
         _configuration = configuration.Value;
+        _nightscoutConfig = nightscoutConfig;
         _logger = logger;
     }
 
@@ -47,8 +51,8 @@ public class CompatibilityController : ControllerBase
         return Ok(
             new ProxyConfigurationDto
             {
-                NightscoutUrl = _configuration.NightscoutUrl,
-                DefaultStrategy = _configuration.DefaultStrategy.ToString(),
+                NightscoutUrl = _nightscoutConfig?.Url ?? string.Empty,
+                Enabled = _configuration.Enabled,
                 EnableDetailedLogging = _configuration.EnableDetailedLogging,
             }
         );
@@ -411,7 +415,7 @@ public class CompatibilityController : ControllerBase
 public class ProxyConfigurationDto
 {
     public string NightscoutUrl { get; set; } = string.Empty;
-    public string DefaultStrategy { get; set; } = string.Empty;
+    public bool Enabled { get; set; }
     public bool EnableDetailedLogging { get; set; }
 }
 

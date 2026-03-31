@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Nocturne.Infrastructure.Data;
-using Nocturne.Services.CompatibilityProxy.Configuration;
+using Nocturne.API.Configuration;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -34,10 +34,9 @@ public class CompatibilityProxyServiceIntegrationTests
                 // Replace configuration with test URLs
                 services.Configure<CompatibilityProxyConfiguration>(config =>
                 {
-                    config.NightscoutUrl = _nightscoutMockServer.Url!;
+                    config.Enabled = true;
                     config.TimeoutSeconds = 5;
                     config.RetryAttempts = 1;
-                    config.DefaultStrategy = ResponseSelectionStrategy.Nightscout;
                 });
 
                 // Remove existing DbContext registration and use in-memory database

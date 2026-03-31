@@ -24,6 +24,6 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Services\Nocturne.Services.CompatibilityProxy\Nocturne.Services.CompatibilityProxy.csproj" />
+    <ProjectReference Include="..\..\..\src\API\Nocturne.API\Nocturne.API.csproj" />
   </ItemGroup>
 </Project>

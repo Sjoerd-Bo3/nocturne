@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.Core.Models;
-using Nocturne.Services.CompatibilityProxy.Services;
+using Nocturne.API.Services.Compatibility;
 using Xunit;
 
 namespace Nocturne.Services.CompatibilityProxy.Tests.Services;

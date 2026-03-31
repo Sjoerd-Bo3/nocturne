@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
+using Nocturne.Connectors.Nightscout.Configurations;
 using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Repositories;
 using Nocturne.API.Configuration;
@@ -29,26 +29,18 @@ public static class CompatibilityProxyServiceExtensions
             configuration.GetSection(CompatibilityProxyConfiguration.ConfigurationSection)
         );
 
-        // Register HTTP context accessor for auto-detecting Nocturne URL
-        services.AddHttpContextAccessor();
-
         // Register core services
         services.AddScoped<IRequestCloningService, RequestCloningService>();
         services.AddScoped<IRequestForwardingService, RequestForwardingService>();
 
         services.AddScoped<ICorrelationService, CorrelationService>();
         services.AddScoped<IResponseComparisonService, ResponseComparisonService>();
-        services.AddScoped<IResponseCacheService, ResponseCacheService>();
 
         services.AddScoped<IDiscrepancyAnalysisRepository, DiscrepancyAnalysisRepository>();
         services.AddScoped<IDiscrepancyForwardingService, DiscrepancyForwardingService>();
         services.AddScoped<IDiscrepancyPersistenceService, DiscrepancyPersistenceService>();
 
-
         services.AddHostedService<DiscrepancyMaintenanceService>();
-
-        // Add memory cache for response caching
-        services.AddMemoryCache();
 
         // Configure HTTP clients for target systems
         services.AddHttpClients(configuration);
@@ -64,39 +56,25 @@ public static class CompatibilityProxyServiceExtensions
         IConfiguration configuration
     )
     {
-        var interceptorConfig =
+        var proxyConfig =
             configuration
                 .GetSection(CompatibilityProxyConfiguration.ConfigurationSection)
                 .Get<CompatibilityProxyConfiguration>() ?? new CompatibilityProxyConfiguration();
 
-        // Nightscout HTTP client
+        // Nightscout HTTP client — URL comes from NightscoutConnectorConfiguration
+        // which is already registered by the connector installer.
+        // We resolve it at request time; here we just set timeout and user-agent.
         services
             .AddHttpClient(
                 "NightscoutClient",
-                client =>
+                (sp, client) =>
                 {
-                    if (!string.IsNullOrEmpty(interceptorConfig.NightscoutUrl))
+                    var nightscoutConfig = sp.GetService<NightscoutConnectorConfiguration>();
+                    if (nightscoutConfig != null && !string.IsNullOrEmpty(nightscoutConfig.Url))
                     {
-                        client.BaseAddress = new Uri(interceptorConfig.NightscoutUrl);
+                        client.BaseAddress = new Uri(nightscoutConfig.Url);
                     }
-                    client.Timeout = TimeSpan.FromSeconds(interceptorConfig.TimeoutSeconds);
-                    client.DefaultRequestHeaders.Add(
-                        "User-Agent",
-                        "Nocturne-CompatibilityProxy/1.0"
-                    );
-                }
-            )
-            .AddStandardResilienceHandler();
-
-        // Nocturne HTTP client
-        services
-            .AddHttpClient(
-                "NocturneClient",
-                client =>
-                {
-                    // Note: BaseAddress is intentionally not set here
-                    // It will be auto-detected from the current request in RequestForwardingService
-                    client.Timeout = TimeSpan.FromSeconds(interceptorConfig.TimeoutSeconds);
+                    client.Timeout = TimeSpan.FromSeconds(proxyConfig.TimeoutSeconds);
                     client.DefaultRequestHeaders.Add(
                         "User-Agent",
                         "Nocturne-CompatibilityProxy/1.0"
@@ -106,7 +84,7 @@ public static class CompatibilityProxyServiceExtensions
             .AddStandardResilienceHandler();
 
         // Discrepancy Forwarding HTTP client
-        var forwardingConfig = interceptorConfig.DiscrepancyForwarding;
+        var forwardingConfig = proxyConfig.DiscrepancyForwarding;
         services
             .AddHttpClient(
                 DiscrepancyForwardingService.HttpClientName,
@@ -135,22 +113,22 @@ public static class CompatibilityProxyServiceExtensions
 public class CompatibilityProxyHealthCheck : IHealthCheck
 {
     private readonly IOptions<CompatibilityProxyConfiguration> _configuration;
+    private readonly NightscoutConnectorConfiguration? _nightscoutConfig;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<CompatibilityProxyHealthCheck> _logger;
 
     /// <summary>
     /// Initializes a new instance of the CompatibilityProxyHealthCheck class
     /// </summary>
-    /// <param name="configuration">CompatibilityProxy configuration settings</param>
-    /// <param name="httpClientFactory">Factory for creating HTTP clients</param>
-    /// <param name="logger">Logger instance for this health check</param>
     public CompatibilityProxyHealthCheck(
         IOptions<CompatibilityProxyConfiguration> configuration,
         IHttpClientFactory httpClientFactory,
-        ILogger<CompatibilityProxyHealthCheck> logger
+        ILogger<CompatibilityProxyHealthCheck> logger,
+        NightscoutConnectorConfiguration? nightscoutConfig = null
     )
     {
         _configuration = configuration;
+        _nightscoutConfig = nightscoutConfig;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
@@ -158,9 +136,6 @@ public class CompatibilityProxyHealthCheck : IHealthCheck
     /// <summary>
     /// Perform the health check for the compatibility proxy service
     /// </summary>
-    /// <param name="context">Health check context</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Health check result</returns>
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
         CancellationToken cancellationToken = default
@@ -171,8 +146,10 @@ public class CompatibilityProxyHealthCheck : IHealthCheck
             var config = _configuration.Value;
             var healthData = new Dictionary<string, object>();
 
+            var nightscoutUrl = _nightscoutConfig?.Url;
+
             // Check configuration - if Nightscout URL is not configured, the service is not in use
-            if (string.IsNullOrEmpty(config.NightscoutUrl))
+            if (string.IsNullOrEmpty(nightscoutUrl))
             {
                 _logger.LogDebug(
                     "Compatibility proxy service is not configured - no Nightscout URL set"
@@ -183,25 +160,17 @@ public class CompatibilityProxyHealthCheck : IHealthCheck
             // Check Nightscout connectivity
             var nightscoutHealthy = await CheckTargetHealthAsync(
                 "NightscoutClient",
-                config.NightscoutUrl,
+                nightscoutUrl,
                 cancellationToken
             );
             healthData["nightscout"] = nightscoutHealthy ? "healthy" : "unhealthy";
 
-            // Note: Nocturne connectivity is not checked here as it auto-detects its own URL
-            healthData["nocturne"] = "auto-detected";
-
             healthData["responseComparison"] = config.Comparison.EnableDeepComparison
                 ? "enabled"
                 : "disabled";
-            healthData["responseCaching"] = config.EnableResponseCaching ? "enabled" : "disabled";
             healthData["correlationTracking"] = config.EnableCorrelationTracking
                 ? "enabled"
                 : "disabled";
-            healthData["abTesting"] =
-                config.ABTestingPercentage > 0
-                    ? $"enabled ({config.ABTestingPercentage}%)"
-                    : "disabled";
 
             healthData["configuration"] = "valid";
             return HealthCheckResult.Healthy("Compatibility proxy service is healthy", healthData);

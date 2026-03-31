@@ -1,11 +1,11 @@
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Nocturne.Core.Models;
-using Nocturne.Services.CompatibilityProxy.Configuration;
-using Nocturne.Services.CompatibilityProxy.Models;
-using Nocturne.Services.CompatibilityProxy.Services;
+using Nocturne.API.Configuration;
+using Nocturne.API.Models.Compatibility;
+using Nocturne.API.Services.Compatibility;
+using Nocturne.Connectors.Nightscout.Configurations;
+using Nocturne.Connectors.Nightscout.Services.WriteBack;
 using Xunit;
 
 namespace Nocturne.Services.CompatibilityProxy.Tests.Unit;
@@ -14,222 +14,63 @@ public class RequestForwardingServiceTests
 {
     private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
     private readonly Mock<ICorrelationService> _correlationServiceMock;
-    private readonly Mock<IResponseComparisonService> _responseComparisonServiceMock;
-    private readonly Mock<IResponseCacheService> _responseCacheServiceMock;
-    private readonly Mock<IDiscrepancyPersistenceService> _discrepancyPersistenceServiceMock;
+    private readonly NightscoutCircuitBreaker _circuitBreaker;
     private readonly ILogger<RequestForwardingService> _logger;
 
     public RequestForwardingServiceTests()
     {
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
         _correlationServiceMock = new Mock<ICorrelationService>();
-        _responseComparisonServiceMock = new Mock<IResponseComparisonService>();
-        _responseCacheServiceMock = new Mock<IResponseCacheService>();
-        _discrepancyPersistenceServiceMock = new Mock<IDiscrepancyPersistenceService>();
+        _circuitBreaker = new NightscoutCircuitBreaker();
         _logger = new LoggerFactory().CreateLogger<RequestForwardingService>();
     }
 
-    private RequestForwardingService CreateService(CompatibilityProxyConfiguration config)
+    private RequestForwardingService CreateService(
+        CompatibilityProxyConfiguration? proxyConfig = null,
+        NightscoutConnectorConfiguration? nightscoutConfig = null)
     {
-        var options = Options.Create(config);
+        var options = Options.Create(proxyConfig ?? new CompatibilityProxyConfiguration());
         return new RequestForwardingService(
             _httpClientFactoryMock.Object,
             options,
-            _logger,
+            nightscoutConfig ?? new NightscoutConnectorConfiguration(),
+            _circuitBreaker,
             _correlationServiceMock.Object,
-            _responseComparisonServiceMock.Object,
-            _responseCacheServiceMock.Object,
-            _discrepancyPersistenceServiceMock.Object
+            _logger
         );
-    }
-
-    [Theory]
-    [InlineData(0, "Default strategy: Nightscout")] // A/B testing disabled
-    [InlineData(100, "Strategy: Nocturne")] // A/B testing at 100%
-    public void SelectABTestResponse_VariousPercentages_ShouldSelectCorrectly(
-        int percentage,
-        string expectedReason
-    )
-    {
-        // Arrange
-        var config = new CompatibilityProxyConfiguration
-        {
-            DefaultStrategy = ResponseSelectionStrategy.ABTest,
-            ABTestingPercentage = percentage,
-        };
-
-        var service = CreateService(config);
-        var response = new CompatibilityProxyResponse
-        {
-            NightscoutResponse = new TargetResponse
-            {
-                Target = "Nightscout",
-                StatusCode = 200,
-                IsSuccess = true,
-                Body = Encoding.UTF8.GetBytes("""{"from": "nightscout"}"""),
-            },
-            NocturneResponse = new TargetResponse
-            {
-                Target = "Nocturne",
-                StatusCode = 200,
-                IsSuccess = true,
-                Body = Encoding.UTF8.GetBytes("""{"from": "nocturne"}"""),
-            },
-            CorrelationId = "test-correlation-123",
-        };
-
-        // Use reflection to access the private SelectResponse method
-        var selectResponseMethod = typeof(RequestForwardingService).GetMethod(
-            "SelectResponse",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-        );
-
-        // Act
-        var selectedResponse = (TargetResponse)
-            selectResponseMethod!.Invoke(service, new object[] { response })!;
-
-        // Assert
-        Assert.NotNull(selectedResponse);
-        if (percentage == 0)
-        {
-            Assert.Equal("Nightscout", selectedResponse.Target);
-        }
-        else if (percentage == 100)
-        {
-            Assert.Equal("Nocturne", selectedResponse.Target);
-        }
-        Assert.Contains(expectedReason.Split(':')[0], response.SelectionReason);
     }
 
     [Fact]
-    public void SelectComparedResponse_WithCriticalDifferences_ShouldLogWarningAndSelectNightscout()
+    public async Task ForwardToNightscoutAsync_CircuitBreakerOpen_ShouldReturnNull()
     {
-        // Arrange
-        var config = new CompatibilityProxyConfiguration
-        {
-            DefaultStrategy = ResponseSelectionStrategy.Compare,
-        };
+        // Arrange — trip the circuit breaker
+        for (int i = 0; i < 10; i++)
+            _circuitBreaker.RecordFailure();
 
-        var service = CreateService(config);
-        var comparisonResult = new ResponseComparisonResult
-        {
-            CorrelationId = "test-correlation",
-            OverallMatch = Nocturne.Core.Models.ResponseMatchType.CriticalDifferences,
-            Summary = "Critical differences detected",
-        };
-
-        var response = new CompatibilityProxyResponse
-        {
-            NightscoutResponse = new TargetResponse
-            {
-                Target = "Nightscout",
-                StatusCode = 200,
-                IsSuccess = true,
-            },
-            NocturneResponse = new TargetResponse
-            {
-                Target = "Nocturne",
-                StatusCode = 404,
-                IsSuccess = false,
-            },
-            ComparisonResult = comparisonResult,
-        };
-
-        // Use reflection to access the private SelectResponse method
-        var selectResponseMethod = typeof(RequestForwardingService).GetMethod(
-            "SelectResponse",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-        );
+        var service = CreateService();
+        var request = new ClonedRequest { Method = "GET", Path = "/api/v1/entries" };
 
         // Act
-        var selectedResponse = (TargetResponse)
-            selectResponseMethod!.Invoke(service, new object[] { response })!;
+        var result = await service.ForwardToNightscoutAsync(request);
 
         // Assert
-        Assert.Equal("Nightscout", selectedResponse.Target);
-        Assert.Contains("Critical differences detected", response.SelectionReason);
+        Assert.Null(result);
     }
 
     [Fact]
-    public void SelectComparedResponse_WithPerfectMatch_ShouldUseFastestStrategy()
+    public async Task ForwardToNightscoutAsync_NoUrl_ShouldReturnErrorResponse()
     {
-        // Arrange
-        var config = new CompatibilityProxyConfiguration
-        {
-            DefaultStrategy = ResponseSelectionStrategy.Compare,
-        };
-
-        var service = CreateService(config);
-        var comparisonResult = new ResponseComparisonResult
-        {
-            CorrelationId = "test-correlation",
-            OverallMatch = Nocturne.Core.Models.ResponseMatchType.Perfect,
-            Summary = "Responses match perfectly",
-        };
-
-        var response = new CompatibilityProxyResponse
-        {
-            NightscoutResponse = new TargetResponse
-            {
-                Target = "Nightscout",
-                StatusCode = 200,
-                IsSuccess = true,
-                ResponseTimeMs = 150,
-            },
-            NocturneResponse = new TargetResponse
-            {
-                Target = "Nocturne",
-                StatusCode = 200,
-                IsSuccess = true,
-                ResponseTimeMs = 100, // Faster
-            },
-            ComparisonResult = comparisonResult,
-        };
-
-        // Use reflection to access the private SelectResponse method
-        var selectResponseMethod = typeof(RequestForwardingService).GetMethod(
-            "SelectResponse",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-        );
+        // Arrange — connector config with empty URL
+        var nightscoutConfig = new NightscoutConnectorConfiguration { Url = "" };
+        var service = CreateService(nightscoutConfig: nightscoutConfig);
+        var request = new ClonedRequest { Method = "GET", Path = "/api/v1/entries" };
 
         // Act
-        var selectedResponse = (TargetResponse)
-            selectResponseMethod!.Invoke(service, new object[] { response })!;
+        var result = await service.ForwardToNightscoutAsync(request);
 
         // Assert
-        Assert.Equal("Nocturne", selectedResponse.Target); // Should select faster response
-        Assert.Contains("Fastest", response.SelectionReason);
-    }
-
-    [Theory]
-    [InlineData("/api/v1/entries/slow", 60)]
-    [InlineData("/api/v1/status", 5)]
-    [InlineData("/api/v1/data", 30)]
-    public void GetTimeoutForEndpoint_VariousPaths_ShouldReturnCorrectTimeout(
-        string path,
-        int expectedTimeout
-    )
-    {
-        // Arrange
-        var config = new CompatibilityProxyConfiguration
-        {
-            TimeoutSeconds = 30,
-            EndpointTimeouts = new Dictionary<string, int> { ["entries"] = 60, ["status"] = 5 },
-        };
-
-        var service = CreateService(config);
-
-        // Use reflection to access the private GetTimeoutForEndpoint method
-        var getTimeoutMethod = typeof(RequestForwardingService).GetMethod(
-            "GetTimeoutForEndpoint",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-        );
-
-        // Act
-        var timeout = (int)getTimeoutMethod!.Invoke(service, new object[] { path })!;
-
-        // Assert
-        Assert.Equal(expectedTimeout, timeout);
+        Assert.NotNull(result);
+        Assert.Equal("Nightscout URL not configured", result.ErrorMessage);
     }
 
     [Fact]
@@ -238,10 +79,13 @@ public class RequestForwardingServiceTests
         // Arrange
         var config = new CompatibilityProxyConfiguration
         {
-            SensitiveFields = new List<string> { "api_secret", "token", "password" },
+            Redaction = new RedactionSettings
+            {
+                SensitiveFields = new List<string> { "custom_field" },
+            },
         };
 
-        var service = CreateService(config);
+        var service = CreateService(proxyConfig: config);
         var errorMessage = "Authentication failed with api_secret=12345 and token=abcdef";
 
         // Use reflection to access the private FilterSensitiveErrorMessage method
@@ -257,7 +101,5 @@ public class RequestForwardingServiceTests
         Assert.Contains("[REDACTED]", filtered);
         Assert.DoesNotContain("api_secret", filtered);
         Assert.DoesNotContain("token", filtered);
-        // Note: The actual values (12345, abcdef) are not redacted in the current implementation
-        // This is because the method only replaces field names, not field values
     }
 }

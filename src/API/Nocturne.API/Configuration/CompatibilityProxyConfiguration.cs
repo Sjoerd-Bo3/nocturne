@@ -11,19 +11,9 @@ public class CompatibilityProxyConfiguration
     public const string ConfigurationSection = "Parameters:CompatibilityProxy";
 
     /// <summary>
-    /// Nightscout target URL
+    /// Whether the compatibility proxy is enabled
     /// </summary>
-    public string NightscoutUrl { get; set; } = string.Empty;
-
-    /// <summary>
-    /// API secret for the external Nightscout instance
-    /// </summary>
-    public string NightscoutApiSecret { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Subject Token for JWT authentication (optional, prefers V3 API if present)
-    /// </summary>
-    public string NightscoutSubjectToken { get; set; } = string.Empty;
+    public bool Enabled { get; set; } = false;
 
     /// <summary>
     /// Request timeout in seconds
@@ -36,12 +26,6 @@ public class CompatibilityProxyConfiguration
     public int RetryAttempts { get; set; } = 3;
 
     /// <summary>
-    /// Default response selection strategy
-    /// </summary>
-    public ResponseSelectionStrategy DefaultStrategy { get; set; } =
-        ResponseSelectionStrategy.Nightscout;
-
-    /// <summary>
     /// Enable detailed request/response logging
     /// </summary>
     public bool EnableDetailedLogging { get; set; } = false;
@@ -52,11 +36,6 @@ public class CompatibilityProxyConfiguration
     public ResponseComparisonSettings Comparison { get; set; } = new();
 
     /// <summary>
-    /// Per-endpoint timeout configurations
-    /// </summary>
-    public Dictionary<string, int> EndpointTimeouts { get; set; } = new();
-
-    /// <summary>
     /// Circuit breaker settings
     /// </summary>
     public CircuitBreakerSettings CircuitBreaker { get; set; } = new();
@@ -65,31 +44,6 @@ public class CompatibilityProxyConfiguration
     /// Enable request correlation tracking
     /// </summary>
     public bool EnableCorrelationTracking { get; set; } = true;
-
-    /// <summary>
-    /// Enable response caching
-    /// </summary>
-    public bool EnableResponseCaching { get; set; } = false;
-
-    /// <summary>
-    /// Response cache TTL in seconds
-    /// </summary>
-    public int ResponseCacheTtlSeconds { get; set; } = 300; // 5 minutes
-
-    /// <summary>
-    /// Enable request deduplication
-    /// </summary>
-    public bool EnableRequestDeduplication { get; set; } = false;
-
-    /// <summary>
-    /// A/B testing percentage (0-100)
-    /// </summary>
-    public int ABTestingPercentage { get; set; } = 0;
-
-    /// <summary>
-    /// Maximum response size for comparison (in bytes)
-    /// </summary>
-    public long MaxResponseSizeForComparison { get; set; } = 10 * 1024 * 1024; // 10MB
 
     /// <summary>
     /// Redaction settings for sensitive data handling
@@ -306,37 +260,6 @@ public class RedactionSettings
     {
         return MandatorySensitiveFields.Union(SensitiveFields, StringComparer.OrdinalIgnoreCase);
     }
-}
-
-/// <summary>
-/// Strategy for selecting which response to return to the client
-/// </summary>
-public enum ResponseSelectionStrategy
-{
-    /// <summary>
-    /// Always return Nightscout response (default)
-    /// </summary>
-    Nightscout,
-
-    /// <summary>
-    /// Always return Nocturne response
-    /// </summary>
-    Nocturne,
-
-    /// <summary>
-    /// Return the fastest response
-    /// </summary>
-    Fastest,
-
-    /// <summary>
-    /// Compare responses and return based on configured criteria
-    /// </summary>
-    Compare,
-
-    /// <summary>
-    /// A/B testing mode - gradually shift traffic
-    /// </summary>
-    ABTest,
 }
 
 /// <summary>

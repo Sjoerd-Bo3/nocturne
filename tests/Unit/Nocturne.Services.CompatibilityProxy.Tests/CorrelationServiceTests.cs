@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Models;
-using Nocturne.Services.CompatibilityProxy.Configuration;
-using Nocturne.Services.CompatibilityProxy.Services;
+using Nocturne.API.Configuration;
+using Nocturne.API.Services.Compatibility;
 using Xunit;
 
 namespace Nocturne.Services.CompatibilityProxy.Tests.Unit;

@@ -2,9 +2,9 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Models;
-using Nocturne.Services.CompatibilityProxy.Configuration;
-using Nocturne.Services.CompatibilityProxy.Models;
-using Nocturne.Services.CompatibilityProxy.Services;
+using Nocturne.API.Configuration;
+using Nocturne.API.Models.Compatibility;
+using Nocturne.API.Services.Compatibility;
 using Xunit;
 
 namespace Nocturne.Services.CompatibilityProxy.Tests.Unit;
@@ -143,8 +143,8 @@ public class ResponseComparisonServiceTests
         );
         Assert.False(result.StatusCodeMatch);
         Assert.Single(result.Discrepancies);
-        Assert.Equal(Models.DiscrepancyType.StatusCode, result.Discrepancies[0].Type);
-        Assert.Equal(Models.DiscrepancySeverity.Critical, result.Discrepancies[0].Severity);
+        Assert.Equal(DiscrepancyType.StatusCode, result.Discrepancies[0].Type);
+        Assert.Equal(DiscrepancySeverity.Critical, result.Discrepancies[0].Severity);
     }
 
     [Fact]
@@ -261,8 +261,8 @@ public class ResponseComparisonServiceTests
         Assert.Equal(Nocturne.Core.Models.ResponseMatchType.MinorDifferences, result.OverallMatch);
         Assert.False(result.BodyMatch);
         Assert.Single(result.Discrepancies);
-        Assert.Equal(Models.DiscrepancyType.NumericValue, result.Discrepancies[0].Type);
-        Assert.Equal(Models.DiscrepancySeverity.Minor, result.Discrepancies[0].Severity);
+        Assert.Equal(DiscrepancyType.NumericValue, result.Discrepancies[0].Type);
+        Assert.Equal(DiscrepancySeverity.Minor, result.Discrepancies[0].Severity);
     }
 
     [Fact]
@@ -301,7 +301,7 @@ public class ResponseComparisonServiceTests
         Assert.Equal(Nocturne.Core.Models.ResponseMatchType.MinorDifferences, result.OverallMatch); // Numeric differences are minor
         Assert.False(result.BodyMatch);
         Assert.Single(result.Discrepancies);
-        Assert.Equal(Models.DiscrepancyType.NumericValue, result.Discrepancies[0].Type);
+        Assert.Equal(DiscrepancyType.NumericValue, result.Discrepancies[0].Type);
         Assert.Contains("values[2]", result.Discrepancies[0].Field);
     }
 }
