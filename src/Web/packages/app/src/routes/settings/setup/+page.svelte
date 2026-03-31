@@ -11,6 +11,7 @@
     Activity,
     CheckCircle2,
     ChevronRight,
+    ArrowRightLeft,
   } from "lucide-svelte";
   import * as patientRemote from "$lib/api/generated/patientRecords.generated.remote";
   import * as servicesRemote from "$lib/api/generated/services.generated.remote";
@@ -145,6 +146,21 @@
       {requiredComplete} of 5 required steps complete
     </p>
   </div>
+
+  <a href="/settings/setup/migrate" class="block">
+    <Card.Root class="border-dashed border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition-colors">
+      <Card.Header class="flex flex-row items-center gap-4 space-y-0 p-4">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600">
+          <ArrowRightLeft class="h-5 w-5" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <Card.Title class="text-sm font-medium">Coming from Nightscout?</Card.Title>
+          <Card.Description class="text-xs">Migrate your data and keep both systems in sync during transition</Card.Description>
+        </div>
+        <ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground" />
+      </Card.Header>
+    </Card.Root>
+  </a>
 
   <div class="space-y-3">
     {#each steps as step, i}
