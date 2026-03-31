@@ -167,6 +167,7 @@ public class DeviceStatusService : IDeviceStatusService
             new WriteEffectOptions { DecomposeToV4 = true },
             cancellationToken
         );
+        await _events.BeforeDeleteAsync(id, cancellationToken);
 
         // Get the device status before deleting for broadcasting
         var deviceStatusToDelete = await _deviceStatuses.GetDeviceStatusByIdAsync(
