@@ -257,7 +257,9 @@ public class TotpController : ControllerBase
             MaxAge = TimeSpan.FromDays(7),
         });
 
-        Response.Cookies.Append("IsAuthenticated", "true", new CookieOptions
+        // IsAuthenticated is intentionally not HttpOnly — the frontend reads it to detect auth state.
+        // The actual tokens (access + refresh) are HttpOnly above. This cookie contains no secrets.
+        Response.Cookies.Append("IsAuthenticated", "true", new CookieOptions // lgtm[cs/web/cookie-httponly-not-set]
         {
             HttpOnly = false,
             Secure = _oidcOptions.Cookie.Secure,

@@ -180,7 +180,13 @@ public class MyLifeSoapClient(HttpClient httpClient, ILogger<MyLifeSoapClient> l
         string body,
         CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+        {
+            logger.LogError("SOAP request rejected: URL must use HTTPS. Got {Url}", url);
+            return string.Empty;
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, uri);
         request.Headers.Add("SOAPAction", action);
         request.Content = new StringContent(body, Encoding.UTF8, "text/xml");
 

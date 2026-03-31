@@ -553,7 +553,7 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error fetching Glooko batch data: {ex.Message}");
+            _logger.LogError(ex, "Error fetching Glooko batch data");
             return null;
         }
     }
@@ -574,7 +574,7 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
     {
         try
         {
-            _logger.LogDebug($"GLOOKO FETCHER LOADING {url}");
+            _logger.LogDebug("GLOOKO FETCHER LOADING {Url}", url);
 
             var request = new HttpRequestMessage(HttpMethod.Get, url);
 
@@ -630,11 +630,11 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
 
             if (response.StatusCode == HttpStatusCode.UnprocessableEntity) // 422
             {
-                _logger.LogWarning($"Rate limited (422) fetching from {url}");
+                _logger.LogWarning("Rate limited (422) fetching from {Url}", url);
                 throw new HttpRequestException("422 UnprocessableEntity - Rate limited");
             }
 
-            _logger.LogWarning($"Failed to fetch from {url}: {response.StatusCode}");
+            _logger.LogWarning("Failed to fetch from {Url}: {StatusCode}", url, response.StatusCode);
             throw new HttpRequestException(
                 $"HTTP {(int)response.StatusCode} {response.StatusCode}"
             );
@@ -646,7 +646,7 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error fetching from {url}: {ex.Message}");
+            _logger.LogError(ex, "Error fetching from {Url}", url);
             throw new HttpRequestException($"Request failed: {ex.Message}", ex);
         }
     }
@@ -670,32 +670,32 @@ public class GlookoConnectorService : BaseConnectorService<GlookoConnectorConfig
                 if (result.HasValue) return result;
 
                 // If we get here, the request failed but didn't throw
-                _logger.LogWarning($"Attempt {attempt + 1} failed for {url}");
+                _logger.LogWarning("Attempt {AttemptNumber} failed for {Url}", attempt + 1, url);
             }
             catch (HttpRequestException ex) when (ex.Message.Contains("422"))
             {
                 lastException = ex;
-                _logger.LogWarning($"Rate limited (422) on attempt {attempt + 1} for {url}");
+                _logger.LogWarning("Rate limited (422) on attempt {AttemptNumber} for {Url}", attempt + 1, url);
             }
             catch (HttpRequestException ex)
             {
                 lastException = ex;
-                _logger.LogError($"Attempt {attempt + 1} failed for {url}: {ex.Message}");
+                _logger.LogError(ex, "Attempt {AttemptNumber} failed for {Url}", attempt + 1, url);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Attempt {attempt + 1} failed for {url}: {ex.Message}");
+                _logger.LogError(ex, "Attempt {AttemptNumber} failed for {Url}", attempt + 1, url);
                 lastException = new HttpRequestException($"Request failed: {ex.Message}", ex);
             } // Don't delay after the last attempt
 
             if (attempt < maxRetries - 1)
             {
-                _logger.LogInformation($"Applying retry backoff before retry {attempt + 2}");
+                _logger.LogInformation("Applying retry backoff before retry {RetryNumber}", attempt + 2);
                 await _retryDelayStrategy.ApplyRetryDelayAsync(attempt);
             }
         }
 
-        _logger.LogError($"All {maxRetries} attempts failed for {url}");
+        _logger.LogError("All {MaxRetries} attempts failed for {Url}", maxRetries, url);
 
         // Throw the last exception if we have one, otherwise throw a generic exception
         if (lastException != null) throw lastException;

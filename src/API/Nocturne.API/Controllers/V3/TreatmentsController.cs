@@ -227,7 +227,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
             _logger.LogDebug("Successfully created V3 treatment {Id}", createdTreatment.Id);
 
             // Set location header for created resource
-            Response.Headers["Location"] = $"/api/v3/treatments/{createdTreatment.Id}";
+            Response.Headers["Location"] = $"/api/v3/treatments/{Uri.EscapeDataString(createdTreatment.Id)}";
 
             return CreatedAtAction(
                 nameof(GetTreatment),

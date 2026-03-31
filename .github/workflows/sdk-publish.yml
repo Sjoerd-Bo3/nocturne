@@ -17,6 +17,8 @@ env:
 jobs:
   generate-spec:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       sdk_version: ${{ steps.version.outputs.version }}
     steps:
