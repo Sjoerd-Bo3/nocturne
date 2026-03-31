@@ -5,6 +5,7 @@ export interface BridgeConfig {
   signalr: {
     hubUrl: string;
     alarmHubUrl?: string;
+    configHubUrl?: string;
     reconnectAttempts?: number;
     reconnectDelay?: number;
     maxReconnectDelay?: number;
@@ -30,6 +31,7 @@ export interface CompleteBridgeConfig {
   signalr: {
     hubUrl: string;
     alarmHubUrl?: string;
+    configHubUrl?: string;
     reconnectAttempts: number;
     reconnectDelay: number;
     maxReconnectDelay: number;

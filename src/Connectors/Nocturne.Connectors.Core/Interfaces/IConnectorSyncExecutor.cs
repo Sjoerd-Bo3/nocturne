@@ -19,5 +19,6 @@ public interface IConnectorSyncExecutor
     Task<SyncResult> ExecuteSyncAsync(
         IServiceProvider scopeProvider,
         SyncRequest request,
-        CancellationToken ct);
+        CancellationToken ct,
+        ISyncProgressReporter? progressReporter = null);
 }

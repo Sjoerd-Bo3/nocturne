@@ -104,7 +104,8 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
     public override async Task<SyncResult> SyncDataAsync(
         SyncRequest request,
         NightscoutConnectorConfiguration config,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ISyncProgressReporter? progressReporter = null)
     {
         if (!await AuthenticateAsync())
         {
@@ -115,13 +116,14 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
             };
         }
 
-        return await base.SyncDataAsync(request, config, cancellationToken);
+        return await base.SyncDataAsync(request, config, cancellationToken, progressReporter);
     }
 
     protected override async Task<SyncResult> PerformSyncInternalAsync(
         SyncRequest request,
         NightscoutConnectorConfiguration config,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ISyncProgressReporter? progressReporter = null)
     {
         var result = new SyncResult { StartTime = DateTimeOffset.UtcNow, Success = true };
 

@@ -8,6 +8,7 @@ import type {
   AnnouncementEvent,
   AlarmEvent,
   TrackerUpdateEvent,
+  SyncProgressEvent,
 } from "$lib/websocket/types";
 import type {
   DeviceStatus,
@@ -53,6 +54,9 @@ export class RealtimeStore {
 
   /** Track if sync/backfill is in progress (public for UI feedback) */
   isSyncing = $state(false);
+
+  /** Live sync progress by connector ID (from SignalR sync progress events) */
+  syncProgressByConnector = $state<Record<string, SyncProgressEvent>>({});
 
   /** Bound visibility change handler for cleanup */
   private handleVisibilityChange: (() => void) | null = null;
@@ -395,6 +399,19 @@ export class RealtimeStore {
 
     this.websocketClient.on("notificationUpdated", (notification: InAppNotificationDto) => {
       this.handleNotificationUpdated(notification);
+    });
+
+    this.websocketClient.on("syncProgress", (event: SyncProgressEvent) => {
+      if (event.phase === "Syncing") {
+        this.syncProgressByConnector = { ...this.syncProgressByConnector, [event.connectorId]: event };
+      } else {
+        // Show completed/failed state briefly, then clear
+        this.syncProgressByConnector = { ...this.syncProgressByConnector, [event.connectorId]: event };
+        setTimeout(() => {
+          const { [event.connectorId]: _, ...rest } = this.syncProgressByConnector;
+          this.syncProgressByConnector = rest;
+        }, 2000);
+      }
     });
 
   }

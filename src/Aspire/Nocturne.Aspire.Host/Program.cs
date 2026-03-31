@@ -232,7 +232,7 @@ class Program
             "nocturne-bridge-build",
             bridgePackagePath,
             scriptName: "build"
-        );
+        ).ExcludeFromManifest();
 
         // Add the SvelteKit web application (with integrated WebSocket bridge)
         var webPackagePath = Path.Combine(solutionRoot, "src", "Web", "packages", "app");

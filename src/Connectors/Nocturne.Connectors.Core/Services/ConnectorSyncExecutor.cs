@@ -23,7 +23,8 @@ public abstract class ConnectorSyncExecutor<TService, TConfig> : IConnectorSyncE
     public async Task<SyncResult> ExecuteSyncAsync(
         IServiceProvider scopeProvider,
         SyncRequest request,
-        CancellationToken ct)
+        CancellationToken ct,
+        ISyncProgressReporter? progressReporter = null)
     {
         var service = scopeProvider.GetRequiredService<TService>();
         var config = scopeProvider.GetRequiredService<TConfig>();
@@ -32,7 +33,7 @@ public abstract class ConnectorSyncExecutor<TService, TConfig> : IConnectorSyncE
 
         await LoadDatabaseConfigurationAsync(scopeProvider, config, logger, ct);
 
-        return await service.SyncDataAsync(request, config, ct);
+        return await service.SyncDataAsync(request, config, ct, progressReporter);
     }
 
     private async Task LoadDatabaseConfigurationAsync(

@@ -63,10 +63,11 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
     public virtual async Task<SyncResult> SyncDataAsync(
         SyncRequest request,
         TConfig config,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        ISyncProgressReporter? progressReporter = null
     )
     {
-        return await PerformSyncInternalAsync(request, config, cancellationToken);
+        return await PerformSyncInternalAsync(request, config, cancellationToken, progressReporter);
     }
 
     public void Dispose()
@@ -230,7 +231,8 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
     protected virtual async Task<SyncResult> PerformSyncInternalAsync(
         SyncRequest request,
         TConfig config,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        ISyncProgressReporter? progressReporter = null
     )
     {
         var result = new SyncResult { StartTime = DateTimeOffset.UtcNow, Success = true };
@@ -246,8 +248,26 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
                 ConnectorSource,
                 string.Join(", ", disabledTypes));
 
-        foreach (var type in request.DataTypes.Where(type => enabledTypes.Contains(type)))
+        var typesToSync = request.DataTypes.Where(type => enabledTypes.Contains(type)).ToList();
+        var completedTypes = new List<SyncDataType>();
+        var itemsSoFar = new Dictionary<SyncDataType, int>();
+
+        foreach (var type in typesToSync)
         {
+            if (progressReporter != null)
+            {
+                await progressReporter.ReportProgressAsync(new SyncProgressEvent
+                {
+                    ConnectorId = ConnectorSource,
+                    ConnectorName = ServiceName,
+                    Phase = SyncPhase.Syncing,
+                    CurrentDataType = type,
+                    CompletedDataTypes = [.. completedTypes],
+                    TotalDataTypes = typesToSync.Count,
+                    ItemsSyncedSoFar = new(itemsSoFar),
+                }, cancellationToken);
+            }
+
             try
             {
                 var count = 0;
@@ -304,6 +324,9 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
                     result.Success = false;
                     result.Errors.Add($"{type} publish failed");
                 }
+
+                completedTypes.Add(type);
+                itemsSoFar[type] = count;
             }
             catch (Exception ex)
             {
@@ -316,10 +339,29 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
                     type,
                     ConnectorSource
                 );
+
+                completedTypes.Add(type);
+                itemsSoFar[type] = 0;
             }
         }
 
         result.EndTime = DateTimeOffset.UtcNow;
+
+        if (progressReporter != null)
+        {
+            await progressReporter.ReportProgressAsync(new SyncProgressEvent
+            {
+                ConnectorId = ConnectorSource,
+                ConnectorName = ServiceName,
+                Phase = result.Success ? SyncPhase.Completed : SyncPhase.Failed,
+                CurrentDataType = null,
+                CompletedDataTypes = [.. completedTypes],
+                TotalDataTypes = typesToSync.Count,
+                ItemsSyncedSoFar = new(itemsSoFar),
+                ErrorMessage = result.Success ? null : string.Join("; ", result.Errors),
+            }, cancellationToken);
+        }
+
         return result;
     }
 
@@ -780,7 +822,8 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
     public virtual async Task<bool> SyncDataAsync(
         TConfig config,
         CancellationToken cancellationToken = default,
-        DateTime? since = null
+        DateTime? since = null,
+        ISyncProgressReporter? progressReporter = null
     )
     {
         _logger.LogInformation(
@@ -806,7 +849,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
                 DataTypes = SupportedDataTypes,
             };
 
-            var result = await PerformSyncInternalAsync(request, config, cancellationToken);
+            var result = await PerformSyncInternalAsync(request, config, cancellationToken, progressReporter);
 
             if (result.Success)
             {

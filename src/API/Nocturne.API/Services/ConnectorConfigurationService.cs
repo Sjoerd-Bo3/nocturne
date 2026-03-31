@@ -756,7 +756,7 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
     {
         var config = await _context.ConnectorConfigurations
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.ConnectorName == connectorName, ct);
+            .FirstOrDefaultAsync(c => c.ConnectorName.ToLower() == connectorName.ToLower(), ct);
 
         if (config == null)
             return null;
@@ -788,7 +788,7 @@ public class ConnectorConfigurationService : IConnectorConfigurationService
     )
     {
         var config = await _context.ConnectorConfigurations
-            .FirstOrDefaultAsync(c => c.ConnectorName == connectorName, ct);
+            .FirstOrDefaultAsync(c => c.ConnectorName.ToLower() == connectorName.ToLower(), ct);
 
         if (config == null)
         {

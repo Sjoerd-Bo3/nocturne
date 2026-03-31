@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Nocturne.API.Hubs;
+using Nocturne.Connectors.Core.Models;
 using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
@@ -101,6 +102,11 @@ public interface ISignalRBroadcastService
     /// <param name="eventName">The event name to broadcast</param>
     /// <param name="payload">The event payload</param>
     Task BroadcastAlertEventAsync(string eventName, object payload);
+
+    /// <summary>
+    /// Broadcast sync progress event to subscribers via ConfigHub
+    /// </summary>
+    Task BroadcastSyncProgressAsync(SyncProgressEvent progress);
 }
 
 /// <summary>
@@ -513,6 +519,32 @@ public class SignalRBroadcastService : ISignalRBroadcastService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error broadcasting alert event {EventName}", eventName);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task BroadcastSyncProgressAsync(SyncProgressEvent progress)
+    {
+        try
+        {
+            _logger.LogDebug(
+                "Broadcasting sync progress for {ConnectorId}: {Phase} - {DataType}",
+                progress.ConnectorId,
+                progress.Phase,
+                progress.CurrentDataType
+            );
+
+            await _configHubContext
+                .Clients.Group(TenantGroup("config:all"))
+                .SendCoreAsync("syncProgress", [progress]);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error broadcasting sync progress for {ConnectorId}",
+                progress.ConnectorId
+            );
         }
     }
 }

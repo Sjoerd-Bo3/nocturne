@@ -18,16 +18,19 @@ public class ConnectorSyncService : IConnectorSyncService
     private readonly IServiceProvider _serviceProvider;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<ConnectorSyncService> _logger;
+    private readonly ISyncProgressReporter _progressReporter;
 
     public ConnectorSyncService(
         IServiceProvider serviceProvider,
         ITenantAccessor tenantAccessor,
-        ILogger<ConnectorSyncService> logger
+        ILogger<ConnectorSyncService> logger,
+        ISyncProgressReporter progressReporter
     )
     {
         _serviceProvider = serviceProvider;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
+        _progressReporter = progressReporter;
     }
 
     public async Task<SyncResult> TriggerSyncAsync(
@@ -64,7 +67,7 @@ public class ConnectorSyncService : IConnectorSyncService
                 };
             }
 
-            var result = await executor.ExecuteSyncAsync(scope.ServiceProvider, request, ct);
+            var result = await executor.ExecuteSyncAsync(scope.ServiceProvider, request, ct, _progressReporter);
 
             _logger.LogInformation(
                 "Manual sync for {ConnectorId} completed: Success={Success}, Message={Message}",

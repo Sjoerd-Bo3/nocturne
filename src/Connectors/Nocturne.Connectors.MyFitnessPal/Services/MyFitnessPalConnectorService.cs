@@ -63,7 +63,8 @@ public class MyFitnessPalConnectorService : BaseConnectorService<MyFitnessPalCon
     public override async Task<SyncResult> SyncDataAsync(
         SyncRequest request,
         MyFitnessPalConnectorConfiguration config,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        ISyncProgressReporter? progressReporter = null
     )
     {
         var result = new SyncResult { StartTime = DateTimeOffset.UtcNow, Success = true };
@@ -144,7 +145,8 @@ public class MyFitnessPalConnectorService : BaseConnectorService<MyFitnessPalCon
     public override async Task<bool> SyncDataAsync(
         MyFitnessPalConnectorConfiguration config,
         CancellationToken cancellationToken = default,
-        DateTime? since = null
+        DateTime? since = null,
+        ISyncProgressReporter? progressReporter = null
     )
     {
         _logger.LogInformation(

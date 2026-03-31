@@ -171,6 +171,18 @@ class SocketIOServer {
     this.io.emit(eventType, data);
   }
 
+  broadcastSyncProgress(data: any): void {
+    if (!this.io) return;
+    logger.debug('Broadcasting syncProgress to all clients');
+    this.io.emit('syncProgress', data);
+  }
+
+  broadcastConfigChanged(data: any): void {
+    if (!this.io) return;
+    logger.debug('Broadcasting configChanged to all clients');
+    this.io.emit('configChanged', data);
+  }
+
   // Send message to specific room
   sendToRoom(room: string, event: string, data: any): void {
     if (!this.io) return;

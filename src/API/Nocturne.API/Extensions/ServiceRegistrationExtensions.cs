@@ -432,6 +432,7 @@ public static class ServiceRegistrationExtensions
             Nocturne.API.Hubs.TenantHubFilter
         >();
         services.AddScoped<ISignalRBroadcastService, SignalRBroadcastService>();
+        services.AddScoped<ISyncProgressReporter, SignalRSyncProgressReporter>();
 
         // Push notifications
         services.AddScoped<INotificationV2Service, NotificationV2Service>();

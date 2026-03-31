@@ -2131,6 +2131,217 @@ export class PasskeyClient {
         }
         return Promise.resolve<SetupCompleteResponse>(null as any);
     }
+
+    accessRequestOptions(request: AccessRequestOptionsRequest, signal?: AbortSignal): Promise<PasskeyOptionsResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/access-request/options";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAccessRequestOptions(_response);
+        });
+    }
+
+    protected processAccessRequestOptions(response: Response): Promise<PasskeyOptionsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PasskeyOptionsResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status === 409) {
+            return response.text().then((_responseText) => {
+            let result409: any = null;
+            result409 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result409);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasskeyOptionsResponse>(null as any);
+    }
+
+    accessRequestComplete(request: AccessRequestCompleteRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/auth/passkey/access-request/complete";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAccessRequestComplete(_response);
+        });
+    }
+
+    protected processAccessRequestComplete(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Generate passkey registration options for an unauthenticated user accepting an invite.
+    Validates the invite, creates a new subject, and returns WebAuthn registration options.
+     */
+    inviteOptions(request: InviteOptionsRequest, signal?: AbortSignal): Promise<PasskeyOptionsResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/invite/options";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processInviteOptions(_response);
+        });
+    }
+
+    protected processInviteOptions(response: Response): Promise<PasskeyOptionsResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PasskeyOptionsResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PasskeyOptionsResponse>(null as any);
+    }
+
+    /**
+     * Complete passkey registration for an invite acceptance.
+    Verifies attestation, accepts the invite, generates recovery codes, and issues a session.
+     */
+    inviteComplete(request: InviteCompleteRequest, signal?: AbortSignal): Promise<SetupCompleteResponse> {
+        let url_ = this.baseUrl + "/api/auth/passkey/invite/complete";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processInviteComplete(_response);
+        });
+    }
+
+    protected processInviteComplete(response: Response): Promise<SetupCompleteResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as SetupCompleteResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SetupCompleteResponse>(null as any);
+    }
 }
 
 export class TotpClient {
@@ -9293,7 +9504,7 @@ export class MemberInviteClient {
     }
 
     /**
-     * List followers of the current tenant (members with follower role).
+     * List followers of the current tenant (members with the follower role).
      */
     getFollowers(signal?: AbortSignal): Promise<TenantMemberDto[]> {
         let url_ = this.baseUrl + "/api/v4/member-invites/members/followers";
@@ -9327,6 +9538,164 @@ export class MemberInviteClient {
             });
         }
         return Promise.resolve<TenantMemberDto[]>(null as any);
+    }
+
+    /**
+     * Set roles for a member (replaces all role assignments).
+     */
+    setMemberRoles(id: string, request: SetMemberRolesRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/member-invites/members/{id}/roles";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSetMemberRoles(_response);
+        });
+    }
+
+    protected processSetMemberRoles(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Set direct permissions for a member.
+     */
+    setMemberPermissions(id: string, request: SetMemberPermissionsRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/member-invites/members/{id}/permissions";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSetMemberPermissions(_response);
+        });
+    }
+
+    protected processSetMemberPermissions(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * Get effective permissions for a member (union of role permissions + direct permissions).
+     */
+    getEffectivePermissions(id: string, signal?: AbortSignal): Promise<string[]> {
+        let url_ = this.baseUrl + "/api/v4/member-invites/members/{id}/effective-permissions";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetEffectivePermissions(_response);
+        });
+    }
+
+    protected processGetEffectivePermissions(response: Response): Promise<string[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string[];
+            return result200;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string[]>(null as any);
     }
 }
 
@@ -9972,6 +10341,54 @@ export class MyFitnessPalSettingsClient {
             });
         }
         return Promise.resolve<MyFitnessPalMatchingSettings>(null as any);
+    }
+}
+
+export class MyPermissionsClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * Get the current user's effective granted scopes for the current tenant.
+     */
+    getMyPermissions(signal?: AbortSignal): Promise<string[]> {
+        let url_ = this.baseUrl + "/api/v4/me/permissions";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMyPermissions(_response);
+        });
+    }
+
+    protected processGetMyPermissions(response: Response): Promise<string[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as string[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<string[]>(null as any);
     }
 }
 
@@ -14189,6 +14606,206 @@ export class RetrospectiveClient {
             });
         }
         return Promise.resolve<BasalTimelineResponse>(null as any);
+    }
+}
+
+export class RoleClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * List roles for the current tenant.
+     */
+    getRoles(signal?: AbortSignal): Promise<TenantRoleDto[]> {
+        let url_ = this.baseUrl + "/api/v4/roles";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetRoles(_response);
+        });
+    }
+
+    protected processGetRoles(response: Response): Promise<TenantRoleDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TenantRoleDto[];
+            return result200;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TenantRoleDto[]>(null as any);
+    }
+
+    /**
+     * Create a custom role.
+     */
+    createRole(request: CreateRoleRequest, signal?: AbortSignal): Promise<TenantRoleDto> {
+        let url_ = this.baseUrl + "/api/v4/roles";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processCreateRole(_response);
+        });
+    }
+
+    protected processCreateRole(response: Response): Promise<TenantRoleDto> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 201) {
+            return response.text().then((_responseText) => {
+            let result201: any = null;
+            result201 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TenantRoleDto;
+            return result201;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TenantRoleDto>(null as any);
+    }
+
+    /**
+     * Update a role.
+     */
+    updateRole(id: string, request: UpdateRoleRequest, signal?: AbortSignal): Promise<TenantRoleDto> {
+        let url_ = this.baseUrl + "/api/v4/roles/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "PUT",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processUpdateRole(_response);
+        });
+    }
+
+    protected processUpdateRole(response: Response): Promise<TenantRoleDto> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TenantRoleDto;
+            return result200;
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TenantRoleDto>(null as any);
+    }
+
+    /**
+     * Delete a role.
+     */
+    deleteRole(id: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/v4/roles/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "DELETE",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeleteRole(_response);
+        });
+    }
+
+    protected processDeleteRole(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 204) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
     }
 }
 
@@ -25503,6 +26120,135 @@ export class VersionsClient {
     }
 }
 
+export class AccessRequestClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getPendingRequests(signal?: AbortSignal): Promise<AccessRequestDto[]> {
+        let url_ = this.baseUrl + "/api/admin/access-requests";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetPendingRequests(_response);
+        });
+    }
+
+    protected processGetPendingRequests(response: Response): Promise<AccessRequestDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AccessRequestDto[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AccessRequestDto[]>(null as any);
+    }
+
+    approve(subjectId: string, request: ApproveAccessRequestRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/admin/access-requests/{subjectId}/approve";
+        if (subjectId === undefined || subjectId === null)
+            throw new globalThis.Error("The parameter 'subjectId' must be defined.");
+        url_ = url_.replace("{subjectId}", encodeURIComponent("" + subjectId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processApprove(_response);
+        });
+    }
+
+    protected processApprove(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    deny(subjectId: string, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/admin/access-requests/{subjectId}/deny";
+        if (subjectId === undefined || subjectId === null)
+            throw new globalThis.Error("The parameter 'subjectId' must be defined.");
+        url_ = url_.replace("{subjectId}", encodeURIComponent("" + subjectId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processDeny(_response);
+        });
+    }
+
+    protected processDeny(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+}
+
 export class TenantClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -26942,6 +27688,7 @@ export interface RecoveryStatusResponse {
 export interface AuthStatusResponse {
     setupRequired?: boolean;
     recoveryMode?: boolean;
+    allowAccessRequests?: boolean;
 }
 
 /** Request for initial setup registration options (first user creation) */
@@ -26961,6 +27708,28 @@ export interface SetupCompleteResponse {
 
 /** Request to complete initial setup registration */
 export interface SetupCompleteRequest {
+    attestationResponseJson?: string;
+    challengeToken?: string;
+}
+
+export interface AccessRequestOptionsRequest {
+    displayName?: string;
+    message?: string | undefined;
+}
+
+export interface AccessRequestCompleteRequest {
+    attestationResponseJson?: string;
+    challengeToken?: string;
+}
+
+export interface InviteOptionsRequest {
+    token?: string;
+    username?: string;
+    displayName?: string;
+}
+
+export interface InviteCompleteRequest {
+    token?: string;
     attestationResponseJson?: string;
     challengeToken?: string;
 }
@@ -28915,8 +29684,8 @@ export interface MemberInviteInfo {
     tenantId?: string;
     tenantName?: string;
     createdByName?: string;
-    role?: string;
-    scopes?: string[] | undefined;
+    roleIds?: string[];
+    directPermissions?: string[] | undefined;
     label?: string | undefined;
     limitTo24Hours?: boolean;
     expiresAt?: Date;
@@ -28943,10 +29712,29 @@ export interface AcceptMemberInviteResult {
 }
 
 export interface TenantMemberDto {
+    id?: string;
     subjectId?: string;
     name?: string | undefined;
-    role?: string;
+    roles?: TenantMemberRoleDto[];
+    directPermissions?: string[] | undefined;
+    label?: string | undefined;
+    limitTo24Hours?: boolean;
+    lastUsedAt?: Date | undefined;
     sysCreatedAt?: Date;
+}
+
+export interface TenantMemberRoleDto {
+    roleId?: string;
+    name?: string;
+    slug?: string;
+}
+
+export interface SetMemberRolesRequest {
+    roleIds?: string[];
+}
+
+export interface SetMemberPermissionsRequest {
+    directPermissions?: string[] | undefined;
 }
 
 export interface PaginatedResponseOfMeterGlucose {
@@ -29671,6 +30459,29 @@ export interface BasalDataPoint {
     timeLabel?: string | undefined;
     rate?: number;
     isTemp?: boolean;
+}
+
+export interface TenantRoleDto {
+    id?: string;
+    name?: string;
+    slug?: string;
+    description?: string | undefined;
+    permissions?: string[];
+    isSystem?: boolean;
+    memberCount?: number;
+    sysCreatedAt?: Date;
+}
+
+export interface CreateRoleRequest {
+    name?: string;
+    description?: string | undefined;
+    permissions?: string[];
+}
+
+export interface UpdateRoleRequest {
+    name?: string;
+    description?: string | undefined;
+    permissions?: string[];
 }
 
 export interface PaginatedResponseOfSensorGlucose {
@@ -32155,6 +32966,18 @@ export interface VersionsResponse {
     versions?: string[];
 }
 
+export interface AccessRequestDto {
+    subjectId?: string;
+    name?: string;
+    message?: string | undefined;
+    createdAt?: Date;
+}
+
+export interface ApproveAccessRequestRequest {
+    roleIds?: string[];
+    directPermissions?: string[] | undefined;
+}
+
 export interface TenantDetailDto {
     id?: string;
     slug?: string;
@@ -32174,11 +32997,13 @@ export interface CreateTenantRequest {
 export interface UpdateTenantRequest {
     displayName?: string;
     isActive?: boolean;
+    allowAccessRequests?: boolean | undefined;
 }
 
 export interface AddMemberRequest {
     subjectId?: string;
-    role?: string;
+    roleIds?: string[];
+    directPermissions?: string[] | undefined;
 }
 
 export interface MemberInviteResult {
@@ -32189,8 +33014,8 @@ export interface MemberInviteResult {
 }
 
 export interface CreateMemberInviteRequest {
-    role?: string;
-    scopes?: string[] | undefined;
+    roleIds?: string[];
+    directPermissions?: string[] | undefined;
     label?: string | undefined;
     expiresInDays?: number;
     maxUses?: number | undefined;

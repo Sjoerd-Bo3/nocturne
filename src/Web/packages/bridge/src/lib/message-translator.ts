@@ -181,6 +181,22 @@ class MessageTranslator {
     }
   }
 
+  handleSyncProgress(data: any): void {
+    try {
+      this.socketIOServer.broadcastSyncProgress(data);
+    } catch (error) {
+      logger.error('Error handling sync progress:', error);
+    }
+  }
+
+  handleConfigChanged(data: any): void {
+    try {
+      this.socketIOServer.broadcastConfigChanged(data);
+    } catch (error) {
+      logger.error('Error handling config changed:', error);
+    }
+  }
+
   // Translation methods - these ensure compatibility with legacy Nightscout client expectations
 
   private translateDataUpdate(data: DataPoint[]): any {

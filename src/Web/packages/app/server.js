@@ -7,6 +7,7 @@ const PORT = process.env.PORT || 5173;
 const API_URL = process.env.NOCTURNE_API_URL || process.env.PUBLIC_API_URL || 'http://localhost:1612';
 const SIGNALR_HUB_URL = `${API_URL}/hubs/data`;
 const SIGNALR_ALARM_HUB_URL = `${API_URL}/hubs/alarms`;
+const SIGNALR_CONFIG_HUB_URL = `${API_URL}/hubs/config`;
 const API_SECRET = process.env.API_SECRET || '';
 
 async function start() {
@@ -19,6 +20,7 @@ async function start() {
       signalr: {
         hubUrl: SIGNALR_HUB_URL,
         alarmHubUrl: SIGNALR_ALARM_HUB_URL,
+        configHubUrl: SIGNALR_CONFIG_HUB_URL,
         reconnectAttempts: parseInt(process.env.PUBLIC_WEBSOCKET_RECONNECT_ATTEMPTS || '10'),
         reconnectDelay: parseInt(process.env.PUBLIC_WEBSOCKET_RECONNECT_DELAY || '5000'),
         maxReconnectDelay: parseInt(process.env.PUBLIC_WEBSOCKET_MAX_RECONNECT_DELAY || '30000'),

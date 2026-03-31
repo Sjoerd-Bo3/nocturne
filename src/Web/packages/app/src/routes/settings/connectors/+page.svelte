@@ -79,6 +79,7 @@
   import { getApiClient } from "$lib/api";
   import { toast } from "svelte-sonner";
   import { getCategoryIcon, mapConnectorStatus } from "$lib/utils/connector-display";
+  import { getRealtimeStore } from "$lib/stores/realtime-store.svelte";
 
   let servicesOverview = $state<ServicesOverview | null>(null);
   let isLoading = $state(true);
@@ -152,6 +153,20 @@
   >({});
   let quickSyncingById = $state<Record<string, boolean>>({});
   let showConnectorDialog = $state(false);
+
+  // Realtime sync progress from WebSocket
+  const realtimeStore = getRealtimeStore();
+  let syncProgressByConnector = $derived(realtimeStore.syncProgressByConnector);
+
+  $effect(() => {
+    const progress = syncProgressByConnector;
+    const hasCompleted = Object.values(progress).some(
+      (p) => p.phase === "Completed" || p.phase === "Failed"
+    );
+    if (hasCompleted) {
+      loadConnectorStatuses();
+    }
+  });
 
   // Deduplication state
   let showDeduplicationDialog = $state(false);
@@ -1188,7 +1203,8 @@
               <DataSourceRow
                 name={connector.name ?? connector.id ?? "Unknown"}
                 icon={getCategoryIcon(connector.category)}
-                status={mapConnectorStatus(connectorStatus)}
+                status={syncProgressByConnector[connector.id ?? ""]?.phase === "Syncing" ? "syncing" : mapConnectorStatus(connectorStatus)}
+                syncProgress={syncProgressByConnector[connector.id ?? ""] ?? null}
                 statusMessage={!connectorStatus.isHealthy ? connectorStatus.stateMessage ?? undefined : undefined}
                 totalEntries={connectorStatus.totalEntries}
                 entriesLast24h={connectorStatus.entriesLast24Hours}
@@ -1253,6 +1269,7 @@
                 name={connector.name ?? connector.id ?? "Unknown"}
                 icon={getCategoryIcon(connector.category)}
                 status={isDisabledWithData ? "disabled" : "offline"}
+                syncProgress={syncProgressByConnector[connector.id ?? ""] ?? null}
                 totalEntries={entryCount}
                 entriesLast24h={entries24h}
                 lastSeen={lastSeenDate}

@@ -1,3 +1,4 @@
+using Nocturne.Connectors.Core.Interfaces;
 using Nocturne.Connectors.MyFitnessPal.Configurations;
 using Nocturne.Connectors.MyFitnessPal.Services;
 
@@ -17,9 +18,9 @@ public class MyFitnessPalConnectorBackgroundService : ConnectorBackgroundService
 
     protected override string ConnectorName => "MyFitnessPal";
 
-    protected override async Task<bool> PerformSyncAsync(IServiceProvider scopeProvider, CancellationToken cancellationToken)
+    protected override async Task<bool> PerformSyncAsync(IServiceProvider scopeProvider, CancellationToken cancellationToken, ISyncProgressReporter? progressReporter = null)
     {
         var connectorService = scopeProvider.GetRequiredService<MyFitnessPalConnectorService>();
-        return await connectorService.SyncDataAsync(Config, cancellationToken);
+        return await connectorService.SyncDataAsync(Config, cancellationToken, since: null, progressReporter);
     }
 }

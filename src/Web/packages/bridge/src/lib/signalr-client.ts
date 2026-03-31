@@ -10,6 +10,7 @@ import MessageTranslator from "./message-translator.js";
 interface SignalRConfig {
   hubUrl: string;
   alarmHubUrl?: string;
+  configHubUrl?: string;
   reconnectAttempts: number;
   reconnectDelay: number;
   maxReconnectDelay: number;
@@ -20,12 +21,14 @@ class SignalRClient {
   private messageHandler: MessageTranslator;
   private dataConnection: HubConnection | null = null;
   private alarmConnection: HubConnection | null = null;
+  private configConnection: HubConnection | null = null;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number;
   private reconnectDelay: number;
   private maxReconnectDelay: number;
   private hubUrl: string;
   private alarmHubUrl?: string;
+  private configHubUrl?: string;
   private apiSecret: string;
   private isConnecting: boolean = false;
 
@@ -33,6 +36,7 @@ class SignalRClient {
     this.messageHandler = messageHandler;
     this.hubUrl = config.hubUrl;
     this.alarmHubUrl = config.alarmHubUrl;
+    this.configHubUrl = config.configHubUrl;
     this.maxReconnectAttempts = config.reconnectAttempts;
     this.reconnectDelay = config.reconnectDelay;
     this.maxReconnectDelay = config.maxReconnectDelay;
@@ -65,6 +69,16 @@ class SignalRClient {
         logger.info("SignalR AlarmHub connection established");
 
         await this.subscribeToAlarmHub();
+      }
+
+      if (this.configHubUrl) {
+        this.configConnection = this.buildConnection(this.configHubUrl);
+        this.setupConfigEventHandlers();
+
+        await this.configConnection.start();
+        logger.info("SignalR ConfigHub connection established");
+
+        await this.subscribeToConfigHub();
       }
 
       this.reconnectAttempts = 0;
@@ -204,6 +218,47 @@ class SignalRClient {
     });
   }
 
+  private setupConfigEventHandlers(): void {
+    if (!this.configConnection) return;
+
+    this.configConnection.onclose(() => {
+      logger.warn("SignalR ConfigHub connection closed");
+      this.handleReconnect();
+    });
+
+    this.configConnection.onreconnecting(() => {
+      logger.info("SignalR ConfigHub connection lost, attempting to reconnect...");
+    });
+
+    this.configConnection.onreconnected(async () => {
+      logger.info("SignalR ConfigHub connection reestablished");
+      this.reconnectAttempts = 0;
+      await this.subscribeToConfigHub();
+    });
+
+    this.configConnection.on("syncProgress", (data: any) => {
+      logger.debug("Received syncProgress from SignalR:", data);
+      this.messageHandler.handleSyncProgress(data);
+    });
+
+    this.configConnection.on("configChanged", (data: any) => {
+      logger.debug("Received configChanged from SignalR:", data);
+      this.messageHandler.handleConfigChanged(data);
+    });
+  }
+
+  private async subscribeToConfigHub(): Promise<void> {
+    if (!this.configConnection) return;
+
+    try {
+      logger.info("Subscribing to all config changes...");
+      await this.configConnection.invoke("SubscribeAll");
+      logger.info("Successfully subscribed to ConfigHub");
+    } catch (error) {
+      logger.error("Error subscribing to ConfigHub:", error);
+    }
+  }
+
   private async authenticateWithDataHub(): Promise<void> {
     if (!this.dataConnection) return;
     if (!this.apiSecret) {
@@ -333,6 +388,15 @@ class SignalRClient {
         logger.error("Error stopping SignalR AlarmHub connection:", error);
       }
     }
+
+    if (this.configConnection) {
+      try {
+        await this.configConnection.stop();
+        logger.info("SignalR ConfigHub connection stopped");
+      } catch (error) {
+        logger.error("Error stopping SignalR ConfigHub connection:", error);
+      }
+    }
   }
 
   isConnected(): boolean {
@@ -342,8 +406,12 @@ class SignalRClient {
       !this.alarmHubUrl ||
       (this.alarmConnection !== null &&
         this.alarmConnection.state === "Connected");
+    const configConnected =
+      !this.configHubUrl ||
+      (this.configConnection !== null &&
+        this.configConnection.state === "Connected");
 
-    return dataConnected && alarmConnected;
+    return dataConnected && alarmConnected && configConnected;
   }
 }
 

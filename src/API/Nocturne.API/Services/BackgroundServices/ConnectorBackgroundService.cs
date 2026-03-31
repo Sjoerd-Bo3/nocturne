@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,12 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
     protected readonly IServiceProvider ServiceProvider;
     protected readonly ILogger Logger;
     protected readonly TConfig Config;
+
+    /// <summary>
+    /// Tracks the last sync time per tenant so each tenant's configured
+    /// SyncIntervalMinutes is respected independently.
+    /// </summary>
+    private readonly ConcurrentDictionary<Guid, DateTime> _lastSyncByTenant = new();
 
     protected ConnectorBackgroundService(
         IServiceProvider serviceProvider,
@@ -45,7 +52,7 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
     /// <param name="scopeProvider">Tenant-scoped service provider</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>True if sync was successful, false otherwise</returns>
-    protected abstract Task<bool> PerformSyncAsync(IServiceProvider scopeProvider, CancellationToken cancellationToken);
+    protected abstract Task<bool> PerformSyncAsync(IServiceProvider scopeProvider, CancellationToken cancellationToken, ISyncProgressReporter? progressReporter = null);
 
     /// <summary>
     /// Loads runtime configuration and secrets from the database and applies them
@@ -196,7 +203,9 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
 
         try
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
+            // Poll every minute; each tenant is only synced when its own
+            // SyncIntervalMinutes has elapsed since its last sync.
+            using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
 
             do
             {
@@ -263,14 +272,23 @@ public abstract class ConnectorBackgroundService<TConfig> : BackgroundService
         if (!Config.Enabled || Config.SyncIntervalMinutes <= 0)
             return;
 
+        // Only sync when the tenant's configured interval has elapsed
+        var now = DateTime.UtcNow;
+        var interval = TimeSpan.FromMinutes(Config.SyncIntervalMinutes);
+        if (_lastSyncByTenant.TryGetValue(tenantId, out var lastSync) && now - lastSync < interval)
+            return;
+
         Logger.LogDebug("Syncing {ConnectorName} for tenant {TenantSlug}", ConnectorName, tenantSlug);
+
+        _lastSyncByTenant[tenantId] = now;
 
         await UpdateHealthStateAsync(
             scope.ServiceProvider,
-            lastSyncAttempt: DateTime.UtcNow,
+            lastSyncAttempt: now,
             cancellationToken: stoppingToken);
 
-        var success = await PerformSyncAsync(scope.ServiceProvider, stoppingToken);
+        var progressReporter = scope.ServiceProvider.GetService<ISyncProgressReporter>();
+        var success = await PerformSyncAsync(scope.ServiceProvider, stoppingToken, progressReporter);
 
         if (success)
         {

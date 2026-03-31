@@ -78,6 +78,18 @@ export interface NotificationUpdateEvent {
   notification: InAppNotificationDto;
 }
 
+export interface SyncProgressEvent {
+  connectorId: string;
+  connectorName: string;
+  phase: "Syncing" | "Completed" | "Failed";
+  currentDataType: string | null;
+  completedDataTypes: string[];
+  totalDataTypes: number;
+  itemsSyncedSoFar: Record<string, number>;
+  errorMessage: string | null;
+  timestamp: string;
+}
+
 // WebSocket client statistics
 export interface WebSocketStats {
   connectedClients: number;
@@ -117,6 +129,8 @@ export interface WebSocketEventHandlers {
   notificationArchived: (notification: InAppNotificationDto) => void;
   notificationUpdated: (notification: InAppNotificationDto) => void;
 
+  // Sync progress events
+  syncProgress: (event: SyncProgressEvent) => void;
 }
 
 // Error types

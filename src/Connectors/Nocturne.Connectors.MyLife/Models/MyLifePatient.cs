@@ -6,4 +6,7 @@ public class MyLifePatient
 {
     [JsonPropertyName("OnlinePatientId")]
     public string? OnlinePatientId { get; set; }
+
+    [JsonPropertyName("EmailNewPatient")]
+    public string? Email { get; set; }
 }

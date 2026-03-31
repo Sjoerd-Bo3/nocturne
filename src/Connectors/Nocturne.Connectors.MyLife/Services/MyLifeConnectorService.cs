@@ -162,7 +162,8 @@ public class MyLifeConnectorService(
     protected override async Task<SyncResult> PerformSyncInternalAsync(
         SyncRequest request,
         MyLifeConnectorConfiguration config,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        ISyncProgressReporter? progressReporter = null
     )
     {
         var result = new SyncResult { StartTime = DateTimeOffset.UtcNow, Success = true };

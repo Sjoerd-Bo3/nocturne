@@ -74,9 +74,12 @@ public class MyLifeAuthTokenProvider(
         IReadOnlyList<MyLifePatient> patients,
         string configuredPatientId)
     {
-        if (!string.IsNullOrWhiteSpace(configuredPatientId))
-            return patients.FirstOrDefault(p => p.OnlinePatientId == configuredPatientId);
+        if (string.IsNullOrWhiteSpace(configuredPatientId))
+            return patients.FirstOrDefault();
 
-        return patients.FirstOrDefault();
+        // Match by OnlinePatientId first, then fall back to email
+        return patients.FirstOrDefault(p => p.OnlinePatientId == configuredPatientId)
+            ?? patients.FirstOrDefault(p =>
+                string.Equals(p.Email, configuredPatientId, StringComparison.OrdinalIgnoreCase));
     }
 }

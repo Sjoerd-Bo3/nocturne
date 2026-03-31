@@ -308,13 +308,20 @@ public static class ConnectorServiceCollectionExtensions
                     if (registration == null)
                         continue;
 
-                    // Check if the connector is enabled
+                    // Check if the connector is enabled, using the same fallback
+                    // chain as BindConnectorConfiguration: per-connector section
+                    // → global Settings section → default (true)
                     var connectorName = registration.ConnectorName;
                     var section = configuration.GetSection($"Parameters:Connectors:{connectorName}");
                     if (!section.Exists())
                         section = configuration.GetSection($"Connectors:{connectorName}");
 
-                    if (!section.GetValue<bool>("Enabled"))
+                    var isEnabled = section.GetValue<bool?>("Enabled")
+                        ?? configuration.GetValue<bool?>("Parameters:Connectors:Settings:Enabled")
+                        ?? configuration.GetValue<bool?>("Connectors:Settings:Enabled")
+                        ?? true;
+
+                    if (!isEnabled)
                         continue;
 
                     // Register the hosted service

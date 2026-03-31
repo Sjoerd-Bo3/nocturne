@@ -34,5 +34,5 @@ public interface IConnectorService<in TConfig> : IDisposable
     /// <summary>
     ///     Perform a granular sync operation
     /// </summary>
-    Task<SyncResult> SyncDataAsync(SyncRequest request, TConfig config, CancellationToken cancellationToken);
+    Task<SyncResult> SyncDataAsync(SyncRequest request, TConfig config, CancellationToken cancellationToken, ISyncProgressReporter? progressReporter = null);
 }

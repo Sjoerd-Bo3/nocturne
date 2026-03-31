@@ -14,6 +14,7 @@ export function buildConfig(
     signalr: {
       hubUrl: userConfig.signalr.hubUrl,
       alarmHubUrl: userConfig.signalr.alarmHubUrl,
+      configHubUrl: userConfig.signalr.configHubUrl,
       reconnectAttempts: userConfig.signalr?.reconnectAttempts || 10,
       reconnectDelay: userConfig.signalr?.reconnectDelay || 5000,
       maxReconnectDelay: userConfig.signalr?.maxReconnectDelay || 30000,

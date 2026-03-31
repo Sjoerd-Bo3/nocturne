@@ -1712,6 +1712,223 @@
         "x-remote-type": "command"
       }
     },
+    "/api/auth/passkey/access-request/options": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "operationId": "Passkey_AccessRequestOptions",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessRequestOptionsRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/auth/passkey/access-request/complete": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "operationId": "Passkey_AccessRequestComplete",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessRequestCompleteRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/auth/passkey/invite/options": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Generate passkey registration options for an unauthenticated user accepting an invite.\nValidates the invite, creates a new subject, and returns WebAuthn registration options.",
+        "operationId": "Passkey_InviteOptions",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteOptionsRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/auth/passkey/invite/complete": {
+      "post": {
+        "tags": [
+          "Passkey"
+        ],
+        "summary": "Complete passkey registration for an invite acceptance.\nVerifies attestation, accepts the invite, generates recovery codes, and issues a session.",
+        "operationId": "Passkey_InviteComplete",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteCompleteRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupCompleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
     "/api/auth/totp/setup": {
       "post": {
         "tags": [
@@ -8264,7 +8481,7 @@
         "tags": [
           "MemberInvites"
         ],
-        "summary": "List followers of the current tenant (members with follower role).",
+        "summary": "List followers of the current tenant (members with the follower role).",
         "operationId": "MemberInvite_GetFollowers",
         "responses": {
           "200": {
@@ -8276,6 +8493,187 @@
                   "items": {
                     "$ref": "#/components/schemas/TenantMemberDto"
                   }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/v4/member-invites/members/{id}/roles": {
+      "put": {
+        "tags": [
+          "MemberInvites"
+        ],
+        "summary": "Set roles for a member (replaces all role assignments).",
+        "operationId": "MemberInvite_SetMemberRoles",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetMemberRolesRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetMembers"
+        ]
+      }
+    },
+    "/api/v4/member-invites/members/{id}/permissions": {
+      "put": {
+        "tags": [
+          "MemberInvites"
+        ],
+        "summary": "Set direct permissions for a member.",
+        "operationId": "MemberInvite_SetMemberPermissions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetMemberPermissionsRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetMembers"
+        ]
+      }
+    },
+    "/api/v4/member-invites/members/{id}/effective-permissions": {
+      "get": {
+        "tags": [
+          "MemberInvites"
+        ],
+        "summary": "Get effective permissions for a member (union of role permissions + direct permissions).",
+        "operationId": "MemberInvite_GetEffectivePermissions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -8856,6 +9254,31 @@
             }
           }
         }
+      }
+    },
+    "/api/v4/me/permissions": {
+      "get": {
+        "tags": [
+          "MyPermissions"
+        ],
+        "summary": "Get the current user's effective granted scopes for the current tenant.",
+        "operationId": "MyPermissions_GetMyPermissions",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
       }
     },
     "/api/v4/me/tenants": {
@@ -12141,6 +12564,193 @@
           }
         },
         "x-remote-type": "query"
+      }
+    },
+    "/api/v4/roles": {
+      "get": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "List roles for the current tenant.",
+        "operationId": "Role_GetRoles",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TenantRoleDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      },
+      "post": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "Create a custom role.",
+        "operationId": "Role_CreateRole",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantRoleDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetRoles"
+        ]
+      }
+    },
+    "/api/v4/roles/{id}": {
+      "put": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "Update a role.",
+        "operationId": "Role_UpdateRole",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantRoleDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetRoles"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "Delete a role.",
+        "operationId": "Role_DeleteRole",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command",
+        "x-remote-invalidates": [
+          "GetRoles"
+        ]
       }
     },
     "/api/v4/glucose/sensor": {
@@ -23058,6 +23668,114 @@
         }
       }
     },
+    "/api/admin/access-requests": {
+      "get": {
+        "tags": [
+          "AccessRequest"
+        ],
+        "operationId": "AccessRequest_GetPendingRequests",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessRequestDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "query"
+      }
+    },
+    "/api/admin/access-requests/{subjectId}/approve": {
+      "post": {
+        "tags": [
+          "AccessRequest"
+        ],
+        "operationId": "AccessRequest_Approve",
+        "parameters": [
+          {
+            "name": "subjectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveAccessRequestRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
+    "/api/admin/access-requests/{subjectId}/deny": {
+      "post": {
+        "tags": [
+          "AccessRequest"
+        ],
+        "operationId": "AccessRequest_Deny",
+        "parameters": [
+          {
+            "name": "subjectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-remote-type": "command"
+      }
+    },
     "/api/admin/tenants": {
       "get": {
         "tags": [
@@ -23473,7 +24191,8 @@
         },
         "x-remote-type": "command",
         "x-remote-invalidates": [
-          "GetById"
+          "GetById",
+          "ListInvites"
         ]
       }
     },
@@ -25577,6 +26296,9 @@
           },
           "recoveryMode": {
             "type": "boolean"
+          },
+          "allowAccessRequests": {
+            "type": "boolean"
           }
         }
       },
@@ -25625,6 +26347,61 @@
         "description": "Request to complete initial setup registration",
         "additionalProperties": false,
         "properties": {
+          "attestationResponseJson": {
+            "type": "string"
+          },
+          "challengeToken": {
+            "type": "string"
+          }
+        }
+      },
+      "AccessRequestOptionsRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AccessRequestCompleteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "attestationResponseJson": {
+            "type": "string"
+          },
+          "challengeToken": {
+            "type": "string"
+          }
+        }
+      },
+      "InviteOptionsRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        }
+      },
+      "InviteCompleteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "type": "string"
+          },
           "attestationResponseJson": {
             "type": "string"
           },
@@ -32177,10 +32954,14 @@
           "createdByName": {
             "type": "string"
           },
-          "role": {
-            "type": "string"
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "guid"
+            }
           },
-          "scopes": {
+          "directPermissions": {
             "type": "array",
             "nullable": true,
             "items": {
@@ -32272,6 +33053,10 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
           "subjectId": {
             "type": "string",
             "format": "guid"
@@ -32280,12 +33065,76 @@
             "type": "string",
             "nullable": true
           },
-          "role": {
-            "type": "string"
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TenantMemberRoleDto"
+            }
+          },
+          "directPermissions": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "limitTo24Hours": {
+            "type": "boolean"
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           },
           "sysCreatedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "TenantMemberRoleDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "roleId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "SetMemberRolesRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "guid"
+            }
+          }
+        }
+      },
+      "SetMemberPermissionsRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "directPermissions": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -34740,6 +35589,81 @@
           },
           "isTemp": {
             "type": "boolean"
+          }
+        }
+      },
+      "TenantRoleDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isSystem": {
+            "type": "boolean"
+          },
+          "memberCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sysCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateRoleRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UpdateRoleRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -42934,6 +43858,47 @@
           }
         }
       },
+      "AccessRequestDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApproveAccessRequestRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "guid"
+            }
+          },
+          "directPermissions": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "TenantDetailDto": {
         "type": "object",
         "additionalProperties": false,
@@ -42991,6 +43956,10 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "allowAccessRequests": {
+            "type": "boolean",
+            "nullable": true
           }
         }
       },
@@ -43002,8 +43971,19 @@
             "type": "string",
             "format": "guid"
           },
-          "role": {
-            "type": "string"
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "guid"
+            }
+          },
+          "directPermissions": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -43031,10 +44011,14 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "role": {
-            "type": "string"
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "guid"
+            }
           },
-          "scopes": {
+          "directPermissions": {
             "type": "array",
             "nullable": true,
             "items": {

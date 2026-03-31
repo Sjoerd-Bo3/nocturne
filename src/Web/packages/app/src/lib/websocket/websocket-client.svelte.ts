@@ -242,6 +242,11 @@ export class WebSocketClient {
       this.updateMessageStats();
       this.eventHandlers.notificationUpdated?.(data);
     });
+
+    this.socket.on("syncProgress", (data: any) => {
+      this.updateMessageStats();
+      this.eventHandlers.syncProgress?.(data);
+    });
   }
 
   /** Register event handlers */
