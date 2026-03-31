@@ -1,8 +1,5 @@
 import type { Chat } from "chat";
 import { createStateToken } from "../lib/state-tokens.js";
-import { createLogger } from "../lib/logger.js";
-
-const logger = createLogger();
 
 export function registerAccountCommands(bot: Chat, nocturneUrl: string) {
   bot.onSlashCommand("/connect", async (event) => {

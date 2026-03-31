@@ -1256,12 +1256,12 @@ public class StatisticsService : IStatisticsService
         const int intervalMinutes = 5;
         var durations = new TimeInRangeDurations
         {
-            VeryLow = veryLowCount * (long)intervalMinutes,
-            Low = lowCount * (long)intervalMinutes,
-            Target = targetCount * (long)intervalMinutes,
-            TightTarget = tightTargetCount * (long)intervalMinutes,
-            High = highCount * (long)intervalMinutes,
-            VeryHigh = veryHighCount * (long)intervalMinutes,
+            VeryLow = (long)veryLowCount * intervalMinutes,
+            Low = (long)lowCount * intervalMinutes,
+            Target = (long)targetCount * intervalMinutes,
+            TightTarget = (long)tightTargetCount * intervalMinutes,
+            High = (long)highCount * intervalMinutes,
+            VeryHigh = (long)veryHighCount * intervalMinutes,
         };
 
         // Calculate episodes (simplified - consecutive readings in same range)

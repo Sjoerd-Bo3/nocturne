@@ -182,7 +182,7 @@ public class MyLifeSoapClient(HttpClient httpClient, ILogger<MyLifeSoapClient> l
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
         {
-            logger.LogError("SOAP request rejected: URL must use HTTPS. Got {Url}", url);
+            logger.LogError("SOAP request rejected: URL must use HTTPS. Got scheme {Scheme}", Uri.TryCreate(url, UriKind.Absolute, out var rejected) ? rejected.Scheme : "invalid");
             return string.Empty;
         }
 

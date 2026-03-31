@@ -104,7 +104,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving V3 treatments");
-            return CreateV3ErrorResponse(500, "Internal server error", ex.Message);
+            return CreateV3ErrorResponse(500, "Internal server error", "An unexpected error occurred");
         }
     }
 
@@ -150,7 +150,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving V3 treatment {Id}", id);
-            return CreateV3ErrorResponse(500, "Internal server error", ex.Message);
+            return CreateV3ErrorResponse(500, "Internal server error", "An unexpected error occurred");
         }
     }
 
@@ -243,7 +243,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating V3 treatment");
-            return CreateV3ErrorResponse(500, "Internal server error", ex.Message);
+            return CreateV3ErrorResponse(500, "Internal server error", "An unexpected error occurred");
         }
     }
 
@@ -316,7 +316,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating V3 bulk treatments");
-            return CreateV3ErrorResponse(500, "Internal server error", ex.Message);
+            return CreateV3ErrorResponse(500, "Internal server error", "An unexpected error occurred");
         }
     }
 
@@ -386,7 +386,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating V3 treatment {Id}", id);
-            return CreateV3ErrorResponse(500, "Internal server error", ex.Message);
+            return CreateV3ErrorResponse(500, "Internal server error", "An unexpected error occurred");
         }
     }
 
@@ -428,7 +428,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting V3 treatment {Id}", id);
-            return CreateV3ErrorResponse(500, "Internal server error", ex.Message);
+            return CreateV3ErrorResponse(500, "Internal server error", "An unexpected error occurred");
         }
     }
 
@@ -466,7 +466,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving treatment history");
-            return CreateV3ErrorResponse(500, "Internal server error", ex.Message);
+            return CreateV3ErrorResponse(500, "Internal server error", "An unexpected error occurred");
         }
     }
 
@@ -518,7 +518,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error patching V3 treatment {Id}", id);
-            return CreateV3ErrorResponse(500, "Internal server error", ex.Message);
+            return CreateV3ErrorResponse(500, "Internal server error", "An unexpected error occurred");
         }
     }
 

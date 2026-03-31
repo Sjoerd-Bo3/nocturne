@@ -90,8 +90,7 @@ const insightMessages: Record<string, InsightTemplate> = {
 /**
  * Format context values for display (round to 1 decimal place)
  */
-function formatValue(value: number | undefined): string {
-  if (value === undefined) return "–";
+function formatValue(value: number): string {
   return value.toFixed(1);
 }
 
