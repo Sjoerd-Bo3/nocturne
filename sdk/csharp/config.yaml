@@ -1,0 +1,17 @@
+generatorName: csharp
+outputDir: ./out
+globalProperties:
+  skipFormModel: true
+additionalProperties:
+  packageName: NightscoutFoundation.Nocturne
+  packageVersion: "0.1.0"
+  targetFramework: net8.0
+  library: httpclient
+  licenseId: AGPL-3.0-only
+  packageAuthors: Nightscout Foundation
+  packageDescription: Official SDK for the Nocturne V4 API
+  sourceFolder: src
+  nullableReferenceTypes: true
+  useDateTimeOffset: true
+  useCollection: false
+  returnICollection: false
