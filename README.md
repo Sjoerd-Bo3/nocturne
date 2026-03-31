@@ -165,16 +165,6 @@ dotnet ef database update
 
 ## Tools
 
-### Migration Tool
-
-Migrate data from MongoDB or Nightscout API to PostgreSQL.
-
-```bash
-dotnet run --project src/Tools/Nocturne.Tools.Migration -- copy \
-  --source-api "https://nightscout.example.com" \
-  --target-connection "Host=localhost;..."
-```
-
 ### MCP Server
 
 Model Context Protocol server for AI integration.

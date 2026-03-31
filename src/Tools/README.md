@@ -1,6 +1,6 @@
 # Nocturne Tools
 
-A collection of modern C# tools built with the Spectre.Console CLI framework for managing Nocturne infrastructure, data migration, configuration, and external service integration.
+A collection of modern C# tools built with the Spectre.Console CLI framework for managing Nocturne infrastructure, configuration, and external service integration.
 
 ## 🛠️ Available Tools
 
@@ -9,12 +9,6 @@ A collection of modern C# tools built with the Spectre.Console CLI framework for
 **Path:** `Nocturne.Tools.Connect`
 
 A modern C# CLI tool providing secure, reliable connectivity between various diabetes management platforms and Nightscout instances. Built with Spectre.Console framework for excellent command-line experience.
-
-### Migration Tool
-
-**Path:** `Nocturne.Tools.Migration`
-
-A powerful tool for migrating data between different storage systems. Supports MongoDB-to-MongoDB and Nightscout API-to-MongoDB migrations with comprehensive progress reporting.
 
 ### Configuration Generator
 
@@ -46,15 +40,6 @@ A Model Context Protocol (MCP) server providing AI and automation tools for inte
 - **🔍 Connection Testing**: Validate connections before running operations
 - **📊 Status Monitoring**: Monitor sync status and health in real-time
 - **🔧 Flexible Deployment**: Support for multiple deployment scenarios
-
-### Migration Tool
-
-- **🔄 Dual Mode Support**: MongoDB-to-MongoDB and Nightscout API-to-MongoDB migrations
-- **🔍 Index Preservation**: Automatically copies all indexes from source to target
-- **🔌 Connection Testing**: Validates connections before migration starts
-- **⚡ Batch Processing**: Efficiently handles large datasets with configurable batch sizes
-- **📊 Progress Tracking**: Real-time progress reporting during migration
-- **🛡️ Safety Checks**: Prevents accidental overwrites without explicit confirmation
 
 ### Configuration Generator
 
@@ -88,7 +73,6 @@ A Model Context Protocol (MCP) server providing AI and automation tools for inte
 
 - **.NET 9.0 or higher** - [Download here](https://dotnet.microsoft.com/download)
 - **Nocturne instance** - Your target Nocturne API (for Connect and MCP tools)
-- **MongoDB access** - For database migration operations (Migration tool)
 - **Data source credentials** - Account for your chosen diabetes platform (Connect tool)
 
 ### Installation & Setup
@@ -106,9 +90,6 @@ A Model Context Protocol (MCP) server providing AI and automation tools for inte
    ```bash
    # Connect tool
    dotnet run --project Nocturne.Tools.Connect --help
-
-   # Migration tool
-   dotnet run --project Nocturne.Tools.Migration --help
 
    # Config generator
    dotnet run --project Nocturne.Tools.Config --help
@@ -130,23 +111,6 @@ dotnet run --project Nocturne.Tools.Connect test
 
 # Start syncing
 dotnet run --project Nocturne.Tools.Connect run --daemon
-```
-
-#### Migration Tool
-
-```bash
-# Copy MongoDB database
-dotnet run --project Nocturne.Tools.Migration copy \
-  --source-connection "mongodb://user:pass@host:27017" \
-  --source-database "nightscout" \
-  --target-database "nocturne-db"
-
-# Migrate from Nightscout API
-dotnet run --project Nocturne.Tools.Migration copy \
-  --source-api "https://nightscout.example.com" \
-  --api-secret "your-secret" \
-  --target-connection "mongodb://localhost:27017" \
-  --target-database "nocturne-db"
 ```
 
 #### Configuration Generator
@@ -195,15 +159,6 @@ All tools are built with the Spectre.Console CLI framework and provide consisten
 | `status`  | Show sync status           | `status --watch`              |
 | `version` | Show version information   | `version --detailed`          |
 
-### Migration Tool Commands
-
-| Command   | Description                | Examples                             |
-| --------- | -------------------------- | ------------------------------------ |
-| `copy`    | Copy/migrate data          | `copy --source-api ... --target ...` |
-| `list`    | List available resources   | `list --connections`                 |
-| `info`    | Show migration information | `info --source-database nightscout`  |
-| `version` | Show version information   | `version --detailed`                 |
-
 ### Configuration Generator Commands
 
 | Command    | Description                  | Examples                              |
@@ -247,32 +202,6 @@ dotnet run --project Nocturne.Tools.Connect run --config "production.env" --daem
 
 # Dry run (test without uploading)
 dotnet run --project Nocturne.Tools.Connect run --dry-run --verbose
-```
-
-#### Migration Tool Examples
-
-```bash
-# MongoDB to MongoDB migration
-dotnet run --project Nocturne.Tools.Migration copy \
-  --source-connection "mongodb://user:pass@source:27017" \
-  --source-database "nightscout" \
-  --target-connection "mongodb://localhost:27017" \
-  --target-database "nocturne-db" \
-  --collections "entries,treatments" \
-  --overwrite
-
-# Nightscout API to MongoDB migration
-dotnet run --project Nocturne.Tools.Migration copy \
-  --source-api "https://nightscout.example.com" \
-  --api-secret "your-secret" \
-  --target-connection "mongodb://localhost:27017" \
-  --target-database "nocturne-db" \
-  --batch-size 1000
-
-# Get migration info
-dotnet run --project Nocturne.Tools.Migration info \
-  --source-database "nightscout" \
-  --source-connection "mongodb://localhost:27017"
 ```
 
 #### Configuration Generator Examples
@@ -361,22 +290,6 @@ CONNECT_GLOOKO_PASSWORD=your-password
 CONNECT_GLOOKO_SERVER=eu.api.glooko.com
 ```
 
-#### Migration Tool Configuration
-
-The Migration tool uses command-line arguments with validation:
-
-```bash
-# MongoDB to MongoDB
-dotnet run --project Nocturne.Tools.Migration copy \
-  --source-connection "mongodb://user:pass@host:27017" \
-  --target-connection "mongodb://localhost:27017"
-
-# API to MongoDB
-dotnet run --project Nocturne.Tools.Migration copy \
-  --source-api "https://nightscout.example.com" \
-  --api-secret "your-secret"
-```
-
 #### Configuration Generator
 
 Generate example configurations for any Nocturne component:
@@ -429,7 +342,6 @@ dotnet run --project Nocturne.Tools.Config validate --config "appsettings.json"
 
 # Test connections
 dotnet run --project Nocturne.Tools.Connect test --all
-dotnet run --project Nocturne.Tools.Migration info --source-connection "..."
 ```
 
 **Authentication Failures:**
@@ -437,21 +349,11 @@ dotnet run --project Nocturne.Tools.Migration info --source-connection "..."
 - Use configuration validation commands to check credentials
 - Verify API endpoints are accessible
 - Check API secrets and connection strings
-- Ensure MongoDB authentication is properly configured
-
 **Connection Issues:**
 
 - Use connection testing commands before running operations
 - Verify network connectivity and firewall settings
 - Check that all required services are running
-- Validate MongoDB connection strings and permissions
-
-**Data Migration Issues:**
-
-- Use `--verbose` flag for detailed progress information
-- Check source and target database permissions
-- Verify collection names and database names exist
-- Use smaller batch sizes for large datasets
 
 **MCP Server Issues:**
 
@@ -573,7 +475,6 @@ src/Tools/
 │   ├── Commands/                  # Tool-specific commands
 │   ├── Configuration/             # Tool configuration
 │   └── Services/                  # Tool services
-├── Nocturne.Tools.Migration/      # Migration tool
 ├── Nocturne.Tools.Config/         # Configuration generator
 └── Nocturne.Tools.McpServer/      # MCP server
 ```
