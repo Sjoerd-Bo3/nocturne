@@ -67,8 +67,8 @@ public class RequestForwardingService : IRequestForwardingService
         {
             _logger.LogWarning(
                 "Circuit breaker is open, skipping Nightscout forwarding for {Method} {Path}",
-                request.Method,
-                request.Path);
+                request.Method.Replace("\r", "").Replace("\n", ""),
+                request.Path.Replace("\r", "").Replace("\n", ""));
             return null;
         }
 

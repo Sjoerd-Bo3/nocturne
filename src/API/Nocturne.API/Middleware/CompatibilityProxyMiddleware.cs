@@ -59,7 +59,8 @@ public class CompatibilityProxyMiddleware
         var clonedRequest = await cloningService.CloneRequestAsync(context.Request);
 
         // Capture the path before the background task (HttpContext will be disposed)
-        var path = context.Request.Path.ToString();
+        // Sanitize to prevent log forging (strip newlines from user-controlled value)
+        var path = context.Request.Path.ToString().Replace("\r", "").Replace("\n", "");
 
         // Swap response body with a memory stream to capture Nocturne's response
         var originalBody = context.Response.Body;

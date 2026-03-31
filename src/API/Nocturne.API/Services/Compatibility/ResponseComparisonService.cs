@@ -70,12 +70,15 @@ public class ResponseComparisonService : IResponseComparisonService
             ComparisonTimestamp = DateTimeOffset.UtcNow,
         };
 
+        // Sanitize user-controlled path to prevent log forging
+        var sanitizedPath = requestPath?.Replace("\r", "").Replace("\n", "");
+
         try
         {
             _logger.LogDebug(
                 "Starting response comparison for correlation {CorrelationId} on path {RequestPath}",
                 correlationId,
-                requestPath
+                sanitizedPath
             );
 
             // Check if both responses exist
