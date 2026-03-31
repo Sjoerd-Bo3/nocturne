@@ -1,0 +1,14 @@
+generatorName: kotlin
+outputDir: ./out
+globalProperties:
+  skipFormModel: true
+additionalProperties:
+  groupId: org.nightscoutfoundation
+  artifactId: nocturne
+  packageName: org.nightscoutfoundation.nocturne
+  artifactVersion: "0.1.0"
+  library: jvm-retrofit2
+  serializationLibrary: gson
+  licenseName: AGPL-3.0-only
+  sourceFolder: src/main/kotlin
+  useCoroutines: true
