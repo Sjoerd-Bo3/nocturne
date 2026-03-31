@@ -1,0 +1,13 @@
+generatorName: swift6
+outputDir: ./out
+globalProperties:
+  skipFormModel: true
+additionalProperties:
+  projectName: NocturneSDK
+  podVersion: "0.1.0"
+  podAuthors: Nightscout Foundation
+  podLicense: AGPL-3.0-only
+  podSummary: Official SDK for the Nocturne V4 API
+  library: urlsession
+  swiftPackagePath: Sources/NocturneSDK
+  useSPMFileStructure: true
