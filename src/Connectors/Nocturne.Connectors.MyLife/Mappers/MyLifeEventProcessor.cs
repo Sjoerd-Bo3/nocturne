@@ -47,9 +47,18 @@ public class MyLifeEventProcessor
             tempBasalConsolidationWindowMinutes
         );
 
+        return MapRecords(eventList, context);
+    }
+
+    /// <summary>
+    /// Maps MyLife events using a pre-built context. This allows building context from a wider
+    /// event set (e.g. for cross-month consolidation) while only iterating a subset for output.
+    /// </summary>
+    public MyLifeResult MapRecords(IReadOnlyList<MyLifeEvent> events, MyLifeContext context)
+    {
         var result = new MyLifeResult();
 
-        foreach (var ev in eventList)
+        foreach (var ev in events)
         {
             if (ev.Deleted) continue;
 
@@ -67,6 +76,7 @@ public class MyLifeEventProcessor
             }
         }
 
+        result.DecompositionBatches.AddRange(context.DecompositionBatches);
         return result;
     }
 }
@@ -76,6 +86,7 @@ public class MyLifeEventProcessor
 /// </summary>
 public class MyLifeResult
 {
+    public List<DecompositionBatch> DecompositionBatches { get; } = [];
     public List<Bolus> Boluses { get; } = [];
     public List<CarbIntake> CarbIntakes { get; } = [];
     public List<BGCheck> BGChecks { get; } = [];

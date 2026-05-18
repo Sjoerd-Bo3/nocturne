@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Infrastructure;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Configuration;
 using Nocturne.Infrastructure.Cache.Services;

@@ -4,20 +4,26 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
+using Nocturne.API.Helpers;
 using Nocturne.Core.Constants;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Core.Models.Authorization;
 
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Service for handling OIDC authentication flows
+/// Handles OpenID Connect authentication flows including login, session refresh,
+/// logout, and account linking.
 /// </summary>
+/// <seealso cref="IOidcAuthService"/>
+/// <seealso cref="IOidcProviderService"/>
+/// <seealso cref="ISessionService"/>
+/// <seealso cref="ISubjectService"/>
 public class OidcAuthService : IOidcAuthService
 {
     private readonly IOidcProviderService _providerService;
     private readonly ISubjectService _subjectService;
+    private readonly ISessionService _sessionService;
     private readonly IJwtService _jwtService;
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -26,11 +32,21 @@ public class OidcAuthService : IOidcAuthService
     private readonly ILogger<OidcAuthService> _logger;
 
     /// <summary>
-    /// Creates a new instance of OidcAuthService
+    /// Initialises a new <see cref="OidcAuthService"/>.
     /// </summary>
+    /// <param name="providerService">Service for resolving and caching OIDC provider configurations.</param>
+    /// <param name="subjectService">Service for finding or creating subjects from OIDC identities.</param>
+    /// <param name="sessionService">Service for issuing and rotating first-party sessions.</param>
+    /// <param name="jwtService">Service for generating Nocturne access tokens (non-rotation refresh path only).</param>
+    /// <param name="refreshTokenService">Service for validating refresh tokens (non-rotation refresh path only).</param>
+    /// <param name="httpClientFactory">Factory for the <c>OidcProvider</c> named HTTP client.</param>
+    /// <param name="options">OIDC session and state configuration options.</param>
+    /// <param name="configuration">Application configuration for reading the base URL.</param>
+    /// <param name="logger">Logger instance.</param>
     public OidcAuthService(
         IOidcProviderService providerService,
         ISubjectService subjectService,
+        ISessionService sessionService,
         IJwtService jwtService,
         IRefreshTokenService refreshTokenService,
         IHttpClientFactory httpClientFactory,
@@ -41,6 +57,7 @@ public class OidcAuthService : IOidcAuthService
     {
         _providerService = providerService;
         _subjectService = subjectService;
+        _sessionService = sessionService;
         _jwtService = jwtService;
         _refreshTokenService = refreshTokenService;
         _httpClientFactory = httpClientFactory;
@@ -258,42 +275,28 @@ public class OidcAuthService : IOidcAuthService
         // Update last login
         await _subjectService.UpdateLastLoginAsync(subject.Id);
 
-        // Get permissions and roles
-        var permissions = await _subjectService.GetSubjectPermissionsAsync(subject.Id);
-        var roles = await _subjectService.GetSubjectRolesAsync(subject.Id);
-
-        // Generate our session tokens
-        var accessTokenLifetime = _options.Session.AccessTokenLifetime;
-        var accessToken = _jwtService.GenerateAccessToken(
-            new SubjectInfo
-            {
-                Id = subject.Id,
-                Name = subject.Name,
-                Email = subject.Email,
-            },
-            permissions,
-            roles,
-            accessTokenLifetime
-        );
-
-        var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
+        // Issue session via SessionService
+        var session = await _sessionService.IssueSessionAsync(
             subject.Id,
-            oidcSessionId: idTokenClaims.SessionId,
-            deviceDescription: ParseUserAgentShort(userAgent),
-            ipAddress: ipAddress,
-            userAgent: userAgent
-        );
+            new SessionContext(
+                OidcSessionId: idTokenClaims.SessionId,
+                DeviceDescription: ParseUserAgentShort(userAgent),
+                IpAddress: ipAddress,
+                UserAgent: userAgent));
 
         var tokens = new OidcTokenResponse
         {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken,
+            AccessToken = session.AccessToken,
+            RefreshToken = session.RefreshToken,
             TokenType = "Bearer",
-            ExpiresIn = (int)accessTokenLifetime.TotalSeconds,
+            ExpiresIn = session.ExpiresInSeconds,
             RefreshExpiresIn = (int)_options.Session.RefreshTokenLifetime.TotalSeconds,
-            ExpiresAt = DateTimeOffset.UtcNow.Add(accessTokenLifetime),
+            ExpiresAt = DateTimeOffset.UtcNow.AddSeconds(session.ExpiresInSeconds),
             SubjectId = subject.Id,
         };
+
+        var permissions = await _subjectService.GetSubjectPermissionsAsync(subject.Id);
+        var roles = await _subjectService.GetSubjectRolesAsync(subject.Id);
 
         var userInfo = new OidcUserInfo
         {
@@ -325,58 +328,50 @@ public class OidcAuthService : IOidcAuthService
         string? userAgent = null
     )
     {
-        // Validate and rotate the refresh token
-        string? newRefreshToken;
-
+        // Rotation path: delegate entirely to SessionService
         if (_options.Session.RotateRefreshTokens)
         {
-            newRefreshToken = await _refreshTokenService.RotateRefreshTokenAsync(
+            var session = await _sessionService.RotateSessionAsync(
                 refreshToken,
-                ipAddress,
-                userAgent
-            );
-        }
-        else
-        {
-            var subjectId = await _refreshTokenService.ValidateRefreshTokenAsync(refreshToken);
-            if (!subjectId.HasValue)
-            {
+                new SessionContext(IpAddress: ipAddress, UserAgent: userAgent));
+
+            if (session is null)
                 return null;
-            }
 
-            // Update last used timestamp
-            await _refreshTokenService.UpdateLastUsedAsync(refreshToken);
-            newRefreshToken = refreshToken;
+            // Resolve subject ID from the new refresh token for the response
+            var rotatedSubjectId = await _refreshTokenService.ValidateRefreshTokenAsync(session.RefreshToken);
+            if (!rotatedSubjectId.HasValue)
+                return null;
+
+            return new OidcTokenResponse
+            {
+                AccessToken = session.AccessToken,
+                RefreshToken = session.RefreshToken,
+                TokenType = "Bearer",
+                ExpiresIn = session.ExpiresInSeconds,
+                RefreshExpiresIn = (int)_options.Session.RefreshTokenLifetime.TotalSeconds,
+                ExpiresAt = DateTimeOffset.UtcNow.AddSeconds(session.ExpiresInSeconds),
+                SubjectId = rotatedSubjectId.Value,
+            };
         }
 
-        if (string.IsNullOrEmpty(newRefreshToken))
-        {
+        // Non-rotation path: validate and re-mint access token without creating a new refresh token
+        var subjectId = await _refreshTokenService.ValidateRefreshTokenAsync(refreshToken);
+        if (!subjectId.HasValue)
             return null;
-        }
 
-        // Get subject ID from the new refresh token
-        var subjectIdResult = await _refreshTokenService.ValidateRefreshTokenAsync(newRefreshToken);
-        if (!subjectIdResult.HasValue)
-        {
-            return null;
-        }
+        await _refreshTokenService.UpdateLastUsedAsync(refreshToken);
 
-        var subjectId2 = subjectIdResult.Value;
-
-        // Get subject details
-        var subject = await _subjectService.GetSubjectByIdAsync(subjectId2);
+        var subject = await _subjectService.GetSubjectByIdAsync(subjectId.Value);
         if (subject == null || !subject.IsActive)
         {
-            // Revoke the token if subject is inactive
-            await _refreshTokenService.RevokeRefreshTokenAsync(newRefreshToken, "Subject inactive");
+            await _refreshTokenService.RevokeRefreshTokenAsync(refreshToken, "Subject inactive");
             return null;
         }
 
-        // Get permissions and roles
-        var permissions = await _subjectService.GetSubjectPermissionsAsync(subjectId2);
-        var roles = await _subjectService.GetSubjectRolesAsync(subjectId2);
+        var permissions = await _subjectService.GetSubjectPermissionsAsync(subjectId.Value);
+        var roles = await _subjectService.GetSubjectRolesAsync(subjectId.Value);
 
-        // Generate new access token
         var accessTokenLifetime = _options.Session.AccessTokenLifetime;
         var accessToken = _jwtService.GenerateAccessToken(
             new SubjectInfo
@@ -393,12 +388,12 @@ public class OidcAuthService : IOidcAuthService
         return new OidcTokenResponse
         {
             AccessToken = accessToken,
-            RefreshToken = newRefreshToken,
+            RefreshToken = refreshToken,
             TokenType = "Bearer",
             ExpiresIn = (int)accessTokenLifetime.TotalSeconds,
             RefreshExpiresIn = (int)_options.Session.RefreshTokenLifetime.TotalSeconds,
             ExpiresAt = DateTimeOffset.UtcNow.Add(accessTokenLifetime),
-            SubjectId = subjectId2,
+            SubjectId = subjectId.Value,
         };
     }
 
@@ -472,6 +467,7 @@ public class OidcAuthService : IOidcAuthService
             ProviderName = providerName,
             LastLoginAt = subject.LastLoginAt,
             PreferredLanguage = subject.PreferredLanguage,
+            AvatarUrl = subject.AvatarUrl,
         };
     }
 
@@ -528,11 +524,110 @@ public class OidcAuthService : IOidcAuthService
         return await AttachVerifiedIdentityAsync(stateData, provider, claims, authenticatedSubjectId);
     }
 
+    /// <inheritdoc />
+    public async Task<OidcAuthorizationRequest> GenerateSetupAuthorizationUrlAsync(
+        Guid providerId, Guid subjectId, string? tenantSlug = null)
+    {
+        var provider =
+            await _providerService.GetProviderByIdAsync(providerId)
+            ?? throw new InvalidOperationException($"OIDC provider {providerId} not found");
+
+        if (!provider.IsEnabled)
+            throw new InvalidOperationException($"OIDC provider {provider.Name} is not enabled");
+
+        var stateData = new OidcStateData
+        {
+            ProviderId = provider.Id,
+            ReturnUrl = "/setup",
+            Nonce = GenerateRandomString(32),
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = DateTimeOffset.UtcNow.Add(_options.State.Lifetime),
+            Intent = "setup",
+            SubjectId = subjectId,
+            TenantSlug = tenantSlug,
+        };
+
+        return await BuildAuthorizationUrlAsync(provider, stateData, "/setup", callbackPath: SetupCallbackPath);
+    }
+
+    /// <inheritdoc />
+    public async Task<OidcSetupCallbackResult> HandleSetupCallbackAsync(
+        string code, string state, string expectedState,
+        string? ipAddress = null, string? userAgent = null)
+    {
+        var parsed = await ValidateCallbackAndParseIdTokenAsync(code, state, expectedState, SetupCallbackPath);
+        if (!parsed.Success)
+            return OidcSetupCallbackResult.Failed(parsed.Error ?? "callback_failed", parsed.ErrorDescription);
+
+        var stateData = parsed.StateData!;
+        var provider = parsed.Provider!;
+        var claims = parsed.Claims!;
+
+        if (stateData.Intent != "setup")
+            return OidcSetupCallbackResult.Failed("invalid_intent", "State was not issued for a setup flow");
+
+        if (!stateData.SubjectId.HasValue)
+            return OidcSetupCallbackResult.Failed("invalid_state", "No subject ID in setup state");
+
+        var subjectId = stateData.SubjectId.Value;
+
+        // Link OIDC identity to the pre-created admin subject
+        var (outcome, _) = await _subjectService.AttachOidcIdentityAsync(
+            subjectId,
+            provider.Id,
+            claims.Sub,
+            provider.IssuerUrl,
+            claims.Email);
+
+        if (outcome == OidcLinkOutcome.AlreadyLinkedToOther)
+            return OidcSetupCallbackResult.Failed(
+                "identity_already_linked",
+                "This provider account is already linked to another Nocturne user");
+
+        // Update subject email/name from OIDC claims if not already set
+        var subject = await _subjectService.GetSubjectByIdAsync(subjectId);
+        if (subject == null)
+            return OidcSetupCallbackResult.Failed("subject_not_found", "Pre-created setup subject not found");
+
+        await _subjectService.UpdateLastLoginAsync(subjectId);
+
+        // Issue session via SessionService
+        var session = await _sessionService.IssueSessionAsync(
+            subjectId,
+            new SessionContext(
+                OidcSessionId: claims.SessionId,
+                DeviceDescription: "Setup OIDC",
+                IpAddress: ipAddress,
+                UserAgent: userAgent));
+
+        var tokens = new OidcTokenResponse
+        {
+            AccessToken = session.AccessToken,
+            RefreshToken = session.RefreshToken,
+            TokenType = "Bearer",
+            ExpiresIn = session.ExpiresInSeconds,
+            RefreshExpiresIn = (int)_options.Session.RefreshTokenLifetime.TotalSeconds,
+            ExpiresAt = DateTimeOffset.UtcNow.AddSeconds(session.ExpiresInSeconds),
+            SubjectId = subjectId,
+        };
+
+        _logger.LogInformation(
+            "Setup OIDC: linked identity for subject {SubjectId} via provider {Provider}",
+            subjectId, provider.Name);
+
+        return OidcSetupCallbackResult.Succeeded(subjectId, tokens, stateData.ReturnUrl);
+    }
+
     /// <summary>
-    /// Internal branching logic for attaching a verified OIDC identity to an authenticated
-    /// subject. Extracted from <see cref="HandleLinkCallbackAsync"/> so it can be unit tested
-    /// without having to mock token exchange + JWKS verification.
+    /// Attaches a verified OIDC identity to an already-authenticated subject.
+    /// Extracted from <see cref="HandleLinkCallbackAsync"/> to enable unit testing
+    /// without mocking token exchange and JWKS verification.
     /// </summary>
+    /// <param name="stateData">Decoded state data from the link callback, which must have <c>Intent == "link"</c>.</param>
+    /// <param name="provider">The OIDC provider from which the identity originated.</param>
+    /// <param name="claims">Parsed claims from the provider's ID token.</param>
+    /// <param name="authenticatedSubjectId">The currently authenticated subject to link the identity to.</param>
+    /// <returns>An <see cref="OidcLinkResult"/> describing the outcome of the link operation.</returns>
     internal async Task<OidcLinkResult> AttachVerifiedIdentityAsync(
         OidcStateData stateData,
         OidcProvider provider,
@@ -569,12 +664,15 @@ public class OidcAuthService : IOidcAuthService
 
     #region Private Helper Methods
 
-    private const string LoginCallbackPath = "/api/v4/oidc/callback";
-    private const string LinkCallbackPath = "/api/v4/oidc/link/callback";
+    private const string LoginCallbackPath = "/api/auth/oidc/callback";
+    private const string LinkCallbackPath = "/api/auth/oidc/link/callback";
+    private const string SetupCallbackPath = "/api/v4/setup/oidc/callback";
 
     /// <summary>
-    /// Get the redirect URI for OIDC callbacks
+    /// Builds the absolute redirect URI by combining the configured base URL with the specified callback path.
     /// </summary>
+    /// <param name="callbackPath">The server-relative callback path (default: <see cref="LoginCallbackPath"/>).</param>
+    /// <returns>The fully qualified redirect URI.</returns>
     private string GetRedirectUri(string callbackPath = LoginCallbackPath)
     {
         var baseUrl = _configuration[ServiceNames.ConfigKeys.BaseUrl]?.TrimEnd('/') ?? "http://localhost:5000";
@@ -582,8 +680,15 @@ public class OidcAuthService : IOidcAuthService
     }
 
     /// <summary>
-    /// Build the authorization URL for the OIDC provider
+    /// Constructs the provider's authorization URL with all required OIDC query parameters.
     /// </summary>
+    /// <param name="authorizationEndpoint">The provider's authorization endpoint URL.</param>
+    /// <param name="clientId">The registered OAuth client identifier.</param>
+    /// <param name="redirectUri">The registered redirect URI for the callback.</param>
+    /// <param name="scopes">The requested OAuth scopes.</param>
+    /// <param name="state">URL-safe state token for CSRF protection.</param>
+    /// <param name="nonce">Replay-prevention nonce embedded in the ID token.</param>
+    /// <returns>The fully assembled authorization URL string.</returns>
     private static string BuildAuthorizationUrl(
         string authorizationEndpoint,
         string clientId,
@@ -612,8 +717,16 @@ public class OidcAuthService : IOidcAuthService
     }
 
     /// <summary>
-    /// Exchange authorization code for tokens
+    /// Exchanges an authorisation code for provider tokens at the token endpoint.
+    /// Uses HTTP Basic authentication when a <paramref name="clientSecret"/> is provided (confidential client).
     /// </summary>
+    /// <param name="tokenEndpoint">The provider's token endpoint URL.</param>
+    /// <param name="code">The authorisation code from the callback.</param>
+    /// <param name="clientId">The registered OAuth client identifier.</param>
+    /// <param name="clientSecret">Optional client secret for confidential clients.</param>
+    /// <param name="redirectUri">The redirect URI that was used in the authorisation request.</param>
+    /// <returns>The <see cref="OidcProviderTokenResponse"/> containing ID and access tokens.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the provider returns a non-success status code.</exception>
     private async Task<OidcProviderTokenResponse> ExchangeCodeForTokensAsync(
         string tokenEndpoint,
         string code,
@@ -668,9 +781,16 @@ public class OidcAuthService : IOidcAuthService
     }
 
     /// <summary>
-    /// Parse claims from an ID token (without full signature validation -
-    /// signature is validated by OidcTokenHandler when token is used)
+    /// Parses the payload claims from a JWT ID token without validating the signature.
     /// </summary>
+    /// <remarks>
+    /// Full signature validation is performed by the OIDC token handler when the token is
+    /// subsequently used. This method is intentionally minimal — it only decodes the Base64url
+    /// payload and deserialises the JSON claims.
+    /// </remarks>
+    /// <param name="idToken">The raw JWT ID token string.</param>
+    /// <returns>Deserialised <see cref="OidcIdTokenClaims"/> from the token payload.</returns>
+    /// <exception cref="InvalidOperationException">Thrown for malformed token format or empty claims.</exception>
     private static OidcIdTokenClaims ParseIdToken(string idToken)
     {
         var parts = idToken.Split('.');
@@ -680,20 +800,8 @@ public class OidcAuthService : IOidcAuthService
         }
 
         var payload = parts[1];
-        // Pad base64 if needed
-        switch (payload.Length % 4)
-        {
-            case 2:
-                payload += "==";
-                break;
-            case 3:
-                payload += "=";
-                break;
-        }
 
-        var json = Encoding.UTF8.GetString(
-            Convert.FromBase64String(payload.Replace('-', '+').Replace('_', '/'))
-        );
+        var json = Encoding.UTF8.GetString(Base64Url.Decode(payload));
 
         var claims = JsonSerializer.Deserialize<OidcIdTokenClaims>(
             json,
@@ -704,41 +812,37 @@ public class OidcAuthService : IOidcAuthService
     }
 
     /// <summary>
-    /// Generate a cryptographically secure random string
+    /// Generates a cryptographically secure URL-safe Base64 random string of the specified byte length.
     /// </summary>
+    /// <param name="length">Number of random bytes to generate.</param>
+    /// <returns>A URL-safe Base64 string (without padding).</returns>
     private static string GenerateRandomString(int length)
     {
         var bytes = RandomNumberGenerator.GetBytes(length);
-        return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        return Base64Url.Encode(bytes);
     }
 
     /// <summary>
-    /// Encode state data as a URL-safe string
+    /// Serialises an <see cref="OidcStateData"/> object to a URL-safe Base64 string.
     /// </summary>
+    /// <param name="data">The state data to encode.</param>
+    /// <returns>URL-safe Base64-encoded JSON state string.</returns>
     private static string EncodeState(OidcStateData data)
     {
         var json = JsonSerializer.Serialize(data);
         var bytes = Encoding.UTF8.GetBytes(json);
-        return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        return Base64Url.Encode(bytes);
     }
 
     /// <summary>
-    /// Decode state data from a URL-safe string
+    /// Deserialises an <see cref="OidcStateData"/> object from a URL-safe Base64 string.
     /// </summary>
+    /// <param name="encoded">URL-safe Base64-encoded state string produced by <see cref="EncodeState"/>.</param>
+    /// <returns>The decoded <see cref="OidcStateData"/>.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the state cannot be deserialised.</exception>
     private static OidcStateData DecodeState(string encoded)
     {
-        // Restore base64 padding
-        switch (encoded.Length % 4)
-        {
-            case 2:
-                encoded += "==";
-                break;
-            case 3:
-                encoded += "=";
-                break;
-        }
-
-        var bytes = Convert.FromBase64String(encoded.Replace("-", "+").Replace("_", "/"));
+        var bytes = Base64Url.Decode(encoded);
         var json = Encoding.UTF8.GetString(bytes);
 
         return JsonSerializer.Deserialize<OidcStateData>(json)
@@ -746,8 +850,10 @@ public class OidcAuthService : IOidcAuthService
     }
 
     /// <summary>
-    /// Parse a short device description from user agent
+    /// Extracts a short human-readable device description from a user-agent string.
     /// </summary>
+    /// <param name="userAgent">The raw HTTP user-agent header value, or <see langword="null"/>.</param>
+    /// <returns>A brief platform label (e.g. <c>Windows</c>, <c>iPhone</c>), a truncated user-agent, or <see langword="null"/>.</returns>
     private static string? ParseUserAgentShort(string? userAgent)
     {
         if (string.IsNullOrEmpty(userAgent))

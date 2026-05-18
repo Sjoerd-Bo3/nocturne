@@ -1,8 +1,28 @@
 namespace Nocturne.Core.Models.V4;
 
 /// <summary>
-/// Insulin bolus delivery record
+/// Insulin bolus delivery record representing a single dose of insulin.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This is the V4 equivalent of the insulin portion of a legacy <see cref="Treatment"/> record.
+/// When a legacy treatment containing both insulin and carbs is decomposed, it produces a
+/// <see cref="Bolus"/> and a <see cref="CarbIntake"/> linked by <see cref="IV4Record.CorrelationId"/>.
+/// </para>
+/// <para>
+/// <see cref="Kind"/> distinguishes user-initiated boluses (<see cref="BolusKind.Manual"/>) from
+/// algorithm-delivered micro-doses such as SMBs (<see cref="BolusKind.Algorithm"/>).
+/// <see cref="BolusType"/> describes the delivery shape (normal, square-wave, or dual-wave).
+/// </para>
+/// </remarks>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="IV4Record"/>
+/// <seealso cref="CarbIntake"/>
+/// <seealso cref="BolusCalculation"/>
+/// <seealso cref="BolusKind"/>
+/// <seealso cref="BolusType"/>
+/// <seealso cref="ApsSnapshot"/>
+/// <seealso cref="TempBasal"/>
 public class Bolus : IV4Record
 {
     /// <summary>
@@ -76,8 +96,9 @@ public class Bolus : IV4Record
     public double? Delivered { get; set; }
 
     /// <summary>
-    /// Type of bolus delivery (Normal, Square, Dual)
+    /// Type of bolus delivery (Normal, Square, Dual).
     /// </summary>
+    /// <seealso cref="V4.BolusType"/>
     public BolusType? BolusType { get; set; }
 
     /// <summary>
@@ -86,7 +107,8 @@ public class Bolus : IV4Record
     public bool Automatic { get; set; }
 
     /// <summary>
-    /// How this bolus was initiated (Manual or Algorithm/SMB)
+    /// How this bolus was initiated: <see cref="BolusKind.Manual"/> for user-initiated,
+    /// <see cref="BolusKind.Algorithm"/> for APS-delivered micro-boluses (SMBs).
     /// </summary>
     public BolusKind Kind { get; set; } = BolusKind.Manual;
 
@@ -106,14 +128,24 @@ public class Bolus : IV4Record
     public string? InsulinType { get; set; }
 
     /// <summary>
+    /// Snapshot of the patient's insulin pharmacokinetic settings at delivery time.
+    /// </summary>
+    public TreatmentInsulinContext? InsulinContext { get; set; }
+
+    /// <summary>
     /// Unabsorbed insulin from previous boluses at time of delivery
     /// </summary>
     public double? Unabsorbed { get; set; }
 
     /// <summary>
-    /// Foreign key to the Device table
+    /// Foreign key to the <see cref="Device"/> table.
     /// </summary>
     public Guid? DeviceId { get; set; }
+
+    /// <summary>
+    /// Foreign key to the <see cref="PatientDevice"/> table.
+    /// </summary>
+    public Guid? PatientDeviceId { get; set; }
 
     /// <summary>
     /// Per-record pump counter (AAPS internal identifier)
@@ -121,12 +153,12 @@ public class Bolus : IV4Record
     public string? PumpRecordId { get; set; }
 
     /// <summary>
-    /// FK to the BolusCalculation that produced this bolus (null for manual/correction/SMB boluses)
+    /// FK to the <see cref="BolusCalculation"/> that produced this bolus (null for manual/correction/SMB boluses).
     /// </summary>
     public Guid? BolusCalculationId { get; set; }
 
     /// <summary>
-    /// FK to the ApsSnapshot whose algorithm decision triggered this bolus (for SMBs/auto-boluses)
+    /// FK to the <see cref="ApsSnapshot"/> whose algorithm decision triggered this bolus (for SMBs/auto-boluses).
     /// </summary>
     public Guid? ApsSnapshotId { get; set; }
 

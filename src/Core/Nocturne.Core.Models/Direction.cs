@@ -85,9 +85,15 @@ public enum Direction
 public static class DirectionExtensions
 {
     /// <summary>
-    /// Converts a Direction enum value to the Nightscout/Dexcom trend number (0-9)
-    /// Used by pebble endpoint and other legacy integrations
+    /// Converts a <see cref="Direction"/> enum value to the Nightscout/Dexcom trend number (0-9).
+    /// Used by the pebble endpoint and other legacy integrations.
     /// </summary>
+    /// <param name="direction">The glucose trend direction to convert</param>
+    /// <returns>
+    /// An integer 0-9 matching the Dexcom trend number convention:
+    /// 0=None, 1=DoubleUp, 2=SingleUp, 3=FortyFiveUp, 4=Flat,
+    /// 5=FortyFiveDown, 6=SingleDown, 7=DoubleDown, 8=NotComputable, 9=RateOutOfRange
+    /// </returns>
     public static int ToTrendNumber(this Direction direction)
     {
         return direction switch
@@ -110,9 +116,12 @@ public static class DirectionExtensions
     }
 
     /// <summary>
-    /// Parses a direction string to the corresponding trend number
-    /// Handles both enum names and legacy string formats
+    /// Parses a direction string to the corresponding Dexcom trend number (0-9).
+    /// Handles both <see cref="Direction"/> enum names and legacy space-separated string formats
+    /// (e.g., "NOT COMPUTABLE", "RATE OUT OF RANGE").
     /// </summary>
+    /// <param name="direction">Direction string to parse; null or empty returns 8 (NotComputable)</param>
+    /// <returns>Dexcom trend number (0-9); returns 8 (NotComputable) for any unrecognized input</returns>
     public static int ParseToTrendNumber(string? direction)
     {
         if (string.IsNullOrEmpty(direction))

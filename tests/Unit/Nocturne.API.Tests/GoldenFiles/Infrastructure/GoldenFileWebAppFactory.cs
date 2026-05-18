@@ -14,11 +14,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nocturne.API.Middleware.Handlers;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Authorization;
+using Nocturne.Core.Contracts.Audit;
 using Nocturne.Infrastructure.Cache.Abstractions;
+using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Infrastructure.Data;
+using Nocturne.Infrastructure.Data.Services;
 
 namespace Nocturne.API.Tests.GoldenFiles.Infrastructure;
 
@@ -96,6 +98,14 @@ public class GoldenFileWebAppFactory : WebApplicationFactory<Program>
                 return context;
             });
 
+            // Register ITenantDbContextFactory (V4 repositories depend on this)
+            services.AddScoped<ITenantDbContextFactory>(sp =>
+            {
+                var factory = sp.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
+                var tenantAccessor = sp.GetService<Nocturne.Core.Contracts.Multitenancy.ITenantAccessor>();
+                return new TestTenantDbContextFactory(factory, tenantAccessor);
+            });
+
             // Create schema and seed all entities required by the middleware pipeline
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
@@ -113,6 +123,9 @@ public class GoldenFileWebAppFactory : WebApplicationFactory<Program>
                 .Returns(Task.CompletedTask);
             RemoveService<ICacheService>(services);
             services.AddSingleton(mockCache.Object);
+
+            // Register audit config cache (missed when bypassing AddPostgreSqlInfrastructure)
+            services.AddSingleton<ITenantAuditConfigCache, TenantAuditConfigCache>();
 
             // Register test auth handler (middleware-based, not ASP.NET Core auth-based)
             // This will authenticate all requests with admin permissions for golden file tests
@@ -207,5 +220,22 @@ public class TestAuthHandlerImpl : IAuthHandler
             Permissions = ["*"],
             Roles = ["admin"],
         }));
+    }
+}
+
+/// <summary>
+/// Test-only <see cref="ITenantDbContextFactory"/> that creates tenant-scoped contexts
+/// from the shared <see cref="IDbContextFactory{NocturneDbContext}"/> mock.
+/// </summary>
+file sealed class TestTenantDbContextFactory(
+    IDbContextFactory<NocturneDbContext> pool,
+    ITenantAccessor? tenantAccessor) : ITenantDbContextFactory
+{
+    public async ValueTask<NocturneDbContext> CreateAsync(CancellationToken ct = default)
+    {
+        var ctx = await pool.CreateDbContextAsync(ct);
+        if (tenantAccessor?.IsResolved == true)
+            ctx.TenantId = tenantAccessor.TenantId;
+        return ctx;
     }
 }

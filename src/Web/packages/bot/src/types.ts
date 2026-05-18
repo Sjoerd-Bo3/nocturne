@@ -98,7 +98,6 @@ export interface DirectoryCandidate {
   nocturneUserId: string;
   label: string;
   displayName: string;
-  isDefault: boolean;
 }
 
 export interface HeartbeatRequest {

@@ -1,22 +1,30 @@
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
-using Nocturne.API.Services;
-using Nocturne.Core.Contracts;
+using Nocturne.API.Services.Legacy;
+using Nocturne.API.Services.Platform;
+using Nocturne.Core.Contracts.Platform;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
-/// Time query controller that provides 1:1 compatibility with Nightscout time-based endpoints
-/// Supports bash-style brace expansion for complex time pattern matching
+/// Time query controller that provides 1:1 compatibility with Nightscout time-based endpoints.
+/// Supports bash-style brace expansion for complex time pattern matching.
 /// </summary>
+/// <seealso cref="ITimeQueryService"/>
 [ApiController]
+[Tags("V1")]
 [Route("api/v1")]
 public class TimeQueryController : ControllerBase
 {
     private readonly ITimeQueryService _timeQueryService;
     private readonly ILogger<TimeQueryController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="TimeQueryController"/>.
+    /// </summary>
+    /// <param name="timeQueryService">Service for time-pattern-based entry queries.</param>
+    /// <param name="logger">Logger instance.</param>
     public TimeQueryController(
         ITimeQueryService timeQueryService,
         ILogger<TimeQueryController> logger

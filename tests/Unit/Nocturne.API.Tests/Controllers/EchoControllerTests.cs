@@ -6,8 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Controllers.V4.Platform;
-using Nocturne.API.Services;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 using Xunit;
 
@@ -20,18 +18,15 @@ namespace Nocturne.API.Tests.Controllers.V4;
 [Trait("Category", "Unit")]
 public class DebugControllerTests
 {
-    private readonly Mock<IInAppNotificationService> _mockNotificationService;
     private readonly Mock<IWebHostEnvironment> _mockEnvironment;
     private readonly Mock<ILogger<DebugController>> _mockLogger;
     private readonly DebugController _controller;
 
     public DebugControllerTests()
     {
-        _mockNotificationService = new Mock<IInAppNotificationService>();
         _mockEnvironment = new Mock<IWebHostEnvironment>();
         _mockLogger = new Mock<ILogger<DebugController>>();
         _controller = new DebugController(
-            _mockNotificationService.Object,
             _mockEnvironment.Object,
             _mockLogger.Object
         );
@@ -247,7 +242,8 @@ public class DebugControllerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
+        var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(400);
     }
 
     [Fact]

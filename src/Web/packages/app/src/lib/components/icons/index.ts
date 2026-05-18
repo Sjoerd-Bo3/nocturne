@@ -1,8 +1,8 @@
 /**
  * Semantic icon components for diabetes-related events and states
  *
- * These components wrap Lucide icons to provide semantic meaning.
- * They can be swapped out for custom icons later without changing call sites.
+ * Device event and therapy icons use AAPS (AndroidAPS) SVG paths.
+ * Chart marker icons (BolusIcon, CarbsIcon) use custom hemisphere shapes.
  *
  * NOTE: For SVG chart contexts (inside <svg>), use the raw SVG paths defined
  * in GlucoseChartCard.svelte since Lucide components render their own <svg>.
@@ -28,12 +28,25 @@ export { default as SuspendedModeIcon } from './SuspendedModeIcon.svelte';
 export { default as LimitedModeIcon } from './LimitedModeIcon.svelte';
 export { default as EaseOffModeIcon } from './EaseOffModeIcon.svelte';
 
-// Device Event Icons
+// Device Event Icons (AAPS SVG icons)
 export { default as SensorIcon } from './SensorIcon.svelte';
 export { default as SiteChangeIcon } from './SiteChangeIcon.svelte';
 export { default as ReservoirIcon } from './ReservoirIcon.svelte';
 export { default as BatteryIcon } from './BatteryIcon.svelte';
 export { default as CannulaIcon } from './CannulaIcon.svelte';
+export { default as SiteRotationIcon } from './SiteRotationIcon.svelte';
+
+// Therapy Event Icons (AAPS SVG icons)
+export { default as BgCheckIcon } from './BgCheckIcon.svelte';
+export { default as CalibrationIcon } from './CalibrationIcon.svelte';
+export { default as ExtendedBolusIcon } from './ExtendedBolusIcon.svelte';
+export { default as NoteIcon } from './NoteIcon.svelte';
+export { default as AnnouncementIcon } from './AnnouncementIcon.svelte';
+export { default as ActivityIcon } from './ActivityIcon.svelte';
+export { default as ProfileSwitchIcon } from './ProfileSwitchIcon.svelte';
+export { default as QuestionEventIcon } from './QuestionEventIcon.svelte';
+export { default as BolusEventIcon } from './BolusEventIcon.svelte';
+export { default as CarbsEventIcon } from './CarbsEventIcon.svelte';
 
 // Dynamic Icon Components (select icon based on state/type)
 export { default as SystemEventIcon } from './SystemEventIcon.svelte';

@@ -1,9 +1,11 @@
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Last modified timestamps response model for /api/v3/lastModified endpoint
-/// Provides timestamps for when each collection was last modified
+/// Last modified timestamps response model for the <c>/api/v3/lastModified</c> endpoint.
+/// Provides timestamps for when each collection was last modified, enabling efficient
+/// incremental sync by clients that cache data locally.
 /// </summary>
+/// <seealso cref="V3StatusResponse"/>
 public class LastModifiedResponse
 {
     /// <summary>

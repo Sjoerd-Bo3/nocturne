@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Extensions;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -13,7 +13,30 @@ namespace Nocturne.API.Controllers.V4.Treatments;
 /// <summary>
 /// Controller for food favorites, recent foods, and food lifecycle management.
 /// </summary>
+/// <remarks>
+/// Provides a V4-native (non-Nightscout-legacy) food catalog in addition to per-user
+/// favorites and recently-used lists.
+///
+/// <b>Food catalog</b> (<c>/api/v4/foods</c>) — CRUD for <see cref="Food"/> records via <see cref="IFoodService"/>.
+/// The catalog is shared and not user-scoped.
+///
+/// <b>Favorites / recents</b> — user-scoped via <see cref="IUserFoodFavoriteService"/>, keyed by
+/// the authenticated subject ID (falls back to a default system ID when the claim is absent).
+///
+/// <b>Attribution count</b> (<c>/{foodId}/attribution-count</c>) — reports how many carb intake
+/// records reference a food, surfaced by <see cref="ITreatmentFoodService"/>. This count is used
+/// to warn users before deleting a food that has meal attributions.
+///
+/// <b>Delete</b> (<c>DELETE /{foodId}</c>) — accepts an <c>attributionMode</c> query parameter:
+/// <c>clear</c> (default) sets food references on attributions to <c>Other</c>;
+/// <c>remove</c> deletes the attributions entirely.
+/// </remarks>
+/// <seealso cref="IFoodService"/>
+/// <seealso cref="IUserFoodFavoriteService"/>
+/// <seealso cref="ITreatmentFoodService"/>
+/// <seealso cref="Food"/>
 [ApiController]
+[Tags("Treatments")]
 [Route("api/v4/foods")]
 [ClientPropertyName("foodsV4")]
 public class FoodsController : ControllerBase

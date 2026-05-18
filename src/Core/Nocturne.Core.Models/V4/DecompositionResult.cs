@@ -1,9 +1,12 @@
 namespace Nocturne.Core.Models.V4;
 
 /// <summary>
-/// Result of decomposing a legacy Entry record into v4 granular models.
-/// Tracks which records were created vs updated for idempotency reporting.
+/// Result of decomposing a single legacy record (e.g., <see cref="Treatment"/>, <see cref="Entry"/>,
+/// <see cref="DeviceStatus"/>) into one or more V4 granular models.
+/// Tracks which records were created versus updated for idempotency reporting.
 /// </summary>
+/// <seealso cref="BatchDecompositionResult"/>
+/// <seealso cref="IV4Record"/>
 public class DecompositionResult
 {
     /// <summary>

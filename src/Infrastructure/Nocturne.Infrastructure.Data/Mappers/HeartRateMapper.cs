@@ -20,12 +20,11 @@ public static class HeartRateMapper
                 ? Guid.CreateVersion7()
                 : ParseIdToGuid(heartRate.Id),
             OriginalId = MongoIdUtils.IsValidMongoId(heartRate.Id) ? heartRate.Id : null,
-            Mills = heartRate.Mills,
+            Timestamp = heartRate.Timestamp,
             Bpm = heartRate.Bpm,
             Accuracy = heartRate.Accuracy,
             Device = heartRate.Device,
             EnteredBy = heartRate.EnteredBy,
-            CreatedAt = heartRate.CreatedAt,
             UtcOffset = heartRate.UtcOffset,
         };
     }
@@ -38,12 +37,11 @@ public static class HeartRateMapper
         return new HeartRate
         {
             Id = entity.OriginalId ?? entity.Id.ToString(),
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             Bpm = entity.Bpm,
             Accuracy = entity.Accuracy,
             Device = entity.Device,
             EnteredBy = entity.EnteredBy,
-            CreatedAt = entity.CreatedAt,
             UtcOffset = entity.UtcOffset,
         };
     }
@@ -53,12 +51,11 @@ public static class HeartRateMapper
     /// </summary>
     public static void UpdateEntity(HeartRateEntity entity, HeartRate heartRate)
     {
-        entity.Mills = heartRate.Mills;
+        entity.Timestamp = heartRate.Timestamp;
         entity.Bpm = heartRate.Bpm;
         entity.Accuracy = heartRate.Accuracy;
         entity.Device = heartRate.Device;
         entity.EnteredBy = heartRate.EnteredBy;
-        entity.CreatedAt = heartRate.CreatedAt;
         entity.UtcOffset = heartRate.UtcOffset;
         entity.SysUpdatedAt = DateTime.UtcNow;
     }

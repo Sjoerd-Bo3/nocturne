@@ -1,25 +1,7 @@
 <script lang="ts">
   import * as Dialog from "$lib/components/ui/dialog";
-  import * as Command from "$lib/components/ui/command";
-  import * as Popover from "$lib/components/ui/popover";
-  import * as Collapsible from "$lib/components/ui/collapsible";
   import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
-  import { Label } from "$lib/components/ui/label";
-  import { Badge } from "$lib/components/ui/badge";
-  import {
-    Check,
-    ChevronsUpDown,
-    Plus,
-    Star,
-    Clock,
-    ChevronDown,
-    Scale,
-    FileText,
-    Loader2,
-  } from "lucide-svelte";
-  import { cn } from "$lib/utils";
-  import { tick } from "svelte";
+  import { Loader2 } from "lucide-svelte";
   import { toast } from "svelte-sonner";
   import {
     CarbIntakeFoodInputMode,
@@ -37,7 +19,9 @@
     removeFavorite as removeFavoriteFood,
     getRecentFoods,
   } from "$api/generated/foods.generated.remote";
-  import { CategorySubcategoryCombobox } from "$lib/components/food";
+  import FoodSearchCombobox from "./FoodSearchCombobox.svelte";
+  import FoodNutritionalForm from "./FoodNutritionalForm.svelte";
+  import TreatmentPortionsForm from "./TreatmentPortionsForm.svelte";
 
   interface Props {
     open: boolean;
@@ -65,14 +49,6 @@
   // Combobox state
   let searchQuery = $state("");
 
-  // Unit combobox state
-  let unitOpen = $state(false);
-  let unitTriggerRef = $state<HTMLButtonElement>(null!);
-
-  // GI combobox state
-  let giOpen = $state(false);
-  let giTriggerRef = $state<HTMLButtonElement>(null!);
-
   // Selected/editing food state
   let selectedFood = $state<Food | null>(null);
   let originalFood = $state<Food | null>(null);
@@ -94,7 +70,7 @@
   // Treatment request fields - both portions and carbs are editable
   let portions = $state(1);
   let entryCarbs = $state(0);
-  let timeOffsetMinutes = $state<number | undefined>(0);
+  let timeOffsetMinutes = $state<number>(0);
   let note = $state("");
 
   // Track which field was last edited
@@ -199,13 +175,6 @@
   let isLoading = $state(false);
   let isSubmitting = $state(false);
 
-  // Constants
-  const foodUnits = ["g", "ml", "pcs", "oz"];
-  const giOptions = [
-    { value: 1, label: "Low" },
-    { value: 2, label: "Medium" },
-    { value: 3, label: "High" },
-  ];
 
   // Derived: check if any field has been edited
   const hasEdits = $derived.by(() => {
@@ -224,28 +193,6 @@
     );
   });
 
-  // Derived: filtered foods based on search
-  const filteredFoods = $derived.by(() => {
-    if (!searchQuery.trim()) return [];
-    const query = searchQuery.trim().toLowerCase();
-    return allFoods.filter((food) => {
-      const name = food.name?.toLowerCase() ?? "";
-      const category = food.category?.toLowerCase() ?? "";
-      const subcategory = food.subcategory?.toLowerCase() ?? "";
-      return (
-        name.includes(query) ||
-        category.includes(query) ||
-        subcategory.includes(query)
-      );
-    });
-  });
-
-  // Derived: check if search matches any existing food name exactly
-  const hasExactMatch = $derived(
-    allFoods.some(
-      (f) => f.name?.toLowerCase() === searchQuery.trim().toLowerCase()
-    )
-  );
 
   // Derived: categories from all foods
   const categories = $derived.by(() => {
@@ -263,11 +210,6 @@
     return catMap;
   });
 
-  // Derived: display labels
-  const selectedUnitLabel = $derived(foodUnit || "Select unit...");
-  const selectedGiLabel = $derived(
-    giOptions.find((opt) => opt.value === foodGi)?.label || "Select GI..."
-  );
 
   $effect(() => {
     if (!open) {
@@ -414,25 +356,6 @@
     lastEditedField = "carbs";
   }
 
-  function closeUnitAndFocus() {
-    unitOpen = false;
-    tick().then(() => unitTriggerRef?.focus());
-  }
-
-  function closeGiAndFocus() {
-    giOpen = false;
-    tick().then(() => giTriggerRef?.focus());
-  }
-
-  function selectUnit(unit: string) {
-    foodUnit = unit;
-    closeUnitAndFocus();
-  }
-
-  function selectGi(gi: number) {
-    foodGi = gi;
-    closeGiAndFocus();
-  }
 
   async function toggleFavorite(food: Food) {
     if (!food._id) return;
@@ -532,155 +455,17 @@
 
     <div class="space-y-4">
       <!-- Food search combobox -->
-      <div class="space-y-2">
-        <Label>Food</Label>
-
-        <Command.Root shouldFilter={false}>
-          <Command.Input
-            placeholder="Search foods..."
-            bind:value={searchQuery}
-          />
-          <Command.List class="max-h-[300px]">
-            {#if isLoading}
-              <Command.Empty>Loading foods...</Command.Empty>
-            {:else if !searchQuery.trim()}
-              <!-- Show favorites and recents when no search -->
-              {#if favorites.length > 0}
-                <Command.Group>
-                  <div
-                    class="px-2 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1"
-                  >
-                    <Star class="h-3 w-3 text-yellow-500" />
-                    Favorites
-                  </div>
-                  {#each favorites as food (food._id)}
-                    <Command.Item
-                      value={food._id}
-                      onSelect={() => selectFood(food)}
-                      class="cursor-pointer"
-                    >
-                      <Check
-                        class={cn(
-                          "mr-2 h-4 w-4",
-                          selectedFood?._id === food._id
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      <div class="flex-1">
-                        <span>{food.name}</span>
-                        <span class="ml-2 text-xs text-muted-foreground">
-                          {food.carbs}g carbs
-                        </span>
-                      </div>
-                    </Command.Item>
-                  {/each}
-                </Command.Group>
-              {/if}
-
-              {#if recents.length > 0}
-                <Command.Group>
-                  <div
-                    class="px-2 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1"
-                  >
-                    <Clock class="h-3 w-3 text-sky-500" />
-                    Recent
-                  </div>
-                  {#each recents as food (food._id)}
-                    <Command.Item
-                      value={food._id}
-                      onSelect={() => selectFood(food)}
-                      class="cursor-pointer"
-                    >
-                      <Check
-                        class={cn(
-                          "mr-2 h-4 w-4",
-                          selectedFood?._id === food._id
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      <div class="flex-1">
-                        <span>{food.name}</span>
-                        <span class="ml-2 text-xs text-muted-foreground">
-                          {food.carbs}g carbs
-                        </span>
-                      </div>
-                    </Command.Item>
-                  {/each}
-                </Command.Group>
-              {/if}
-
-              {#if favorites.length === 0 && recents.length === 0}
-                <Command.Empty>
-                  Type to search foods or create a new one.
-                </Command.Empty>
-              {/if}
-            {:else}
-              <!-- Show filtered results and create option -->
-              {#if filteredFoods.length > 0}
-                <Command.Group>
-                  {#each filteredFoods as food (food._id)}
-                    <Command.Item
-                      value={food._id}
-                      onSelect={() => selectFood(food)}
-                      class="cursor-pointer"
-                    >
-                      <Check
-                        class={cn(
-                          "mr-2 h-4 w-4",
-                          selectedFood?._id === food._id
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      <div class="flex-1">
-                        <span>{food.name}</span>
-                        <span class="ml-2 text-xs text-muted-foreground">
-                          {food.carbs}g carbs
-                        </span>
-                      </div>
-                      {#if food.category}
-                        <Badge variant="outline" class="text-xs">
-                          {food.category}
-                        </Badge>
-                      {/if}
-                    </Command.Item>
-                  {/each}
-                </Command.Group>
-              {/if}
-
-              <!-- Create new and log without saving options when searching -->
-              {#if searchQuery.trim()}
-                <Command.Group>
-                  {#if !hasExactMatch}
-                    <Command.Item
-                      value="__create_new__"
-                      onSelect={startCreateNew}
-                      class="cursor-pointer text-primary"
-                    >
-                      <Plus class="mr-2 h-4 w-4" />
-                      Create "{searchQuery.trim()}"
-                    </Command.Item>
-                  {/if}
-                  <Command.Item
-                    value="__log_without_saving__"
-                    onSelect={startLogWithoutSaving}
-                    class="cursor-pointer text-muted-foreground"
-                  >
-                    <FileText class="mr-2 h-4 w-4" />
-                    Log without saving food
-                  </Command.Item>
-                </Command.Group>
-              {/if}
-
-              {#if filteredFoods.length === 0 && hasExactMatch}
-                <Command.Empty>No additional matches found.</Command.Empty>
-              {/if}
-            {/if}
-          </Command.List>
-        </Command.Root>
-      </div>
+      <FoodSearchCombobox
+        {allFoods}
+        {favorites}
+        {recents}
+        {selectedFood}
+        bind:searchQuery
+        {isLoading}
+        onSelect={selectFood}
+        onCreateNew={startCreateNew}
+        onLogWithoutSaving={startLogWithoutSaving}
+      />
 
       <!-- Log without saving - just show a message, then share the "How much did you eat?" section below -->
       {#if showSimpleCarbsForm}
@@ -694,328 +479,42 @@
         </div>
       {:else if showForm}
         <!-- Nutritional fields form -->
-        <form
-          id="food-form"
-          class="border-t pt-4 space-y-4"
+        <FoodNutritionalForm
+          bind:foodName
+          bind:foodCategory
+          bind:foodSubcategory
+          bind:foodPortion
+          bind:foodUnit
+          bind:foodCarbs
+          bind:foodFat
+          bind:foodProtein
+          bind:foodEnergy
+          bind:foodGi
+          {selectedFood}
+          {favorites}
+          bind:nutritionDetailsOpen
+          {categories}
+          {isCreatingNew}
+          onToggleFavorite={() => selectedFood && toggleFavorite(selectedFood)}
           onsubmit={handleFoodFormSubmit}
-        >
-          <!-- Hidden fields for food record -->
-          <input type="hidden" name="type" value="food" />
-          {#if submitAction === "update" && selectedFood?._id}
-            <input type="hidden" name="_id" value={selectedFood._id} />
-          {/if}
-          <input type="hidden" name="hideafteruse" value="false" />
-          <input type="hidden" name="hidden" value="false" />
-          <input type="hidden" name="position" value="0" />
-
-          <!-- Name and Category row -->
-          <div class="grid gap-4 md:grid-cols-3">
-            <div class="space-y-2">
-              <Label for="food-name">Name</Label>
-              <Input id="food-name" name="name" bind:value={foodName} />
-            </div>
-            <div class="space-y-2 col-span-2">
-              <Label>Category & Subcategory</Label>
-              <CategorySubcategoryCombobox
-                bind:category={foodCategory}
-                bind:subcategory={foodSubcategory}
-                {categories}
-                onCategoryChange={(cat) => (foodCategory = cat)}
-                onSubcategoryChange={(sub) => (foodSubcategory = sub)}
-                onCategoryCreate={(_cat) => {
-                  // Category will be created when food is saved
-                }}
-                onSubcategoryCreate={(_cat, _sub) => {
-                  // Subcategory will be created when food is saved
-                }}
-              />
-            </div>
-          </div>
-          <!-- Hidden inputs for category/subcategory since combobox doesn't render native inputs -->
-          <input type="hidden" name="category" value={foodCategory} />
-          <input type="hidden" name="subcategory" value={foodSubcategory} />
-
-          <!-- Quick summary of selected food -->
-          {#if selectedFood && !isCreatingNew}
-            <div
-              class="flex items-center justify-between rounded-lg border bg-muted/30 p-3"
-            >
-              <div class="flex items-center gap-4">
-                <div class="text-sm">
-                  <span class="font-medium">{foodPortion}{foodUnit}</span>
-                  <span class="text-muted-foreground">=</span>
-                  <span
-                    class="font-semibold text-green-600 dark:text-green-400"
-                  >
-                    {foodCarbs}g carbs
-                  </span>
-                </div>
-                {#if foodFat > 0 || foodProtein > 0}
-                  <div class="text-xs text-muted-foreground">
-                    {foodFat}g fat • {foodProtein}g protein
-                  </div>
-                {/if}
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onclick={() => selectedFood && toggleFavorite(selectedFood)}
-              >
-                <Star
-                  class="h-4 w-4 {favorites.some(
-                    (fav) => fav._id === selectedFood?._id
-                  )
-                    ? 'text-yellow-500 fill-yellow-500'
-                    : 'text-muted-foreground'}"
-                />
-              </Button>
-            </div>
-          {/if}
-
-          <!-- Collapsible nutritional details -->
-          <Collapsible.Root bind:open={nutritionDetailsOpen}>
-            <Collapsible.Trigger
-              class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors"
-            >
-              <span>Nutritional Details</span>
-              <ChevronDown
-                class={cn(
-                  "h-4 w-4 transition-transform",
-                  nutritionDetailsOpen && "rotate-180"
-                )}
-              />
-            </Collapsible.Trigger>
-            <Collapsible.Content class="pt-3 space-y-4">
-              <!-- Portion and unit row -->
-              <div class="grid gap-4 md:grid-cols-4">
-                <div class="space-y-2">
-                  <Label for="food-portion">Portion Size</Label>
-                  <Input
-                    id="food-portion"
-                    name="portion"
-                    type="number"
-                    bind:value={foodPortion}
-                  />
-                </div>
-                <div class="space-y-2">
-                  <Label for="food-unit">Unit</Label>
-                  <input type="hidden" name="unit" value={foodUnit} />
-                  <Popover.Root bind:open={unitOpen}>
-                    <Popover.Trigger bind:ref={unitTriggerRef}>
-                      {#snippet child({ props })}
-                        <Button
-                          variant="outline"
-                          class="w-full justify-between"
-                          {...props}
-                          role="combobox"
-                          aria-expanded={unitOpen}
-                        >
-                          {selectedUnitLabel}
-                          <ChevronsUpDown
-                            class="ml-2 size-4 shrink-0 opacity-50"
-                          />
-                        </Button>
-                      {/snippet}
-                    </Popover.Trigger>
-                    <Popover.Content
-                      class="w-(--bits-popover-anchor-width) p-0"
-                    >
-                      <Command.Root>
-                        <Command.Input placeholder="Search units..." />
-                        <Command.List>
-                          <Command.Empty>No unit found.</Command.Empty>
-                          <Command.Group>
-                            {#each foodUnits as unit}
-                              <Command.Item
-                                value={unit}
-                                onSelect={() => selectUnit(unit)}
-                              >
-                                <Check
-                                  class={cn(
-                                    "mr-2 size-4",
-                                    foodUnit !== unit && "text-transparent"
-                                  )}
-                                />
-                                {unit}
-                              </Command.Item>
-                            {/each}
-                          </Command.Group>
-                        </Command.List>
-                      </Command.Root>
-                    </Popover.Content>
-                  </Popover.Root>
-                </div>
-                <div class="space-y-2">
-                  <Label for="food-carbs">Carbs (g)</Label>
-                  <Input id="food-carbs" name="carbs" type="number" bind:value={foodCarbs} />
-                </div>
-                <div class="space-y-2">
-                  <Label for="food-gi">GI</Label>
-                  <input type="hidden" name="gi" value={foodGi} />
-                  <Popover.Root bind:open={giOpen}>
-                    <Popover.Trigger bind:ref={giTriggerRef}>
-                      {#snippet child({ props })}
-                        <Button
-                          variant="outline"
-                          class="w-full justify-between"
-                          {...props}
-                          role="combobox"
-                          aria-expanded={giOpen}
-                        >
-                          {selectedGiLabel}
-                          <ChevronsUpDown
-                            class="ml-2 size-4 shrink-0 opacity-50"
-                          />
-                        </Button>
-                      {/snippet}
-                    </Popover.Trigger>
-                    <Popover.Content
-                      class="w-(--bits-popover-anchor-width) p-0"
-                    >
-                      <Command.Root>
-                        <Command.Input placeholder="Search GI..." />
-                        <Command.List>
-                          <Command.Empty>No GI found.</Command.Empty>
-                          <Command.Group>
-                            {#each giOptions as option}
-                              <Command.Item
-                                value={option.label}
-                                onSelect={() => selectGi(option.value)}
-                              >
-                                <Check
-                                  class={cn(
-                                    "mr-2 size-4",
-                                    foodGi !== option.value &&
-                                      "text-transparent"
-                                  )}
-                                />
-                                {option.label}
-                              </Command.Item>
-                            {/each}
-                          </Command.Group>
-                        </Command.List>
-                      </Command.Root>
-                    </Popover.Content>
-                  </Popover.Root>
-                </div>
-              </div>
-
-              <!-- Additional nutrients row -->
-              <div class="grid gap-4 md:grid-cols-3">
-                <div class="space-y-2">
-                  <Label for="food-fat">Fat (g)</Label>
-                  <Input id="food-fat" name="fat" type="number" bind:value={foodFat} />
-                </div>
-                <div class="space-y-2">
-                  <Label for="food-protein">Protein (g)</Label>
-                  <Input
-                    id="food-protein"
-                    name="protein"
-                    type="number"
-                    bind:value={foodProtein}
-                  />
-                </div>
-                <div class="space-y-2">
-                  <Label for="food-energy">Energy (kJ)</Label>
-                  <Input
-                    id="food-energy"
-                    name="energy"
-                    type="number"
-                    bind:value={foodEnergy}
-                  />
-                </div>
-              </div>
-            </Collapsible.Content>
-          </Collapsible.Root>
-        </form>
+        />
       {/if}
 
       <!-- Treatment request fields - shared between food selection and log without saving -->
       {#if showForm || showSimpleCarbsForm}
-        <div class="border-t pt-4 space-y-4">
-          <div class="text-sm font-medium">How much did you eat?</div>
-
-          <!-- Show remaining carbs context -->
-          {#if totalCarbs > 0}
-            <div
-              class="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
-            >
-              <span>Remaining to attribute</span>
-              <span class="font-semibold tabular-nums">
-                {unspecifiedCarbs}g
-              </span>
-            </div>
-          {/if}
-
-          <!-- Bidirectional portion/carbs input -->
-          <div class="grid gap-4 md:grid-cols-3">
-            {#if !showSimpleCarbsForm}
-              <div class="space-y-2">
-                <Label for="portions">Portions</Label>
-                <Input
-                  id="portions"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={portions}
-                  oninput={(e) =>
-                    handlePortionsChange(
-                      parseFloat(e.currentTarget.value) || 0
-                    )}
-                />
-              </div>
-            {/if}
-            <div class="space-y-2">
-              <Label for="entry-carbs">Carbs (g)</Label>
-              <Input
-                id="entry-carbs"
-                type="number"
-                step="0.1"
-                min="0"
-                value={entryCarbs}
-                oninput={(e) =>
-                  handleCarbsChange(parseFloat(e.currentTarget.value) || 0)}
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="offset">Time offset (min)</Label>
-              <Input
-                id="offset"
-                type="number"
-                step="1"
-                bind:value={timeOffsetMinutes}
-              />
-            </div>
-          </div>
-
-          <!-- Scale to fit button - show for food selection (needs foodCarbs) or log without saving -->
-          {#if unspecifiedCarbs > 0 && (foodCarbs > 0 || showSimpleCarbsForm)}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              class="w-full"
-              onclick={scaleToFit}
-            >
-              <Scale class="mr-2 h-4 w-4" />
-              Scale to fill remaining {unspecifiedCarbs}g
-            </Button>
-          {/if}
-
-          <div class="space-y-2">
-            <Label for="note">
-              {showSimpleCarbsForm ? "Description" : "Note (optional)"}
-            </Label>
-            <Input
-              id="note"
-              bind:value={note}
-              placeholder={showSimpleCarbsForm
-                ? "What did you eat?"
-                : "Add a note..."}
-            />
-          </div>
-        </div>
+        <TreatmentPortionsForm
+          bind:portions
+          bind:entryCarbs
+          bind:timeOffsetMinutes
+          bind:note
+          {foodCarbs}
+          {totalCarbs}
+          {unspecifiedCarbs}
+          showPortions={!showSimpleCarbsForm}
+          onScaleToFit={scaleToFit}
+          onPortionsChange={handlePortionsChange}
+          onCarbsChange={handleCarbsChange}
+        />
       {/if}
     </div>
 

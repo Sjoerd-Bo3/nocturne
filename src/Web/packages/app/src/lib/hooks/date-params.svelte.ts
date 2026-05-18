@@ -58,7 +58,7 @@ export type DateRangeInput = {
 export function useDateParams(defaultDays = 7) {
   // showDefaults: true ensures all params are shown in URL, not just non-default ones
   // This is critical because runed by default omits params that match schema defaults
-  const params = useSearchParams(ReportsParamsSchema, { showDefaults: true });
+  const params = useSearchParams(ReportsParamsSchema, { showDefaults: true, noScroll: true });
 
   // Track initialization to prevent infinite loops
   let initialized = $state(false);
@@ -254,6 +254,28 @@ export function useDateParams(defaultDays = 7) {
     // This is a getter that returns the memoized $state, not a new object
     get dateRangeInput(): DateRangeInput {
       return memoizedInput;
+    },
+
+    /** Start of the date range as a Date object. Derived from memoizedInput for stability. */
+    get startDate(): Date {
+      const from = memoizedInput.from;
+      return from ? new Date(from) : new Date();
+    },
+
+    /** End of the date range as a Date object. Derived from memoizedInput for stability. */
+    get endDate(): Date {
+      const to = memoizedInput.to;
+      return to ? new Date(to) : new Date();
+    },
+
+    /** Date range as Unix milliseconds. Derived from memoizedInput for stability. */
+    get dateRangeMillis(): { from: number; to: number } {
+      const from = memoizedInput.from;
+      const to = memoizedInput.to;
+      return {
+        from: from ? new Date(from).getTime() : Date.now(),
+        to: to ? new Date(to).getTime() : Date.now(),
+      };
     },
 
     // Helper methods

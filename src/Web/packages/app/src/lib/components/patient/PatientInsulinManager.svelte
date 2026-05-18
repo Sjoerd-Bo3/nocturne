@@ -1,13 +1,9 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
-  import { Label } from "$lib/components/ui/label";
   import { Badge } from "$lib/components/ui/badge";
   import * as Card from "$lib/components/ui/card";
-  import * as Select from "$lib/components/ui/select";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
-  import { Textarea } from "$lib/components/ui/textarea";
   import {
     Syringe,
     Plus,
@@ -24,11 +20,10 @@
   } from "$api";
   import {
     insulinCategoryLabels,
-    insulinCategoryDescriptions,
     insulinRoleLabels,
-    insulinRoleDescriptions,
   } from "./labels";
   import { InsulinListState } from "./state.svelte";
+  import InsulinFormFields from "./InsulinFormFields.svelte";
 
   interface Props {
     /** "inline" = wizard-style card forms, "dialog" = settings-style dialog CRUD */
@@ -71,14 +66,14 @@
   // ── Inline variant state ────────────────────────────────────────
 
   let showInlineForm = $state(false);
-  let inlineCategory = $state("");
+  let inlineCategory = $state<string>("");
   let inlineFormulationId = $state("");
   let inlineName = $state("");
-  let inlineDia = $state(4.0);
-  let inlinePeak = $state(75);
+  let inlineDia = $state<number | null>(4.0);
+  let inlinePeak = $state<number | null>(75);
   let inlineCurve = $state("rapid-acting");
-  let inlineConcentration = $state(100);
-  let inlineRole = $state<string>(InsulinRole.Bolus);
+  let inlineConcentration = $state<number | null>(100);
+  let inlineRole = $state<string | InsulinRole>(InsulinRole.Bolus);
 
   let inlineFormulations = $derived(formulationsForCategory(inlineCategory));
 
@@ -127,21 +122,21 @@
   let editing = $state<PatientInsulin | null>(null);
   let deleteId = $state<string | null>(null);
 
-  let insulinCategory = $state<string>(InsulinCategory.RapidActing);
+  let insulinCategory = $state<string | InsulinCategory>(InsulinCategory.RapidActing);
   let insulinFormulationId = $state("");
   let insulinName = $state("");
   let insulinStartDate = $state("");
   let insulinEndDate = $state("");
   let insulinIsCurrent = $state(true);
   let insulinNotes = $state("");
-  let insulinDia = $state(4.0);
-  let insulinPeak = $state(75);
+  let insulinDia = $state<number | null>(4.0);
+  let insulinPeak = $state<number | null>(75);
   let insulinCurve = $state("rapid-acting");
-  let insulinConcentration = $state(100);
-  let insulinRole = $state<string>(InsulinRole.Bolus);
+  let insulinConcentration = $state<number | null>(100);
+  let insulinRole = $state<string | InsulinRole>(InsulinRole.Bolus);
   let insulinIsPrimary = $state(false);
 
-  let dialogFormulations = $derived(formulationsForCategory(insulinCategory));
+  let dialogFormulations = $derived(formulationsForCategory(insulinCategory as string));
 
   const activeForm = $derived(editing?.id ? insulinList.updateForm : insulinList.createForm);
   const dialogSaving = $derived(!!insulinList.createForm.pending || !!insulinList.updateForm.pending);
@@ -214,15 +209,6 @@
     deleteId = null;
   }
 
-  // ── Category items with descriptions ─────────────────────────
-
-  const insulinCategoryItems = $derived(
-    Object.entries(insulinCategoryLabels).map(([value, label]) => ({
-      value,
-      label,
-      description: insulinCategoryDescriptions[value] ?? "",
-    })),
-  );
 </script>
 
 {#if variant === "inline"}
@@ -283,148 +269,20 @@
         })}
       >
         <Card.Content class="space-y-4">
-          <div class="grid gap-4 sm:grid-cols-2">
-            <div class="space-y-2">
-              <Label for="insulin-category">Category</Label>
-              <Select.Root
-                type="single"
-                name="insulinCategory"
-                bind:value={inlineCategory}
-                onValueChange={() => onInlineCategoryChange()}
-              >
-                <Select.Trigger id="insulin-category">
-                  {inlineCategory
-                    ? (insulinCategoryLabels[inlineCategory] ?? inlineCategory)
-                    : "Select category"}
-                </Select.Trigger>
-                <Select.Content>
-                  {#each insulinCategoryItems as cat}
-                    <Select.Item value={cat.value} label={cat.label}>
-                      <div>
-                        <div>{cat.label}</div>
-                        <div class="text-xs text-muted-foreground">{cat.description}</div>
-                      </div>
-                    </Select.Item>
-                  {/each}
-                </Select.Content>
-              </Select.Root>
-            </div>
-
-            {#if inlineCategory && inlineFormulations.length > 0}
-              <div class="space-y-2">
-                <Label for="insulin-formulation">Formulation</Label>
-                <Select.Root
-                  type="single"
-                  bind:value={inlineFormulationId}
-                  onValueChange={() => onInlineFormulationChange()}
-                >
-                  <Select.Trigger id="insulin-formulation">
-                    {inlineFormulationId
-                      ? (insulinList.catalog.find(f => f.id === inlineFormulationId)?.name ?? "Select formulation")
-                      : "Select formulation"}
-                  </Select.Trigger>
-                  <Select.Content>
-                    {#each inlineFormulations as f}
-                      <Select.Item value={f.id ?? ""} label={f.name ?? ""}>
-                        <div>
-                          <div>{f.name}</div>
-                          <div class="text-xs text-muted-foreground">
-                            DIA {f.defaultDia}h &middot; U-{f.concentration}
-                          </div>
-                        </div>
-                      </Select.Item>
-                    {/each}
-                    <Select.Item value="" label="Custom">
-                      <div>
-                        <div>Custom</div>
-                        <div class="text-xs text-muted-foreground">Enter a custom insulin name</div>
-                      </div>
-                    </Select.Item>
-                  </Select.Content>
-                </Select.Root>
-              </div>
-            {/if}
-
-            <div class="space-y-2">
-              <Label for="insulin-name">Brand / Name</Label>
-              <Input
-                name="name"
-                id="insulin-name"
-                bind:value={inlineName}
-                placeholder="e.g. Humalog, Lantus"
-                disabled={!!inlineFormulationId}
-              />
-            </div>
-
-            <div class="space-y-2">
-              <Label for="insulin-role">Role</Label>
-              <Select.Root type="single" name="role" bind:value={inlineRole}>
-                <Select.Trigger id="insulin-role">
-                  {insulinRoleLabels[inlineRole] ?? inlineRole}
-                </Select.Trigger>
-                <Select.Content>
-                  {#each Object.entries(insulinRoleLabels) as [value, label]}
-                    <Select.Item {value} {label}>
-                      <div>
-                        <div>{label}</div>
-                        <div class="text-xs text-muted-foreground">
-                          {insulinRoleDescriptions[value] ?? ""}
-                        </div>
-                      </div>
-                    </Select.Item>
-                  {/each}
-                </Select.Content>
-              </Select.Root>
-            </div>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-3">
-            <div class="space-y-2">
-              <Label for="insulin-dia">Duration of Insulin Action</Label>
-              <div class="flex items-center gap-2">
-                <Input
-                  id="insulin-dia"
-                  type="number"
-                  bind:value={inlineDia}
-                  step={0.5}
-                  min={0.5}
-                  max={48}
-                  class="flex-1"
-                />
-                <span class="text-sm text-muted-foreground whitespace-nowrap">hours</span>
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <Label for="insulin-peak">Peak</Label>
-              <div class="flex items-center gap-2">
-                <Input
-                  id="insulin-peak"
-                  type="number"
-                  bind:value={inlinePeak}
-                  step={5}
-                  min={0}
-                  class="flex-1"
-                />
-                <span class="text-sm text-muted-foreground whitespace-nowrap">min</span>
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <Label for="insulin-concentration">Concentration</Label>
-              <div class="flex items-center gap-2">
-                <span class="text-sm text-muted-foreground whitespace-nowrap">U-</span>
-                <Input
-                  id="insulin-concentration"
-                  type="number"
-                  bind:value={inlineConcentration}
-                  step={100}
-                  min={100}
-                  class="flex-1"
-                />
-              </div>
-            </div>
-          </div>
+          <InsulinFormFields
+            bind:category={inlineCategory}
+            bind:formulationId={inlineFormulationId}
+            bind:name={inlineName}
+            bind:role={inlineRole}
+            bind:dia={inlineDia}
+            bind:peak={inlinePeak}
+            bind:concentration={inlineConcentration}
+            formulations={inlineFormulations}
+            catalog={insulinList.catalog}
+            showExtendedFields={false}
+            onCategoryChange={onInlineCategoryChange}
+            onFormulationChange={onInlineFormulationChange}
+          />
 
           <!-- Hidden fields for form submission -->
           <input type="hidden" name="b:isCurrent" value="on" />
@@ -477,12 +335,12 @@
                 {insulin.name ?? "Unnamed"}
               </span>
               <Badge variant="secondary" class="text-xs">
-                {insulinCategoryLabels[insulin.insulinCategory ?? ""] ??
+                {insulinCategoryLabels[(insulin.insulinCategory ?? "") as InsulinCategory] ??
                   insulin.insulinCategory}
               </Badge>
               {#if insulin.role}
                 <Badge variant="outline" class="text-xs">
-                  {insulinRoleLabels[insulin.role] ?? insulin.role}
+                  {insulinRoleLabels[insulin.role as InsulinRole] ?? insulin.role}
                 </Badge>
               {/if}
               {#if insulin.isCurrent}
@@ -567,195 +425,25 @@
           <input type="hidden" name="id" value={editing.id} />
         {/if}
         <div class="space-y-4 py-4">
-          <div class="space-y-2">
-            <Label for="insulin-category">Category</Label>
-            <Select.Root
-              type="single"
-              name="insulinCategory"
-              bind:value={insulinCategory}
-              onValueChange={() => onDialogCategoryChange()}
-            >
-              <Select.Trigger id="insulin-category">
-                {insulinCategoryLabels[insulinCategory] ?? insulinCategory}
-              </Select.Trigger>
-              <Select.Content>
-                {#each Object.entries(insulinCategoryLabels) as [value, label]}
-                  <Select.Item {value} {label} />
-                {/each}
-              </Select.Content>
-            </Select.Root>
-          </div>
-
-          {#if dialogFormulations.length > 0}
-            <div class="space-y-2">
-              <Label for="insulin-formulation">Formulation</Label>
-              <Select.Root
-                type="single"
-                bind:value={insulinFormulationId}
-                onValueChange={() => onDialogFormulationChange()}
-              >
-                <Select.Trigger id="insulin-formulation">
-                  {insulinFormulationId
-                    ? (insulinList.catalog.find(f => f.id === insulinFormulationId)?.name ?? "Custom")
-                    : "Select formulation or enter custom"}
-                </Select.Trigger>
-                <Select.Content>
-                  {#each dialogFormulations as f}
-                    <Select.Item value={f.id ?? ""} label={f.name ?? ""}>
-                      <div>
-                        <div>{f.name}</div>
-                        <div class="text-xs text-muted-foreground">
-                          DIA {f.defaultDia}h &middot; Peak {f.defaultPeak}min &middot; U-{f.concentration}
-                        </div>
-                      </div>
-                    </Select.Item>
-                  {/each}
-                  <Select.Item value="" label="Custom">
-                    <div>
-                      <div>Custom</div>
-                      <div class="text-xs text-muted-foreground">Enter a custom insulin name</div>
-                    </div>
-                  </Select.Item>
-                </Select.Content>
-              </Select.Root>
-            </div>
-          {/if}
-
-          <div class="space-y-2">
-            <Label for="insulin-name">Name / Brand</Label>
-            <Input
-              name="name"
-              id="insulin-name"
-              bind:value={insulinName}
-              placeholder="e.g. Humalog, Tresiba, Fiasp"
-              disabled={!!insulinFormulationId}
-            />
-          </div>
-
-          <div class="space-y-2">
-            <Label for="insulin-role">Role</Label>
-            <Select.Root type="single" name="role" bind:value={insulinRole}>
-              <Select.Trigger id="insulin-role">
-                {insulinRoleLabels[insulinRole] ?? insulinRole}
-              </Select.Trigger>
-              <Select.Content>
-                {#each Object.entries(insulinRoleLabels) as [value, label]}
-                  <Select.Item {value} {label}>
-                    <div>
-                      <div>{label}</div>
-                      <div class="text-xs text-muted-foreground">
-                        {insulinRoleDescriptions[value] ?? ""}
-                      </div>
-                    </div>
-                  </Select.Item>
-                {/each}
-              </Select.Content>
-            </Select.Root>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-3">
-            <div class="space-y-2">
-              <Label for="insulin-dia">DIA</Label>
-              <div class="flex items-center gap-2">
-                <Input
-                  id="insulin-dia"
-                  type="number"
-                  bind:value={insulinDia}
-                  step={0.5}
-                  min={0.5}
-                  max={48}
-                  class="flex-1"
-                />
-                <span class="text-sm text-muted-foreground whitespace-nowrap">hours</span>
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <Label for="insulin-peak">Peak</Label>
-              <div class="flex items-center gap-2">
-                <Input
-                  id="insulin-peak"
-                  type="number"
-                  bind:value={insulinPeak}
-                  step={5}
-                  min={0}
-                  class="flex-1"
-                />
-                <span class="text-sm text-muted-foreground whitespace-nowrap">min</span>
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <Label for="insulin-concentration">Concentration</Label>
-              <div class="flex items-center gap-2">
-                <span class="text-sm text-muted-foreground whitespace-nowrap">U-</span>
-                <Input
-                  id="insulin-concentration"
-                  type="number"
-                  bind:value={insulinConcentration}
-                  step={100}
-                  min={100}
-                  class="flex-1"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <div class="space-y-2">
-              <Label for="insulin-start">Start Date</Label>
-              <Input
-                name="startDate"
-                id="insulin-start"
-                type="date"
-                bind:value={insulinStartDate}
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="insulin-end">End Date</Label>
-              <Input
-                name="endDate"
-                id="insulin-end"
-                type="date"
-                bind:value={insulinEndDate}
-              />
-            </div>
-          </div>
-
-          <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2">
-              <input
-                id="insulin-current"
-                type="checkbox"
-                name="isCurrent"
-                bind:checked={insulinIsCurrent}
-                class="h-4 w-4 rounded border-input"
-              />
-              <Label for="insulin-current">Currently in use</Label>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <input
-                id="insulin-primary"
-                type="checkbox"
-                name="isPrimary"
-                bind:checked={insulinIsPrimary}
-                class="h-4 w-4 rounded border-input"
-              />
-              <Label for="insulin-primary">Primary for this role</Label>
-            </div>
-          </div>
-
-          <div class="space-y-2">
-            <Label for="insulin-notes">Notes</Label>
-            <Textarea
-              name="notes"
-              id="insulin-notes"
-              bind:value={insulinNotes}
-              placeholder="Any additional notes about this insulin"
-              rows={2}
-            />
-          </div>
+          <InsulinFormFields
+            bind:category={insulinCategory}
+            bind:formulationId={insulinFormulationId}
+            bind:name={insulinName}
+            bind:role={insulinRole}
+            bind:dia={insulinDia}
+            bind:peak={insulinPeak}
+            bind:concentration={insulinConcentration}
+            bind:startDate={insulinStartDate}
+            bind:endDate={insulinEndDate}
+            bind:isCurrent={insulinIsCurrent}
+            bind:isPrimary={insulinIsPrimary}
+            bind:notes={insulinNotes}
+            formulations={dialogFormulations}
+            catalog={insulinList.catalog}
+            showExtendedFields={true}
+            onCategoryChange={onDialogCategoryChange}
+            onFormulationChange={onDialogFormulationChange}
+          />
 
           <!-- Hidden fields for form submission -->
           <input type="hidden" name="n:dia" value={insulinDia} />

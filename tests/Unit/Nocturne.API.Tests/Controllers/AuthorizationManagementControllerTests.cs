@@ -2,8 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Controllers.V2;
-using Nocturne.API.Services;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Identity;
 using Xunit;
 
 namespace Nocturne.API.Tests.Controllers;
@@ -157,8 +156,8 @@ public class AuthorizationManagementControllerTests
         var result = await _controller.UpdateSubject(subjectWithoutId);
 
         // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Subject ID is required for update", badRequestResult.Value);
+        var objectResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, objectResult.StatusCode);
     }
 
     [Fact]
@@ -337,8 +336,8 @@ public class AuthorizationManagementControllerTests
         var result = await _controller.UpdateRole(roleWithoutId);
 
         // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Role ID is required for update", badRequestResult.Value);
+        var objectResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(400, objectResult.StatusCode);
     }
 
     [Fact]

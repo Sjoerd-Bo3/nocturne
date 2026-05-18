@@ -3,8 +3,14 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Interface for documents that can be processed for sanitization and timestamp conversion
+/// Interface for documents that can be processed for sanitization and timestamp conversion.
 /// </summary>
+/// <seealso cref="ProcessableDocumentBase"/>
+/// <seealso cref="SanitizableAttribute"/>
+/// <seealso cref="Entry"/>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="DeviceStatus"/>
+/// <seealso cref="Activity"/>
 public interface IProcessableDocument
 {
     /// <summary>

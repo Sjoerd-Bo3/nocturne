@@ -6,25 +6,31 @@ using Nocturne.Core.Models;
 namespace Nocturne.API.Controllers.V4.Platform;
 
 /// <summary>
-/// Controller for managing point-in-time system events (alarms, warnings, info)
+/// Controller for managing point-in-time system events (alarms, warnings, info).
 /// </summary>
+/// <seealso cref="ISystemEventRepository"/>
 [ApiController]
+[Tags("Platform")]
 [Route("api/v4/system-events")]
 [Authorize]
 public class SystemEventsController : ControllerBase
 {
     private readonly ISystemEventRepository _repository;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="SystemEventsController"/>.
+    /// </summary>
+    /// <param name="repository">Repository for system event storage and retrieval.</param>
     public SystemEventsController(ISystemEventRepository repository)
     {
         _repository = repository;
     }
 
     /// <summary>
-    /// Query system events with optional filtering
+    /// Query system events with optional filtering.
     /// </summary>
-    [HttpGet]
     /// <inheritdoc cref="ISystemEventRepository.GetSystemEventsAsync"/>
+    [HttpGet]
     public async Task<ActionResult<IEnumerable<SystemEvent>>> GetSystemEvents(
         [FromQuery] SystemEventType? type = null,
         [FromQuery] SystemEventCategory? category = null,
@@ -43,10 +49,10 @@ public class SystemEventsController : ControllerBase
     }
 
     /// <summary>
-    /// Get a specific system event by ID
+    /// Get a specific system event by ID.
     /// </summary>
-    [HttpGet("{id}")]
     /// <inheritdoc cref="ISystemEventRepository.GetSystemEventByIdAsync"/>
+    [HttpGet("{id}")]
     public async Task<ActionResult<SystemEvent>> GetSystemEvent(
         string id,
         CancellationToken cancellationToken = default)
@@ -58,11 +64,11 @@ public class SystemEventsController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new system event (manual entry or import)
+    /// Create a new system event (manual entry or import).
     /// </summary>
+    /// <inheritdoc cref="ISystemEventRepository.UpsertSystemEventAsync"/>
     [HttpPost]
     [ProducesResponseType(typeof(SystemEvent), StatusCodes.Status201Created)]
-    /// <inheritdoc cref="ISystemEventRepository.UpsertSystemEventAsync"/>
     public async Task<ActionResult<SystemEvent>> CreateSystemEvent(
         [FromBody] CreateSystemEventRequest request,
         CancellationToken cancellationToken = default)
@@ -84,10 +90,10 @@ public class SystemEventsController : ControllerBase
     }
 
     /// <summary>
-    /// Delete a system event
+    /// Delete a system event.
     /// </summary>
-    [HttpDelete("{id}")]
     /// <inheritdoc cref="ISystemEventRepository.DeleteSystemEventAsync"/>
+    [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteSystemEvent(
         string id,
         CancellationToken cancellationToken = default)
@@ -101,15 +107,26 @@ public class SystemEventsController : ControllerBase
 
 #region Request Models
 
+/// <summary>
+/// Request body for creating a new <see cref="SystemEvent"/> record.
+/// </summary>
 public class CreateSystemEventRequest
 {
+    /// <summary>Gets or sets the event type (alarm, warning, or info).</summary>
     public SystemEventType EventType { get; set; }
+    /// <summary>Gets or sets the event category.</summary>
     public SystemEventCategory Category { get; set; }
+    /// <summary>Gets or sets an optional short code identifying the event.</summary>
     public string? Code { get; set; }
+    /// <summary>Gets or sets a human-readable description of the event.</summary>
     public string? Description { get; set; }
+    /// <summary>Gets or sets the Unix millisecond timestamp of the event.</summary>
     public long Mills { get; set; }
+    /// <summary>Gets or sets the data source identifier (defaults to "manual" when absent).</summary>
     public string? Source { get; set; }
+    /// <summary>Gets or sets arbitrary metadata associated with the event.</summary>
     public Dictionary<string, object>? Metadata { get; set; }
+    /// <summary>Gets or sets the original MongoDB ObjectId, preserved for migration compatibility.</summary>
     public string? OriginalId { get; set; }
 }
 

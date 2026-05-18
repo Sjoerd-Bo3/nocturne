@@ -22,6 +22,7 @@ public static class PumpSnapshotMapper
             Timestamp = model.Timestamp,
             UtcOffset = model.UtcOffset,
             Device = model.Device,
+            CorrelationId = model.CorrelationId,
             LegacyId = model.LegacyId,
             SysCreatedAt = DateTime.UtcNow,
             SysUpdatedAt = DateTime.UtcNow,
@@ -36,6 +37,9 @@ public static class PumpSnapshotMapper
             PumpStatus = model.PumpStatus,
             Clock = model.Clock,
             DeviceId = model.DeviceId,
+            PatientDeviceId = model.PatientDeviceId,
+            Iob = model.Iob,
+            BolusIob = model.BolusIob,
             AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
                 ? JsonSerializer.Serialize(model.AdditionalProperties)
                 : null,
@@ -55,6 +59,7 @@ public static class PumpSnapshotMapper
             Timestamp = entity.Timestamp,
             UtcOffset = entity.UtcOffset,
             Device = entity.Device,
+            CorrelationId = entity.CorrelationId,
             LegacyId = entity.LegacyId,
             CreatedAt = entity.SysCreatedAt,
             ModifiedAt = entity.SysUpdatedAt,
@@ -69,6 +74,9 @@ public static class PumpSnapshotMapper
             PumpStatus = entity.PumpStatus,
             Clock = entity.Clock,
             DeviceId = entity.DeviceId,
+            PatientDeviceId = entity.PatientDeviceId,
+            Iob = entity.Iob,
+            BolusIob = entity.BolusIob,
             AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
                 ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
                 : null,
@@ -85,6 +93,7 @@ public static class PumpSnapshotMapper
         entity.Timestamp = model.Timestamp;
         entity.UtcOffset = model.UtcOffset;
         entity.Device = model.Device;
+        entity.CorrelationId = model.CorrelationId;
         entity.LegacyId = model.LegacyId;
         entity.SysUpdatedAt = DateTime.UtcNow;
         entity.Manufacturer = model.Manufacturer;
@@ -98,6 +107,9 @@ public static class PumpSnapshotMapper
         entity.PumpStatus = model.PumpStatus;
         entity.Clock = model.Clock;
         entity.DeviceId = model.DeviceId;
+        entity.PatientDeviceId = model.PatientDeviceId;
+        entity.Iob = model.Iob;
+        entity.BolusIob = model.BolusIob;
         entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
             ? JsonSerializer.Serialize(model.AdditionalProperties)
             : null;

@@ -1,36 +1,54 @@
 using Nocturne.Connectors.Core.Interfaces;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Profiles.Resolvers;
+using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
+using Nocturne.Infrastructure.Data;
+using Nocturne.Infrastructure.Data.Entities.V4;
 
 namespace Nocturne.API.Services.ConnectorPublishing;
 
+/// <summary>
+/// Publishes treatment data received from connectors into both the legacy v1-v3 treatment store
+/// (via <see cref="ITreatmentService"/>) and the v4 event-centric repositories for boluses, carb
+/// intakes, BG checks, bolus calculations, and temporary basals.
+/// </summary>
+/// <seealso cref="ITreatmentPublisher"/>
 internal sealed class TreatmentPublisher : ITreatmentPublisher
 {
+    private readonly NocturneDbContext _dbContext;
     private readonly ITreatmentService _treatmentService;
     private readonly IBolusRepository _bolusRepository;
     private readonly ICarbIntakeRepository _carbIntakeRepository;
     private readonly IBGCheckRepository _bgCheckRepository;
     private readonly IBolusCalculationRepository _bolusCalculationRepository;
     private readonly ITempBasalRepository _tempBasalRepository;
+    private readonly IBasalRateResolver _basalRateResolver;
+    private readonly ITherapySettingsResolver _therapySettingsResolver;
     private readonly ILogger<TreatmentPublisher> _logger;
 
     public TreatmentPublisher(
+        NocturneDbContext dbContext,
         ITreatmentService treatmentService,
         IBolusRepository bolusRepository,
         ICarbIntakeRepository carbIntakeRepository,
         IBGCheckRepository bgCheckRepository,
         IBolusCalculationRepository bolusCalculationRepository,
         ITempBasalRepository tempBasalRepository,
+        IBasalRateResolver basalRateResolver,
+        ITherapySettingsResolver therapySettingsResolver,
         ILogger<TreatmentPublisher> logger)
     {
+        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _treatmentService = treatmentService ?? throw new ArgumentNullException(nameof(treatmentService));
         _bolusRepository = bolusRepository ?? throw new ArgumentNullException(nameof(bolusRepository));
         _carbIntakeRepository = carbIntakeRepository ?? throw new ArgumentNullException(nameof(carbIntakeRepository));
         _bgCheckRepository = bgCheckRepository ?? throw new ArgumentNullException(nameof(bgCheckRepository));
         _bolusCalculationRepository = bolusCalculationRepository ?? throw new ArgumentNullException(nameof(bolusCalculationRepository));
         _tempBasalRepository = tempBasalRepository ?? throw new ArgumentNullException(nameof(tempBasalRepository));
+        _basalRateResolver = basalRateResolver ?? throw new ArgumentNullException(nameof(basalRateResolver));
+        _therapySettingsResolver = therapySettingsResolver ?? throw new ArgumentNullException(nameof(therapySettingsResolver));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -156,6 +174,14 @@ internal sealed class TreatmentPublisher : ITreatmentPublisher
             await _tempBasalRepository.DeleteBySourceAndDateRangeAsync(
                 source, minTimestamp, maxTimestamp, cancellationToken);
 
+            var reclassifiedCount = await ReclassifyScheduledAlgorithmicBasalsAsync(
+                recordList, cancellationToken);
+            if (reclassifiedCount > 0)
+                _logger.LogInformation(
+                    "Reclassified {Count}/{Total} TempBasal records from Scheduled to Algorithm "
+                    + "(rate differs from programmed basal schedule) for {Source}",
+                    reclassifiedCount, recordList.Count, source);
+
             await _tempBasalRepository.BulkCreateAsync(recordList, cancellationToken);
             _logger.LogDebug("Published {Count} TempBasal records for {Source}", recordList.Count, source);
             return true;
@@ -164,6 +190,89 @@ internal sealed class TreatmentPublisher : ITreatmentPublisher
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to publish TempBasal records for {Source}", source);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Connectors that flatten algorithm-driven adjustments (e.g. Tandem Control-IQ via Glooko's
+    /// ScheduledBasal stream) emit <see cref="TempBasalOrigin.Scheduled"/> records whose
+    /// <see cref="TempBasal.Rate"/> reflects what the pump actually delivered, not the user's
+    /// programmed basal profile. Compare each Scheduled record's rate against the resolved
+    /// schedule rate; when they diverge, reclassify as <see cref="TempBasalOrigin.Algorithm"/>
+    /// so downstream chart code emits the correct overlay. In either case, overwrite
+    /// <see cref="TempBasal.ScheduledRate"/> with the resolved programmed rate (some connectors
+    /// copy Rate into ScheduledRate, which makes the chart's reference line track the algorithm).
+    /// </summary>
+    private async Task<int> ReclassifyScheduledAlgorithmicBasalsAsync(
+        List<TempBasal> records,
+        CancellationToken cancellationToken)
+    {
+        // Floating-point noise guard. Real pump precision is ≥0.025 U/hr; algorithm-driven
+        // adjustments differ by far more.
+        const double rateTolerance = 0.005;
+
+        var scheduledRecords = records
+            .Where(r => r.Origin == TempBasalOrigin.Scheduled)
+            .ToList();
+        if (scheduledRecords.Count == 0) return 0;
+
+        // Without therapy settings on file, the resolver falls back to a hardcoded default and
+        // would mass-reclassify every record. Skip — we don't yet know what the schedule is.
+        if (!await _therapySettingsResolver.HasDataAsync(cancellationToken))
+            return 0;
+
+        var minMills = scheduledRecords.Min(r => r.StartMills);
+        var maxMills = scheduledRecords.Max(r => r.StartMills);
+
+        var resolve = await _basalRateResolver.BuildResolverAsync(minMills, maxMills, cancellationToken);
+
+        var reclassified = 0;
+        foreach (var record in scheduledRecords)
+        {
+            var programmedRate = resolve(record.StartMills);
+            record.ScheduledRate = programmedRate;
+
+            if (Math.Abs(record.Rate - programmedRate) > rateTolerance)
+            {
+                record.Origin = TempBasalOrigin.Algorithm;
+                reclassified++;
+            }
+        }
+
+        return reclassified;
+    }
+
+    public async Task<bool> PublishDecompositionBatchesAsync(
+        IEnumerable<DecompositionBatch> batches,
+        string source,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var batchList = batches.ToList();
+            if (batchList.Count == 0) return true;
+
+            foreach (var batch in batchList)
+            {
+                _dbContext.DecompositionBatches.Add(new DecompositionBatchEntity
+                {
+                    Id = batch.Id,
+                    TenantId = _dbContext.TenantId,
+                    Source = batch.Source,
+                    SourceRecordId = batch.SourceRecordId,
+                    CreatedAt = batch.CreatedAt,
+                });
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            _logger.LogDebug("Published {Count} DecompositionBatch records for {Source}", batchList.Count, source);
+            return true;
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish DecompositionBatch records for {Source}", source);
             return false;
         }
     }

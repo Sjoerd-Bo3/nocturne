@@ -13,12 +13,12 @@
     BatteryWarning,
     Zap,
   } from "lucide-svelte";
-  import { formatTime, timeAgo } from "$lib/utils";
-  import { formatGlucoseDelta, getUnitLabel } from "$lib/utils/formatting";
+  import { timeAgo } from "$lib/utils";
+  import { formatGlucoseDelta, getUnitLabel, time } from "$lib/utils/formatting";
   import { getRealtimeStore } from "$lib/stores/realtime-store.svelte";
   import { glucoseUnits } from "$lib/stores/appearance-store.svelte";
   import WebSocketStatus from "$lib/components/WebSocketStatus.svelte";
-  import { getBatteryCardData } from "$api/battery.remote";
+  import { getCurrentBatteryStatus } from "$api/generated/batteries.generated.remote";
 
   let {
     bgDelta,
@@ -40,8 +40,8 @@
   const displayLastUpdated = $derived(lastUpdated ?? realtimeStore.lastUpdated);
 
   // Battery data
-  const batteryDataPromise = $derived(
-    getBatteryCardData({ recentMinutes: 30 })
+  const batteryStatusPromise = $derived(
+    getCurrentBatteryStatus({ recentMinutes: 30 })
   );
 
   // Get battery icon component based on level
@@ -77,7 +77,7 @@
   </Card>
 
   <!-- Last Updated Card with Battery Info -->
-  {#await batteryDataPromise}
+  {#await batteryStatusPromise}
     <Card>
       <CardHeader class="pb-2">
         <CardTitle class="text-sm font-medium">Last Updated</CardTitle>
@@ -87,12 +87,11 @@
           {timeAgo(displayLastUpdated)}
         </div>
         <p class="text-xs text-muted-foreground">
-          {formatTime(displayLastUpdated)}
+          {time(displayLastUpdated)}
         </p>
       </CardContent>
     </Card>
-  {:then data}
-    {@const currentStatus = data?.currentStatus}
+  {:then currentStatus}
     {@const hasDevices =
       currentStatus && Object.keys(currentStatus.devices ?? {}).length > 0}
     <Card>
@@ -132,7 +131,7 @@
           </div>
         {:else}
           <p class="text-xs text-muted-foreground">
-            {formatTime(displayLastUpdated)}
+            {time(displayLastUpdated)}
           </p>
         {/if}
       </CardContent>
@@ -147,7 +146,7 @@
           {timeAgo(displayLastUpdated)}
         </div>
         <p class="text-xs text-muted-foreground">
-          {formatTime(displayLastUpdated)}
+          {time(displayLastUpdated)}
         </p>
       </CardContent>
     </Card>

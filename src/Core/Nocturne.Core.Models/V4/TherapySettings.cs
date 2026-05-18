@@ -1,8 +1,22 @@
 namespace Nocturne.Core.Models.V4;
 
 /// <summary>
-/// Scalar therapy configuration for a named profile (DIA, carb absorption, units, timezone, Loop settings)
+/// Scalar therapy configuration for a named profile, including DIA, carb absorption rates, units,
+/// timezone, and APS-specific settings. Decomposed from a legacy <see cref="Profile"/> record.
 /// </summary>
+/// <remarks>
+/// <see cref="TherapySettings"/> holds the non-scheduled configuration for a profile. The scheduled
+/// parameters (basal rates, carb ratios, ISF, target ranges) are stored in their respective schedule
+/// types. All records decomposed from the same legacy <see cref="Profile"/> share the same
+/// <see cref="IV4Record.CorrelationId"/>.
+/// </remarks>
+/// <seealso cref="Profile"/>
+/// <seealso cref="IV4Record"/>
+/// <seealso cref="BasalSchedule"/>
+/// <seealso cref="CarbRatioSchedule"/>
+/// <seealso cref="SensitivitySchedule"/>
+/// <seealso cref="TargetRangeSchedule"/>
+/// <seealso cref="ProfileSummary"/>
 public class TherapySettings : IV4Record
 {
     /// <summary>

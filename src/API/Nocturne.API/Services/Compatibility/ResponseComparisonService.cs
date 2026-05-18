@@ -8,18 +8,16 @@ using Nocturne.Core.Models;
 namespace Nocturne.API.Services.Compatibility;
 
 /// <summary>
-/// Service for comparing responses from different target systems
+/// Compares the responses from Nightscout and Nocturne to identify compatibility discrepancies.
 /// </summary>
+/// <seealso cref="ResponseComparisonService"/>
 public interface IResponseComparisonService
 {
     /// <summary>
-    /// Compare two target responses and generate a detailed comparison result
+    /// Compares responses at status code, header, body, and performance levels.
+    /// The <paramref name="requestPath"/> is used to look up route-specific field exclusions
+    /// from <see cref="Configuration.ResponseComparisonSettings.RouteExcludeFields"/>.
     /// </summary>
-    /// <param name="nightscoutResponse">Response from Nightscout</param>
-    /// <param name="nocturneResponse">Response from Nocturne</param>
-    /// <param name="correlationId">Request correlation ID</param>
-    /// <param name="requestPath">Request path for route-specific exclusions</param>
-    /// <returns>Detailed comparison result</returns>
     Task<ResponseComparisonResult> CompareResponsesAsync(
         TargetResponse? nightscoutResponse,
         TargetResponse? nocturneResponse,
@@ -29,8 +27,36 @@ public interface IResponseComparisonService
 }
 
 /// <summary>
-/// Implementation of response comparison service
+/// <see cref="IResponseComparisonService"/> implementation that performs structured JSON
+/// comparison with configurable tolerances for numeric values, timestamps, and array ordering.
 /// </summary>
+/// <remarks>
+/// <para>
+/// JSON body comparison is recursive (<c>CompareJsonNodes</c>) and handles objects, arrays,
+/// and scalar values. Numeric values within <see cref="Configuration.ResponseComparisonSettings.NumericPrecisionTolerance"/>
+/// are treated as equal; timestamp fields (detected by path suffix heuristics) within
+/// <see cref="Configuration.ResponseComparisonSettings.TimestampToleranceMs"/> are also treated as equal.
+/// </para>
+/// <para>
+/// When <see cref="Configuration.ResponseComparisonSettings.AllowSupersetResponses"/> is
+/// <see langword="true"/>, fields present only in the Nocturne response are silently ignored,
+/// so Nocturne is allowed to return richer data without generating discrepancies.
+/// </para>
+/// <para>
+/// Array comparison defaults to <see cref="Configuration.ArrayOrderHandling.Strict"/>
+/// positional matching. The <c>Loose</c> mode currently falls back to strict (order-agnostic
+/// matching is deferred). <c>Sorted</c> mode sorts elements by their string representation
+/// before comparing.
+/// </para>
+/// <para>
+/// Response bodies larger than 10 MB are compared as raw byte sequences; detailed field-level
+/// analysis is skipped to avoid excessive memory allocation.
+/// </para>
+/// <para>
+/// Performance differences greater than 1 000 ms are flagged as minor discrepancies.
+/// </para>
+/// </remarks>
+/// <seealso cref="IResponseComparisonService"/>
 public class ResponseComparisonService : IResponseComparisonService
 {
     private readonly IOptions<CompatibilityProxyConfiguration> _configuration;

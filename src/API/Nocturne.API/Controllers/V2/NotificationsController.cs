@@ -3,17 +3,19 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Authorization;
 using OpenApi.Remote.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Notifications;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V2;
 
 /// <summary>
-/// V2 Notifications controller providing enhanced notifications system endpoints
-/// Implements the legacy /api/v2/notifications endpoints with 1:1 backwards compatibility
-/// Based on the legacy notifications-v2.js implementation
+/// V2 Notifications controller providing enhanced notifications system endpoints.
+/// Implements the legacy /api/v2/notifications endpoints with 1:1 backwards compatibility.
+/// Based on the legacy notifications-v2.js implementation.
 /// </summary>
+/// <seealso cref="INotificationV2Service"/>
 [ApiController]
+[Tags("V2")]
 [Route("api/v2/notifications")]
 [Produces("application/json")]
 [ClientPropertyName("v2Notifications")]
@@ -23,6 +25,11 @@ public class NotificationsController : ControllerBase
     private readonly INotificationV2Service _notificationService;
     private readonly ILogger<NotificationsController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="NotificationsController"/>.
+    /// </summary>
+    /// <param name="notificationService">Service handling V2 notification operations.</param>
+    /// <param name="logger">Logger instance.</param>
     public NotificationsController(
         INotificationV2Service notificationService,
         ILogger<NotificationsController> logger

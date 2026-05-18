@@ -207,7 +207,7 @@
               <Select.Root type="single" name="deviceCategory" bind:value={inlineCategory}>
                 <Select.Trigger id="device-category">
                   {inlineCategory
-                    ? (deviceCategoryLabels[inlineCategory] ?? inlineCategory)
+                    ? (deviceCategoryLabels[inlineCategory as DeviceCategory] ?? inlineCategory)
                     : "Select category"}
                 </Select.Trigger>
                 <Select.Content>
@@ -244,7 +244,7 @@
                 <Select.Root type="single" name="aidAlgorithm" bind:value={inlineAidAlgorithm}>
                   <Select.Trigger id="aid-algorithm">
                     {inlineAidAlgorithm
-                      ? (aidAlgorithmLabels[inlineAidAlgorithm] ?? inlineAidAlgorithm)
+                      ? (aidAlgorithmLabels[inlineAidAlgorithm as AidAlgorithm] ?? inlineAidAlgorithm)
                       : "Select algorithm"}
                   </Select.Trigger>
                   <Select.Content>
@@ -297,7 +297,7 @@
                 {device.manufacturer ?? "Unknown"} {device.model ?? ""}
               </span>
               <Badge variant="secondary" class="text-xs">
-                {deviceCategoryLabels[device.deviceCategory ?? ""] ??
+                {deviceCategoryLabels[(device.deviceCategory ?? "") as DeviceCategory] ??
                   device.deviceCategory}
               </Badge>
               {#if device.isCurrent}
@@ -384,7 +384,7 @@
             <Label for="device-category">Category</Label>
             <Select.Root type="single" name="deviceCategory" bind:value={deviceCategory}>
               <Select.Trigger id="device-category">
-                {deviceCategoryLabels[deviceCategory] ?? deviceCategory}
+                {deviceCategoryLabels[deviceCategory as DeviceCategory] ?? deviceCategory}
               </Select.Trigger>
               <Select.Content>
                 {#each Object.entries(deviceCategoryLabels) as [value, label]}
@@ -421,7 +421,7 @@
               <Select.Root type="single" name="aidAlgorithm" bind:value={deviceAidAlgorithm}>
                 <Select.Trigger id="device-aid">
                   {deviceAidAlgorithm
-                    ? (aidAlgorithmLabels[deviceAidAlgorithm] ?? deviceAidAlgorithm)
+                    ? (aidAlgorithmLabels[deviceAidAlgorithm as AidAlgorithm] ?? deviceAidAlgorithm)
                     : "Select algorithm"}
                 </Select.Trigger>
                 <Select.Content>

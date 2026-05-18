@@ -4,14 +4,19 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Nocturne.Core.Contracts;
+using Nocturne.API.Helpers;
 using Nocturne.Core.Models.Configuration;
 
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// JWT service implementation for access and refresh token management
+/// JWT service implementation for access token generation, refresh token management,
+/// and token validation. Uses HMAC-SHA256 signing with a symmetric key derived from
+/// <see cref="JwtOptions.SecretKey"/> (minimum 32 characters enforced at construction).
 /// </summary>
+/// <seealso cref="IJwtService"/>
+/// <seealso cref="OAuthTokenService"/>
+/// <seealso cref="RefreshTokenService"/>
 public class JwtService : IJwtService
 {
     private readonly JwtOptions _options;
@@ -21,8 +26,13 @@ public class JwtService : IJwtService
     private readonly TokenValidationParameters _validationParameters;
 
     /// <summary>
-    /// Creates a new instance of JwtService
+    /// Initializes a new instance of <see cref="JwtService"/>.
     /// </summary>
+    /// <param name="options">JWT configuration options including secret key, issuer, audience, and token lifetimes.</param>
+    /// <param name="logger">The logger instance.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <see cref="JwtOptions.SecretKey"/> is null, empty, or shorter than 32 characters.
+    /// </exception>
     public JwtService(IOptions<JwtOptions> options, ILogger<JwtService> logger)
     {
         _options = options.Value;
@@ -334,7 +344,7 @@ public class JwtService : IJwtService
     public string GenerateRefreshToken()
     {
         var randomBytes = RandomNumberGenerator.GetBytes(_options.RefreshTokenLengthBytes);
-        return Convert.ToBase64String(randomBytes).Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        return Base64Url.Encode(randomBytes);
     }
 
     /// <inheritdoc />

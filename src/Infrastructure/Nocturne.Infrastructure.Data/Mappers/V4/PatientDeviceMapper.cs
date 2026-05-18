@@ -21,6 +21,7 @@ public static class PatientDeviceMapper
             DeviceCategory = model.DeviceCategory.ToString(),
             Manufacturer = model.Manufacturer,
             Model = model.Model,
+            CatalogId = model.CatalogId,
             AidAlgorithm = model.AidAlgorithm?.ToString(),
             SerialNumber = model.SerialNumber,
             DeviceId = model.DeviceId,
@@ -48,6 +49,7 @@ public static class PatientDeviceMapper
                 : DeviceCategory.CGM,
             Manufacturer = entity.Manufacturer,
             Model = entity.Model,
+            CatalogId = entity.CatalogId,
             AidAlgorithm = entity.AidAlgorithm is not null
                 && Enum.TryParse<AidAlgorithm>(entity.AidAlgorithm, ignoreCase: true, out var algorithm)
                     ? algorithm
@@ -73,6 +75,7 @@ public static class PatientDeviceMapper
         entity.DeviceCategory = model.DeviceCategory.ToString();
         entity.Manufacturer = model.Manufacturer;
         entity.Model = model.Model;
+        entity.CatalogId = model.CatalogId;
         entity.AidAlgorithm = model.AidAlgorithm?.ToString();
         entity.SerialNumber = model.SerialNumber;
         entity.DeviceId = model.DeviceId;

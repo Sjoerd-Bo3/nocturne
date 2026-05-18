@@ -1,7 +1,6 @@
 import { ApiClient } from "./api-client.generated";
 import { browser } from "$app/environment";
 import { createAuthenticatedFetch } from "./auth-interceptor";
-import { getActingAsHeaders } from "$lib/stores/acting-as";
 
 /**
  * Client-side API client instance This should be used in the browser when you
@@ -26,16 +25,10 @@ export function getApiClient(): ApiClient {
     // This avoids cross-origin issues since cookies are sent with same-origin requests
     const apiBaseUrl = "";
 
-    // Create the base fetch function with credentials and acting-as headers
+    // Create the base fetch function with credentials
     const baseFetch = (url: RequestInfo, init?: RequestInit): Promise<Response> => {
-      const actingAsHeaders = getActingAsHeaders();
-      const headers = new Headers(init?.headers);
-      for (const [key, value] of Object.entries(actingAsHeaders)) {
-        headers.set(key, value);
-      }
       return window.fetch(url, {
         ...init,
-        headers,
         credentials: 'include',
       });
     };

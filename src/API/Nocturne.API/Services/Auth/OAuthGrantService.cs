@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -7,8 +6,11 @@ using Nocturne.Infrastructure.Data.Entities;
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Service for managing OAuth authorization grants stored in the database.
+/// Manages OAuth 2.0 authorisation grants stored in the database, including creation,
+/// scope merging, revocation, and cascade-revocation of associated refresh tokens.
 /// </summary>
+/// <seealso cref="IOAuthGrantService"/>
+/// <seealso cref="IOAuthClientService"/>
 public class OAuthGrantService : IOAuthGrantService
 {
     private readonly NocturneDbContext _dbContext;
@@ -16,8 +18,11 @@ public class OAuthGrantService : IOAuthGrantService
     private readonly ILogger<OAuthGrantService> _logger;
 
     /// <summary>
-    /// Creates a new instance of OAuthGrantService
+    /// Initialises a new <see cref="OAuthGrantService"/>.
     /// </summary>
+    /// <param name="dbContext">Database context for grant persistence.</param>
+    /// <param name="clientService">Used to resolve client metadata (currently unused in this implementation).</param>
+    /// <param name="logger">Logger instance.</param>
     public OAuthGrantService(
         NocturneDbContext dbContext,
         IOAuthClientService clientService,
@@ -49,7 +54,6 @@ public class OAuthGrantService : IOAuthGrantService
             // Merge scopes: union of existing and new
             var mergedScopes = existingGrant.Scopes
                 .Union(scopes)
-                .Distinct()
                 .OrderBy(s => s)
                 .ToList();
 
@@ -186,8 +190,10 @@ public class OAuthGrantService : IOAuthGrantService
     }
 
     /// <summary>
-    /// Maps an OAuthGrantEntity to an OAuthGrantInfo DTO
+    /// Maps an <see cref="OAuthGrantEntity"/> to an <see cref="OAuthGrantInfo"/> DTO.
     /// </summary>
+    /// <param name="entity">The database entity to map. The <c>Client</c> navigation property must be loaded.</param>
+    /// <returns>A populated <see cref="OAuthGrantInfo"/> view model.</returns>
     private static OAuthGrantInfo MapToInfo(OAuthGrantEntity entity)
     {
         return new OAuthGrantInfo

@@ -1,17 +1,42 @@
 using Microsoft.Extensions.Logging;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
+using Nocturne.Core.Contracts.Health;
 using Nocturne.Core.Contracts.Repositories;
 using Nocturne.Infrastructure.Data.Abstractions;
 
 namespace Nocturne.API.Services.ChartData.Stages;
 
 /// <summary>
-/// Pipeline stage that fetches all raw data required for the dashboard chart.
-/// All repository calls are sequential because the underlying DbContext is not thread-safe.
+/// Chart data pipeline stage that fetches all raw data required for the dashboard chart.
+/// All repository calls are made sequentially because the underlying EF Core
+/// <see cref="Microsoft.EntityFrameworkCore.DbContext"/> is not thread-safe.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Dynamic query limits are derived from the requested time range to avoid over-fetching on
+/// wide windows while still guaranteeing coverage on narrow ones. The baseline is 12 CGM
+/// readings per hour (5-minute intervals) with a 50% safety margin.
+/// </para>
+/// <para>
+/// Bolus and carb data are fetched from an extended window beginning at
+/// <see cref="ChartDataContext.BufferStartTime"/> (8 hours before <see cref="ChartDataContext.StartTime"/>)
+/// so that IOB and COB calculations account for insulin and carbs administered before the
+/// visible chart window. <see cref="ChartDataContext.DisplayBoluses"/> and
+/// <see cref="ChartDataContext.DisplayCarbIntakes"/> are derived subsets trimmed to the display window.
+/// </para>
+/// <para>
+/// TempBasal records are fetched in ascending order because basal series construction
+/// (in <see cref="IobCobComputeStage"/>) walks them forward in time.
+/// </para>
+/// <para>
+/// All <see cref="StateSpanCategory"/> variants are fetched in a single batched query via
+/// <c>IStateSpanRepository.GetByCategories</c> to avoid N+1 round trips.
+/// </para>
+/// </remarks>
+/// <seealso cref="IChartDataStage"/>
+/// <seealso cref="ChartDataContext"/>
 internal sealed class DataFetchStage(
     ISensorGlucoseRepository sensorGlucoseRepository,
     IBolusRepository bolusRepository,
@@ -22,8 +47,10 @@ internal sealed class DataFetchStage(
     IStateSpanRepository stateSpanRepository,
     ISystemEventRepository systemEventRepository,
     ITrackerRepository trackerRepository,
-    IDeviceStatusService deviceStatusService,
-    ILogger<DataFetchStage> logger
+    IBasalInjectionRepository basalInjectionRepository,
+    ILogger<DataFetchStage> logger,
+    IHeartRateService heartRateService,
+    IStepCountService stepCountService
 ) : IChartDataStage
 {
     public async Task<ChartDataContext> ExecuteAsync(ChartDataContext context, CancellationToken cancellationToken)
@@ -37,8 +64,10 @@ internal sealed class DataFetchStage(
 
         // Calculate reasonable limits based on the actual time range
         var rangeHours = (endTime - startTime) / (60.0 * 60 * 1000);
-        // At 5-min CGM intervals: ~12 entries/hour. Add 50% safety margin.
-        var entryLimit = (int)Math.Max(500, Math.Ceiling(rangeHours * 12 * 1.5));
+        // 3 sensors × 60 readings/hour (1-minute resolution) = 4 320 for a 24-hour window.
+        // Covers the realistic worst case of multiple simultaneous high-frequency sources
+        // without removing the limit entirely.
+        var entryLimit = (int)Math.Max(500, Math.Ceiling(rangeHours * 3 * 60));
         // Treatments are less frequent but include the buffer window
         var bufferMs = startTime - bufferStartTime;
         var treatmentRangeHours = (endTime - (startTime - bufferMs)) / (60.0 * 60 * 1000);
@@ -115,6 +144,20 @@ internal sealed class DataFetchStage(
             )
         ).ToList();
 
+        // Fetch basal injections from v4 BasalInjection table (display range only)
+        var basalInjectionList = (
+            await basalInjectionRepository.GetAsync(
+                from: MillsToDateTime(startTime),
+                to: MillsToDateTime(endTime),
+                device: null,
+                source: null,
+                limit: displayRangeLimit,
+                offset: 0,
+                descending: true,
+                ct: cancellationToken
+            )
+        ).ToList();
+
         // Fetch TempBasal records from v4 table (ascending — needed for basal series building)
         var tempBasalList = (await tempBasalRepository.GetAsync(
             from: MillsToDateTime(startTime),
@@ -165,15 +208,19 @@ internal sealed class DataFetchStage(
             cancellationToken: cancellationToken
         );
 
-        // Device status - only need recent entries for IOB source detection
-        var deviceStatusList =
-            (
-                await deviceStatusService.GetDeviceStatusAsync(
-                    count: 100,
-                    skip: 0,
-                    cancellationToken: cancellationToken
-                )
-            )?.ToList() ?? new List<DeviceStatus>();
+        // Heart rate data
+        var heartRateList = (await heartRateService.GetHeartRatesByDateRangeAsync(
+            MillsToDateTime(startTime)!.Value,
+            MillsToDateTime(endTime)!.Value,
+            cancellationToken
+        )).ToList();
+
+        // Step count data
+        var stepCountList = (await stepCountService.GetStepCountsByDateRangeAsync(
+            MillsToDateTime(startTime)!.Value,
+            MillsToDateTime(endTime)!.Value,
+            cancellationToken
+        )).ToList();
 
         // Display-range subsets for markers
         var displayBoluses = bolusList
@@ -184,14 +231,15 @@ internal sealed class DataFetchStage(
             .ToList();
 
         logger.LogDebug(
-            "DataFetchStage: fetched {Glucose} glucose, {Bolus} bolus, {Carb} carb, {BgCheck} bg-check, {DeviceEvent} device-event, {TempBasal} temp-basal, {DeviceStatus} device-status records",
+            "DataFetchStage: fetched {Glucose} glucose, {Bolus} bolus, {Carb} carb, {BgCheck} bg-check, {DeviceEvent} device-event, {TempBasal} temp-basal, {HeartRate} heart-rate, {StepCount} step-count records",
             sensorGlucoseList.Count,
             bolusList.Count,
             carbIntakeList.Count,
             bgCheckList.Count,
             deviceEventList.Count,
             tempBasalList.Count,
-            deviceStatusList.Count
+            heartRateList.Count,
+            stepCountList.Count
         );
 
         // Project Dictionary<K, List<V>> to IReadOnlyDictionary<K, IEnumerable<V>>
@@ -211,11 +259,13 @@ internal sealed class DataFetchStage(
             BgCheckList = bgCheckList,
             DeviceEventList = deviceEventList,
             TempBasalList = tempBasalList,
+            BasalInjectionList = basalInjectionList,
             StateSpans = stateSpansReadOnly,
             SystemEvents = systemEventsResult?.ToList() ?? [],
             TrackerDefinitions = trackerDefs?.ToList() ?? [],
             TrackerInstances = trackerInstances?.ToList() ?? [],
-            DeviceStatusList = deviceStatusList,
+            HeartRateList = heartRateList,
+            StepCountList = stepCountList,
         };
     }
 }

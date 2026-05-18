@@ -10,7 +10,7 @@ namespace Nocturne.Infrastructure.Data.Entities.V4;
 /// Maps to Nocturne.Core.Models.V4.PumpSnapshot
 /// </summary>
 [Table("pump_snapshots")]
-public class PumpSnapshotEntity : ITenantScoped
+public class PumpSnapshotEntity : ITenantScoped, ISoftDeletable
 {
     /// <summary>
     /// The unique identifier of the tenant this record belongs to.
@@ -42,6 +42,12 @@ public class PumpSnapshotEntity : ITenantScoped
     [Column("device")]
     [MaxLength(256)]
     public string? Device { get; set; }
+
+    /// <summary>
+    /// Links records that were decomposed from the same legacy DeviceStatus
+    /// </summary>
+    [Column("correlation_id")]
+    public Guid? CorrelationId { get; set; }
 
     /// <summary>
     /// Original v1/v3 record ID for migration traceability
@@ -134,8 +140,33 @@ public class PumpSnapshotEntity : ITenantScoped
     public Guid? DeviceId { get; set; }
 
     /// <summary>
+    /// Foreign key to the PatientDevice table.
+    /// </summary>
+    [Column("patient_device_id")]
+    public Guid? PatientDeviceId { get; set; }
+
+    /// <summary>
+    /// Pump-reported total IOB (when no APS algorithm is running)
+    /// </summary>
+    [Column("iob")]
+    public double? Iob { get; set; }
+
+    /// <summary>
+    /// Pump-reported bolus IOB
+    /// </summary>
+    [Column("bolus_iob")]
+    public double? BolusIob { get; set; }
+
+    /// <summary>
     /// Catch-all JSONB column for fields not mapped to dedicated columns
     /// </summary>
     [Column("additional_properties", TypeName = "jsonb")]
     public string? AdditionalPropertiesJson { get; set; }
+
+    /// <summary>
+    /// Soft-delete timestamp. When non-null the record is treated as deleted
+    /// by the global query filter and is invisible above the repository layer.
+    /// </summary>
+    [Column("deleted_at")]
+    public DateTime? DeletedAt { get; set; }
 }

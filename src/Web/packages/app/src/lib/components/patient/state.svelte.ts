@@ -7,6 +7,29 @@ import {
   type InsulinFormulation,
   DiabetesType,
 } from "$api";
+import { FormGuard } from "$lib/forms";
+import { z } from "zod";
+
+/** Convert a date value from the API into a YYYY-MM-DD string for date inputs. */
+function toDateInput(value: string | Date | null | undefined): string {
+  if (!value) return "";
+  return new Date(value).toISOString().split("T")[0];
+}
+
+const ClinicalFieldsSchema = z.object({
+  diabetesType: z.string().min(1, "Diabetes type is required"),
+  diabetesTypeOther: z.string().optional(),
+  diagnosisDate: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  preferredName: z.string().optional(),
+  pronouns: z.string().optional(),
+  timezone: z.string().optional(),
+});
+
+const browserTimezone =
+  typeof Intl !== "undefined"
+    ? Intl.DateTimeFormat().resolvedOptions().timeZone
+    : "";
 
 /** Reactive clinical form state bound to the patient record API */
 export class ClinicalState {
@@ -16,59 +39,83 @@ export class ClinicalState {
   dateOfBirth = $state("");
   preferredName = $state("");
   pronouns = $state("");
-  saving = $state(false);
-  saveError = $state<string | null>(null);
+  timezone = $state("");
+  /** True when the server has no timezone and we've pre-filled the field from the browser — used to surface a hint to confirm. */
+  timezoneAutoDetected = $state(false);
 
   readonly #record = patientRemote.getPatientRecord();
+  readonly form = patientRemote.updatePatientRecord;
+  readonly guard: FormGuard<z.infer<typeof ClinicalFieldsSchema>>;
 
-  get isValid() { return !!this.diabetesType; }
+  /** Expose record for hidden form inputs (id, createdAt, etc.) */
+  get record() { return this.#record.current; }
 
-  constructor() {
+  constructor(el: () => HTMLFormElement | null) {
+    // Sync fields from server when record loads
     $effect(() => {
       const r = this.#record.current;
       if (r) {
         this.diabetesType = r.diabetesType ?? "";
         this.diabetesTypeOther = r.diabetesTypeOther ?? "";
-        this.diagnosisDate = r.diagnosisDate
-          ? new Date(r.diagnosisDate).toISOString().split("T")[0]
-          : "";
-        this.dateOfBirth = r.dateOfBirth
-          ? new Date(r.dateOfBirth).toISOString().split("T")[0]
-          : "";
+        this.diagnosisDate = toDateInput(r.diagnosisDate);
+        this.dateOfBirth = toDateInput(r.dateOfBirth);
         this.preferredName = r.preferredName ?? "";
         this.pronouns = r.pronouns ?? "";
+        if (r.timezone) {
+          this.timezone = r.timezone;
+          this.timezoneAutoDetected = false;
+        } else {
+          // Pre-fill the browser tz so the user just needs to confirm. Alerts with
+          // time-of-day windows fall back to UTC without this — typically the wrong
+          // wall-clock for anyone outside UTC.
+          this.timezone = browserTimezone;
+          this.timezoneAutoDetected = !!browserTimezone;
+        }
       }
     });
-  }
 
-  save = async (): Promise<boolean> => {
-    this.saving = true;
-    this.saveError = null;
-    try {
-      const current = this.#record.current;
-      await patientRemote.updatePatientRecord({
-        id: current?.id,
-        avatarUrl: current?.avatarUrl,
-        createdAt: current?.createdAt instanceof Date ? current.createdAt.toISOString() : current?.createdAt,
-        modifiedAt: current?.modifiedAt instanceof Date ? current.modifiedAt.toISOString() : current?.modifiedAt,
-        diabetesType: (this.diabetesType as DiabetesType) || undefined,
-        diabetesTypeOther:
-          this.diabetesType === DiabetesType.Other
-            ? this.diabetesTypeOther
-            : undefined,
-        diagnosisDate: this.diagnosisDate || undefined,
-        dateOfBirth: this.dateOfBirth || undefined,
-        preferredName: this.preferredName || undefined,
-        pronouns: this.pronouns || undefined,
-      });
-      return true;
-    } catch {
-      this.saveError = "Something went wrong. Please try again.";
-      return false;
-    } finally {
-      this.saving = false;
-    }
-  };
+    this.guard = new FormGuard({
+      form: this.form,
+      schema: ClinicalFieldsSchema,
+      el,
+      initial: () => {
+        const r = this.#record.current;
+        if (!r) return null;
+        return {
+          diabetesType: r.diabetesType ?? "",
+          diabetesTypeOther: r.diabetesTypeOther ?? "",
+          diagnosisDate: toDateInput(r.diagnosisDate),
+          dateOfBirth: toDateInput(r.dateOfBirth),
+          preferredName: r.preferredName ?? "",
+          pronouns: r.pronouns ?? "",
+          // Initial reflects the *server* value, NOT the pre-filled browser tz. Diverging
+          // from `values` here is intentional: it makes the form dirty when the field is
+          // auto-populated, so the Save button enables and the user is nudged to commit.
+          timezone: r.timezone ?? "",
+        };
+      },
+      values: () => ({
+        diabetesType: this.diabetesType,
+        diabetesTypeOther: this.diabetesType === DiabetesType.Other ? this.diabetesTypeOther : "",
+        diagnosisDate: this.diagnosisDate,
+        dateOfBirth: this.dateOfBirth,
+        preferredName: this.preferredName,
+        pronouns: this.pronouns,
+        timezone: this.timezone,
+      }),
+      navBlockMessage: "You have unsaved changes. Leave anyway?",
+      onreset: (snapshot) => {
+        this.diabetesType = snapshot.diabetesType;
+        this.diabetesTypeOther = snapshot.diabetesTypeOther ?? "";
+        this.diagnosisDate = snapshot.diagnosisDate ?? "";
+        this.dateOfBirth = snapshot.dateOfBirth ?? "";
+        this.preferredName = snapshot.preferredName ?? "";
+        this.pronouns = snapshot.pronouns ?? "";
+        this.timezone = snapshot.timezone ?? "";
+        this.timezoneAutoDetected = false;
+      },
+    });
+  }
 }
 
 /** Reactive device list state with CRUD */

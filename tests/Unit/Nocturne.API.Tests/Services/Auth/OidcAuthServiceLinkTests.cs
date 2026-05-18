@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nocturne.API.Services.Auth;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Auth;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Core.Models.Configuration;
 using Xunit;
@@ -19,6 +19,7 @@ public class OidcAuthServiceLinkTests
 {
     private readonly Mock<ISubjectService> _subjectService = new();
     private readonly Mock<IOidcProviderService> _providerService = new();
+    private readonly Mock<ISessionService> _sessionService = new();
     private readonly Mock<IJwtService> _jwtService = new();
     private readonly Mock<IRefreshTokenService> _refreshTokenService = new();
     private readonly Mock<IHttpClientFactory> _httpFactory = new();
@@ -31,6 +32,7 @@ public class OidcAuthServiceLinkTests
         _service = new OidcAuthService(
             _providerService.Object,
             _subjectService.Object,
+            _sessionService.Object,
             _jwtService.Object,
             _refreshTokenService.Object,
             _httpFactory.Object,

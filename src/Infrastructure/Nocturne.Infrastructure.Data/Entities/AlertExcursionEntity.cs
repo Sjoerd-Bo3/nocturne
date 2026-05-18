@@ -8,7 +8,7 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Spans from first trigger to resolution + hysteresis clear.
 /// </summary>
 [Table("alert_excursions")]
-public class AlertExcursionEntity : ITenantScoped
+public class AlertExcursionEntity : ITenantScoped, IAuditable
 {
     /// <summary>
     /// Unique identifier for the alert excursion

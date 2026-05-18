@@ -1,8 +1,11 @@
 namespace Nocturne.Core.Models.Authorization;
 
 /// <summary>
-/// Domain model representing an authorization role
+/// Domain model representing an authorization role.
+/// Roles group Shiro-style permissions and are assigned to <see cref="Subject"/>s.
 /// </summary>
+/// <seealso cref="Subject"/>
+/// <seealso cref="TenantPermissions"/>
 public class Role
 {
     /// <summary>

@@ -3,8 +3,9 @@ using Nocturne.Core.Models;
 namespace Nocturne.Core.Contracts.Repositories;
 
 /// <summary>
-/// Repository port for Settings domain operations
+/// Repository port for <see cref="Settings"/> domain operations.
 /// </summary>
+/// <seealso cref="Settings"/>
 public interface ISettingsRepository
 {
     /// <summary>

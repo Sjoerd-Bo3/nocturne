@@ -1,15 +1,28 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OpenApi.Remote.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.API.Attributes;
+using Nocturne.API.Models.Requests.V4;
+using Nocturne.Core.Contracts.Health;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.Authorization;
+using OpenApi.Remote.Attributes;
 
 namespace Nocturne.API.Controllers.V4.Health;
 
 /// <summary>
-/// Step count controller for xDrip PebbleMovement step count data
+/// Controller for step count data from diabetes apps and wearables.
 /// </summary>
+/// <remarks>
+/// Step count readings are stored as time-series observations.
+/// All operations delegate to <see cref="IStepCountService"/>. Callers must hold the
+/// appropriate scope (<c>read:health</c> or <c>write:health</c>).
+/// </remarks>
+/// <seealso cref="IStepCountService"/>
 [ApiController]
+[Tags("Health")]
 [Route("api/v4/[controller]")]
+[Authorize]
+[Produces("application/json")]
 public class StepCountController : ControllerBase
 {
     private readonly IStepCountService _stepCountService;
@@ -22,25 +35,35 @@ public class StepCountController : ControllerBase
     }
 
     /// <summary>
-    /// Get step count records with optional pagination
+    /// Get step count records with optional pagination and date filtering
     /// </summary>
-    /// <param name="count">Maximum number of records to return (default: 10)</param>
-    /// <param name="skip">Number of records to skip for pagination (default: 0)</param>
+    /// <param name="count">Maximum number of records to return (default: 10, ignored when from/to are specified)</param>
+    /// <param name="skip">Number of records to skip for pagination (default: 0, ignored when from/to are specified)</param>
+    /// <param name="from">Start of date range (inclusive). When specified with 'to', returns all records in range.</param>
+    /// <param name="to">End of date range (exclusive). When specified with 'from', returns all records in range.</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of step count records ordered by most recent first</returns>
+    /// <returns>List of step count records</returns>
     [HttpGet]
     [RemoteQuery]
+    [RequireScope(OAuthScopes.StepCountRead)]
     [ProducesResponseType(typeof(IEnumerable<StepCount>), 200)]
     [ProducesResponseType(500)]
     public async Task<ActionResult<IEnumerable<StepCount>>> GetStepCounts(
         [FromQuery] int count = 10,
         [FromQuery] int skip = 0,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
-            var records = await _stepCountService.GetStepCountsAsync(count, skip, cancellationToken);
+            IEnumerable<StepCount> records;
+            if (from.HasValue && to.HasValue)
+                records = await _stepCountService.GetStepCountsByDateRangeAsync(from.Value, to.Value, cancellationToken);
+            else
+                records = await _stepCountService.GetStepCountsAsync(count, skip, cancellationToken);
+
             return Ok(records);
         }
         catch (Exception ex)
@@ -57,6 +80,7 @@ public class StepCountController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     [HttpGet("{id}")]
     [RemoteQuery]
+    [RequireScope(OAuthScopes.StepCountRead)]
     [ProducesResponseType(typeof(StepCount), 200)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
@@ -81,48 +105,33 @@ public class StepCountController : ControllerBase
     }
 
     /// <summary>
-    /// Create one or more step count records (single object or array)
+    /// Create one or more step count records
     /// </summary>
     [HttpPost]
+    [RequireScope(OAuthScopes.StepCountReadWrite)]
     [ProducesResponseType(typeof(IEnumerable<StepCount>), 200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(500)]
     public async Task<ActionResult<IEnumerable<StepCount>>> CreateStepCounts(
-        [FromBody] object stepCounts,
+        [FromBody] UpsertStepCountRequest[] requests,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
-            if (stepCounts == null)
-                return Problem(detail: "Step count data is required", statusCode: 400, title: "Bad Request");
-
-            List<StepCount> stepCountList;
-
-            if (stepCounts is System.Text.Json.JsonElement jsonElement)
-            {
-                if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.Array)
-                {
-                    stepCountList =
-                        System.Text.Json.JsonSerializer.Deserialize<List<StepCount>>(
-                            jsonElement.GetRawText()
-                        ) ?? [];
-                }
-                else
-                {
-                    var single = System.Text.Json.JsonSerializer.Deserialize<StepCount>(
-                        jsonElement.GetRawText()
-                    );
-                    stepCountList = single != null ? [single] : [];
-                }
-            }
-            else
-            {
-                return Problem(detail: "Invalid data format", statusCode: 400, title: "Bad Request");
-            }
-
-            if (stepCountList.Count == 0)
+            if (requests.Length == 0)
                 return Problem(detail: "At least one step count record is required", statusCode: 400, title: "Bad Request");
+
+            var stepCountList = requests.Select(request => new StepCount
+            {
+                Timestamp = request.Timestamp.UtcDateTime,
+                UtcOffset = request.UtcOffset,
+                Metric = request.Metric,
+                Source = request.Source,
+                Device = request.Device,
+                EnteredBy = request.App,
+                DataSource = request.DataSource,
+            }).ToList();
 
             var result = await _stepCountService.CreateStepCountsAsync(stepCountList, cancellationToken);
             return Ok(result);
@@ -138,17 +147,29 @@ public class StepCountController : ControllerBase
     /// Update an existing step count record
     /// </summary>
     [HttpPut("{id}")]
+    [RequireScope(OAuthScopes.StepCountReadWrite)]
     [ProducesResponseType(typeof(StepCount), 200)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
     public async Task<ActionResult<StepCount>> UpdateStepCount(
         string id,
-        [FromBody] StepCount stepCount,
+        [FromBody] UpsertStepCountRequest request,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
+            var stepCount = new StepCount
+            {
+                Timestamp = request.Timestamp.UtcDateTime,
+                UtcOffset = request.UtcOffset,
+                Metric = request.Metric,
+                Source = request.Source,
+                Device = request.Device,
+                EnteredBy = request.App,
+                DataSource = request.DataSource,
+            };
+
             var updated = await _stepCountService.UpdateStepCountAsync(id, stepCount, cancellationToken);
             if (updated == null)
                 return Problem(detail: $"Step count record with ID {id} not found", statusCode: 404, title: "Not Found");
@@ -166,6 +187,7 @@ public class StepCountController : ControllerBase
     /// Delete a step count record by ID
     /// </summary>
     [HttpDelete("{id}")]
+    [RequireScope(OAuthScopes.StepCountReadWrite)]
     [ProducesResponseType(200)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]

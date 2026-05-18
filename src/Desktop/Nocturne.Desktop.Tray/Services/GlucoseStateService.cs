@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using Nocturne.Desktop.Tray.Models;
+using Nocturne.Core.Models.Widget;
+using Nocturne.Desktop.Tray.Extensions;
 
 namespace Nocturne.Desktop.Tray.Services;
 
@@ -12,7 +13,7 @@ public sealed partial class GlucoseStateService : ObservableObject, IDisposable
     private const int MaxHistorySize = 1000;
 
     [ObservableProperty]
-    private GlucoseReading? _currentReading;
+    private V4GlucoseReading? _currentReading;
 
     [ObservableProperty]
     private bool _isConnected;
@@ -20,13 +21,13 @@ public sealed partial class GlucoseStateService : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isStale;
 
-    private readonly List<GlucoseReading> _history = [];
+    private readonly List<V4GlucoseReading> _history = [];
     private readonly object _lock = new();
     private Timer? _staleTimer;
 
     public event Action? StateChanged;
 
-    public IReadOnlyList<GlucoseReading> History
+    public IReadOnlyList<V4GlucoseReading> History
     {
         get
         {
@@ -42,7 +43,7 @@ public sealed partial class GlucoseStateService : ObservableObject, IDisposable
         _staleTimer = new Timer(CheckStaleness, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
     }
 
-    public void ProcessReading(GlucoseReading reading)
+    public void ProcessReading(V4GlucoseReading reading)
     {
         lock (_lock)
         {
@@ -69,7 +70,7 @@ public sealed partial class GlucoseStateService : ObservableObject, IDisposable
         StateChanged?.Invoke();
     }
 
-    public void SetHistory(IEnumerable<GlucoseReading> readings)
+    public void SetHistory(IEnumerable<V4GlucoseReading> readings)
     {
         lock (_lock)
         {
@@ -87,13 +88,13 @@ public sealed partial class GlucoseStateService : ObservableObject, IDisposable
         if (latest is not null)
         {
             CurrentReading = latest;
-            IsStale = Helpers.TimeAgoHelper.IsStale(latest.Timestamp);
+            IsStale = Helpers.TimeAgoHelper.IsStale(latest.GetTimestamp());
         }
 
         StateChanged?.Invoke();
     }
 
-    public void MergeReadings(IEnumerable<GlucoseReading> readings)
+    public void MergeReadings(IEnumerable<V4GlucoseReading> readings)
     {
         var added = false;
         lock (_lock)
@@ -124,14 +125,14 @@ public sealed partial class GlucoseStateService : ObservableObject, IDisposable
             if (latest is not null && (CurrentReading is null || latest.Mills >= CurrentReading.Mills))
             {
                 CurrentReading = latest;
-                IsStale = Helpers.TimeAgoHelper.IsStale(latest.Timestamp);
+                IsStale = Helpers.TimeAgoHelper.IsStale(latest.GetTimestamp());
             }
 
             StateChanged?.Invoke();
         }
     }
 
-    public IReadOnlyList<GlucoseReading> GetReadingsForChart(int hours)
+    public IReadOnlyList<V4GlucoseReading> GetReadingsForChart(int hours)
     {
         var cutoff = DateTimeOffset.UtcNow.AddHours(-hours).ToUnixTimeMilliseconds();
         lock (_lock)
@@ -145,7 +146,7 @@ public sealed partial class GlucoseStateService : ObservableObject, IDisposable
         if (CurrentReading is not null)
         {
             var wasStale = IsStale;
-            IsStale = Helpers.TimeAgoHelper.IsStale(CurrentReading.Timestamp);
+            IsStale = Helpers.TimeAgoHelper.IsStale(CurrentReading.GetTimestamp());
 
             if (IsStale != wasStale)
             {

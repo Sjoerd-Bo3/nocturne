@@ -4,7 +4,7 @@ using Nocturne.API.Configuration;
 using Nocturne.API.Services.Compatibility;
 using Nocturne.Connectors.Nightscout.Configurations;
 using Nocturne.Connectors.Nightscout.Services.WriteBack;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Connectors;
 using Nocturne.Core.Models.V4;
 
 namespace Nocturne.API.Controllers.V4.TenantAdmin;
@@ -13,7 +13,10 @@ namespace Nocturne.API.Controllers.V4.TenantAdmin;
 /// Aggregates Nightscout transition status for the migration dashboard.
 /// Reports migration progress, write-back health, and disconnect readiness.
 /// </summary>
+/// <seealso cref="IConnectorConfigurationService"/>
+/// <seealso cref="IDiscrepancyPersistenceService"/>
 [ApiController]
+[Tags("TenantAdmin")]
 [Route("api/v4/nightscout-transition")]
 [Produces("application/json")]
 public class NightscoutTransitionController : ControllerBase
@@ -25,6 +28,15 @@ public class NightscoutTransitionController : ControllerBase
     private readonly IDiscrepancyPersistenceService? _persistenceService;
     private readonly ILogger<NightscoutTransitionController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="NightscoutTransitionController"/>.
+    /// </summary>
+    /// <param name="connectorConfigService">Service for querying connector health state.</param>
+    /// <param name="proxyConfiguration">Compatibility proxy configuration options.</param>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="nightscoutConfig">Optional Nightscout connector configuration (null when connector is not registered).</param>
+    /// <param name="circuitBreaker">Optional circuit breaker for Nightscout write-back health (null when not registered).</param>
+    /// <param name="persistenceService">Optional service for compatibility metrics (null when proxy is disabled).</param>
     public NightscoutTransitionController(
         IConnectorConfigurationService connectorConfigService,
         IOptions<CompatibilityProxyConfiguration> proxyConfiguration,
@@ -78,6 +90,11 @@ public class NightscoutTransitionController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Builds migration status information from the Nightscout connector health state.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="MigrationStatusInfo"/> describing the last successful sync.</returns>
     private async Task<MigrationStatusInfo> BuildMigrationStatusAsync(CancellationToken ct)
     {
         var info = new MigrationStatusInfo();
@@ -100,6 +117,10 @@ public class NightscoutTransitionController : ControllerBase
         return info;
     }
 
+    /// <summary>
+    /// Builds write-back health information from the circuit breaker state.
+    /// </summary>
+    /// <returns>A <see cref="WriteBackHealthInfo"/> describing circuit breaker state and request counts.</returns>
     private WriteBackHealthInfo BuildWriteBackHealth()
     {
         var info = new WriteBackHealthInfo();
@@ -118,6 +139,11 @@ public class NightscoutTransitionController : ControllerBase
         return info;
     }
 
+    /// <summary>
+    /// Builds compatibility information from the discrepancy persistence service when the proxy is enabled.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="CompatibilityInfo"/> with compatibility score and discrepancy counts, or <see langword="null"/> when the proxy is disabled.</returns>
     private async Task<CompatibilityInfo?> BuildCompatibilityInfoAsync(CancellationToken ct)
     {
         if (!_proxyConfiguration.Enabled || _persistenceService is null)
@@ -143,6 +169,12 @@ public class NightscoutTransitionController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Evaluates readiness to disconnect from Nightscout and returns a recommendation.
+    /// </summary>
+    /// <param name="compatibility">Current compatibility info, or <see langword="null"/> if proxy is disabled.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="DisconnectRecommendation"/> with status and any blocking issues.</returns>
     private async Task<DisconnectRecommendation> BuildRecommendationAsync(
         CompatibilityInfo? compatibility, CancellationToken ct)
     {

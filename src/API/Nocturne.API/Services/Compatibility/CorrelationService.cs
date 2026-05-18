@@ -4,32 +4,37 @@ using Nocturne.API.Configuration;
 namespace Nocturne.API.Services.Compatibility;
 
 /// <summary>
-/// Service for generating and managing request correlation IDs
+/// Generates and propagates correlation IDs for requests mirrored to the upstream Nightscout
+/// instance by the compatibility proxy.
 /// </summary>
+/// <seealso cref="CorrelationService"/>
 public interface ICorrelationService
 {
     /// <summary>
-    /// Generate a new correlation ID for a request
+    /// Generates a unique correlation ID for the current mirror request.
+    /// Returns an empty string when correlation tracking is disabled in configuration.
     /// </summary>
-    /// <returns>Unique correlation ID</returns>
     string GenerateCorrelationId();
 
-    /// <summary>
-    /// Get the current correlation ID from context
-    /// </summary>
-    /// <returns>Current correlation ID or null if not set</returns>
+    /// <summary>Returns the correlation ID stored in the current async-flow context, or <see langword="null"/> if none has been set.</summary>
     string? GetCurrentCorrelationId();
 
-    /// <summary>
-    /// Set the correlation ID in the current context
-    /// </summary>
-    /// <param name="correlationId">Correlation ID to set</param>
+    /// <summary>Stores a correlation ID in the current async-flow context so downstream calls (e.g. Nightscout forwarding) can read it without passing it explicitly.</summary>
     void SetCorrelationId(string correlationId);
 }
 
 /// <summary>
-/// Implementation of correlation service using AsyncLocal for context storage
+/// <see cref="ICorrelationService"/> implementation that stores the active correlation ID in
+/// an <see cref="System.Threading.AsyncLocal{T}"/> so it flows naturally across <c>await</c>
+/// continuations without explicit parameter threading.
 /// </summary>
+/// <remarks>
+/// Generated IDs follow the format <c>INT-yyyyMMdd-HHmmss-{uuid7}</c>.
+/// When <see cref="Configuration.CompatibilityProxyConfiguration.EnableCorrelationTracking"/> is
+/// <see langword="false"/>, <see cref="GenerateCorrelationId"/> returns an empty string and no
+/// ID is stored or forwarded.
+/// </remarks>
+/// <seealso cref="ICorrelationService"/>
 public class CorrelationService : ICorrelationService
 {
     private static readonly AsyncLocal<string?> _correlationId = new();

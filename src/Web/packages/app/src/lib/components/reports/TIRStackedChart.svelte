@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Chart, Svg, Bars, Text, Tooltip, Line } from "layerchart";
+  import { Chart, Svg, Bars, Bar, Spline, Text, Tooltip } from "layerchart";
   import { scaleBand, scaleLinear } from "d3-scale";
 
   // Minimum percentage to render as filled bar (below this = outline only)
@@ -87,15 +87,16 @@
     veryHigh: percentages?.veryHigh ?? 0,
   });
 
-  // Transform data for stacked bar chart - one row per range with cumulative positions
-  // Tiny values get minimum height and outline-only styling (only in vertical mode)
+  // Transform data for stacked bar chart - one row per range with cumulative positions.
+  // In vertical mode, tiny (<MIN) and empty (0%) segments get a minimum visible height;
+  // empty segments are rendered as a dotted outline to signal they aren't included.
   const stackedData = $derived.by(() => {
     let cumulative = 0;
     return rangeKeys.map((key) => {
       const value = pct[key];
-      // Only apply minimum bar size in vertical mode
+      const isEmpty = orientation === "vertical" && value === 0;
       const isTiny = orientation === "vertical" && value > 0 && value < MIN_BAR_PERCENT;
-      const displaySize = isTiny ? MIN_BAR_PERCENT : value;
+      const displaySize = isEmpty || isTiny ? MIN_BAR_PERCENT : value;
       const start = cumulative;
       cumulative += displaySize;
       const color = colorMap[key];
@@ -114,6 +115,7 @@
         color,
         label: labelMap[key],
         isTiny,
+        isEmpty,
       };
     });
   });
@@ -149,6 +151,36 @@
     }));
   });
 
+  /**
+   * Spreads label Y positions apart so adjacent labels are at least minGap px
+   * apart. Input positions are in SVG Y coords (larger Y = lower on screen),
+   * ordered bottom-to-top: [veryLow, low, target, high, veryHigh].
+   */
+  function spreadLabelPositions(rawYs: number[], minGap: number, height: number): number[] {
+    const ys = [...rawYs];
+    for (let pass = 0; pass < 10; pass++) {
+      for (let i = 1; i < ys.length; i++) {
+        if (ys[i - 1] - ys[i] < minGap) {
+          const center = (ys[i - 1] + ys[i]) / 2;
+          ys[i - 1] = center + minGap / 2;
+          ys[i] = center - minGap / 2;
+        }
+      }
+      for (let i = ys.length - 2; i >= 0; i--) {
+        if (ys[i] - ys[i + 1] < minGap) {
+          const center = (ys[i] + ys[i + 1]) / 2;
+          ys[i] = center + minGap / 2;
+          ys[i + 1] = center - minGap / 2;
+        }
+      }
+    }
+    const margin = 6;
+    for (let i = 0; i < ys.length; i++) {
+      ys[i] = Math.max(margin, Math.min(height - margin, ys[i]));
+    }
+    return ys;
+  }
+
   // Padding based on orientation and options
   const chartPadding = $derived.by(() => {
     if (orientation === "horizontal") {
@@ -158,10 +190,10 @@
   });
 </script>
 
-<div class="relative h-full w-full">
+<div class={orientation === "horizontal" ? "relative w-full" : "relative h-full w-full"}>
   {#if orientation === "horizontal"}
     <!-- Horizontal stacked bar (simple CSS-based for better control) -->
-    <div class="h-full flex rounded overflow-hidden">
+    <div class={["flex rounded overflow-hidden", compact ? "h-4" : "h-6"].join(" ")}>
       {#each stackedData as segment}
         {#if segment.value > 0}
           <div
@@ -188,8 +220,27 @@
       tooltip={{ mode: "band" }}
     >
       {#snippet children({ context })}
+        {@const rawLabelYs = rangeKeys.map((key) => {
+          const seg = stackedData.find((s) => s.range === key)!;
+          const midpoint = (seg.y0 + seg.y1) / 2;
+          return context.height - (midpoint / totalDisplaySize) * context.height;
+        })}
+        {@const spreadYs = spreadLabelPositions(rawLabelYs, compact ? 16 : 20, context.height)}
+        {@const labelYByRange = Object.fromEntries(rangeKeys.map((key, i) => [key, spreadYs[i]])) as Record<RangeKey, number>}
         <Svg>
-          <Bars rx={4} strokeWidth={2} stroke="inherit" />
+          <!-- Bar segments: filled for value > 0, dotted outline for 0% -->
+          <Bars>
+            {#each stackedData as segment (segment.range)}
+              <Bar
+                data={segment}
+                radius={4}
+                strokeWidth={2}
+                stroke={segment.color}
+                fill={segment.isEmpty ? "transparent" : segment.color}
+                stroke-dasharray={segment.isEmpty ? "4 3" : undefined}
+              />
+            {/each}
+          </Bars>
 
           <!-- Threshold labels at boundaries (on the bar) -->
           {#if effectiveShowThresholds}
@@ -209,37 +260,34 @@
             {/each}
           {/if}
 
-          <!-- Spline connectors from bar to percentage labels -->
+          <!-- Stepped connectors (right-down-right) from bar midpoint to offset label -->
           {#if effectiveShowConnectors && showLabels}
-            {#each stackedData as segment}
+            {#each stackedData as segment (segment.range)}
               {@const midpoint = (segment.y0 + segment.y1) / 2}
-              {@const yPos =
+              {@const segMidY =
                 context.height - (midpoint / totalDisplaySize) * context.height}
-
-              <Line
-                y1={yPos}
-                x1={context.width - 12}
-                x2={context.width - 82}
-                y2={yPos}
+              {@const labelY = labelYByRange[segment.range]}
+              {@const segEdgeX = context.width - 12}
+              {@const labelStubX = context.width - 82}
+              {@const elbowX = (segEdgeX + labelStubX) / 2}
+              <Spline
+                pathData={`M ${segEdgeX} ${segMidY} L ${elbowX} ${segMidY} L ${elbowX} ${labelY} L ${labelStubX} ${labelY}`}
+                fill="none"
                 stroke={segment.color}
                 strokeWidth={1}
-                x="x"
-                y="y"
-                stroke-dasharray="2,2"
+                stroke-dasharray="2 2"
               />
             {/each}
           {/if}
 
-          <!-- Percentage labels on the right side -->
+          <!-- Percentage labels on the right side, offset toward center -->
           {#if showLabels}
-            {#each stackedData as segment}
-              {@const midpoint = (segment.y0 + segment.y1) / 2}
-              {@const yPos =
-                context.height - (midpoint / totalDisplaySize) * context.height}
+            {#each stackedData as segment (segment.range)}
+              {@const labelY = labelYByRange[segment.range]}
 
               <Text
                 x={context.width - 8}
-                y={yPos}
+                y={labelY}
                 textAnchor="start"
                 verticalAnchor="middle"
                 class={[

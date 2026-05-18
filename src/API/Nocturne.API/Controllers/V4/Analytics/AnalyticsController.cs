@@ -1,16 +1,24 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Analytics;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V4.Analytics;
 
 /// <summary>
-/// Controller for managing analytics collection and providing transparency
-/// Allows users to view, configure, and control their analytics data
+/// Controller for managing local analytics collection and providing transparency.
+/// Allows users to view, configure, and control their usage analytics data.
 /// </summary>
+/// <remarks>
+/// All analytics data is stored locally and never transmitted externally.
+/// Collection is opt-in and disabled by default. Users can call <c>GET /privacy</c>
+/// to review the full data-collection policy, or <c>DELETE /data</c> to wipe collected data.
+/// Configuration changes are persisted via <see cref="IAnalyticsService.UpdateAnalyticsConfigAsync"/>.
+/// </remarks>
+/// <seealso cref="IAnalyticsService"/>
 [Authorize]
 [ApiController]
+[Tags("Analytics")]
 [Route("api/v4/[controller]")]
 [Produces("application/json")]
 public class AnalyticsController : ControllerBase
@@ -28,10 +36,14 @@ public class AnalyticsController : ControllerBase
     }
 
     /// <summary>
-    /// Get the current analytics configuration and status
+    /// Gets the current analytics configuration and collection status.
     /// </summary>
-    /// <returns>Analytics configuration and collection status</returns>
+    /// <returns>An object containing whether collection is enabled, the current <see cref="AnalyticsCollectionConfig"/>,
+    /// system info, and a human-readable privacy note.</returns>
+    /// <exception cref="Exception">Returns HTTP 500 if the analytics service throws unexpectedly.</exception>
     [HttpGet("status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public ActionResult<object> GetAnalyticsStatus()
     {
         try
@@ -57,10 +69,13 @@ public class AnalyticsController : ControllerBase
     }
 
     /// <summary>
-    /// Get current performance metrics
+    /// Gets current system performance metrics such as request latencies and memory usage.
     /// </summary>
-    /// <returns>System performance metrics</returns>
+    /// <returns>A <see cref="PerformanceMetrics"/> snapshot.</returns>
+    /// <exception cref="Exception">Returns HTTP 500 if metrics cannot be retrieved.</exception>
     [HttpGet("metrics/performance")]
+    [ProducesResponseType(typeof(PerformanceMetrics), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public ActionResult<PerformanceMetrics> GetPerformanceMetrics()
     {
         try
@@ -76,10 +91,13 @@ public class AnalyticsController : ControllerBase
     }
 
     /// <summary>
-    /// Get current usage statistics
+    /// Gets current usage statistics such as endpoint hit counts and feature usage.
     /// </summary>
-    /// <returns>Usage statistics</returns>
+    /// <returns>A <see cref="UsageStatistics"/> snapshot.</returns>
+    /// <exception cref="Exception">Returns HTTP 500 if statistics cannot be retrieved.</exception>
     [HttpGet("metrics/usage")]
+    [ProducesResponseType(typeof(UsageStatistics), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public ActionResult<UsageStatistics> GetUsageStatistics()
     {
         try
@@ -95,10 +113,14 @@ public class AnalyticsController : ControllerBase
     }
 
     /// <summary>
-    /// Get pending analytics data that would be transmitted (for transparency)
+    /// Gets any pending analytics data queued for collection, returned for transparency.
+    /// Since data is stored locally only, this is informational.
     /// </summary>
-    /// <returns>Pending analytics data or null if none</returns>
+    /// <returns>An <see cref="AnalyticsBatch"/> if there is pending data, or a no-data message if none.</returns>
+    /// <exception cref="Exception">Returns HTTP 500 if the data cannot be retrieved.</exception>
     [HttpGet("data/pending")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<AnalyticsBatch?>> GetPendingAnalyticsData()
     {
         try
@@ -120,11 +142,14 @@ public class AnalyticsController : ControllerBase
     }
 
     /// <summary>
-    /// Update analytics collection configuration
+    /// Updates analytics collection configuration.
     /// </summary>
-    /// <param name="config">New analytics configuration</param>
-    /// <returns>Updated configuration</returns>
+    /// <param name="config">The new <see cref="AnalyticsCollectionConfig"/> to persist.</param>
+    /// <returns>The updated configuration and a confirmation message.</returns>
+    /// <exception cref="Exception">Returns HTTP 500 if the update fails.</exception>
     [HttpPut("config")]
+    [ProducesResponseType(typeof(AnalyticsCollectionConfig), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<AnalyticsCollectionConfig>> UpdateAnalyticsConfig(
         [FromBody] AnalyticsCollectionConfig config
     )
@@ -151,10 +176,13 @@ public class AnalyticsController : ControllerBase
     }
 
     /// <summary>
-    /// Clear all stored analytics data
+    /// Clears all locally stored analytics data. This action cannot be undone.
     /// </summary>
-    /// <returns>Confirmation message</returns>
+    /// <returns>A confirmation message on success.</returns>
+    /// <exception cref="Exception">Returns HTTP 500 if the clear operation fails.</exception>
     [HttpDelete("data")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult> ClearAnalyticsData()
     {
         try
@@ -221,11 +249,16 @@ public class AnalyticsController : ControllerBase
     }
 
     /// <summary>
-    /// Track a custom analytics event (for testing or manual tracking)
+    /// Tracks a custom <see cref="AnalyticsEvent"/>. Useful for integration testing or manually
+    /// recording discrete events. Returns <c>400 Bad Request</c> if analytics collection is disabled.
     /// </summary>
-    /// <param name="eventData">Custom event data</param>
-    /// <returns>Confirmation message</returns>
+    /// <param name="eventData">The custom <see cref="AnalyticsEvent"/> to record.</param>
+    /// <returns>A confirmation message on success.</returns>
+    /// <exception cref="Exception">Returns HTTP 500 if the event cannot be tracked.</exception>
     [HttpPost("events")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult> TrackCustomEvent([FromBody] AnalyticsEvent eventData)
     {
         try

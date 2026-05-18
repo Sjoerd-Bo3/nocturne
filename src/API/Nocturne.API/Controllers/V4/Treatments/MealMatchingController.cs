@@ -2,15 +2,36 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Extensions;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Notifications;
+using Nocturne.Core.Contracts.Connectors;
+using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V4.Treatments;
 
 /// <summary>
-/// Controller for meal matching operations
+/// Controller for meal matching operations.
 /// </summary>
+/// <remarks>
+/// Meal matching surfaces suggested pairings between raw connector food entries
+/// (imported via <see cref="ConnectorFoodEntriesController"/>) and existing carb intake treatments.
+/// Suggestions are scored by <see cref="IMealMatchingService.GetSuggestionsAsync"/> and presented
+/// to the user for acceptance or dismissal.
+///
+/// <b>Accept</b> (<c>POST /accept</c>) — links a connector food entry to a treatment, archives the
+/// associated notification (topic <c>meal_matching.suggested_match</c>) with reason <c>Completed</c>.
+///
+/// <b>Dismiss</b> (<c>POST /dismiss</c>) — marks the food entry as dismissed and archives the
+/// notification with reason <c>Dismissed</c>.
+///
+/// Both mutation endpoints use <c>RemoteCommandAttribute</c> with
+/// cache invalidation on <c>GetSuggestions</c>.
+/// </remarks>
+/// <seealso cref="IMealMatchingService"/>
+/// <seealso cref="IConnectorFoodEntryRepository"/>
+/// <seealso cref="IInAppNotificationService"/>
 [ApiController]
+[Tags("Treatments")]
 [Route("api/v4/meal-matching")]
 [Authorize]
 public class MealMatchingController : ControllerBase
@@ -110,7 +131,7 @@ public class MealMatchingController : ControllerBase
             // Archive the notification
             await _notificationService.ArchiveBySourceAsync(
                 userId,
-                InAppNotificationType.SuggestedMealMatch,
+                "meal_matching.suggested_match",
                 request.FoodEntryId.ToString(),
                 NotificationArchiveReason.Completed,
                 HttpContext.RequestAborted);
@@ -144,7 +165,7 @@ public class MealMatchingController : ControllerBase
         // Archive the notification
         await _notificationService.ArchiveBySourceAsync(
             userId,
-            InAppNotificationType.SuggestedMealMatch,
+            "meal_matching.suggested_match",
             request.FoodEntryId.ToString(),
             NotificationArchiveReason.Dismissed,
             HttpContext.RequestAborted);

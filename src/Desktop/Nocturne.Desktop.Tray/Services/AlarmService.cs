@@ -86,7 +86,7 @@ public sealed class AlarmService : IDisposable
 
     private static void ClearAlarmToasts()
     {
-        AppNotificationManager.Default.RemoveByGroupAsync("glucose-alarms");
+        _ = AppNotificationManager.Default.RemoveByGroupAsync("glucose-alarms");
     }
 
     private void OnNotificationInvoked(AppNotificationManager sender, AppNotificationActivatedEventArgs args)

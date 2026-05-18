@@ -3,8 +3,12 @@ using System.Reflection;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Base class providing default implementation for sanitization methods using reflection
+/// Base class providing default implementation for sanitization methods using reflection.
+/// Properties marked with <see cref="SanitizableAttribute"/> are automatically discovered
+/// and included in HTML sanitization passes.
 /// </summary>
+/// <seealso cref="IProcessableDocument"/>
+/// <seealso cref="SanitizableAttribute"/>
 public abstract class ProcessableDocumentBase : IProcessableDocument
 {
     /// <inheritdoc />

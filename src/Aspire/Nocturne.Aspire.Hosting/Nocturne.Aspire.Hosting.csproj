@@ -3,6 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);ASPIREINTERACTION001</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting" />

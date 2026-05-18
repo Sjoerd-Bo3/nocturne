@@ -1,8 +1,16 @@
 namespace Nocturne.Core.Models.V4;
 
 /// <summary>
-/// User note or annotation record
+/// User note or annotation record, capturing free-text observations and announcements.
 /// </summary>
+/// <remarks>
+/// This is the V4 equivalent of a legacy <see cref="Treatment"/> with an event type that
+/// carries text content (e.g., "Note", "Announcement", "Question"). The
+/// <see cref="EventType"/> field preserves the original legacy event type string.
+/// </remarks>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="IV4Record"/>
+/// <seealso cref="DeviceEvent"/>
 public class Note : IV4Record
 {
     /// <summary>

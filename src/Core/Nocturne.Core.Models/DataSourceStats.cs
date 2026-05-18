@@ -1,8 +1,12 @@
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Statistics for a data source's data in the database, with per-type breakdowns
+/// Statistics for a data source's data in the database, with per-type breakdowns.
+/// Aggregates counts across <see cref="Entry"/>, <see cref="Treatment"/>, and <see cref="StateSpan"/> tables.
 /// </summary>
+/// <seealso cref="Entry"/>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="StateSpan"/>
 public record DataSourceStats(
     string DataSource,
     long TotalEntries,

@@ -3,8 +3,10 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// System event severity/urgency type
+/// System event severity/urgency type for <see cref="SystemEvent"/> records.
 /// </summary>
+/// <seealso cref="SystemEvent"/>
+/// <seealso cref="SystemEventCategory"/>
 [JsonConverter(typeof(JsonStringEnumConverter<SystemEventType>))]
 public enum SystemEventType
 {
@@ -30,8 +32,11 @@ public enum SystemEventType
 }
 
 /// <summary>
-/// System event device category
+/// System event device category for <see cref="SystemEvent"/> records.
+/// Groups events by the device type that generated them.
 /// </summary>
+/// <seealso cref="SystemEvent"/>
+/// <seealso cref="SystemEventType"/>
 [JsonConverter(typeof(JsonStringEnumConverter<SystemEventCategory>))]
 public enum SystemEventCategory
 {

@@ -5,9 +5,28 @@ using Nocturne.Infrastructure.Data.Entities;
 namespace Nocturne.API.Services.Chat;
 
 /// <summary>
-/// Tenant-scoped facade over the chat identity directory. Handles claim flows,
-/// direct link creation, and pending-link lookups for the current tenant.
+/// Tenant-scoped facade over <see cref="ChatIdentityDirectoryService"/> and
+/// <see cref="ChatIdentityPendingLinkService"/>. Handles pending-token claim flows,
+/// direct link creation, and read-only pending link lookups.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <see cref="ClaimPendingLinkAsync"/> validates that the consumed token belongs to the
+/// requested tenant: if the token's <c>TenantSlug</c> hint is set it must match the tenant's
+/// slug (case-insensitive), otherwise any tenant may claim it. This check prevents a token
+/// issued in a Discord DM targeted at tenant A from being redeemed against tenant B.
+/// </para>
+/// <para>
+/// <see cref="CreateDirectLinkAsync"/> bypasses the pending-token flow entirely and is
+/// intended for administrative link creation (e.g. from the management UI).
+/// </para>
+/// <para>
+/// <see cref="GetPendingAsync"/> is a read-only lookup safe for the OAuth2 authorise page;
+/// it does NOT consume the token.
+/// </para>
+/// </remarks>
+/// <seealso cref="ChatIdentityDirectoryService"/>
+/// <seealso cref="ChatIdentityPendingLinkService"/>
 public sealed class ChatIdentityService(
     ChatIdentityDirectoryService directory,
     ChatIdentityPendingLinkService pendingLinks,
@@ -103,6 +122,11 @@ public sealed class ChatIdentityService(
     }
 }
 
+/// <summary>
+/// Read-only projection of a <c>ChatIdentityPendingLinkEntity</c> row returned by
+/// <see cref="ChatIdentityService.GetPendingAsync"/> for display on the OAuth2 authorise page.
+/// Does not expose the raw token value.
+/// </summary>
 public class ChatIdentityPendingLinkView
 {
     public string Platform { get; set; } = string.Empty;

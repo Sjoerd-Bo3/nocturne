@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { getRealtimeStore } from "$lib/stores/realtime-store.svelte";
+  import { tryGetRealtimeStore } from "$lib/stores/realtime-store.svelte";
   import { getDirectionInfo } from "$lib/utils";
   import * as Sidebar from "$lib/components/ui/sidebar";
 
-  const realtimeStore = getRealtimeStore();
+  const realtimeStore = tryGetRealtimeStore();
 
   // Scroll tracking state
   let lastScrollY = $state(0);
@@ -11,7 +11,7 @@
   let scrollThreshold = 10; // Minimum scroll amount to trigger hide/show
 
   // Get direction info for arrow display
-  const directionInfo = $derived(getDirectionInfo(realtimeStore.direction));
+  const directionInfo = $derived(getDirectionInfo(realtimeStore?.direction ?? "NONE"));
 
   // Get background color based on BG value
   function getBGColor(bg: number): string {
@@ -60,7 +60,7 @@
   <Sidebar.Trigger class="-ml-1" />
 
   <!-- Current BG display on the right -->
-  {#if realtimeStore.currentBG > 0}
+  {#if realtimeStore && realtimeStore.currentBG > 0}
     <div class="flex items-center gap-2">
       <!-- BG Value -->
       <div

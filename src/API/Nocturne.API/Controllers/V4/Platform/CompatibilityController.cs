@@ -9,9 +9,12 @@ using Nocturne.Infrastructure.Data.Abstractions;
 namespace Nocturne.API.Controllers.V4.Platform;
 
 /// <summary>
-/// API controller for compatibility dashboard data
+/// API controller for compatibility dashboard data.
 /// </summary>
+/// <seealso cref="IDiscrepancyPersistenceService"/>
+/// <seealso cref="IDiscrepancyAnalysisRepository"/>
 [ApiController]
+[Tags("Platform")]
 [Route("api/v4/compatibility")]
 public class CompatibilityController : ControllerBase
 {

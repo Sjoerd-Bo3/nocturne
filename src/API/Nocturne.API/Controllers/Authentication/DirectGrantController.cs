@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Extensions;
 using Nocturne.API.Middleware.Handlers;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -14,8 +13,24 @@ namespace Nocturne.API.Controllers.Authentication;
 
 /// <summary>
 /// Controller for managing direct grant tokens (programmatic API tokens without an OAuth client).
-/// These tokens use the "noc_" prefix and are validated by DirectGrantTokenHandler.
+/// These tokens use the <c>noc_</c> prefix and are validated by <see cref="DirectGrantTokenHandler"/>.
 /// </summary>
+/// <remarks>
+/// Direct grants are bearer tokens tied to a specific user but issued outside the standard
+/// OAuth 2.0 consent flow. They are intended for scripts, automation, and server-to-server
+/// integrations where launching an authorization-code flow is impractical.
+///
+/// Token generation uses <see cref="System.Security.Cryptography.RandomNumberGenerator"/> to produce
+/// 32 bytes of entropy encoded as a Base64-URL string. Only the SHA-256 hash of the token is stored
+/// (<see cref="DirectGrantTokenHandler.ComputeSha256Hex"/>); the plaintext is returned once at
+/// creation and cannot be retrieved again.
+///
+/// Scopes are validated and normalized via <see cref="OAuthScopes.Normalize"/> before storage.
+/// All mutations are audit-logged through <see cref="IAuthAuditService"/>.
+/// </remarks>
+/// <seealso cref="DirectGrantTokenHandler"/>
+/// <seealso cref="IAuthAuditService"/>
+/// <seealso cref="OAuthScopes"/>
 [ApiController]
 [Route("api/auth/direct-grants")]
 [Tags("Authentication")]
@@ -29,8 +44,11 @@ public class DirectGrantController : ControllerBase
     private readonly ILogger<DirectGrantController> _logger;
 
     /// <summary>
-    /// Creates a new instance of DirectGrantController
+    /// Initializes a new instance of the <see cref="DirectGrantController"/> class.
     /// </summary>
+    /// <param name="dbContext">The application database context used to read and write grant records.</param>
+    /// <param name="auditService">The audit service for recording token issuance and revocation events.</param>
+    /// <param name="logger">The logger.</param>
     public DirectGrantController(
         NocturneDbContext dbContext,
         IAuthAuditService auditService,
@@ -44,6 +62,8 @@ public class DirectGrantController : ControllerBase
     /// <summary>
     /// Create a new direct grant token. The plaintext token is returned once and cannot be retrieved again.
     /// </summary>
+    /// <param name="request">The create request containing the human-readable label, desired scopes, and optional expiry.</param>
+    /// <returns>A <see cref="CreateDirectGrantResponse"/> containing the grant ID and the single-use plaintext token.</returns>
     [HttpPost]
     [RemoteCommand(Invalidates = ["List"])]
     [ProducesResponseType(typeof(CreateDirectGrantResponse), StatusCodes.Status200OK)]
@@ -57,12 +77,26 @@ public class DirectGrantController : ControllerBase
             return Problem(detail: "Authentication required", statusCode: 401, title: "Unauthorized");
         }
 
+        if (string.IsNullOrWhiteSpace(request.Label))
+        {
+            return Problem(detail: "Label is required", statusCode: 400, title: "Bad Request");
+        }
+
+        if (request.Scopes == null || request.Scopes.Count == 0)
+        {
+            return Problem(detail: "At least one scope is required", statusCode: 400, title: "Bad Request");
+        }
+
+        var normalizedScopes = OAuthScopes.Normalize(request.Scopes).ToList();
+        if (normalizedScopes.Count == 0)
+        {
+            return Problem(detail: "No valid scopes provided", statusCode: 400, title: "Bad Request");
+        }
+
         // Generate opaque token
         var randomBytes = RandomNumberGenerator.GetBytes(TokenRandomBytes);
         var plaintextToken = TokenPrefix + Base64UrlEncode(randomBytes);
         var tokenHash = DirectGrantTokenHandler.ComputeSha256Hex(plaintextToken);
-
-        var normalizedScopes = OAuthScopes.Normalize(request.Scopes).ToList();
 
         var entity = new OAuthGrantEntity
         {
@@ -109,6 +143,7 @@ public class DirectGrantController : ControllerBase
     /// List all active direct grants for the authenticated user.
     /// Never returns the token itself.
     /// </summary>
+    /// <returns>A list of <see cref="DirectGrantDto"/> objects representing non-revoked grants for the current user.</returns>
     [HttpGet]
     [RemoteQuery]
     [ProducesResponseType(typeof(List<DirectGrantDto>), StatusCodes.Status200OK)]
@@ -134,6 +169,7 @@ public class DirectGrantController : ControllerBase
                 Scopes = g.Scopes,
                 CreatedAt = g.CreatedAt,
                 LastUsedAt = g.LastUsedAt,
+                IsLegacy = g.LegacySecretHash != null,
             })
             .ToListAsync();
 
@@ -141,8 +177,10 @@ public class DirectGrantController : ControllerBase
     }
 
     /// <summary>
-    /// Revoke a direct grant by setting its RevokedAt timestamp
+    /// Revoke a direct grant by setting its <c>RevokedAt</c> timestamp. This operation is idempotent.
     /// </summary>
+    /// <param name="id">The GUID of the grant to revoke.</param>
+    /// <returns><c>204 No Content</c> on success (including when already revoked); <c>404 Not Found</c> if the grant does not belong to the current user.</returns>
     [HttpDelete("{id:guid}")]
     [RemoteCommand(Invalidates = ["List"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -230,6 +268,12 @@ public class DirectGrantDto
     public List<string> Scopes { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime? LastUsedAt { get; set; }
+
+    /// <summary>
+    /// True when this grant was created from a migrated Nightscout API secret
+    /// rather than as a scoped <c>noc_</c> token.
+    /// </summary>
+    public bool IsLegacy { get; set; }
 }
 
 #endregion

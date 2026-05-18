@@ -3,18 +3,30 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Authorization;
+using Nocturne.API.Configuration;
+using Nocturne.API.Models.OAuth;
 using Nocturne.API.Multitenancy;
 using Nocturne.Connectors.Core.Extensions;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Configuration;
+using Nocturne.Core.Models.Services;
 
 namespace Nocturne.API.Controllers;
 
 /// <summary>
-/// Metadata controller that exposes type definitions for frontend clients
+/// Metadata controller that exposes type definitions for NSwag and the frontend client generation pipeline.
 /// </summary>
+/// <remarks>
+/// This controller exists solely to ensure NSwag generates TypeScript types for models that are not
+/// otherwise reachable through regular API endpoints (e.g., WebSocket event envelopes, connector
+/// configuration shapes, OAuth scope lists). It is excluded from the interactive API explorer via
+/// <see cref="ApiExplorerSettingsAttribute"/> with <c>IgnoreApi = true</c>.
+///
+/// None of the endpoints here perform real business logic — they return empty/stub responses.
+/// All endpoints are permitted during initial setup (<see cref="AllowDuringSetupAttribute"/>).
+/// </remarks>
 [ApiController]
 [ApiExplorerSettings(IgnoreApi = true)]
 [Route("api/[controller]")]
@@ -176,7 +188,8 @@ public class MetadataController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(MultitenancyInfo), 200)]
     public ActionResult<MultitenancyInfo> GetMultitenancyInfo(
-        [FromServices] IOptions<MultitenancyConfiguration> config,
+        [FromServices] IOptions<BaseDomainOptions> config,
+        [FromServices] IOptions<OperatorConfiguration> operatorConfig,
         [FromServices] ITenantAccessor tenantAccessor)
     {
         var tenantContext = tenantAccessor.Context;
@@ -184,13 +197,71 @@ public class MetadataController : ControllerBase
         return Ok(new MultitenancyInfo
         {
             BaseDomain = config.Value.BaseDomain,
-            DefaultTenantSlug = config.Value.DefaultTenantSlug,
-            SubdomainResolution = !string.IsNullOrEmpty(config.Value.BaseDomain),
-            AllowSelfServiceCreation = config.Value.AllowSelfServiceCreation,
+            SubdomainResolution = true,
+            AllowSelfServiceCreation = operatorConfig.Value.AllowSelfServiceCreation,
             CurrentTenantSlug = tenantContext?.Slug,
             CurrentTenantId = tenantContext?.TenantId,
             CurrentTenantDisplayName = tenantContext?.DisplayName,
         });
+    }
+
+    /// <summary>
+    /// Get data source categories metadata
+    /// This endpoint ensures NSwag generates TypeScript types for DataSourceCategory
+    /// </summary>
+    /// <returns>Data source categories metadata</returns>
+    [HttpGet("data-source-categories")]
+    [RemoteQuery]
+    [ProducesResponseType(typeof(DataSourceCategoriesMetadata), 200)]
+    public ActionResult<DataSourceCategoriesMetadata> GetDataSourceCategories()
+    {
+        return Ok(
+            new DataSourceCategoriesMetadata
+            {
+                AvailableCategories = Enum.GetValues<DataSourceCategory>(),
+                Description = "Available data source categories",
+            }
+        );
+    }
+
+    /// <summary>
+    /// Get the alert condition tree shape. Exists solely so NSwag generates TypeScript
+    /// interfaces for <see cref="ConditionNode"/> and every condition payload record
+    /// — they're stored as opaque JSON on the rule entity and not otherwise reachable
+    /// through a controller signature.
+    /// </summary>
+    [HttpGet("alert-condition-types")]
+    [RemoteQuery]
+    [ApiExplorerSettings(IgnoreApi = false)]
+    [ProducesResponseType(typeof(AlertConditionTypesMetadata), 200)]
+    public ActionResult<AlertConditionTypesMetadata> GetAlertConditionTypes()
+    {
+        return Ok(new AlertConditionTypesMetadata
+        {
+            Sample = new ConditionNode("threshold"),
+            TempBasalMetrics = Enum.GetValues<TempBasalMetric>(),
+            Description = "Polymorphic ConditionNode shape used by alert rules.",
+        });
+    }
+
+    /// <summary>
+    /// Get authentication error codes metadata
+    /// This endpoint ensures NSwag generates TypeScript types for AuthErrorCode
+    /// </summary>
+    /// <returns>Auth error codes metadata</returns>
+    [HttpGet("auth-error-codes")]
+    [RemoteQuery]
+    [ApiExplorerSettings(IgnoreApi = false)]
+    [ProducesResponseType(typeof(AuthErrorCodesMetadata), 200)]
+    public ActionResult<AuthErrorCodesMetadata> GetAuthErrorCodes()
+    {
+        return Ok(
+            new AuthErrorCodesMetadata
+            {
+                AvailableCodes = Enum.GetValues<AuthErrorCode>(),
+                Description = "Authentication error codes returned by the auth flow",
+            }
+        );
     }
 
     private static WidgetDefinition[] GetAllWidgetDefinitions() =>
@@ -522,11 +593,6 @@ public class MultitenancyInfo
     public string? BaseDomain { get; set; }
 
     /// <summary>
-    /// Slug of the auto-created default tenant
-    /// </summary>
-    public string DefaultTenantSlug { get; set; } = "default";
-
-    /// <summary>
     /// Whether subdomain-based tenant resolution is active
     /// </summary>
     public bool SubdomainResolution { get; set; }
@@ -550,4 +616,52 @@ public class MultitenancyInfo
     /// Whether self-service tenant creation is allowed
     /// </summary>
     public bool AllowSelfServiceCreation { get; set; }
+}
+
+/// <summary>
+/// Metadata about data source categories for NSwag generation
+/// </summary>
+public class DataSourceCategoriesMetadata
+{
+    /// <summary>
+    /// Array of all available data source categories
+    /// </summary>
+    public DataSourceCategory[] AvailableCategories { get; set; } = [];
+
+    /// <summary>
+    /// Description of the data source categories
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Forces NSwag to emit TypeScript interfaces for <see cref="ConditionNode"/> and
+/// every condition payload record — they're stored as opaque JSON on the rule entity
+/// and otherwise never appear in a controller signature.
+/// </summary>
+public class AlertConditionTypesMetadata
+{
+    /// <summary>A sample <see cref="ConditionNode"/>; pulls every sub-record into the OpenAPI schema.</summary>
+    public ConditionNode? Sample { get; set; }
+
+    /// <summary>All <see cref="TempBasalMetric"/> values.</summary>
+    public TempBasalMetric[] TempBasalMetrics { get; set; } = [];
+
+    public string Description { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Metadata about authentication error codes for NSwag generation
+/// </summary>
+public class AuthErrorCodesMetadata
+{
+    /// <summary>
+    /// Array of all available authentication error codes
+    /// </summary>
+    public AuthErrorCode[] AvailableCodes { get; set; } = [];
+
+    /// <summary>
+    /// Description of the auth error codes
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
 }

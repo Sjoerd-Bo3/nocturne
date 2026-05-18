@@ -3,8 +3,11 @@ using H.NotifyIcon;
 using H.NotifyIcon.Core;
 using Microsoft.UI.Xaml;
 using Nocturne.Desktop.Tray.Helpers;
+using Nocturne.Core.Models.Widget;
+using Nocturne.Desktop.Tray.Extensions;
 using Nocturne.Desktop.Tray.Models;
 using Nocturne.Widget.Contracts;
+using GlucoseUnit = Nocturne.Widget.Contracts.GlucoseUnit;
 
 namespace Nocturne.Desktop.Tray.TrayIcon;
 
@@ -49,7 +52,7 @@ public sealed class TrayIconManager : IDisposable
         _taskbarIcon.ContextFlyout = contextMenu;
     }
 
-    public async Task UpdateAsync(GlucoseReading? reading, TraySettings settings)
+    public async Task UpdateAsync(V4GlucoseReading? reading, TraySettings settings)
     {
         var iconBytes = await _iconRenderer.RenderIconAsync(reading, settings);
 
@@ -82,13 +85,13 @@ public sealed class TrayIconManager : IDisposable
         _taskbarIcon.ForceCreate();
     }
 
-    private static string FormatTooltip(GlucoseReading reading, TraySettings settings)
+    private static string FormatTooltip(V4GlucoseReading reading, TraySettings settings)
     {
-        var value = GlucoseRangeHelper.FormatValue(reading.Mgdl, settings.Unit);
+        var value = GlucoseRangeHelper.FormatValue(reading.Sgv, settings.Unit);
         var unit = settings.Unit == GlucoseUnit.MmolL ? "mmol/L" : "mg/dL";
-        var arrow = TrendHelper.GetArrowText(reading.Direction);
+        var arrow = TrendHelper.GetArrowText(reading.Direction.ToString());
         var delta = GlucoseRangeHelper.FormatDelta(reading.Delta, settings.Unit);
-        var age = TimeAgoHelper.Format(reading.Timestamp);
+        var age = TimeAgoHelper.Format(reading.GetTimestamp());
 
         return $"Nocturne - {value} {unit} {arrow} {delta} ({age})";
     }

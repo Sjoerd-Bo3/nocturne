@@ -3,8 +3,11 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models.Battery;
 
 /// <summary>
-/// Represents a battery charge cycle (from charging to depleted or vice versa)
+/// Represents a battery charge cycle (from charging to depleted or vice versa).
+/// Derived from transitions in <see cref="BatteryReading.IsCharging"/> state.
 /// </summary>
+/// <seealso cref="BatteryReading"/>
+/// <seealso cref="BatteryStatistics"/>
 public class ChargeCycle
 {
     /// <summary>

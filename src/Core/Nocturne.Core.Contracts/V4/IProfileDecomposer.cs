@@ -9,6 +9,9 @@ namespace Nocturne.Core.Contracts.V4;
 /// Iterates through the profile's Store dictionary, producing one set of V4 records per named profile.
 /// Handles idempotent create-or-update based on composite LegacyId matching.
 /// </summary>
+/// <seealso cref="IDecompositionPipeline"/>
+/// <seealso cref="IEntryDecomposer"/>
+/// <seealso cref="ITreatmentDecomposer"/>
 public interface IProfileDecomposer
 {
     /// <summary>
@@ -21,6 +24,18 @@ public interface IProfileDecomposer
     /// A single Profile with N named stores produces N sets of 5 records each.
     /// </returns>
     Task<DecompositionResult> DecomposeAsync(Profile profile, CancellationToken ct = default);
+
+    /// <summary>
+    /// Decomposes a batch of legacy Profiles into V4 records, using bulk insert for each schedule type.
+    /// Flattens all Store entries across all profiles into per-type lists and bulk-creates them.
+    /// </summary>
+    /// <param name="profiles">The legacy Profiles to decompose</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>
+    /// A <see cref="DecompositionResult"/> containing all created V4 records across all profiles.
+    /// </returns>
+    Task<DecompositionResult> DecomposeBatchAsync(
+        IReadOnlyList<Profile> profiles, CancellationToken ct = default);
 
     /// <summary>
     /// Deletes all V4 records that were decomposed from a legacy Profile with the given ID.

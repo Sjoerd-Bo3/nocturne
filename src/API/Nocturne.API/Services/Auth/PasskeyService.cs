@@ -4,16 +4,25 @@ using Fido2NetLib.Objects;
 using Fido2NetLib.Serialization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Nocturne.Core.Contracts;
+using Microsoft.Extensions.Hosting;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
 
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Implements WebAuthn/FIDO2 passkey registration and authentication ceremonies.
-/// Challenge state is persisted in encrypted tokens passed via request/response bodies.
+/// Implements WebAuthn/FIDO2 passkey registration and authentication ceremonies using Fido2NetLib.
+/// Challenge state is persisted in ASP.NET Data Protection-encrypted tokens passed via
+/// request/response bodies (stateless challenge flow — no server-side session required).
 /// </summary>
+/// <remarks>
+/// The service dynamically adds tenant subdomain origins
+/// to the FIDO2 allowed-origins list when the browser's WebAuthn origin is a valid subdomain
+/// of the configured <c>rpId</c>. Maximum passkeys per subject is capped at 20.
+/// Challenge tokens expire after 5 minutes.
+/// </remarks>
+/// <seealso cref="IPasskeyService"/>
+/// <seealso cref="SubjectService"/>
 public class PasskeyService : IPasskeyService
 {
     private const int MaxCredentialsPerSubject = 20;
@@ -24,25 +33,37 @@ public class PasskeyService : IPasskeyService
     private readonly IDataProtector _protector;
     private readonly Fido2Configuration _fido2Config;
     private readonly ILogger<PasskeyService> _logger;
+    private readonly IHostEnvironment _environment;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="PasskeyService"/>.
+    /// </summary>
+    /// <param name="dbContext">The EF Core database context for passkey credential entity persistence.</param>
+    /// <param name="fido2">The Fido2NetLib instance for ceremony execution.</param>
+    /// <param name="dataProtectionProvider">ASP.NET Data Protection provider for encrypting challenge tokens.</param>
+    /// <param name="fido2Options">FIDO2 configuration options (rpId, rpName, allowed origins, attestation preference).</param>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="environment">The hosting environment used to adjust origin validation in development.</param>
     public PasskeyService(
         NocturneDbContext dbContext,
         IFido2 fido2,
         IDataProtectionProvider dataProtectionProvider,
         Microsoft.Extensions.Options.IOptions<Fido2Configuration> fido2Options,
-        ILogger<PasskeyService> logger)
+        ILogger<PasskeyService> logger,
+        IHostEnvironment environment)
     {
         _dbContext = dbContext;
         _fido2 = fido2;
         _protector = dataProtectionProvider.CreateProtector("Nocturne.Passkey.Challenge");
         _fido2Config = fido2Options.Value;
         _logger = logger;
+        _environment = environment;
     }
 
     /// <summary>
     /// Extracts the origin from the WebAuthn clientDataJSON and, if it is a
     /// subdomain of the configured rpId, adds it to the FIDO2 allowed origins.
-    /// This is required for multi-tenant wildcard subdomains where the browser
+    /// This is required for tenant subdomains where the browser
     /// origin (e.g. https://rhys.nocturne.run) isn't known at startup.
     /// </summary>
     private void AllowOriginFromClientData(byte[] clientDataJson)
@@ -59,7 +80,8 @@ public class PasskeyService : IPasskeyService
 
             var uri = new Uri(origin);
             var rpId = _fido2Config.ServerDomain;
-            if (uri.Host == rpId || uri.Host.EndsWith($".{rpId}", StringComparison.OrdinalIgnoreCase))
+            if (_environment.IsDevelopment() ||
+                uri.Host == rpId || uri.Host.EndsWith($".{rpId}", StringComparison.OrdinalIgnoreCase))
             {
                 ((HashSet<string>)_fido2Config.Origins).Add(origin);
 

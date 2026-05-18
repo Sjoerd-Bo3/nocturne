@@ -12,7 +12,7 @@
     "bot:register-discord-commands": "node dist/scripts/register-discord-commands.js"
   },
   "author": "Nocturne Project",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "dependencies": {
     "chat": "4.20.2",
     "@chat-adapter/discord": "4.20.2",

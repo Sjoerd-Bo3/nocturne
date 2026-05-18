@@ -7,7 +7,13 @@ namespace Nocturne.Core.Constants;
 /// <remarks>
 /// Replaces the previous IsDemo boolean approach with a more flexible, extensible string-based system.
 /// Every piece of data in Nocturne can be traced back to its source using these identifiers.
+/// Connector-specific environment variables for each source are defined in
+/// <see cref="ConnectorEnvironmentVariables"/>, and session/timeout configuration in
+/// <see cref="ConnectorTimeouts"/>.
 /// </remarks>
+/// <seealso cref="ConnectorEnvironmentVariables"/>
+/// <seealso cref="ConnectorTimeouts"/>
+/// <seealso cref="ServiceNames"/>
 public static class DataSources
 {
     // ============================================================================
@@ -46,6 +52,11 @@ public static class DataSources
     public const string MiniMedConnector = "minimed-connector";
 
     /// <summary>
+    /// Data fetched from Medtronic CareLink via the CareLink connector.
+    /// </summary>
+    public const string CareLinkConnector = "carelink-connector";
+
+    /// <summary>
     /// Data fetched from Glooko API via the Glooko connector.
     /// </summary>
     public const string GlookoConnector = "glooko-connector";
@@ -54,6 +65,11 @@ public static class DataSources
     /// Data bridged from an upstream Nightscout instance via the Nightscout connector.
     /// </summary>
     public const string NightscoutConnector = "nightscout-connector";
+
+    /// <summary>
+    /// Data synced from Gluroo Global Connect's Nightscout-compatible API.
+    /// </summary>
+    public const string GlurooConnector = "gluroo-connector";
 
     /// <summary>
     /// Data fetched from Tidepool API.
@@ -80,12 +96,31 @@ public static class DataSources
     /// </summary>
     public const string MyFitnessPalConnector = "myfitnesspal-connector";
 
+    /// <summary>
+    /// Data fetched from MyLife (CamAPS / YpsoPump) via the MyLife connector.
+    /// </summary>
+    /// <seealso cref="ConnectorEnvironmentVariables.MyLifeUsername"/>
     public const string MyLifeConnector = "mylife-connector";
 
     /// <summary>
     /// Data synced from Home Assistant via the Home Assistant connector.
     /// </summary>
     public const string HomeAssistantConnector = "home-assistant-connector";
+
+    /// <summary>
+    /// Data fetched from Eversense Now follower API via the Eversense connector.
+    /// </summary>
+    public const string EversenseConnector = "eversense-connector";
+
+    /// <summary>
+    /// Data pulled from a remote Nocturne instance via the NocturneRemote connector.
+    /// </summary>
+    public const string NocturneRemoteConnector = "nocturne-remote-connector";
+
+    /// <summary>
+    /// Data fetched from Twiist Insight follower API (Omnipod 5 / Tidepool Loop).
+    /// </summary>
+    public const string TwiistConnector = "twiist-connector";
 
     // ============================================================================
     // Manual Entry Sources
@@ -180,56 +215,89 @@ public static class DataSources
     // ============================================================================
 
     /// <summary>
-    /// Returns true if the data source represents demo/test data that can be safely deleted.
+    /// Returns <see langword="true"/> if the data source represents demo/test data that can be safely deleted.
+    /// Matches <see cref="DemoService"/> and <see cref="Testing"/>.
     /// </summary>
+    /// <param name="dataSource">The data source identifier to check, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if <paramref name="dataSource"/> is ephemeral; otherwise <see langword="false"/>.</returns>
     public static bool IsEphemeral(string? dataSource)
     {
         return dataSource is DemoService or Testing;
     }
 
     /// <summary>
-    /// Returns true if the data source represents data from a CGM connector.
+    /// Returns <see langword="true"/> if the data source represents data fetched by a CGM or
+    /// device connector service.
     /// </summary>
+    /// <param name="dataSource">The data source identifier to check, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if <paramref name="dataSource"/> is a connector source; otherwise <see langword="false"/>.</returns>
+    /// <seealso cref="ConnectorEnvironmentVariables"/>
     public static bool IsConnector(string? dataSource)
     {
         return dataSource
             is DexcomConnector
                 or LibreConnector
                 or MiniMedConnector
+                or CareLinkConnector
                 or GlookoConnector
                 or NightscoutConnector
+                or GlurooConnector
                 or TidepoolConnector
                 or TConnectSyncConnector
-                or HomeAssistantConnector;
+                or HomeAssistantConnector
+                or EversenseConnector
+                or NocturneRemoteConnector
+                or TwiistConnector;
     }
 
     /// <summary>
-    /// Returns true if the data source represents manually entered data.
+    /// Returns <see langword="true"/> if the data source represents manually entered data
+    /// from the web UI, Careportal, or an API client.
     /// </summary>
+    /// <param name="dataSource">The data source identifier to check, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if <paramref name="dataSource"/> is a manual entry source; otherwise <see langword="false"/>.</returns>
     public static bool IsManualEntry(string? dataSource)
     {
         return dataSource is ManualEntry or Careportal or ApiClient;
     }
 
     /// <summary>
-    /// Returns true if the data source represents imported/migrated data.
+    /// Returns <see langword="true"/> if the data source represents data imported or migrated
+    /// from an external system (MongoDB, CSV, Tidepool export).
     /// </summary>
+    /// <param name="dataSource">The data source identifier to check, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if <paramref name="dataSource"/> is an import source; otherwise <see langword="false"/>.</returns>
     public static bool IsImported(string? dataSource)
     {
         return dataSource is MongoDbImport or CsvImport or TidepoolImport;
     }
 
     /// <summary>
-    /// Returns true if the data source represents data from an AID/closed-loop system.
+    /// Returns <see langword="true"/> if the data source represents data from an automated insulin delivery
+    /// (AID) or closed-loop system such as <see cref="Loop"/>, <see cref="OpenAps"/>,
+    /// <see cref="AndroidAps"/>, <see cref="IAps"/>, or <see cref="Trio"/>.
     /// </summary>
+    /// <param name="dataSource">The data source identifier to check, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if <paramref name="dataSource"/> is an AID system source; otherwise <see langword="false"/>.</returns>
     public static bool IsAidSystem(string? dataSource)
     {
         return dataSource is Loop or OpenAps or AndroidAps or IAps or Trio;
     }
 
     /// <summary>
-    /// Gets all known data source values.
+    /// Returns the default CGM update interval in minutes for a given data source.
+    /// Used as fallback when no PatientDevice is registered.
     /// </summary>
+    public static int GetDefaultUpdateIntervalMinutes(string? dataSource) => dataSource switch
+    {
+        LibreConnector or MyLifeConnector => 1,
+        _ => 5,
+    };
+
+    /// <summary>
+    /// Gets all known data source identifier values.
+    /// </summary>
+    /// <value>A read-only list of every data source constant defined in this class.</value>
     public static IReadOnlyList<string> All { get; } =
         new[]
         {
@@ -238,11 +306,16 @@ public static class DataSources
             DexcomConnector,
             LibreConnector,
             MiniMedConnector,
+            CareLinkConnector,
             GlookoConnector,
             NightscoutConnector,
+            GlurooConnector,
             TidepoolConnector,
             TConnectSyncConnector,
             HomeAssistantConnector,
+            EversenseConnector,
+            NocturneRemoteConnector,
+            TwiistConnector,
             XDrip,
             Spike,
             ManualEntry,

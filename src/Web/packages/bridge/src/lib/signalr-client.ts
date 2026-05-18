@@ -20,6 +20,10 @@ interface SignalRConfig {
   connectionHeaders?: Record<string, string>;
 }
 
+function isSetupRequiredError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('"setupRequired":true');
+}
+
 class SignalRClient {
   private messageHandler: MessageTranslator;
   private dataConnection: HubConnection | null = null;
@@ -94,7 +98,7 @@ class SignalRClient {
       this.reconnectAttempts = 0;
     } catch (error) {
       logger.error("Failed to connect to SignalR hub:", error);
-      await this.handleReconnect();
+      await this.handleReconnect(isSetupRequiredError(error));
     } finally {
       this.isConnecting = false;
     }
@@ -361,8 +365,8 @@ class SignalRClient {
     }
   }
 
-  private async handleReconnect(): Promise<void> {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+  private async handleReconnect(isSetupRequired = false): Promise<void> {
+    if (!isSetupRequired && this.reconnectAttempts >= this.maxReconnectAttempts) {
       logger.error(
         `Maximum reconnection attempts (${this.maxReconnectAttempts}) exceeded`,
       );
@@ -375,8 +379,11 @@ class SignalRClient {
       this.maxReconnectDelay,
     );
 
+    const attemptLabel = isSetupRequired
+      ? `setup pending, attempt ${this.reconnectAttempts}`
+      : `attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`;
     logger.info(
-      `Attempting to reconnect to SignalR hub in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
+      `Attempting to reconnect to SignalR hub in ${delay}ms (${attemptLabel})`,
     );
 
     setTimeout(() => {

@@ -28,28 +28,18 @@
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import { Checkbox } from "$lib/components/ui/checkbox";
-  import { Input } from "$lib/components/ui/input";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import * as Popover from "$lib/components/ui/popover";
-  import * as Command from "$lib/components/ui/command";
   import * as Table from "$lib/components/ui/table";
   import {
     ArrowUpDown,
     ArrowUp,
     ArrowDown,
-    ChevronLeft,
-    ChevronRight,
-    ChevronsLeft,
-    ChevronsRight,
     Trash2,
-    Columns3,
-    Filter,
-    X,
-    Check,
   } from "lucide-svelte";
-  import { cn } from "$lib/utils";
-  import { formatDateTimeCompact } from "$lib/utils/formatting";
+  import { formatDateTimeCompact, bg, bgLabel } from "$lib/utils/formatting";
   import { ENTRY_CATEGORIES } from "$lib/constants/entry-categories";
+  import DataTableToolbar from "./DataTableToolbar.svelte";
+  import DataTablePagination from "./DataTablePagination.svelte";
+  import ColumnFilterPopover from "./ColumnFilterPopover.svelte";
 
   interface Props {
     rows: EntryRecord[];
@@ -69,11 +59,7 @@
   let globalFilter = $state("");
 
   // Column filter states
-  let typeFilterOpen = $state(false);
   let selectedTypes = $state<string[]>([]);
-
-  let sourceFilterOpen = $state(false);
-  let sourceFilterSearch = $state("");
   let selectedSources = $state<string[]>([]);
 
   // Map category IDs to display labels
@@ -83,6 +69,7 @@
     bgCheck: "BG Check",
     note: "Note",
     deviceEvent: "Device Event",
+    basalInjection: "Long-acting injection",
   };
 
   // Compute unique sources from data
@@ -93,14 +80,6 @@
       if (source) sources.add(source);
     }
     return Array.from(sources).sort();
-  });
-
-  let filteredSourcesForDropdown = $derived.by(() => {
-    if (!sourceFilterSearch.trim()) return uniqueSources;
-    const search = sourceFilterSearch.toLowerCase();
-    return uniqueSources.filter((source) =>
-      source.toLowerCase().includes(search)
-    );
   });
 
   // Format functions
@@ -128,7 +107,7 @@
       case "carbs":
         return formatNumber(record.data.carbs, "g");
       case "bgCheck":
-        return formatNumber(record.data.mgdl, " mg/dL");
+        return record.data.mgdl != null ? `${bg(record.data.mgdl)} ${bgLabel()}` : "\u2014";
       case "note":
         return record.data.text
           ? record.data.text.length > 40
@@ -137,6 +116,8 @@
           : "\u2014";
       case "deviceEvent":
         return record.data.eventType ?? "\u2014";
+      case "basalInjection":
+        return formatNumber(record.data.units, "U");
     }
   }
 
@@ -165,6 +146,8 @@
             ? record.data.notes.slice(0, 30) + "\u2026"
             : record.data.notes
           : "\u2014";
+      case "basalInjection":
+        return record.data.insulinContext?.insulinName ?? "\u2014";
     }
   }
 
@@ -204,7 +187,7 @@
     {
       id: "type",
       accessorFn: (row) => row.kind,
-      header: () => renderSnippet(typeFilterHeaderSnippet as any, {}),
+      header: () => renderSnippet(typeFilterHeaderSnippet as any, { typeFilterOptions, selectedTypes, toggleTypeFilter, clearTypeFilter }),
       cell: ({ row }) => {
         const label = categoryLabels[row.original.kind];
         const styles = getEntryStyle(row.original.kind);
@@ -275,7 +258,7 @@
     {
       id: "source",
       accessorFn: (row) => row.data.dataSource || row.data.app,
-      header: () => renderSnippet(sourceFilterHeaderSnippet as any, {}),
+      header: () => renderSnippet(sourceFilterHeaderSnippet as any, { uniqueSources, selectedSources, toggleSourceFilter, clearSourceFilter }),
       cell: ({ row }) => {
         const source = row.original.data.dataSource || row.original.data.app;
         if (!source) return "\u2014";
@@ -353,6 +336,10 @@
           break;
         case "deviceEvent":
           if (r.data.eventType) values.push(r.data.eventType);
+          if (r.data.notes) values.push(r.data.notes);
+          break;
+        case "basalInjection":
+          if (r.data.insulinContext?.insulinName) values.push(r.data.insulinContext.insulinName);
           if (r.data.notes) values.push(r.data.notes);
           break;
       }
@@ -519,139 +506,29 @@
   </Badge>
 {/snippet}
 
-{#snippet typeFilterHeaderSnippet({})}
-  <Popover.Root bind:open={typeFilterOpen}>
-    <Popover.Trigger>
-      {#snippet child({ props })}
-        <Button
-          variant="ghost"
-          size="sm"
-          class="-ml-3 h-8 data-[state=open]:bg-accent gap-1"
-          {...props}
-        >
-          Type
-          {#if selectedTypes.length > 0}
-            <Badge variant="secondary" class="ml-1 h-5 px-1 text-xs">
-              {selectedTypes.length}
-            </Badge>
-          {/if}
-          <Filter class="ml-1 h-3 w-3 opacity-50" />
-        </Button>
-      {/snippet}
-    </Popover.Trigger>
-    <Popover.Content class="w-[200px] p-0" align="start">
-      <Command.Root shouldFilter={false}>
-        <Command.List>
-          <Command.Group>
-            {#each typeFilterOptions as option}
-              <Command.Item
-                value={option.value}
-                onSelect={() => toggleTypeFilter(option.value)}
-                class="cursor-pointer"
-              >
-                <div
-                  class={cn(
-                    "mr-2 h-4 w-4 border rounded flex items-center justify-center",
-                    selectedTypes.includes(option.value)
-                      ? "bg-primary border-primary"
-                      : "border-muted"
-                  )}
-                >
-                  {#if selectedTypes.includes(option.value)}
-                    <Check class="h-3 w-3 text-primary-foreground" />
-                  {/if}
-                </div>
-                <span>{option.label}</span>
-              </Command.Item>
-            {/each}
-          </Command.Group>
-        </Command.List>
-        {#if selectedTypes.length > 0}
-          <div class="border-t p-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              class="w-full"
-              onclick={clearTypeFilter}
-            >
-              <X class="mr-2 h-3 w-3" />
-              Clear filter
-            </Button>
-          </div>
-        {/if}
-      </Command.Root>
-    </Popover.Content>
-  </Popover.Root>
+{#snippet typeFilterHeaderSnippet({ typeFilterOptions, selectedTypes, toggleTypeFilter, clearTypeFilter }: any)}
+  <ColumnFilterPopover
+    label="Type"
+    options={typeFilterOptions}
+    selected={selectedTypes}
+    onToggle={toggleTypeFilter}
+    onClear={clearTypeFilter}
+  />
 {/snippet}
 
-{#snippet sourceFilterHeaderSnippet({})}
-  <Popover.Root bind:open={sourceFilterOpen}>
-    <Popover.Trigger>
-      {#snippet child({ props })}
-        <Button
-          variant="ghost"
-          size="sm"
-          class="-ml-3 h-8 data-[state=open]:bg-accent gap-1"
-          {...props}
-        >
-          Source
-          {#if selectedSources.length > 0}
-            <Badge variant="secondary" class="ml-1 h-5 px-1 text-xs">
-              {selectedSources.length}
-            </Badge>
-          {/if}
-          <Filter class="ml-1 h-3 w-3 opacity-50" />
-        </Button>
-      {/snippet}
-    </Popover.Trigger>
-    <Popover.Content class="w-[220px] p-0" align="start">
-      <Command.Root shouldFilter={false}>
-        <Command.Input
-          placeholder="Search sources..."
-          bind:value={sourceFilterSearch}
-        />
-        <Command.List class="max-h-[200px]">
-          <Command.Empty>No sources found.</Command.Empty>
-          <Command.Group>
-            {#each filteredSourcesForDropdown as source}
-              <Command.Item
-                value={source}
-                onSelect={() => toggleSourceFilter(source)}
-                class="cursor-pointer"
-              >
-                <div
-                  class={cn(
-                    "mr-2 h-4 w-4 border rounded flex items-center justify-center",
-                    selectedSources.includes(source)
-                      ? "bg-primary border-primary"
-                      : "border-muted"
-                  )}
-                >
-                  {#if selectedSources.includes(source)}
-                    <Check class="h-3 w-3 text-primary-foreground" />
-                  {/if}
-                </div>
-                <span class="truncate">{source}</span>
-              </Command.Item>
-            {/each}
-          </Command.Group>
-        </Command.List>
-        {#if selectedSources.length > 0}
-          <div class="border-t p-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              class="w-full"
-              onclick={clearSourceFilter}
-            >
-              <X class="mr-2 h-3 w-3" />
-              Clear filter
-            </Button>
-          </div>
-        {/if}
-      </Command.Root>
-    </Popover.Content>
-  </Popover.Root>
+{#snippet sourceFilterHeaderSnippet({ uniqueSources, selectedSources, toggleSourceFilter, clearSourceFilter }: any)}
+  <ColumnFilterPopover
+    label="Source"
+    options={uniqueSources.map((source: string) => ({
+      value: source,
+      label: source,
+    }))}
+    selected={selectedSources}
+    searchable={true}
+    searchPlaceholder="Search sources..."
+    onToggle={toggleSourceFilter}
+    onClear={clearSourceFilter}
+  />
 {/snippet}
 
 {#snippet actionsSnippet({ entry }: { entry: EntryRecord })}
@@ -673,77 +550,13 @@
 <!-- Table UI -->
 <div class="space-y-4">
   <!-- Toolbar -->
-  <div
-    class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-  >
-    <!-- Search -->
-    <div class="flex flex-1 items-center gap-2">
-      <Input
-        placeholder="Search records..."
-        value={globalFilter}
-        oninput={(e) => {
-          globalFilter = e.currentTarget.value;
-        }}
-        class="max-w-sm"
-      />
-      {#if globalFilter}
-        <Button variant="ghost" size="sm" onclick={() => (globalFilter = "")}>
-          Clear
-        </Button>
-      {/if}
-    </div>
-
-    <!-- Right side controls -->
-    <div class="flex items-center gap-2">
-      <!-- Column visibility dropdown -->
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger>
-          {#snippet child({ props })}
-            <Button variant="outline" size="sm" class="ml-auto" {...props}>
-              <Columns3 class="mr-2 h-4 w-4" />
-              Columns
-            </Button>
-          {/snippet}
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Content align="end">
-          {#each table
-            .getAllColumns()
-            .filter((col) => col.getCanHide()) as column}
-            <DropdownMenu.CheckboxItem
-              checked={column.getIsVisible()}
-              onCheckedChange={(value) => column.toggleVisibility(!!value)}
-            >
-              {column.id}
-            </DropdownMenu.CheckboxItem>
-          {/each}
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
-    </div>
-  </div>
-
-  <!-- Selection actions bar -->
-  {#if selectedRows.length > 0}
-    <div
-      class="flex items-center justify-between rounded-md border bg-muted/50 px-4 py-2"
-    >
-      <span class="text-sm font-medium">
-        {selectedRows.length} record{selectedRows.length !== 1
-          ? "s"
-          : ""} selected
-      </span>
-      <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" onclick={clearSelection}>
-          Clear
-        </Button>
-        {#if onBulkDelete}
-          <Button variant="destructive" size="sm" onclick={handleBulkDelete}>
-            <Trash2 class="mr-2 h-4 w-4" />
-            Delete Selected
-          </Button>
-        {/if}
-      </div>
-    </div>
-  {/if}
+  <DataTableToolbar
+    bind:globalFilter
+    {table}
+    selectedCount={selectedRows.length}
+    onClearSelection={clearSelection}
+    onBulkDelete={handleBulkDelete}
+  />
 
   <!-- Table -->
   <div class="rounded-md border">
@@ -804,68 +617,9 @@
   </div>
 
   <!-- Pagination -->
-  <div class="flex items-center justify-between px-2">
-    <div class="text-sm text-muted-foreground">
-      {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel()
-        .rows.length} row(s) selected
-    </div>
-    <div class="flex items-center gap-6 lg:gap-8">
-      <div class="flex items-center gap-2">
-        <p class="text-sm font-medium">Rows per page</p>
-        <select
-          class="h-8 w-16 rounded-md border border-input bg-background text-sm"
-          value={pagination.pageSize}
-          onchange={(e) => {
-            pagination = {
-              ...pagination,
-              pageSize: Number(e.currentTarget.value),
-            };
-          }}
-        >
-          {#each [25, 50, 100, 200] as size}
-            <option value={size}>{size}</option>
-          {/each}
-        </select>
-      </div>
-      <div
-        class="flex w-[100px] items-center justify-center text-sm font-medium"
-      >
-        Page {pagination.pageIndex + 1} of {table.getPageCount()}
-      </div>
-      <div class="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onclick={() => table.setPageIndex(0)}
-          disabled={!table.getCanPreviousPage()}
-        >
-          <ChevronsLeft class="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onclick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          <ChevronLeft class="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onclick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          <ChevronRight class="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onclick={() => table.setPageIndex(table.getPageCount() - 1)}
-          disabled={!table.getCanNextPage()}
-        >
-          <ChevronsRight class="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  </div>
+  <DataTablePagination
+    {table}
+    selectedCount={table.getFilteredSelectedRowModel().rows.length}
+    totalCount={table.getFilteredRowModel().rows.length}
+  />
 </div>

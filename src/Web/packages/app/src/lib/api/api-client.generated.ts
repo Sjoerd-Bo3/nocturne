@@ -4,14 +4,18 @@
 //
 import {
   AccessRequestClient,
+  ActivityClient,
+  ActogramClient,
   AlertCustomSoundsClient,
   AlertInvitesClient,
+  AlertReplayClient,
   AlertRulesClient,
   AlertsClient,
   AnalyticsClient,
-  ApiSecretClient,
   ApsSnapshotClient,
-  BackfillClient,
+  AuditClient,
+  AvatarClient,
+  BasalInjectionClient,
   BatteryClient,
   BGCheckClient,
   BodyWeightClient,
@@ -22,6 +26,7 @@ import {
   ChatIdentityClient,
   ChatIdentityDirectoryClient,
   ClockFacesClient,
+  CoachMarkClient,
   CompatibilityClient,
   CompressionLowClient,
   ConfigurationClient,
@@ -29,19 +34,26 @@ import {
   ConnectorFoodEntriesClient,
   ConnectorStatusClient,
   CorrelationClient,
+  CurrentTherapyStateClient,
   DataOverviewClient,
   DebugClient,
   DeduplicationClient,
+  DevAdminClient,
   DeviceAgeClient,
+  DeviceCatalogClient,
   DeviceEventClient,
   DirectGrantClient,
   DiscrepancyClient,
   FoodsClient,
+  GlucoseProcessingSettingsClient,
+  GuestLinkClient,
   HeartRateClient,
-  HomeAssistantWebhookClient,
   InsulinCatalogClient,
+  LinkedPlatformsClient,
   MealMatchingClient,
   MemberInviteClient,
+  MembershipRequestClient,
+  MetadataClient,
   MeterGlucoseClient,
   MigrationClient,
   MyFitnessPalSettingsClient,
@@ -57,6 +69,8 @@ import {
   OidcProviderAdminClient,
   PasskeyClient,
   PatientRecordClient,
+  PlatformClient,
+  PlatformSettingsClient,
   PredictionClient,
   ProcessingClient,
   ProfileClient,
@@ -65,19 +79,21 @@ import {
   RoleClient,
   SensorGlucoseClient,
   ServicesClient,
+  SetupClient,
   StateSpansClient,
   StatisticsClient,
   StatusClient,
   StepCountClient,
   SubjectAdminClient,
   SummaryClient,
+  SupportClient,
   SystemClient,
   SystemEventsClient,
   TenantClient,
+  TenantAlertSettingsClient,
   TotpClient,
   TrackerAlertsClient,
   TrackersClient,
-  TreatmentsClient,
   UISettingsClient,
   UploaderSnapshotClient,
   UserPreferencesClient,
@@ -91,14 +107,18 @@ import {
 export class ApiClient {
   public readonly baseUrl: string;
   public readonly accessRequest: AccessRequestClient;
+  public readonly activity: ActivityClient;
+  public readonly actogram: ActogramClient;
   public readonly alertCustomSounds: AlertCustomSoundsClient;
   public readonly alertInvites: AlertInvitesClient;
+  public readonly alertReplay: AlertReplayClient;
   public readonly alertRules: AlertRulesClient;
   public readonly alerts: AlertsClient;
   public readonly analytics: AnalyticsClient;
-  public readonly apiSecret: ApiSecretClient;
   public readonly apsSnapshot: ApsSnapshotClient;
-  public readonly backfill: BackfillClient;
+  public readonly audit: AuditClient;
+  public readonly avatar: AvatarClient;
+  public readonly basalInjection: BasalInjectionClient;
   public readonly battery: BatteryClient;
   public readonly bGCheck: BGCheckClient;
   public readonly bodyWeight: BodyWeightClient;
@@ -109,6 +129,7 @@ export class ApiClient {
   public readonly chatIdentity: ChatIdentityClient;
   public readonly chatIdentityDirectory: ChatIdentityDirectoryClient;
   public readonly clockFaces: ClockFacesClient;
+  public readonly coachMark: CoachMarkClient;
   public readonly compatibility: CompatibilityClient;
   public readonly compressionLow: CompressionLowClient;
   public readonly configuration: ConfigurationClient;
@@ -116,19 +137,26 @@ export class ApiClient {
   public readonly connectorFoodEntries: ConnectorFoodEntriesClient;
   public readonly connectorStatus: ConnectorStatusClient;
   public readonly correlation: CorrelationClient;
+  public readonly currentTherapyState: CurrentTherapyStateClient;
   public readonly dataOverview: DataOverviewClient;
   public readonly debug: DebugClient;
   public readonly deduplication: DeduplicationClient;
+  public readonly devAdmin: DevAdminClient;
   public readonly deviceAge: DeviceAgeClient;
+  public readonly deviceCatalog: DeviceCatalogClient;
   public readonly deviceEvent: DeviceEventClient;
   public readonly directGrant: DirectGrantClient;
   public readonly discrepancy: DiscrepancyClient;
   public readonly foodsV4: FoodsClient;
+  public readonly glucoseProcessingSettings: GlucoseProcessingSettingsClient;
+  public readonly guestLink: GuestLinkClient;
   public readonly heartRate: HeartRateClient;
-  public readonly homeAssistantWebhook: HomeAssistantWebhookClient;
   public readonly insulinCatalog: InsulinCatalogClient;
+  public readonly linkedPlatforms: LinkedPlatformsClient;
   public readonly mealMatching: MealMatchingClient;
   public readonly memberInvite: MemberInviteClient;
+  public readonly membershipRequest: MembershipRequestClient;
+  public readonly metadata: MetadataClient;
   public readonly meterGlucose: MeterGlucoseClient;
   public readonly migration: MigrationClient;
   public readonly myFitnessPalSettings: MyFitnessPalSettingsClient;
@@ -144,6 +172,8 @@ export class ApiClient {
   public readonly oidcProviderAdmin: OidcProviderAdminClient;
   public readonly passkey: PasskeyClient;
   public readonly patientRecord: PatientRecordClient;
+  public readonly platform: PlatformClient;
+  public readonly platformSettings: PlatformSettingsClient;
   public readonly predictions: PredictionClient;
   public readonly processing: ProcessingClient;
   public readonly profile: ProfileClient;
@@ -152,19 +182,21 @@ export class ApiClient {
   public readonly role: RoleClient;
   public readonly sensorGlucose: SensorGlucoseClient;
   public readonly services: ServicesClient;
+  public readonly setup: SetupClient;
   public readonly stateSpans: StateSpansClient;
   public readonly statistics: StatisticsClient;
   public readonly status: StatusClient;
   public readonly stepCount: StepCountClient;
   public readonly subjectAdmin: SubjectAdminClient;
   public readonly summary: SummaryClient;
+  public readonly support: SupportClient;
   public readonly system: SystemClient;
   public readonly systemEvents: SystemEventsClient;
   public readonly tenant: TenantClient;
+  public readonly tenantAlertSettings: TenantAlertSettingsClient;
   public readonly totp: TotpClient;
   public readonly trackerAlerts: TrackerAlertsClient;
   public readonly trackers: TrackersClient;
-  public readonly treatments: TreatmentsClient;
   public readonly uiSettings: UISettingsClient;
   public readonly uploaderSnapshot: UploaderSnapshotClient;
   public readonly userPreferences: UserPreferencesClient;
@@ -178,14 +210,18 @@ export class ApiClient {
     this.baseUrl = apiBaseUrl;
 
     this.accessRequest = new AccessRequestClient(apiBaseUrl, http);
+    this.activity = new ActivityClient(apiBaseUrl, http);
+    this.actogram = new ActogramClient(apiBaseUrl, http);
     this.alertCustomSounds = new AlertCustomSoundsClient(apiBaseUrl, http);
     this.alertInvites = new AlertInvitesClient(apiBaseUrl, http);
+    this.alertReplay = new AlertReplayClient(apiBaseUrl, http);
     this.alertRules = new AlertRulesClient(apiBaseUrl, http);
     this.alerts = new AlertsClient(apiBaseUrl, http);
     this.analytics = new AnalyticsClient(apiBaseUrl, http);
-    this.apiSecret = new ApiSecretClient(apiBaseUrl, http);
     this.apsSnapshot = new ApsSnapshotClient(apiBaseUrl, http);
-    this.backfill = new BackfillClient(apiBaseUrl, http);
+    this.audit = new AuditClient(apiBaseUrl, http);
+    this.avatar = new AvatarClient(apiBaseUrl, http);
+    this.basalInjection = new BasalInjectionClient(apiBaseUrl, http);
     this.battery = new BatteryClient(apiBaseUrl, http);
     this.bGCheck = new BGCheckClient(apiBaseUrl, http);
     this.bodyWeight = new BodyWeightClient(apiBaseUrl, http);
@@ -196,6 +232,7 @@ export class ApiClient {
     this.chatIdentity = new ChatIdentityClient(apiBaseUrl, http);
     this.chatIdentityDirectory = new ChatIdentityDirectoryClient(apiBaseUrl, http);
     this.clockFaces = new ClockFacesClient(apiBaseUrl, http);
+    this.coachMark = new CoachMarkClient(apiBaseUrl, http);
     this.compatibility = new CompatibilityClient(apiBaseUrl, http);
     this.compressionLow = new CompressionLowClient(apiBaseUrl, http);
     this.configuration = new ConfigurationClient(apiBaseUrl, http);
@@ -203,19 +240,26 @@ export class ApiClient {
     this.connectorFoodEntries = new ConnectorFoodEntriesClient(apiBaseUrl, http);
     this.connectorStatus = new ConnectorStatusClient(apiBaseUrl, http);
     this.correlation = new CorrelationClient(apiBaseUrl, http);
+    this.currentTherapyState = new CurrentTherapyStateClient(apiBaseUrl, http);
     this.dataOverview = new DataOverviewClient(apiBaseUrl, http);
     this.debug = new DebugClient(apiBaseUrl, http);
     this.deduplication = new DeduplicationClient(apiBaseUrl, http);
+    this.devAdmin = new DevAdminClient(apiBaseUrl, http);
     this.deviceAge = new DeviceAgeClient(apiBaseUrl, http);
+    this.deviceCatalog = new DeviceCatalogClient(apiBaseUrl, http);
     this.deviceEvent = new DeviceEventClient(apiBaseUrl, http);
     this.directGrant = new DirectGrantClient(apiBaseUrl, http);
     this.discrepancy = new DiscrepancyClient(apiBaseUrl, http);
     this.foodsV4 = new FoodsClient(apiBaseUrl, http);
+    this.glucoseProcessingSettings = new GlucoseProcessingSettingsClient(apiBaseUrl, http);
+    this.guestLink = new GuestLinkClient(apiBaseUrl, http);
     this.heartRate = new HeartRateClient(apiBaseUrl, http);
-    this.homeAssistantWebhook = new HomeAssistantWebhookClient(apiBaseUrl, http);
     this.insulinCatalog = new InsulinCatalogClient(apiBaseUrl, http);
+    this.linkedPlatforms = new LinkedPlatformsClient(apiBaseUrl, http);
     this.mealMatching = new MealMatchingClient(apiBaseUrl, http);
     this.memberInvite = new MemberInviteClient(apiBaseUrl, http);
+    this.membershipRequest = new MembershipRequestClient(apiBaseUrl, http);
+    this.metadata = new MetadataClient(apiBaseUrl, http);
     this.meterGlucose = new MeterGlucoseClient(apiBaseUrl, http);
     this.migration = new MigrationClient(apiBaseUrl, http);
     this.myFitnessPalSettings = new MyFitnessPalSettingsClient(apiBaseUrl, http);
@@ -231,6 +275,8 @@ export class ApiClient {
     this.oidcProviderAdmin = new OidcProviderAdminClient(apiBaseUrl, http);
     this.passkey = new PasskeyClient(apiBaseUrl, http);
     this.patientRecord = new PatientRecordClient(apiBaseUrl, http);
+    this.platform = new PlatformClient(apiBaseUrl, http);
+    this.platformSettings = new PlatformSettingsClient(apiBaseUrl, http);
     this.predictions = new PredictionClient(apiBaseUrl, http);
     this.processing = new ProcessingClient(apiBaseUrl, http);
     this.profile = new ProfileClient(apiBaseUrl, http);
@@ -239,19 +285,21 @@ export class ApiClient {
     this.role = new RoleClient(apiBaseUrl, http);
     this.sensorGlucose = new SensorGlucoseClient(apiBaseUrl, http);
     this.services = new ServicesClient(apiBaseUrl, http);
+    this.setup = new SetupClient(apiBaseUrl, http);
     this.stateSpans = new StateSpansClient(apiBaseUrl, http);
     this.statistics = new StatisticsClient(apiBaseUrl, http);
     this.status = new StatusClient(apiBaseUrl, http);
     this.stepCount = new StepCountClient(apiBaseUrl, http);
     this.subjectAdmin = new SubjectAdminClient(apiBaseUrl, http);
     this.summary = new SummaryClient(apiBaseUrl, http);
+    this.support = new SupportClient(apiBaseUrl, http);
     this.system = new SystemClient(apiBaseUrl, http);
     this.systemEvents = new SystemEventsClient(apiBaseUrl, http);
     this.tenant = new TenantClient(apiBaseUrl, http);
+    this.tenantAlertSettings = new TenantAlertSettingsClient(apiBaseUrl, http);
     this.totp = new TotpClient(apiBaseUrl, http);
     this.trackerAlerts = new TrackerAlertsClient(apiBaseUrl, http);
     this.trackers = new TrackersClient(apiBaseUrl, http);
-    this.treatments = new TreatmentsClient(apiBaseUrl, http);
     this.uiSettings = new UISettingsClient(apiBaseUrl, http);
     this.uploaderSnapshot = new UploaderSnapshotClient(apiBaseUrl, http);
     this.userPreferences = new UserPreferencesClient(apiBaseUrl, http);

@@ -2,8 +2,10 @@ namespace Nocturne.Core.Models;
 
 /// <summary>
 /// External URLs used by Nocturne for documentation, website, and other public resources.
-/// Exposed via API so frontend can consume these from a single source of truth.
+/// Exposed via API so the frontend can consume these from a single source of truth
+/// rather than hard-coding URLs in client code.
 /// </summary>
+/// <seealso cref="ConnectorDocsUrls"/>
 public class ExternalUrls
 {
     /// <summary>

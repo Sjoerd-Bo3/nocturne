@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Extensions;
 using OpenApi.Remote.Attributes;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 
 namespace Nocturne.API.Controllers.V4.Identity;
@@ -12,7 +11,10 @@ namespace Nocturne.API.Controllers.V4.Identity;
 /// Manages OAuth app grants ("connected apps") for the authenticated user.
 /// Filters to grant_type='app' so direct/follower grants are managed elsewhere.
 /// </summary>
+/// <seealso cref="IOAuthGrantService"/>
+/// <seealso cref="IOAuthTokenService"/>
 [ApiController]
+[Tags("Identity")]
 [Route("api/v4/account/connected-apps")]
 [Authorize]
 [Produces("application/json")]
@@ -39,10 +41,10 @@ public class ConnectedAppsController : ControllerBase
     /// List all connected apps (OAuth app grants) for the authenticated user
     /// on the current tenant.
     /// </summary>
+    /// <inheritdoc cref="IOAuthGrantService.GetGrantsForSubjectAsync"/>
     [HttpGet]
     [RemoteQuery]
     [ProducesResponseType(typeof(List<ConnectedAppDto>), StatusCodes.Status200OK)]
-    /// <inheritdoc cref="IOAuthGrantService.GetGrantsForSubjectAsync"/>
     public async Task<ActionResult<List<ConnectedAppDto>>> List(CancellationToken ct)
     {
         var subjectId = HttpContext.GetSubjectId();
@@ -79,11 +81,11 @@ public class ConnectedAppsController : ControllerBase
     /// associated refresh tokens; previously-issued access tokens become
     /// unusable on next request via the revocation cache.
     /// </summary>
+    /// <inheritdoc cref="IOAuthGrantService.RevokeGrantAsync"/>
     [HttpDelete("{grantId}")]
     [RemoteCommand(Invalidates = ["List"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    /// <inheritdoc cref="IOAuthGrantService.RevokeGrantAsync"/>
     public async Task<ActionResult> Revoke(Guid grantId, CancellationToken ct)
     {
         var subjectId = HttpContext.GetSubjectId();

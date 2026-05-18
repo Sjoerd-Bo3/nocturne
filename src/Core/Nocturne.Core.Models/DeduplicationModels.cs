@@ -3,8 +3,12 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Criteria for matching records during deduplication
+/// Criteria for matching records during deduplication.
+/// Fields are selective: populate only those relevant to the record type being matched
+/// (<see cref="Entry"/>, <see cref="Treatment"/>, or <see cref="StateSpan"/>).
 /// </summary>
+/// <seealso cref="DeduplicationResult"/>
+/// <seealso cref="DeduplicationJobStatus"/>
 public record MatchCriteria
 {
     // Entry matching
@@ -91,6 +95,16 @@ public record MatchCriteria
     /// </summary>
     public Dictionary<string, object>? Metadata { get; init; }
 }
+
+/// <summary>
+/// Input for batch deduplication — one per record being ingested.
+/// </summary>
+public record DeduplicationInput(Guid RecordId, long Mills, string DataSource, MatchCriteria Criteria);
+
+/// <summary>
+/// Stats returned from a batch deduplication call.
+/// </summary>
+public record DeduplicationBatchResult(int Processed, int GroupsCreated, int RecordsLinked, int DuplicateGroups);
 
 /// <summary>
 /// Progress information for deduplication job

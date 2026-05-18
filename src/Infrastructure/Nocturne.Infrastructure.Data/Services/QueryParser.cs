@@ -3,8 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 using Microsoft.Extensions.Logging;
-using Nocturne.Core.Contracts;
-using Nocturne.Infrastructure.Data.Entities;
+using Nocturne.Core.Contracts.Infrastructure;
 
 namespace Nocturne.Infrastructure.Data.Services;
 
@@ -27,23 +26,6 @@ public class QueryParser : IQueryParser
     }
 
     private const int MaxQueryDepth = 10;
-
-    private static readonly Dictionary<string, Func<string, object>> DefaultEntryConverters = new()
-    {
-        ["date"] = ParseIsoDateToMills,
-        ["mills"] = ParseIsoDateToMills,
-        ["sgv"] = s => int.Parse(s),
-        ["filtered"] = s => int.Parse(s),
-        ["unfiltered"] = s => int.Parse(s),
-        ["rssi"] = s => int.Parse(s),
-        ["noise"] = s => int.Parse(s),
-        ["mgdl"] = s => int.Parse(s),
-        ["mbg"] = s => int.Parse(s),
-        ["type"] = s => s.Trim('\'', '"'), // Handle quoted strings
-        ["direction"] = s => s.Trim('\'', '"'),
-        ["device"] = s => s.Trim('\'', '"'),
-        ["data_source"] = s => s.Trim('\'', '"'),
-    };
 
     private static readonly Dictionary<string, Func<string, object>> DefaultTreatmentConverters =
         new()
@@ -174,7 +156,7 @@ public class QueryParser : IQueryParser
                 && (
                     findQuery.Contains("date")
                     || findQuery.Contains("mills")
-                    || findQuery.Contains(options.DateField.ToLower())
+                    || findQuery.Contains(options.DateField.ToLowerInvariant())
                 )
             );
 
@@ -243,7 +225,7 @@ public class QueryParser : IQueryParser
                     if (propertyExpr != null)
                     {
                         var value = GetJsonElementValue(element);
-                        var convertedValue = ConvertValue(value, currentFieldPath.ToLower(), typeConverters);
+                        var convertedValue = ConvertValue(value, currentFieldPath.ToLowerInvariant(), typeConverters);
                         return BuildEqualExpression(propertyExpr, convertedValue);
                     }
                 }
@@ -382,7 +364,7 @@ public class QueryParser : IQueryParser
         }
 
         var value = GetJsonElementValue(valueElement);
-        var convertedValue = ConvertValue(value, fieldPath.ToLower(), typeConverters);
+        var convertedValue = ConvertValue(value, fieldPath.ToLowerInvariant(), typeConverters);
 
         return mongoOperator switch
         {
@@ -664,10 +646,7 @@ public class QueryParser : IQueryParser
             return options.TypeConverters;
         }
 
-        // Return appropriate converters based on entity type
-        return typeof(T) == typeof(EntryEntity)
-            ? DefaultEntryConverters
-            : DefaultTreatmentConverters;
+        return DefaultTreatmentConverters;
     }
 
     private static object ConvertValue(
@@ -840,7 +819,7 @@ public class QueryParser : IQueryParser
                 return null;
             }
 
-            var convertedValue = ConvertValue(value, fieldPath.ToLower(), typeConverters);
+            var convertedValue = ConvertValue(value, fieldPath.ToLowerInvariant(), typeConverters);
 
             return mongoOperator switch
             {
@@ -1156,7 +1135,7 @@ public class QueryParser : IQueryParser
     {
         // $exists: true means field IS NOT NULL
         // $exists: false means field IS NULL
-        var existsValue = value.ToLower() == "true" || value == "1";
+        var existsValue = value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
 
         // Handle nullable types
         var propertyType = property.Type;

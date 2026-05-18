@@ -3,8 +3,11 @@ using System.Text.Json;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// V3 API query parameters for filtering and field selection
+/// V3 API query parameters for filtering and field selection.
+/// Supports the Nightscout v3 query syntax including field projection, pagination, and filter criteria.
 /// </summary>
+/// <seealso cref="V3FilterCriteria"/>
+/// <seealso cref="V3CollectionResponse{T}"/>
 public class V3QueryParameters
 {
     /// <summary>
@@ -70,9 +73,11 @@ public class V3FilterCriteria
 }
 
 /// <summary>
-/// V3 API collection response wrapper
+/// V3 API collection response wrapper for paginated data.
 /// </summary>
 /// <typeparam name="T">Type of data being returned</typeparam>
+/// <seealso cref="V3ResponseMetadata"/>
+/// <seealso cref="V3ErrorResponse"/>
 public class V3CollectionResponse<T>
 {
     /// <summary>

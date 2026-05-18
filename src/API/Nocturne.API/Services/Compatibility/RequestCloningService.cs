@@ -3,21 +3,32 @@ using Nocturne.API.Models.Compatibility;
 namespace Nocturne.API.Services.Compatibility;
 
 /// <summary>
-/// Service for cloning HTTP requests
+/// Clones an incoming ASP.NET Core <see cref="HttpRequest"/> into a serialisable
+/// <see cref="Models.Compatibility.ClonedRequest"/> for forwarding to the upstream Nightscout instance.
 /// </summary>
+/// <seealso cref="RequestCloningService"/>
 public interface IRequestCloningService
 {
     /// <summary>
-    /// Clone an HTTP request for forwarding to target systems
+    /// Clones the request, capturing method, path+query, headers (minus hop-by-hop headers),
+    /// and body bytes. The original request body stream is reset if seekable so the pipeline
+    /// can still read it.
     /// </summary>
-    /// <param name="request">The original HTTP request</param>
-    /// <returns>A cloned request object</returns>
     Task<ClonedRequest> CloneRequestAsync(HttpRequest request);
 }
 
 /// <summary>
-/// Implementation of request cloning service
+/// <see cref="IRequestCloningService"/> implementation that buffers the request body into a
+/// <see cref="MemoryStream"/> and filters hop-by-hop headers that must not be forwarded
+/// (<c>host</c>, <c>connection</c>, <c>content-length</c>, <c>transfer-encoding</c>,
+/// <c>upgrade</c>, <c>proxy-*</c>).
 /// </summary>
+/// <remarks>
+/// For non-seekable request bodies (common in integration tests), the body is replaced with
+/// a new <see cref="MemoryStream"/> backed by the captured bytes so subsequent middleware or
+/// model binding can still read it.
+/// </remarks>
+/// <seealso cref="IRequestCloningService"/>
 public class RequestCloningService : IRequestCloningService
 {
     private readonly ILogger<RequestCloningService> _logger;

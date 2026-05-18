@@ -3,8 +3,11 @@ using Nocturne.Core.Models;
 namespace Nocturne.Core.Contracts.Repositories;
 
 /// <summary>
-/// Repository port for Food domain operations
+/// Repository port for <see cref="Food"/> domain operations.
 /// </summary>
+/// <seealso cref="Food"/>
+/// <seealso cref="ITreatmentFoodRepository"/>
+/// <seealso cref="IUserFoodFavoriteRepository"/>
 public interface IFoodRepository
 {
     /// <summary>

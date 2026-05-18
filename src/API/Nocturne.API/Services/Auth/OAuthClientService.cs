@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -8,8 +7,11 @@ using Nocturne.Infrastructure.Data.Entities;
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Service for managing OAuth client registrations and the known app directory.
+/// Manages OAuth 2.0 client registrations and the known-application directory,
+/// including Dynamic Client Registration (DCR) per RFC 7591.
 /// </summary>
+/// <seealso cref="IOAuthClientService"/>
+/// <seealso cref="RedirectUriValidator"/>
 public class OAuthClientService : IOAuthClientService
 {
     private readonly NocturneDbContext _dbContext;
@@ -17,8 +19,13 @@ public class OAuthClientService : IOAuthClientService
     private readonly ILogger<OAuthClientService> _logger;
 
     /// <summary>
-    /// Creates a new instance of OAuthClientService
+    /// Initialises a new <see cref="OAuthClientService"/>.
     /// </summary>
+    /// <param name="dbContext">The database context for reading and writing OAuth client records.</param>
+    /// <param name="redirectUriValidator">
+    /// Validator that applies RFC 8252 redirect URI matching rules.
+    /// </param>
+    /// <param name="logger">Logger instance.</param>
     public OAuthClientService(
         NocturneDbContext dbContext,
         RedirectUriValidator redirectUriValidator,
@@ -91,8 +98,11 @@ public class OAuthClientService : IOAuthClientService
     }
 
     /// <summary>
-    /// Deserialize the redirect_uris JSON array from the entity.
+    /// Deserialises the <c>redirect_uris</c> JSON array stored in a client entity.
+    /// Returns an empty list on parse failure or when the JSON is blank.
     /// </summary>
+    /// <param name="redirectUrisJson">Raw JSON string from <see cref="Nocturne.Infrastructure.Data.Entities.OAuthClientEntity.RedirectUris"/>.</param>
+    /// <returns>A list of registered redirect URI strings.</returns>
     private static List<string> DeserializeRedirectUris(string redirectUrisJson)
     {
         if (string.IsNullOrWhiteSpace(redirectUrisJson) || redirectUrisJson == "[]")
@@ -208,12 +218,14 @@ public class OAuthClientService : IOAuthClientService
     }
 
     /// <summary>
-    /// Strip control characters (including CR/LF) from a user-supplied value
-    /// before it reaches a log sink. Structured-logging placeholders already
-    /// avoid message injection, but CodeQL can't prove that — and collapsed
-    /// single-line values are friendlier to any downstream tail/grep.
+    /// Strips control characters (including CR/LF) from a user-supplied value before it reaches a
+    /// log sink. Structured-logging placeholders already prevent message injection, but CodeQL
+    /// cannot prove that — and single-line values are friendlier to downstream log tooling.
     /// Values are also truncated to keep log lines bounded.
     /// </summary>
+    /// <param name="value">The raw user-supplied string to sanitise, or <see langword="null"/>.</param>
+    /// <param name="maxLength">Maximum number of characters to retain (default: 200).</param>
+    /// <returns>A sanitised string with control characters replaced by <c>_</c>, or <see langword="null"/>.</returns>
     private static string? SanitizeForLog(string? value, int maxLength = 200)
     {
         if (value is null)
@@ -229,8 +241,10 @@ public class OAuthClientService : IOAuthClientService
     }
 
     /// <summary>
-    /// Map an OAuthClientEntity to an OAuthClientInfo DTO.
+    /// Maps an <see cref="OAuthClientEntity"/> to an <see cref="OAuthClientInfo"/> DTO.
     /// </summary>
+    /// <param name="entity">The database entity to map.</param>
+    /// <returns>A populated <see cref="OAuthClientInfo"/> view model.</returns>
     private static OAuthClientInfo MapToInfo(OAuthClientEntity entity)
     {
         return new OAuthClientInfo

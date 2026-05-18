@@ -1,9 +1,12 @@
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// V3 Status response model that maintains 1:1 compatibility with Nightscout /api/v3/status endpoint
-/// Includes extended status information with permissions and authorization details
+/// V3 Status response model that maintains 1:1 compatibility with Nightscout /api/v3/status endpoint.
+/// Includes extended status information with permissions and authorization details.
 /// </summary>
+/// <seealso cref="StatusResponse"/>
+/// <seealso cref="ExtendedStatusInfo"/>
+/// <seealso cref="StorageInfo"/>
 public class V3StatusResponse
 {
     /// <summary>

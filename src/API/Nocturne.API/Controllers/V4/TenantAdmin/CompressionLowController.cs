@@ -1,15 +1,18 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Glucose;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V4.TenantAdmin;
 
 /// <summary>
-/// Controller for compression low detection and review
+/// Controller for compression low detection and review.
 /// </summary>
+/// <seealso cref="ICompressionLowService"/>
+/// <seealso cref="ICompressionLowDetectionService"/>
 [ApiController]
+[Tags("TenantAdmin")]
 [Route("api/v4/compression-lows")]
 [Authorize]
 public class CompressionLowController : ControllerBase
@@ -17,6 +20,11 @@ public class CompressionLowController : ControllerBase
     private readonly ICompressionLowService _compressionLowService;
     private readonly ICompressionLowDetectionService _detectionService;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="CompressionLowController"/>.
+    /// </summary>
+    /// <param name="compressionLowService">Service for suggestion CRUD and accept/dismiss operations.</param>
+    /// <param name="detectionService">Service for running compression low detection algorithms.</param>
     public CompressionLowController(
         ICompressionLowService compressionLowService,
         ICompressionLowDetectionService detectionService)

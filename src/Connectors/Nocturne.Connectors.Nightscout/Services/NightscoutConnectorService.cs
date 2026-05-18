@@ -10,26 +10,34 @@ using Nocturne.Core.Models;
 
 namespace Nocturne.Connectors.Nightscout.Services;
 
-public class NightscoutConnectorService : BaseConnectorService<NightscoutConnectorConfiguration>
+public class NightscoutConnectorServiceBase<TConfig> : BaseConnectorService<TConfig>
+    where TConfig : NightscoutConnectorConfiguration
 {
     private readonly IRetryDelayStrategy _retryDelayStrategy;
     private readonly IRateLimitingStrategy _rateLimitingStrategy;
-    private readonly NightscoutConnectorConfiguration _config;
-    private string? _apiSecretHash;
 
-    public NightscoutConnectorService(
+    // Starts as the startup defaults (from IConnectorRegistration); replaced with the
+    // per-tenant config when AuthenticateWithConfigAsync runs at the start of a sync.
+    // Per-instance, no concurrency: connectors are resolved into a fresh DI scope per
+    // tenant sync, and SyncDataAsync is not invoked concurrently on the same instance.
+    private TConfig _currentConfig;
+    private string? _apiSecretHash;
+    private string? _resolvedBaseUrl;
+
+    public NightscoutConnectorServiceBase(
         HttpClient httpClient,
-        ILogger<NightscoutConnectorService> logger,
+        IConnectorServerResolver<TConfig> serverResolver,
+        ILogger logger,
         IRetryDelayStrategy retryDelayStrategy,
         IRateLimitingStrategy rateLimitingStrategy,
-        NightscoutConnectorConfiguration config,
+        IConnectorRegistration<TConfig> registration,
         IConnectorPublisher? publisher = null
     )
-        : base(httpClient, logger, publisher)
+        : base(httpClient, serverResolver, logger, publisher)
     {
         _retryDelayStrategy = retryDelayStrategy ?? throw new ArgumentNullException(nameof(retryDelayStrategy));
         _rateLimitingStrategy = rateLimitingStrategy ?? throw new ArgumentNullException(nameof(rateLimitingStrategy));
-        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _currentConfig = registration?.Defaults ?? throw new ArgumentNullException(nameof(registration));
     }
 
     protected override string ConnectorSource => DataSources.NightscoutConnector;
@@ -52,9 +60,18 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
 
     public override async Task<bool> AuthenticateAsync()
     {
-        EnsureBaseAddress();
+        // Legacy no-config overload; uses whatever config the service was last primed
+        // with (startup defaults until AuthenticateWithConfigAsync replaces it).
+        // Per-tenant sync uses AuthenticateWithConfigAsync instead.
+        return await AuthenticateWithConfigAsync(_currentConfig);
+    }
 
-        if (string.IsNullOrEmpty(_config.ApiSecret))
+    private async Task<bool> AuthenticateWithConfigAsync(TConfig config)
+    {
+        _currentConfig = config;
+        _resolvedBaseUrl = ResolveBaseUrl(config.Url);
+
+        if (string.IsNullOrEmpty(config.ApiSecret))
         {
             _logger.LogError(
                 "[{ConnectorSource}] API secret is not configured",
@@ -63,21 +80,36 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
             return false;
         }
 
-        _apiSecretHash = ComputeApiSecretHash(_config.ApiSecret);
+        _apiSecretHash = ComputeApiSecretHash(config.ApiSecret);
 
         _logger.LogDebug(
             "[{ConnectorSource}] Authenticating with Nightscout at {Url}",
             ConnectorSource,
-            _httpClient.BaseAddress);
+            _resolvedBaseUrl);
 
         try
         {
             var headers = GetAuthHeaders();
-            var response = await GetWithHeadersAsync("/api/v1/entries.json?count=1", headers);
+            var response = await GetWithHeadersAsync(
+                $"{_resolvedBaseUrl}/api/v1/entries.json?count=1", headers);
 
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync();
+
+                // Detect Cloudflare/WAF challenge pages that block server-to-server requests
+                if (IsWafChallengePage(response, body))
+                {
+                    _logger.LogError(
+                        "[{ConnectorSource}] Nightscout instance at {Url} is behind a WAF (e.g. Cloudflare) that is blocking API requests",
+                        ConnectorSource,
+                        _resolvedBaseUrl);
+                    TrackFailedRequest(
+                        "Your Nightscout instance is behind a firewall (e.g. Cloudflare) that is blocking Nocturne from syncing. " +
+                        "Please add a WAF bypass rule for API paths (e.g. /api/*) or allowlist the Nocturne server IP.");
+                    return false;
+                }
+
                 _logger.LogError(
                     "[{ConnectorSource}] Nightscout auth check returned HTTP {StatusCode}: {Body}",
                     ConnectorSource,
@@ -99,18 +131,18 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
             _logger.LogError(ex,
                 "[{ConnectorSource}] Failed to connect to Nightscout instance at {Url}",
                 ConnectorSource,
-                _httpClient.BaseAddress);
+                _resolvedBaseUrl);
             return false;
         }
     }
 
     public override async Task<SyncResult> SyncDataAsync(
         SyncRequest request,
-        NightscoutConnectorConfiguration config,
+        TConfig config,
         CancellationToken cancellationToken,
         ISyncProgressReporter? progressReporter = null)
     {
-        if (!await AuthenticateAsync())
+        if (!await AuthenticateWithConfigAsync(config))
         {
             return new SyncResult
             {
@@ -124,7 +156,7 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
 
     protected override async Task<SyncResult> PerformSyncInternalAsync(
         SyncRequest request,
-        NightscoutConnectorConfiguration config,
+        TConfig config,
         CancellationToken cancellationToken,
         ISyncProgressReporter? progressReporter = null)
     {
@@ -360,7 +392,7 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
             allEntries.AddRange(entries);
 
             // If we got fewer than MaxCount, we've fetched everything in this range
-            if (entries.Length < _config.MaxCount)
+            if (entries.Length < _currentConfig.MaxCount)
                 break;
 
             // Find the oldest entry's date and paginate backwards
@@ -416,7 +448,7 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
 
             allTreatments.AddRange(treatments);
 
-            if (treatments.Length < _config.MaxCount)
+            if (treatments.Length < _currentConfig.MaxCount)
                 break;
 
             // Find the oldest treatment's created_at and paginate backwards.
@@ -491,7 +523,7 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
 
             allStatuses.AddRange(statuses);
 
-            if (statuses.Length < _config.MaxCount)
+            if (statuses.Length < _currentConfig.MaxCount)
                 break;
 
             var oldestDate = statuses
@@ -528,7 +560,7 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
     private async Task<IEnumerable<Food>> FetchFoodAsync()
     {
         var foods = await FetchDataAsync<Food[]>(
-            $"/api/v1/food.json?count={_config.MaxCount}",
+            $"/api/v1/food.json?count={_currentConfig.MaxCount}",
             "FetchFood");
 
         if (foods == null || foods.Length == 0)
@@ -564,7 +596,7 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
 
             allActivities.AddRange(activities);
 
-            if (activities.Length < _config.MaxCount)
+            if (activities.Length < _currentConfig.MaxCount)
                 break;
 
             var oldestDate = activities
@@ -611,7 +643,8 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
     private async Task<T?> FetchDataCoreAsync<T>(string url) where T : class
     {
         var headers = GetAuthHeaders();
-        var response = await GetWithHeadersAsync(url, headers);
+        var absoluteUrl = _resolvedBaseUrl != null ? $"{_resolvedBaseUrl}{url}" : url;
+        var response = await GetWithHeadersAsync(absoluteUrl, headers);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -627,7 +660,7 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
 
     private string BuildEntriesUrl(DateTime? from, DateTime? to)
     {
-        var url = $"/api/v1/entries.json?count={_config.MaxCount}";
+        var url = $"/api/v1/entries.json?count={_currentConfig.MaxCount}";
 
         if (from.HasValue)
         {
@@ -646,7 +679,7 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
 
     private string BuildTreatmentsUrl(DateTime? from, DateTime? to)
     {
-        var url = $"/api/v1/treatments.json?count={_config.MaxCount}";
+        var url = $"/api/v1/treatments.json?count={_currentConfig.MaxCount}";
 
         if (from.HasValue)
             url += $"&find[created_at][$gte]={from.Value.ToUniversalTime():o}";
@@ -659,7 +692,7 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
 
     private string BuildDeviceStatusUrl(DateTime? from, DateTime? to)
     {
-        var url = $"/api/v1/devicestatus.json?count={_config.MaxCount}";
+        var url = $"/api/v1/devicestatus.json?count={_currentConfig.MaxCount}";
 
         if (from.HasValue)
             url += $"&find[created_at][$gte]={from.Value.ToUniversalTime():o}";
@@ -672,7 +705,7 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
 
     private string BuildActivityUrl(DateTime? from, DateTime? to)
     {
-        var url = $"/api/v1/activity.json?count={_config.MaxCount}";
+        var url = $"/api/v1/activity.json?count={_currentConfig.MaxCount}";
 
         if (from.HasValue)
             url += $"&find[created_at][$gte]={from.Value.ToUniversalTime():o}";
@@ -683,26 +716,23 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
         return url;
     }
 
-    private void EnsureBaseAddress()
+    private static string ResolveBaseUrl(string configUrl)
     {
-        if (_httpClient.BaseAddress != null)
-            return;
-
-        if (string.IsNullOrEmpty(_config.Url))
+        if (string.IsNullOrEmpty(configUrl))
             throw new InvalidOperationException("Nightscout URL is not configured");
 
-        var url = _config.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-            ? _config.Url
-            : $"https://{_config.Url}";
+        var url = configUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? configUrl
+            : $"https://{configUrl}";
 
-        _httpClient.BaseAddress = new Uri(url);
+        return url.TrimEnd('/');
     }
 
     private Dictionary<string, string> GetAuthHeaders()
     {
         return new Dictionary<string, string>
         {
-            ["api-secret"] = _apiSecretHash ?? ComputeApiSecretHash(_config.ApiSecret)
+            ["api-secret"] = _apiSecretHash ?? ComputeApiSecretHash(_currentConfig.ApiSecret)
         };
     }
 
@@ -719,4 +749,44 @@ public class NightscoutConnectorService : BaseConnectorService<NightscoutConnect
     {
         return value.Length == 40 && value.All(c => char.IsAsciiHexDigit(c));
     }
+
+    /// <summary>
+    ///     Detects WAF challenge pages (Cloudflare, Akamai, etc.) that block server-to-server API requests.
+    ///     These return HTML instead of JSON and typically include challenge scripts.
+    /// </summary>
+    private static bool IsWafChallengePage(HttpResponseMessage response, string body)
+    {
+        // Check for Cloudflare server header
+        if (response.Headers.TryGetValues("server", out var serverValues) &&
+            serverValues.Any(v => v.Contains("cloudflare", StringComparison.OrdinalIgnoreCase)))
+        {
+            // Cloudflare returning non-JSON (challenge page) for an API request
+            var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
+            if (contentType.Contains("html", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        // Check for cf-ray header (Cloudflare) with HTML body containing challenge markers
+        if (response.Headers.Contains("cf-ray") &&
+            body.Contains("challenge-platform", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    }
+}
+
+/// <summary>
+/// Nightscout connector service for syncing data from a Nightscout instance.
+/// </summary>
+public class NightscoutConnectorService : NightscoutConnectorServiceBase<NightscoutConnectorConfiguration>
+{
+    public NightscoutConnectorService(
+        HttpClient httpClient,
+        IConnectorServerResolver<NightscoutConnectorConfiguration> serverResolver,
+        ILogger<NightscoutConnectorService> logger,
+        IRetryDelayStrategy retryDelayStrategy,
+        IRateLimitingStrategy rateLimitingStrategy,
+        IConnectorRegistration<NightscoutConnectorConfiguration> registration,
+        IConnectorPublisher? publisher = null
+    ) : base(httpClient, serverResolver, logger, retryDelayStrategy, rateLimitingStrategy, registration, publisher) { }
 }

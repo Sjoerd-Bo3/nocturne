@@ -1,15 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Platform;
 using Nocturne.Core.Models;
+using OpenApi.Remote.Attributes;
 
 namespace Nocturne.API.Controllers.V4.Platform;
 
 /// <summary>
 /// Nocturne-native status controller providing detailed system status.
 /// This is the V4 endpoint that returns full JSON status information.
-/// For Nightscout-compatible HTML status, use /api/v1/status
+/// For Nightscout-compatible HTML status, use /api/v1/status.
 /// </summary>
+/// <seealso cref="IStatusService"/>
 [ApiController]
+[Tags("Platform")]
 [Route("api/v4/[controller]")]
 [Produces("application/json")]
 public class StatusController : ControllerBase
@@ -17,6 +20,11 @@ public class StatusController : ControllerBase
     private readonly IStatusService _statusService;
     private readonly ILogger<StatusController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="StatusController"/>.
+    /// </summary>
+    /// <param name="statusService">Service providing system status information.</param>
+    /// <param name="logger">Logger instance.</param>
     public StatusController(IStatusService statusService, ILogger<StatusController> logger)
     {
         _statusService = statusService;
@@ -28,6 +36,7 @@ public class StatusController : ControllerBase
     /// </summary>
     /// <returns>Comprehensive system status including settings, api status, and server information</returns>
     [HttpGet]
+    [RemoteQuery]
     [ProducesResponseType(typeof(StatusResponse), 200)]
     public async Task<ActionResult<StatusResponse>> GetStatus()
     {

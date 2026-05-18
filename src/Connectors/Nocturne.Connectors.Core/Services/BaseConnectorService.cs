@@ -14,9 +14,10 @@ namespace Nocturne.Connectors.Core.Services;
 /// </summary>
 /// <typeparam name="TConfig">The connector-specific configuration type</typeparam>
 public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
-    where TConfig : IConnectorConfiguration
+    where TConfig : BaseConnectorConfiguration
 {
     protected readonly HttpClient _httpClient;
+    protected readonly IConnectorServerResolver<TConfig> _serverResolver;
     protected readonly ILogger _logger;
     private readonly IConnectorPublisher? _publisher;
 
@@ -24,17 +25,18 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
     ///     Base constructor for connector services using IHttpClientFactory pattern
     /// </summary>
     /// <param name="httpClient">HttpClient instance from IHttpClientFactory (will not be disposed)</param>
+    /// <param name="serverResolver">Resolves the base server URL from per-tenant config</param>
     /// <param name="logger">Logger instance for this connector</param>
     /// <param name="publisher">Optional publisher for Nocturne mode</param>
-    /// <param name="metricsTracker">Optional metrics tracker</param>
-    /// <param name="stateService">Optional state service for tracking connector state</param>
     protected BaseConnectorService(
         HttpClient httpClient,
+        IConnectorServerResolver<TConfig> serverResolver,
         ILogger logger,
         IConnectorPublisher? publisher = null
     )
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _serverResolver = serverResolver ?? throw new ArgumentNullException(nameof(serverResolver));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _publisher = publisher;
     }
@@ -265,6 +267,8 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
                     CompletedDataTypes = [.. completedTypes],
                     TotalDataTypes = typesToSync.Count,
                     ItemsSyncedSoFar = new(itemsSoFar),
+                    MessageType = SyncMessageType.FetchingDataType,
+                    MessageParams = new() { ["dataType"] = type.ToString() },
                 }, cancellationToken);
             }
 
@@ -325,6 +329,22 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
                     result.Errors.Add($"{type} publish failed");
                 }
 
+                if (progressReporter != null && count > 0)
+                {
+                    await progressReporter.ReportProgressAsync(new SyncProgressEvent
+                    {
+                        ConnectorId = ConnectorSource,
+                        ConnectorName = ServiceName,
+                        Phase = SyncPhase.Syncing,
+                        CurrentDataType = type,
+                        CompletedDataTypes = [.. completedTypes],
+                        TotalDataTypes = typesToSync.Count,
+                        ItemsSyncedSoFar = new(itemsSoFar) { [type] = count },
+                        MessageType = SyncMessageType.PublishingDataType,
+                        MessageParams = new() { ["dataType"] = type.ToString(), ["count"] = count.ToString() },
+                    }, cancellationToken);
+                }
+
                 completedTypes.Add(type);
                 itemsSoFar[type] = count;
             }
@@ -359,6 +379,7 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
                 TotalDataTypes = typesToSync.Count,
                 ItemsSyncedSoFar = new(itemsSoFar),
                 ErrorMessage = result.Success ? null : string.Join("; ", result.Errors),
+                MessageType = result.Success ? SyncMessageType.SyncComplete : SyncMessageType.SyncFailed,
             }, cancellationToken);
         }
 
@@ -550,6 +571,38 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
         );
     }
 
+    /// <summary>
+    ///     Reusable helper that checks whether a data type is active, publishes a batch of records,
+    ///     updates the <see cref="SyncResult"/> counts, and logs the outcome.
+    /// </summary>
+    protected async Task PublishRecordTypeAsync<T>(
+        SyncResult result,
+        SyncDataType dataType,
+        HashSet<SyncDataType> activeTypes,
+        List<T> records,
+        Func<List<T>, TConfig, CancellationToken, Task<bool>> publishFunc,
+        TConfig config,
+        CancellationToken cancellationToken,
+        string? context = null) where T : class
+    {
+        if (!activeTypes.Contains(dataType) || records.Count == 0) return;
+
+        var success = await publishFunc(records, config, cancellationToken);
+        result.ItemsSynced.TryGetValue(dataType, out var prev);
+        result.ItemsSynced[dataType] = prev + records.Count;
+        if (!success)
+        {
+            result.Success = false;
+            result.Errors.Add($"{dataType} publish failed");
+        }
+        else
+        {
+            var ctx = context != null ? $" from {context}" : "";
+            _logger.LogInformation("Synced {Count} {Type} records{Context}",
+                records.Count, dataType, ctx);
+        }
+    }
+
     #region V4 Publishing Methods
 
     /// <summary>
@@ -565,6 +618,14 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
         {
             _logger?.LogWarning("Publisher not available for SensorGlucose submission");
             return false;
+        }
+
+        // Stamp glucose processing metadata from connector config
+        var processing = config.GlucoseProcessing;
+        foreach (var record in records)
+        {
+            record.GlucoseProcessing = processing;
+            record.SmoothedMgdl ??= processing == GlucoseProcessing.Smoothed ? record.Mgdl : null;
         }
 
         return await _publisher.Glucose.PublishSensorGlucoseAsync(
@@ -590,6 +651,24 @@ public abstract class BaseConnectorService<TConfig> : IConnectorService<TConfig>
         }
 
         return await _publisher.Treatments.PublishBolusesAsync(records, ConnectorSource, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Submits DecompositionBatch records before their V4 siblings (FK ordering)
+    /// </summary>
+    protected virtual async Task<bool> PublishDecompositionBatchesAsync(
+        IEnumerable<DecompositionBatch> batches,
+        TConfig config,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (_publisher == null || !_publisher.IsAvailable)
+        {
+            _logger?.LogWarning("Publisher not available for DecompositionBatch submission");
+            return false;
+        }
+
+        return await _publisher.Treatments.PublishDecompositionBatchesAsync(batches, ConnectorSource, cancellationToken);
     }
 
     /// <summary>

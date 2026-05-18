@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Nocturne.API.Extensions;
 using Nocturne.API.Models.OAuth;
 using Nocturne.API.Services.Auth;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
+using OpenApi.Remote.Attributes;
 
 namespace Nocturne.API.Controllers.Authentication;
 
@@ -15,6 +15,35 @@ namespace Nocturne.API.Controllers.Authentication;
 /// Supports Authorization Code + PKCE and Device Authorization Grant (RFC 8628).
 /// All clients are public (no client secrets); PKCE is mandatory.
 /// </summary>
+/// <remarks>
+/// The full authorization-code flow is:
+/// <list type="number">
+///   <item><description><c>GET /oauth/authorize</c> — initiates the flow; redirects to login if unauthenticated, then to the consent page.</description></item>
+///   <item><description><c>POST /oauth/authorize</c> — accepts the consent form result and issues the authorization code.</description></item>
+///   <item><description><c>POST /oauth/token</c> with <c>grant_type=authorization_code</c> — exchanges the code for an access token and refresh token.</description></item>
+/// </list>
+///
+/// Device Authorization Grant (RFC 8628) for headless clients:
+/// <list type="number">
+///   <item><description><c>POST /oauth/device</c> — issues a device code and user code pair.</description></item>
+///   <item><description>User visits <c>GET /oauth/device-info?user_code=...</c> on a capable device and calls <c>POST /oauth/device-approve</c>.</description></item>
+///   <item><description>Client polls <c>POST /oauth/token</c> with <c>grant_type=urn:ietf:params:oauth:grant-type:device_code</c>.</description></item>
+/// </list>
+///
+/// Additional standards implemented:
+/// <list type="bullet">
+///   <item><description>RFC 7009 Token Revocation via <c>POST /oauth/revoke</c>.</description></item>
+///   <item><description>RFC 7662 Token Introspection via <c>POST /oauth/introspect</c>.</description></item>
+///   <item><description>RFC 7591 Dynamic Client Registration via <c>POST /oauth/register</c>.</description></item>
+/// </list>
+///
+/// Scopes are validated via <see cref="OAuthScopes.IsValid"/> and normalized via <see cref="OAuthScopes.Normalize"/>.
+/// </remarks>
+/// <seealso cref="IOAuthClientService"/>
+/// <seealso cref="IOAuthGrantService"/>
+/// <seealso cref="IOAuthTokenService"/>
+/// <seealso cref="IOAuthDeviceCodeService"/>
+/// <seealso cref="IJwtService"/>
 [ApiController]
 [Route("api/oauth")]
 [Tags("Authentication")]
@@ -30,7 +59,7 @@ public class OAuthController : ControllerBase
     private readonly ILogger<OAuthController> _logger;
 
     /// <summary>
-    /// Creates a new instance of OAuthController
+    /// Initializes a new instance of the <see cref="OAuthController"/> class.
     /// </summary>
     public OAuthController(
         IOAuthClientService clientService,
@@ -57,6 +86,14 @@ public class OAuthController : ControllerBase
     /// Authorization endpoint (Authorization Code + PKCE flow).
     /// Redirects to login if not authenticated, then shows consent screen.
     /// </summary>
+    /// <param name="client_id">The registered OAuth client identifier.</param>
+    /// <param name="redirect_uri">The URI to redirect to after authorization.</param>
+    /// <param name="response_type">Must be <c>code</c>.</param>
+    /// <param name="scope">Space-separated list of requested scopes.</param>
+    /// <param name="state">Optional state value passed back to the redirect URI.</param>
+    /// <param name="code_challenge">PKCE code challenge (required).</param>
+    /// <param name="code_challenge_method">Must be <c>S256</c>.</param>
+    /// <returns>Redirect to the consent page, or directly issues an authorization code if a valid grant already covers all requested scopes.</returns>
     [HttpGet("authorize")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status302Found)]
@@ -179,13 +216,15 @@ public class OAuthController : ControllerBase
         var existingScopeString = existingGrant != null
             ? string.Join(" ", existingGrant.Scopes)
             : null;
-        var consentUrl = BuildConsentUrl(client_id, redirect_uri, scope, state, code_challenge, existingScopeString);
+        var consentUrl = BuildConsentUrl(client_id, redirect_uri, scope!, state, code_challenge, existingScopeString);
         return Redirect(consentUrl);
     }
 
     /// <summary>
     /// Consent approval endpoint. Called by the consent page when the user approves.
     /// </summary>
+    /// <param name="request">The consent form data including the approved scopes and PKCE code challenge.</param>
+    /// <returns>Redirect to the client's <c>redirect_uri</c> with an authorization code, or an error redirect if the user denied access.</returns>
     [HttpPost("authorize")]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -271,6 +310,10 @@ public class OAuthController : ControllerBase
     /// Token endpoint. Handles authorization code exchange, refresh token rotation,
     /// and device code polling.
     /// </summary>
+    /// <param name="request">Form-encoded token request. Supported <c>grant_type</c> values:
+    /// <c>authorization_code</c>, <c>refresh_token</c>,
+    /// and <c>urn:ietf:params:oauth:grant-type:device_code</c>.</param>
+    /// <returns>An <see cref="OAuthTokenResponse"/> on success, or an <see cref="OAuthError"/> on failure.</returns>
     [HttpPost("token")]
     [AllowAnonymous]
     [EnableRateLimiting("oauth-token")]
@@ -374,6 +417,9 @@ public class OAuthController : ControllerBase
     /// Device Authorization endpoint (RFC 8628).
     /// Used by headless clients (CLI tools, scripts, IoT devices, pump rigs).
     /// </summary>
+    /// <param name="client_id">The registered OAuth client identifier.</param>
+    /// <param name="scope">Space-separated list of requested scopes.</param>
+    /// <returns>An <see cref="OAuthDeviceAuthorizationResponse"/> containing the device code, user code, and polling interval.</returns>
     [HttpPost("device")]
     [AllowAnonymous]
     [EnableRateLimiting("oauth-device")]
@@ -450,6 +496,8 @@ public class OAuthController : ControllerBase
     /// <summary>
     /// Get device code info for the approval page.
     /// </summary>
+    /// <param name="user_code">The user-facing code displayed on the headless device.</param>
+    /// <returns>A <see cref="DeviceCodeInfo"/> with the associated client and requested scopes, or <c>404</c> / <c>400</c> if invalid or expired.</returns>
     [HttpGet("device-info")]
     [ProducesResponseType(typeof(DeviceCodeInfo), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -492,7 +540,10 @@ public class OAuthController : ControllerBase
     /// Approve or deny a device authorization request.
     /// Called by the device approval page.
     /// </summary>
+    /// <param name="request">Contains the <c>user_code</c> and the user's approval decision.</param>
+    /// <returns><c>200 OK</c> with <c>approved: true/false</c>, or <c>400</c> if the code is invalid or already processed.</returns>
     [HttpPost("device-approve")]
+    [RemoteCommand]
     [EnableRateLimiting("oauth-device-approve")]
     [Consumes("application/x-www-form-urlencoded")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -546,8 +597,11 @@ public class OAuthController : ControllerBase
     }
 
     /// <summary>
-    /// Token revocation endpoint (RFC 7009).
+    /// Token revocation endpoint (RFC 7009). Per the specification, always returns <c>200 OK</c>
+    /// regardless of whether the token was found or already revoked.
     /// </summary>
+    /// <param name="token">The access token or refresh token to revoke.</param>
+    /// <param name="token_type_hint">Optional hint: <c>access_token</c> or <c>refresh_token</c>.</param>
     [HttpPost("revoke")]
     [AllowAnonymous]
     [Consumes("application/x-www-form-urlencoded")]
@@ -564,6 +618,8 @@ public class OAuthController : ControllerBase
     /// <summary>
     /// Get client info for the consent page.
     /// </summary>
+    /// <param name="client_id">The client identifier to look up.</param>
+    /// <returns>An <see cref="OAuthClientInfoResponse"/> with the client's display name and whether it is a known first-party client.</returns>
     [HttpGet("client-info")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(OAuthClientInfoResponse), StatusCodes.Status200OK)]
@@ -587,6 +643,7 @@ public class OAuthController : ControllerBase
             DisplayName = client.DisplayName,
             IsKnown = client.IsKnown,
             Homepage = client.ClientUri,
+            LogoUri = client.LogoUri,
         });
     }
 
@@ -668,6 +725,7 @@ public class OAuthController : ControllerBase
     /// <summary>
     /// List all active grants for the authenticated user.
     /// </summary>
+    /// <returns>An <see cref="OAuthGrantListResponse"/> containing all non-revoked grants across authorization-code and device-code flows.</returns>
     [HttpGet("grants")]
     [ProducesResponseType(typeof(OAuthGrantListResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<OAuthGrantListResponse>> GetGrants()
@@ -700,6 +758,8 @@ public class OAuthController : ControllerBase
     /// <summary>
     /// Revoke (delete) a specific grant owned by the authenticated user.
     /// </summary>
+    /// <param name="grantId">The ID of the grant to revoke.</param>
+    /// <returns><c>204 No Content</c> on success, or <c>404 Not Found</c> if the grant does not exist or belongs to another user.</returns>
     [HttpDelete("grants/{grantId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -742,6 +802,9 @@ public class OAuthController : ControllerBase
     /// <summary>
     /// Update a grant's label and/or scopes.
     /// </summary>
+    /// <param name="grantId">The ID of the grant to update.</param>
+    /// <param name="request">Partial update request containing the new label and/or scopes.</param>
+    /// <returns>The updated <see cref="OAuthGrantDto"/>, or <c>404</c> / <c>400</c> if the grant is not found or the scopes are invalid.</returns>
     [HttpPatch("grants/{grantId}")]
     [Consumes("application/json")]
     [ProducesResponseType(typeof(OAuthGrantDto), StatusCodes.Status200OK)]
@@ -803,8 +866,11 @@ public class OAuthController : ControllerBase
     /// <summary>
     /// Token introspection endpoint (RFC 7662).
     /// Returns metadata about a token including its active status, scopes, and subject.
-    /// Per RFC 7662, always returns 200 OK; invalid tokens get active=false.
+    /// Per RFC 7662, always returns 200 OK; invalid tokens get <c>active=false</c>.
     /// </summary>
+    /// <param name="token">The token to introspect (access token or refresh token).</param>
+    /// <param name="token_type_hint">Optional hint: <c>access_token</c> or <c>refresh_token</c>.</param>
+    /// <returns>A <see cref="TokenIntrospectionResponse"/> with <c>active=false</c> for invalid, expired, or revoked tokens.</returns>
     [HttpPost("introspect")]
     [AllowAnonymous]
     [EnableRateLimiting("oauth-token")]
@@ -854,10 +920,14 @@ public class OAuthController : ControllerBase
 
     /// <summary>
     /// RFC 7591 Dynamic Client Registration. Allows third-party native apps
-    /// (Trio, xDrip+, Loop, AAPS) to obtain a tenant-scoped client_id without
-    /// any out-of-band registration step. Idempotent on (tenant, software_id):
-    /// re-registering with the same software_id returns the existing client_id.
+    /// (Trio, xDrip+, Loop, AAPS) to obtain a tenant-scoped <c>client_id</c> without
+    /// any out-of-band registration step. Idempotent on <c>(tenant, software_id)</c>:
+    /// re-registering with the same <c>software_id</c> returns the existing <c>client_id</c>.
     /// </summary>
+    /// <param name="request">The client registration metadata including redirect URIs, scopes, and optional software ID.</param>
+    /// <param name="redirectUriValidator">Injected validator that enforces RFC 8252 redirect URI policies.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A <see cref="ClientRegistrationResponse"/> with the issued <c>client_id</c>.</returns>
     [HttpPost("register")]
     [AllowAnonymous]
     [EnableRateLimiting("oauth-register")]

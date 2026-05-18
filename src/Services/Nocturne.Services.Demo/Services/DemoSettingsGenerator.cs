@@ -312,15 +312,6 @@ public class DemoSettingsGenerator
                         },
                     },
                 },
-                QuietHours = new QuietHoursConfiguration
-                {
-                    Enabled = false,
-                    StartTime = "22:00",
-                    EndTime = "07:00",
-                    AllowCritical = true,
-                    ReduceVolume = true,
-                    QuietVolume = 30,
-                },
                 Channels = new NotificationChannelsConfig
                 {
                     Push = new ChannelConfig { Enabled = true },

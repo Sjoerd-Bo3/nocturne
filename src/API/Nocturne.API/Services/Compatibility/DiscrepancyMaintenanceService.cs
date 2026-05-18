@@ -4,9 +4,13 @@ using Nocturne.Infrastructure.Data.Abstractions;
 namespace Nocturne.API.Services.Compatibility;
 
 /// <summary>
-/// Background service for managing discrepancy analysis data
-/// Handles cleanup, aggregation, and maintenance tasks
+/// Background service that manages discrepancy analysis data by periodically pruning records older
+/// than the configured retention period (default: 30 days). Runs every 6 hours.
 /// </summary>
+/// <remarks>
+/// Discrepancy records are produced by the compatibility layer when comparing Nocturne responses
+/// against a legacy Nightscout instance. This service prevents unbounded growth of that data.
+/// </remarks>
 public class DiscrepancyMaintenanceService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;

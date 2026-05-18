@@ -44,8 +44,11 @@ export enum ConnectorPropertyKey {
   AccessToken = "AccessToken",
   WebhookEnabled = "WebhookEnabled",
   WebhookSecret = "WebhookSecret",
+  ActiveThresholdMinutes = "ActiveThresholdMinutes",
+  StaleThresholdMinutes = "StaleThresholdMinutes",
   WriteBackEnabled = "WriteBackEnabled",
   WriteBackBatchSize = "WriteBackBatchSize",
+  GlucoseProcessing = "GlucoseProcessing",
 }
 
 /** String key names derived from the generated enum */
@@ -273,6 +276,17 @@ export const connectorPropertyMeta: Record<ConnectorPropertyKeyName, PropertyMet
     description: 'Secret key for validating webhook requests',
     category: 'Credentials',
   },
+  // Status thresholds
+  ActiveThresholdMinutes: {
+    label: 'Active threshold (minutes)',
+    description: 'Minutes without new data before status changes from active to stale',
+    category: 'Advanced',
+  },
+  StaleThresholdMinutes: {
+    label: 'Stale threshold (minutes)',
+    description: 'Minutes without new data before status changes from stale to inactive',
+    category: 'Advanced',
+  },
   // Write-back
   WriteBackEnabled: {
     label: 'Enable Write-back',
@@ -283,6 +297,11 @@ export const connectorPropertyMeta: Record<ConnectorPropertyKeyName, PropertyMet
     label: 'Write-back Batch Size',
     description: 'Number of records to write back per batch',
     category: 'Advanced',
+  },
+  GlucoseProcessing: {
+    label: 'Glucose Processing',
+    description: 'How the connector labels its glucose readings (smoothed or unsmoothed)',
+    category: 'General',
   },
 };
 

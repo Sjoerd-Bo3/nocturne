@@ -6,11 +6,13 @@ namespace Nocturne.Core.Models.Serializers;
 /// <summary>
 /// JSON converter for glucose trend direction that handles both string values
 /// ("Flat", "SingleUp") and numeric values (1-9) from older Nightscout records.
-///
+/// </summary>
+/// <remarks>
 /// Numeric direction mapping follows the Dexcom/Nightscout convention:
 /// 1=DoubleUp, 2=SingleUp, 3=FortyFiveUp, 4=Flat, 5=FortyFiveDown,
-/// 6=SingleDown, 7=DoubleDown, 8=NOT COMPUTABLE, 9=RATE OUT OF RANGE
-/// </summary>
+/// 6=SingleDown, 7=DoubleDown, 8=NOT COMPUTABLE, 9=RATE OUT OF RANGE.
+/// </remarks>
+/// <seealso cref="Entry"/>
 public class FlexibleDirectionConverter : JsonConverter<string?>
 {
     private static readonly Dictionary<int, string> NumericDirectionMap = new()

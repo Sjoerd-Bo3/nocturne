@@ -7,17 +7,23 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design"/>
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions"/>
-        <!-- Added for design-time configuration loading -->
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables"/>
+        <InternalsVisibleTo Include="Nocturne.Infrastructure.Data.Tests" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\Core\Nocturne.Core.Models\Nocturne.Core.Models.csproj"/>
-        <ProjectReference Include="..\..\Core\Nocturne.Core.Contracts\Nocturne.Core.Contracts.csproj"/>
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+        <!-- Added for design-time configuration loading -->
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+        <!-- Added to take vulnerability patched version -->
+        <PackageReference Include="System.Security.Cryptography.Xml" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\Core\Nocturne.Core.Models\Nocturne.Core.Models.csproj" />
+        <ProjectReference Include="..\..\Core\Nocturne.Core.Contracts\Nocturne.Core.Contracts.csproj" />
     </ItemGroup>
 </Project>

@@ -1,13 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Notifications;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
 
 namespace Nocturne.API.Services.Migration;
 
 /// <summary>
-/// Hosted service that checks for pending migrations on startup and creates admin notifications
+/// Hosted service that checks for a pending MongoDB migration on startup (via the
+/// <c>MIGRATION_MODE</c> environment variable) and creates an admin in-app notification if one is
+/// detected, prompting the admin to initiate the migration via the portal.
 /// </summary>
+/// <seealso cref="IMigrationJobService"/>
 public class MigrationStartupService : IHostedService
 {
     private readonly IServiceProvider _serviceProvider;

@@ -3,40 +3,57 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Authorization;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Legacy;
+using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Models;
-using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers.V3;
 
 /// <summary>
-/// V3 Treatments controller that provides full V3 API compatibility with Nightscout treatments endpoints
-/// Implements the /api/v3/treatments endpoints with pagination, field selection, sorting, and advanced filtering
+/// V3 Treatments controller that provides full V3 API compatibility with Nightscout treatments endpoints.
+/// Implements the /api/v3/treatments endpoints with pagination, field selection, sorting, and advanced filtering.
 /// </summary>
+/// <seealso cref="ITreatmentService"/>
+/// <seealso cref="ITreatmentStore"/>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="BaseV3Controller{T}"/>
 [ApiController]
+[Tags("V3")]
 [Route("api/v3/[controller]")]
 [Authorize(Policy = PolicyNames.HasPermissions)]
 public class TreatmentsController : BaseV3Controller<Treatment>
 {
-    private readonly ITreatmentRepository _treatments;
+    private readonly ITreatmentStore _treatmentStore;
     private readonly ITreatmentService _treatmentService;
 
     public TreatmentsController(
-        ITreatmentRepository treatments,
+        ITreatmentStore treatmentStore,
         IDocumentProcessingService documentProcessingService,
         ITreatmentService treatmentService,
         ILogger<TreatmentsController> logger
     )
         : base(documentProcessingService, logger)
     {
-        _treatments = treatments;
+        _treatmentStore = treatmentStore;
         _treatmentService = treatmentService;
     }
 
     /// <summary>
-    /// Get treatments with V3 API features including pagination, field selection, and advanced filtering
+    /// Get treatments with V3 API features including pagination, field selection, and advanced filtering.
     /// </summary>
-    /// <returns>V3 treatments collection response</returns>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// A Nightscout V3-compatible response containing <see cref="Treatment"/> objects
+    /// wrapped in <c>{"status": 200, "result": [...]}</c>.
+    /// </returns>
+    /// <remarks>
+    /// Supports the full V3 query parameter set including <see cref="V3FilterCriteria"/>-based filtering.
+    /// Conditional requests via If-None-Match and If-Modified-Since return 304 when data has not changed.
+    /// </remarks>
+    /// <response code="200">V3 collection of treatments.</response>
+    /// <response code="304">Not modified.</response>
+    /// <response code="400">Invalid request parameters.</response>
+    /// <response code="500">Internal server error.</response>
     [HttpGet]
     [NightscoutEndpoint("/api/v3/treatments")]
     [ProducesResponseType(typeof(V3CollectionResponse<object>), 200)]
@@ -154,11 +171,21 @@ public class TreatmentsController : BaseV3Controller<Treatment>
     }
 
     /// <summary>
-    /// Create a new treatment via V3 API
+    /// Create a new treatment via V3 API.
     /// </summary>
-    /// <param name="treatment">Treatment to create</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Created treatment</returns>
+    /// <param name="treatment">The <see cref="Treatment"/> to create.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The created <see cref="Treatment"/>.</returns>
+    /// <remarks>
+    /// Supports AAPS deduplication: if a treatment with the same ID already exists,
+    /// returns 200 with <c>isDeduplication: true</c>.
+    /// Treatments are routed through <see cref="ITreatmentService"/> which handles
+    /// StateSpan creation for temp basals and other event-type-specific processing.
+    /// </remarks>
+    /// <response code="201">Treatment created successfully.</response>
+    /// <response code="200">Duplicate treatment detected (deduplication response for AAPS).</response>
+    /// <response code="400">Invalid treatment data.</response>
+    /// <response code="500">Internal server error.</response>
     [HttpPost]
     [Authorize]
     [NightscoutEndpoint("/api/v3/treatments")]
@@ -227,7 +254,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
             _logger.LogDebug("Successfully created V3 treatment {Id}", createdTreatment.Id);
 
             // Set location header for created resource
-            Response.Headers["Location"] = $"/api/v3/treatments/{Uri.EscapeDataString(createdTreatment.Id)}";
+            Response.Headers["Location"] = $"/api/v3/treatments/{Uri.EscapeDataString(createdTreatment.Id ?? string.Empty)}";
 
             return CreatedAtAction(
                 nameof(GetTreatment),
@@ -436,8 +463,14 @@ public class TreatmentsController : BaseV3Controller<Treatment>
     }
 
     /// <summary>
-    /// Get treatments modified since a given timestamp (for AAPS incremental sync)
+    /// Get treatments modified since a given timestamp (for AAPS incremental sync).
     /// </summary>
+    /// <param name="lastModified">Unix timestamp in milliseconds. Only treatments modified after this time are returned.</param>
+    /// <param name="limit">Maximum number of treatments to return (1-1000, default 1000).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>V3 collection of <see cref="Treatment"/> objects modified since the given timestamp.</returns>
+    /// <response code="200">Treatments modified since the given timestamp.</response>
+    /// <response code="500">Internal server error.</response>
     [HttpGet("history/{lastModified:long}")]
     [NightscoutEndpoint("/api/v3/treatments/history/{lastModified}")]
     [ProducesResponseType(typeof(object), 200)]
@@ -473,9 +506,20 @@ public class TreatmentsController : BaseV3Controller<Treatment>
     }
 
     /// <summary>
-    /// Partially update a treatment via V3 API (JSON merge-patch)
+    /// Partially update a treatment via V3 API (JSON merge-patch).
     /// Used by AAPS to update Temp Basal duration, endId, etc.
     /// </summary>
+    /// <param name="id">The treatment ID to patch.</param>
+    /// <param name="patchData">JSON merge-patch data to apply to the existing <see cref="Treatment"/>.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The patched <see cref="Treatment"/> with updated fields.</returns>
+    /// <remarks>
+    /// Delegates to <see cref="ITreatmentService.PatchTreatmentAsync"/> which applies JSON merge-patch
+    /// semantics. This is critical for AAPS which uses PATCH to update Temp Basal end times and durations.
+    /// </remarks>
+    /// <response code="200">Treatment patched successfully.</response>
+    /// <response code="404">Treatment not found.</response>
+    /// <response code="500">Internal server error.</response>
     [HttpPatch("{id}")]
     [Authorize]
     [NightscoutEndpoint("/api/v3/treatments/:id")]
@@ -622,7 +666,7 @@ public class TreatmentsController : BaseV3Controller<Treatment>
         try
         {
             // Use the count endpoint to get total
-            return await _treatments.CountTreatmentsAsync(findQuery, cancellationToken);
+            return await _treatmentStore.CountAsync(findQuery, cancellationToken);
         }
         catch (Exception ex)
         {

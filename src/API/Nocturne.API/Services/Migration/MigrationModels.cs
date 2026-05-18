@@ -17,20 +17,27 @@ public enum MigrationMode
 }
 
 /// <summary>
-/// Current state of a migration job
+/// Lifecycle state of a <see cref="MigrationJobInfo"/>.
+/// Transitions are: Pending → Validating → Running → Completed|Failed, or any state → Cancelled.
 /// </summary>
 public enum MigrationJobState
 {
+    /// <summary>Job has been created and is waiting to start.</summary>
     Pending,
+    /// <summary>Connection to the migration source is being tested before data transfer begins.</summary>
     Validating,
+    /// <summary>Data is actively being transferred.</summary>
     Running,
+    /// <summary>All requested collections have been migrated successfully.</summary>
     Completed,
+    /// <summary>Migration terminated due to an unrecoverable error. See <see cref="MigrationJobInfo.ErrorMessage"/>.</summary>
     Failed,
+    /// <summary>Migration was explicitly stopped by the user before completion.</summary>
     Cancelled
 }
 
 /// <summary>
-/// Request to start a new migration job
+/// Parameters for starting a new data migration from Nightscout or MongoDB.
 /// </summary>
 public record StartMigrationRequest
 {
@@ -92,7 +99,9 @@ public record MigrationJobInfo
 
 
 /// <summary>
-/// Status of a migration job including progress
+/// Real-time progress snapshot for a running <see cref="MigrationJobInfo"/>.
+/// <see cref="EstimatedTimeRemaining"/> is <see langword="null"/> until enough records have
+/// been processed to project a completion time.
 /// </summary>
 public record MigrationJobStatus
 {
@@ -146,7 +155,10 @@ public record TestMigrationConnectionResult
 }
 
 /// <summary>
-/// Pending migration configuration from environment variables
+/// Auto-start migration configuration discovered from environment variables
+/// (<c>MIGRATION_MODE</c>, <c>MIGRATION_NS_URL</c>, <c>MIGRATION_NS_API_SECRET</c>, etc.).
+/// Credentials are never returned verbatim; only their presence is indicated via
+/// <see cref="HasApiSecret"/> and <see cref="HasMongoConnectionString"/>.
 /// </summary>
 public record PendingMigrationConfig
 {

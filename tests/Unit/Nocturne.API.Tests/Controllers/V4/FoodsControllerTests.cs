@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Nocturne.API.Controllers.V4.Treatments;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Tests.Shared.Infrastructure;
@@ -81,7 +81,7 @@ public class FoodsControllerTests
         var controller = CreateController(new AuthContext
         {
             IsAuthenticated = true,
-            AuthType = AuthType.ApiSecret,
+            AuthType = AuthType.ApiKey,
             SubjectName = "admin",
             SubjectId = null,
         });
@@ -125,7 +125,7 @@ public class FoodsControllerTests
         var controller = CreateController(new AuthContext
         {
             IsAuthenticated = true,
-            AuthType = AuthType.ApiSecret,
+            AuthType = AuthType.ApiKey,
             SubjectName = "admin",
             SubjectId = null,
         });

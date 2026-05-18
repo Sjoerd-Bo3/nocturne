@@ -6,12 +6,16 @@ using Nocturne.API.Models.Compatibility;
 namespace Nocturne.API.Services.Compatibility;
 
 /// <summary>
-/// Service for persisting discrepancy analysis data
+/// Persists compatibility-proxy discrepancy analyses to the database and surfaces
+/// aggregate metrics for the compatibility dashboard.
 /// </summary>
+/// <seealso cref="DiscrepancyPersistenceService"/>
 public interface IDiscrepancyPersistenceService
 {
     /// <summary>
-    /// Store a response comparison result for analysis
+    /// Persists a <see cref="ResponseComparisonResult"/> to the database and fires a fire-and-forget
+    /// task to forward it via <see cref="IDiscrepancyForwardingService"/> so the calling request
+    /// path is not blocked by the forwarding HTTP call.
     /// </summary>
     Task<Guid> StoreAnalysisAsync(
         ResponseComparisonResult comparisonResult,
@@ -21,18 +25,14 @@ public interface IDiscrepancyPersistenceService
         CancellationToken cancellationToken = default
     );
 
-    /// <summary>
-    /// Get compatibility metrics for dashboard
-    /// </summary>
+    /// <summary>Returns aggregate compatibility metrics (match rates, discrepancy counts by severity) for the specified UTC date range.</summary>
     Task<CompatibilityMetrics> GetCompatibilityMetricsAsync(
         DateTimeOffset? fromDate = null,
         DateTimeOffset? toDate = null,
         CancellationToken cancellationToken = default
     );
 
-    /// <summary>
-    /// Get endpoint-specific metrics
-    /// </summary>
+    /// <summary>Returns per-endpoint discrepancy metrics for the specified UTC date range, useful for identifying which API paths have the most compatibility gaps.</summary>
     Task<IEnumerable<EndpointMetrics>> GetEndpointMetricsAsync(
         DateTimeOffset? fromDate = null,
         DateTimeOffset? toDate = null,
@@ -40,7 +40,8 @@ public interface IDiscrepancyPersistenceService
     );
 
     /// <summary>
-    /// Perform data cleanup based on retention policies
+    /// Deletes discrepancy analyses older than <paramref name="retentionDays"/> days.
+    /// Intended to be called from a scheduled background sweep.
     /// </summary>
     Task<int> CleanupOldDataAsync(
         int retentionDays = 30,
@@ -49,8 +50,16 @@ public interface IDiscrepancyPersistenceService
 }
 
 /// <summary>
-/// Implementation of discrepancy persistence service
+/// <see cref="IDiscrepancyPersistenceService"/> implementation backed by
+/// <see cref="Infrastructure.Data.Abstractions.IDiscrepancyAnalysisRepository"/>.
 /// </summary>
+/// <remarks>
+/// After each successful database write, forwarding is kicked off as a fire-and-forget
+/// <c>Task.Run</c> so that remote forwarding latency does not affect the response time of
+/// the mirrored request. Forwarding failures are logged as warnings and do not surface to
+/// callers.
+/// </remarks>
+/// <seealso cref="IDiscrepancyPersistenceService"/>
 public class DiscrepancyPersistenceService : IDiscrepancyPersistenceService
 {
     private readonly IDiscrepancyAnalysisRepository _repository;

@@ -4,37 +4,12 @@ using Nocturne.Core.Constants;
 namespace Nocturne.Core.Models.Entries;
 
 /// <summary>
-/// Pure domain logic for entry operations. All methods are static with zero I/O,
+/// Pure domain logic for <see cref="Entry"/> operations. All methods are static with zero I/O,
 /// making them trivially testable without mocks.
 /// </summary>
+/// <seealso cref="Entry"/>
 public static class EntryDomainLogic
 {
-    /// <summary>
-    /// Merges legacy entries with V4-projected entries.
-    /// Deduplicates by ID and Mills (timestamp).
-    /// Orders by Mills descending, applies skip/take.
-    /// </summary>
-    public static IReadOnlyList<Entry> MergeAndDeduplicate(
-        IEnumerable<Entry> legacyEntries,
-        IEnumerable<Entry> projectedEntries,
-        int count,
-        int skip)
-    {
-        var legacyList = legacyEntries.ToList();
-        var legacyIds = legacyList.Select(e => e.Id).Where(id => id != null).ToHashSet();
-        var legacyMillsSet = legacyList.Select(e => e.Mills).ToHashSet();
-
-        var filteredProjected = projectedEntries
-            .Where(p => !legacyIds.Contains(p.Id) && !legacyMillsSet.Contains(p.Mills));
-
-        return legacyList
-            .Concat(filteredProjected)
-            .OrderByDescending(e => e.Mills)
-            .Skip(skip)
-            .Take(count)
-            .ToList();
-    }
-
     /// <summary>
     /// Builds a MongoDB-style JSON find query with data_source filter injected
     /// based on whether demo mode is enabled.
@@ -79,6 +54,8 @@ public static class EntryDomainLogic
     /// Walks the document looking for numeric $gte / $lte values on any field.
     /// Returns (null, null) if the query is absent or contains no time constraints.
     /// </summary>
+    /// <param name="find">A MongoDB-style JSON query string (may be null).</param>
+    /// <returns>A tuple of (From, To) timestamps in Unix milliseconds, either of which may be null.</returns>
     public static (long? From, long? To) ParseTimeRangeFromFind(string? find)
     {
         if (string.IsNullOrEmpty(find))
@@ -100,9 +77,9 @@ public static class EntryDomainLogic
                     if (op.Value.ValueKind != JsonValueKind.Number)
                         continue;
 
-                    if (op.Name == "$gte" && op.Value.TryGetInt64(out var gte))
+                    if ((op.Name == "$gte" || op.Name == "$gt") && op.Value.TryGetInt64(out var gte))
                         from = gte;
-                    else if (op.Name == "$lte" && op.Value.TryGetInt64(out var lte))
+                    else if ((op.Name == "$lte" || op.Name == "$lt") && op.Value.TryGetInt64(out var lte))
                         to = lte;
                 }
             }
@@ -118,25 +95,8 @@ public static class EntryDomainLogic
     /// <summary>
     /// Returns true for common entry counts that are worth caching (10, 50, 100).
     /// </summary>
+    /// <param name="count">The entry count to check.</param>
+    /// <returns><c>true</c> if <paramref name="count"/> is 10, 50, or 100.</returns>
     public static bool IsCommonEntryCount(int count) => count is 10 or 50 or 100;
 
-    /// <summary>
-    /// Returns the entry with the higher Mills timestamp, handling nulls.
-    /// </summary>
-    public static Entry? SelectMostRecent(Entry? legacy, Entry? projected)
-    {
-        if (legacy == null && projected == null)
-            return null;
-        if (legacy == null)
-            return projected;
-        if (projected == null)
-            return legacy;
-
-        return projected.Mills > legacy.Mills ? projected : legacy;
-    }
-
-    /// <summary>
-    /// Returns true if the type is null, empty, or "sgv" — i.e., should be projected from V4.
-    /// </summary>
-    public static bool ShouldProject(string? type) => string.IsNullOrEmpty(type) || type == "sgv";
 }

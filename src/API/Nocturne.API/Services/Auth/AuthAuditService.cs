@@ -1,12 +1,23 @@
-using Nocturne.Core.Contracts;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
 
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Writes authentication and authorization audit events to the database.
+/// Writes authentication and authorization audit events to the <c>auth_audit_log</c> table.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Each call to <see cref="LogAsync"/> opens its own <c>SaveChangesAsync</c> to commit the
+/// single row immediately; it does not participate in any ambient unit-of-work.
+/// </para>
+/// <para>
+/// Audit logging is non-blocking by design: any database exception is swallowed and logged as a
+/// warning so that a transient storage failure never prevents an authentication response from
+/// reaching the caller.
+/// </para>
+/// </remarks>
+/// <seealso cref="IAuthAuditService"/>
 public class AuthAuditService : IAuthAuditService
 {
     private readonly NocturneDbContext _dbContext;

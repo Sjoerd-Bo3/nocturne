@@ -1,15 +1,17 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Extensions;
-using Nocturne.API.Services;
+using Nocturne.API.Services.Monitoring;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V4.Monitoring;
 
 /// <summary>
-/// Controller for tracker alert management
+/// Controller for tracker alert management.
 /// </summary>
+/// <seealso cref="ITrackerAlertService"/>
 [ApiController]
+[Tags("Monitoring")]
 [Authorize]
 [Route("api/v4/trackers/alerts")]
 public class TrackerAlertsController : ControllerBase
@@ -29,6 +31,11 @@ public class TrackerAlertsController : ControllerBase
         "tone"
     ];
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="TrackerAlertsController"/>.
+    /// </summary>
+    /// <param name="alertService">Service for querying and acknowledging tracker alerts.</param>
+    /// <param name="logger">Logger instance.</param>
     public TrackerAlertsController(
         ITrackerAlertService alertService,
         ILogger<TrackerAlertsController> logger)

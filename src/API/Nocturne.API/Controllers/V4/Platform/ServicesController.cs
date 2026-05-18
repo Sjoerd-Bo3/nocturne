@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Models;
-using Nocturne.API.Services;
-using Nocturne.Core.Contracts;
+using Nocturne.API.Services.Connectors;
+using Nocturne.Core.Contracts.Connectors;
 using Nocturne.Core.Models.Services;
-using Nocturne.Core.Contracts.Repositories;
 
 namespace Nocturne.API.Controllers.V4.Platform;
 
@@ -13,23 +12,30 @@ namespace Nocturne.API.Controllers.V4.Platform;
 /// Provides information about connected data sources, available connectors,
 /// sync status for connectors, and setup instructions for uploaders like xDrip+, Loop, AAPS, etc.
 /// </summary>
+/// <seealso cref="IDataSourceService"/>
+/// <seealso cref="IConnectorHealthService"/>
+/// <seealso cref="IConnectorSyncService"/>
 [ApiController]
 [Route("api/v4/services")]
 [Produces("application/json")]
 public class ServicesController : ControllerBase
 {
     private readonly IDataSourceService _dataSourceService;
-    private readonly IEntryRepository _entryRepository;
-    private readonly ITreatmentRepository _treatmentRepository;
     private readonly IConnectorHealthService _connectorHealthService;
     private readonly IConnectorSyncService _connectorSyncService;
     private readonly ILogger<ServicesController> _logger;
     private readonly IConfiguration _configuration;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ServicesController"/>.
+    /// </summary>
+    /// <param name="dataSourceService">Service for querying active data sources and their status.</param>
+    /// <param name="connectorHealthService">Service for connector health state queries.</param>
+    /// <param name="connectorSyncService">Service for triggering on-demand connector syncs.</param>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="configuration">Application configuration for base URL resolution.</param>
     public ServicesController(
         IDataSourceService dataSourceService,
-        IEntryRepository entryRepository,
-        ITreatmentRepository treatmentRepository,
         IConnectorHealthService connectorHealthService,
         IConnectorSyncService connectorSyncService,
         ILogger<ServicesController> logger,
@@ -37,8 +43,6 @@ public class ServicesController : ControllerBase
     )
     {
         _dataSourceService = dataSourceService;
-        _entryRepository = entryRepository;
-        _treatmentRepository = treatmentRepository;
         _connectorHealthService = connectorHealthService;
         _connectorSyncService = connectorSyncService;
         _logger = logger;
@@ -149,10 +153,11 @@ public class ServicesController : ControllerBase
     [HttpGet("connectors")]
     [RemoteQuery]
     [ProducesResponseType(typeof(List<AvailableConnector>), 200)]
-    public ActionResult<List<AvailableConnector>> GetAvailableConnectors()
+    public async Task<ActionResult<List<AvailableConnector>>> GetAvailableConnectors(
+        CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Getting available connectors");
-        var connectors = _dataSourceService.GetAvailableConnectors();
+        var connectors = await _dataSourceService.GetAvailableConnectorsAsync(cancellationToken);
         return Ok(connectors);
     }
 
@@ -245,20 +250,19 @@ public class ServicesController : ControllerBase
 
         var baseUrl = GetBaseUrl();
 
-        return Ok(
-            new UploaderSetupResponse
-            {
-                App = app,
-                BaseUrl = baseUrl,
-                ApiSecretPlaceholder = "YOUR-API-SECRET",
-                FullApiUrl = $"{baseUrl}/api/v1",
-                EntriesUrl = $"{baseUrl}/api/v1/entries",
-                TreatmentsUrl = $"{baseUrl}/api/v1/treatments",
-                DeviceStatusUrl = $"{baseUrl}/api/v1/devicestatus",
-                // Format for xDrip+ style URL with embedded secret
-                XdripStyleUrl = $"https://YOUR-API-SECRET@{GetHostFromUrl(baseUrl)}/api/v1",
-            }
-        );
+        var response = new UploaderSetupResponse
+        {
+            App = app,
+            BaseUrl = baseUrl,
+        };
+
+        // Apps that support OAuth device authorization get a deep-link URL for QR code scanning
+        if (appId.Equals("xdrip", StringComparison.OrdinalIgnoreCase))
+        {
+            response.ConnectUrl = $"xdrip://connect/nocturne?url={Uri.EscapeDataString(baseUrl)}";
+        }
+
+        return Ok(response);
     }
 
     /// <summary>
@@ -460,29 +464,22 @@ public class ServicesController : ControllerBase
             // Map connector ID to data source name used in database
             var dataSource = MapConnectorIdToDataSource(id);
 
-            // Get latest timestamps from database
-            var entryTimestamp = await _entryRepository.GetLatestEntryTimestampBySourceAsync(
+            // Get latest timestamps from V4 glucose tables
+            var entryTimestamp = await _dataSourceService.GetLatestGlucoseTimestampBySourceAsync(
                 dataSource,
                 cancellationToken
             );
 
             var oldestEntryTimestamp =
-                await _entryRepository.GetOldestEntryTimestampBySourceAsync(
+                await _dataSourceService.GetOldestGlucoseTimestampBySourceAsync(
                     dataSource,
                     cancellationToken
                 );
 
-            var treatmentTimestamp =
-                await _treatmentRepository.GetLatestTreatmentTimestampBySourceAsync(
-                    dataSource,
-                    cancellationToken
-                );
-
-            var oldestTreatmentTimestamp =
-                await _treatmentRepository.GetOldestTreatmentTimestampBySourceAsync(
-                    dataSource,
-                    cancellationToken
-                );
+            var treatmentTimestamp = await _dataSourceService.GetLatestTreatmentTimestampBySourceAsync(
+                dataSource, cancellationToken);
+            var oldestTreatmentTimestamp = await _dataSourceService.GetOldestTreatmentTimestampBySourceAsync(
+                dataSource, cancellationToken);
 
             // Get connector health/state
             var connectorStatuses = await _connectorHealthService.GetConnectorStatusesAsync(
@@ -550,18 +547,6 @@ public class ServicesController : ControllerBase
         return $"{request.Scheme}://{request.Host}";
     }
 
-    private static string GetHostFromUrl(string url)
-    {
-        try
-        {
-            var uri = new Uri(url);
-            return uri.Host + (uri.Port != 80 && uri.Port != 443 ? $":{uri.Port}" : "");
-        }
-        catch
-        {
-            return url.Replace("https://", "").Replace("http://", "").TrimEnd('/');
-        }
-    }
 }
 
 /// <summary>
@@ -580,34 +565,11 @@ public class UploaderSetupResponse
     public string BaseUrl { get; set; } = string.Empty;
 
     /// <summary>
-    /// Placeholder for where the API secret goes
+    /// Deep-link URL for apps that support OAuth device authorization via QR code
+    /// (e.g. xdrip://connect/nocturne?url=https://your-instance.com).
+    /// When present, the frontend shows a QR code and inline device-code input.
     /// </summary>
-    public string ApiSecretPlaceholder { get; set; } = "YOUR-API-SECRET";
-
-    /// <summary>
-    /// Full API URL (base + /api/v1)
-    /// </summary>
-    public string FullApiUrl { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Entries endpoint URL
-    /// </summary>
-    public string EntriesUrl { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Treatments endpoint URL
-    /// </summary>
-    public string TreatmentsUrl { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Device status endpoint URL
-    /// </summary>
-    public string DeviceStatusUrl { get; set; } = string.Empty;
-
-    /// <summary>
-    /// xDrip+ style URL with embedded secret placeholder
-    /// </summary>
-    public string XdripStyleUrl { get; set; } = string.Empty;
+    public string? ConnectUrl { get; set; }
 }
 
 /// <summary>

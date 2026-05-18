@@ -171,7 +171,6 @@ function pickCandidate(
     return match ?? "not-found";
   }
 
-  // No label: fall back to default, or ambiguous.
-  const def = candidates.find((c) => c.isDefault);
-  return def ?? "ambiguous";
+  // No label and multiple candidates: ambiguous.
+  return "ambiguous";
 }

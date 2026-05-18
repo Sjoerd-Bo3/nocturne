@@ -1,5 +1,11 @@
 namespace Nocturne.Core.Contracts.Multitenancy;
 
+/// <summary>
+/// Manages tenant-scoped roles: CRUD for custom roles and seeding of system roles
+/// (owner, member, follower). Each role carries a set of permission strings.
+/// </summary>
+/// <seealso cref="ITenantService"/>
+/// <seealso cref="IMemberInviteService"/>
 public interface ITenantRoleService
 {
     /// <summary>Returns all roles defined for the specified tenant.</summary>
@@ -24,6 +30,9 @@ public interface ITenantRoleService
     Task<List<string>> GetEffectivePermissionsAsync(Guid memberId, CancellationToken ct = default);
 }
 
+/// <summary>
+/// Projection of a tenant role including its permission set and member count.
+/// </summary>
 public record TenantRoleDto(
     Guid Id,
     string Name,
@@ -35,4 +44,8 @@ public record TenantRoleDto(
     DateTime SysCreatedAt
 );
 
+/// <summary>
+/// Result of a role deletion attempt. Deletion fails if the role is a system role
+/// or has members currently assigned.
+/// </summary>
 public record DeleteRoleResult(bool Success, string? ErrorCode, string? ErrorDescription);

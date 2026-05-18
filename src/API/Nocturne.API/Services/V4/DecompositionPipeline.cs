@@ -7,14 +7,29 @@ namespace Nocturne.API.Services.V4;
 
 /// <summary>
 /// Unified orchestration layer that dispatches decomposition to the appropriate
-/// <see cref="IDecomposer{T}"/> and absorbs errors internally (try-catch-log).
-/// Parent services never need try-catch around decomposition calls.
+/// <see cref="IDecomposer{T}"/> for a given record type, and absorbs errors internally
+/// (try-catch-log). Callers never need their own try-catch around decomposition.
 /// </summary>
+/// <remarks>
+/// Decomposers are resolved from a child <see cref="IServiceProvider"/> scope per invocation
+/// to support scoped service lifetimes. A <see cref="BatchDecompositionResult"/> is returned
+/// with per-record success/failure counts so callers can track partial failures.
+/// </remarks>
+/// <seealso cref="IDecompositionPipeline"/>
+/// <seealso cref="EntryDecomposer"/>
+/// <seealso cref="TreatmentDecomposer"/>
+/// <seealso cref="DeviceStatusDecomposer"/>
+/// <seealso cref="ProfileDecomposer"/>
 public class DecompositionPipeline : IDecompositionPipeline
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DecompositionPipeline> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="DecompositionPipeline"/>.
+    /// </summary>
+    /// <param name="serviceProvider">The root service provider used to resolve <see cref="IDecomposer{T}"/> instances.</param>
+    /// <param name="logger">The logger instance.</param>
     public DecompositionPipeline(IServiceProvider serviceProvider, ILogger<DecompositionPipeline> logger)
     {
         _serviceProvider = serviceProvider;

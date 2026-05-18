@@ -1,41 +1,69 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using Nocturne.API.Helpers;
 using Nocturne.API.Multitenancy;
 
 namespace Nocturne.API.Middleware;
 
 /// <summary>
 /// Redirects OIDC callbacks that land on the apex domain to the originating
-/// tenant subdomain. Runs before <see cref="TenantResolutionMiddleware"/> so
+/// tenant subdomain. Runs before <see cref="Multitenancy.TenantResolutionMiddleware"/> so
 /// cookies set on the tenant subdomain are available when the callback is
 /// actually processed.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Pipeline order (position 3 of 8 custom middleware):
+/// <see cref="JsonExtensionMiddleware"/>,
+/// <b>OidcCallbackRedirectMiddleware</b>, <see cref="Multitenancy.TenantResolutionMiddleware"/>,
+/// <see cref="TenantSetupMiddleware"/>, <see cref="AuthenticationMiddleware"/>,
+/// <see cref="MemberScopeMiddleware"/>, <see cref="SiteSecurityMiddleware"/>.
+/// </para>
+/// <para>
+/// Extracts the tenant slug from the base64-encoded OIDC <c>state</c> query parameter
+/// and issues a 302 redirect to the correct <c>{slug}.{baseDomain}</c> URL.
+/// </para>
+/// </remarks>
+/// <seealso cref="Multitenancy.TenantResolutionMiddleware"/>
+/// <seealso cref="BaseDomainOptions"/>
 public partial class OidcCallbackRedirectMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<OidcCallbackRedirectMiddleware> _logger;
-    private readonly MultitenancyConfiguration _config;
+    private readonly BaseDomainOptions _config;
 
     private static readonly string[] CallbackPaths =
     [
-        "/api/v4/oidc/callback",
-        "/api/v4/oidc/link/callback",
+        "/api/auth/oidc/callback",
+        "/api/auth/oidc/link/callback",
     ];
 
+    /// <summary>
+    /// Creates a new instance of <see cref="OidcCallbackRedirectMiddleware"/>.
+    /// </summary>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="logger">Logger for redirect diagnostics.</param>
+    /// <param name="config">Base domain configuration.</param>
     public OidcCallbackRedirectMiddleware(
         RequestDelegate next,
         ILogger<OidcCallbackRedirectMiddleware> logger,
-        IOptions<MultitenancyConfiguration> config)
+        IOptions<BaseDomainOptions> config)
     {
         _next = next;
         _logger = logger;
         _config = config.Value;
     }
 
+    /// <summary>
+    /// Checks if the request is an OIDC callback on the apex domain and redirects to the
+    /// originating tenant subdomain if so.
+    /// </summary>
+    /// <param name="context">The current HTTP context.</param>
+    /// <returns>A task that completes when the middleware has finished processing.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
-        if (string.IsNullOrEmpty(_config.BaseDomain) || !IsOidcCallbackPath(context.Request.Path))
+        if (!IsOidcCallbackPath(context.Request.Path) || string.IsNullOrEmpty(_config.BaseDomain))
         {
             await _next(context);
             return;
@@ -94,15 +122,7 @@ public partial class OidcCallbackRedirectMiddleware
     {
         try
         {
-            // Restore base64 padding
-            var padded = (encoded.Length % 4) switch
-            {
-                2 => encoded + "==",
-                3 => encoded + "=",
-                _ => encoded,
-            };
-
-            var bytes = Convert.FromBase64String(padded.Replace("-", "+").Replace("_", "/"));
+            var bytes = Base64Url.Decode(encoded);
             var json = Encoding.UTF8.GetString(bytes);
 
             using var doc = JsonDocument.Parse(json);

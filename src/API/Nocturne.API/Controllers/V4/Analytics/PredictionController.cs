@@ -1,15 +1,27 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using OpenApi.Remote.Attributes;
-using Nocturne.API.Services;
+using Nocturne.API.Services.Glucose;
 
 namespace Nocturne.API.Controllers.V4.Analytics;
 
 /// <summary>
-/// Predictions controller for glucose forecast predictions.
-/// Supports multiple prediction sources: DeviceStatus (AAPS/Trio/Loop) or OrefWasm.
+/// Controller for glucose forecast predictions.
+/// Supports multiple prediction sources: <c>DeviceStatus</c> (AAPS/Trio/Loop loop data)
+/// or <c>OrefWasm</c> (server-side oref0 WASM calculation).
 /// </summary>
+/// <remarks>
+/// The active prediction source is determined at startup from <c>Predictions:Source</c>
+/// in application configuration. If the source is <c>None</c> or no
+/// <see cref="IPredictionService"/> is registered, the endpoint returns <c>404 Not Found</c>
+/// with an actionable error message.
+///
+/// </remarks>
+/// <seealso cref="IPredictionService"/>
+/// <seealso cref="GlucosePredictionResponse"/>
+/// <seealso cref="PredictionStatusResponse"/>
 [ApiController]
+[Tags("Analytics")]
 [Route("api/v4/predictions")]
 [Produces("application/json")]
 [ClientPropertyName("predictions")]
@@ -56,7 +68,7 @@ public class PredictionController : ControllerBase
 
         try
         {
-            var result = await _predictionService.GetPredictionsAsync(profileId, cancellationToken);
+            var result = await _predictionService.GetPredictionsAsync(profileId, asOf: null, cancellationToken);
             return Ok(result);
         }
         catch (InvalidOperationException ex)

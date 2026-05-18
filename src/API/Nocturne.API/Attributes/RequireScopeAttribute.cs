@@ -7,11 +7,21 @@ namespace Nocturne.API.Attributes;
 
 /// <summary>
 /// Attribute to require specific OAuth scopes for controller actions.
-/// Composes with the existing RequirePermission attribute; both can be used
+/// Composes with the existing <see cref="RequirePermissionAttribute"/>; both can be used
 /// on the same endpoint. This attribute checks the resolved scopes on
-/// the AuthContext (populated by the auth middleware from either OAuth tokens
-/// or translated legacy permissions).
+/// the <see cref="AuthContext"/> (populated by <see cref="Middleware.AuthenticationMiddleware"/>
+/// from either OAuth tokens or translated legacy permissions via <see cref="OAuthScopes"/>).
 /// </summary>
+/// <remarks>
+/// Scope satisfaction is evaluated by <see cref="OAuthScopes.SatisfiesScope"/> which supports
+/// hierarchical scope matching (e.g., <c>read</c> satisfies <c>read:entries</c>).
+/// The granted scopes are further refined by <see cref="Middleware.MemberScopeMiddleware"/>
+/// based on the user's tenant membership roles.
+/// </remarks>
+/// <seealso cref="RequirePermissionAttribute"/>
+/// <seealso cref="Middleware.AuthenticationMiddleware"/>
+/// <seealso cref="Middleware.MemberScopeMiddleware"/>
+/// <seealso cref="OAuthScopes"/>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class RequireScopeAttribute : Attribute, IAuthorizationFilter
 {
@@ -40,6 +50,10 @@ public class RequireScopeAttribute : Attribute, IAuthorizationFilter
         _requireAll = requireAll;
     }
 
+    /// <summary>
+    /// Evaluates the scope requirement against the current request's granted scopes.
+    /// </summary>
+    /// <param name="context">The authorization filter context.</param>
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         var httpContext = context.HttpContext;

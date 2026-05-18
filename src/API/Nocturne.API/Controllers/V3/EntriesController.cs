@@ -4,29 +4,31 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Authorization;
 using Nocturne.API.Extensions;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Glucose;
+using Nocturne.Core.Contracts.Legacy;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Extensions;
-using Nocturne.Core.Contracts.Repositories;
-
 namespace Nocturne.API.Controllers.V3;
 
 /// <summary>
-/// V3 Entries controller that provides full V3 API compatibility with Nightscout entries endpoints
-/// Implements the /api/v3/entries endpoints with pagination, field selection, sorting, and advanced filtering
+/// V3 Entries controller that provides full V3 API compatibility with Nightscout entries endpoints.
+/// Implements the /api/v3/entries endpoints with pagination, field selection, sorting, and advanced filtering.
 /// </summary>
+/// <seealso cref="IEntryService"/>
+/// <seealso cref="IAlertOrchestrator"/>
+/// <seealso cref="Entry"/>
+/// <seealso cref="BaseV3Controller{T}"/>
 [ApiController]
+[Tags("V3")]
 [Route("api/v3/[controller]")]
 [Authorize(Policy = PolicyNames.HasPermissions)]
 public class EntriesController : BaseV3Controller<Entry>
 {
-    private readonly IEntryRepository _entries;
     private readonly IEntryService _entryService;
     private readonly IAlertOrchestrator _alertOrchestrator;
 
     public EntriesController(
-        IEntryRepository entries,
         IDocumentProcessingService documentProcessingService,
         IEntryService entryService,
         IAlertOrchestrator alertOrchestrator,
@@ -34,15 +36,28 @@ public class EntriesController : BaseV3Controller<Entry>
     )
         : base(documentProcessingService, logger)
     {
-        _entries = entries;
         _entryService = entryService;
         _alertOrchestrator = alertOrchestrator;
     }
 
     /// <summary>
-    /// Get entries with V3 API features including pagination, field selection, and advanced filtering
+    /// Get entries with V3 API features including pagination, field selection, and advanced filtering.
     /// </summary>
-    /// <returns>V3 entries collection response</returns>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// A Nightscout V3-compatible response containing <see cref="Entry"/> objects
+    /// wrapped in <c>{"status": 200, "result": [...]}</c>.
+    /// </returns>
+    /// <remarks>
+    /// Supports the full V3 query parameter set: limit, offset, fields, sort, sort$desc, filter,
+    /// and <see cref="V3FilterCriteria"/>-based filtering (e.g., <c>type$eq=sgv</c>).
+    /// Conditional requests via If-None-Match and If-Modified-Since are honored, returning 304 when appropriate.
+    /// Entries are transformed to the V3 response format via <c>ToV3Responses()</c> before being returned.
+    /// </remarks>
+    /// <response code="200">V3 collection of entries.</response>
+    /// <response code="304">Not modified (conditional request matched).</response>
+    /// <response code="400">Invalid request parameters.</response>
+    /// <response code="500">Internal server error.</response>
     [HttpGet]
     [NightscoutEndpoint("/api/v3/entries")]
     [ProducesResponseType(typeof(V3CollectionResponse<object>), 200)]
@@ -74,8 +89,8 @@ public class EntriesController : BaseV3Controller<Entry>
             var hasSortDesc = HttpContext?.Request.Query.ContainsKey("sort$desc") ?? false;
             var reverseResults = !hasSortDesc && ExtractSortDirection(parameters.Sort);
 
-            // Get entries using existing V1 backend with V3 parameters
-            var entries = await _entries.GetEntriesWithAdvancedFilterAsync(
+            // Get entries using service layer with V3 parameters
+            var entries = await _entryService.GetEntriesWithAdvancedFilterAsync(
                 type: type,
                 count: parameters.Limit,
                 skip: parameters.Offset,
@@ -139,7 +154,7 @@ public class EntriesController : BaseV3Controller<Entry>
 
         try
         {
-            var entry = await _entries.GetEntryByIdAsync(id, cancellationToken);
+            var entry = await _entryService.GetEntryByIdAsync(id, cancellationToken);
 
             if (entry == null)
             {
@@ -165,11 +180,21 @@ public class EntriesController : BaseV3Controller<Entry>
     }
 
     /// <summary>
-    /// Create a new entry via V3 API
+    /// Create a new entry via V3 API.
     /// </summary>
-    /// <param name="entry">Entry to create</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Created entry</returns>
+    /// <param name="entry">The <see cref="Entry"/> to create.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The created <see cref="Entry"/> in V3 format.</returns>
+    /// <remarks>
+    /// Supports AAPS deduplication: if an entry with the same device, type, SGV value,
+    /// and timestamp (within a 1-minute window) already exists, returns a 200 response
+    /// with <c>isDeduplication: true</c> instead of creating a duplicate.
+    /// After creation, alerts are evaluated via <see cref="IAlertOrchestrator"/> for the new reading.
+    /// </remarks>
+    /// <response code="201">Entry created successfully.</response>
+    /// <response code="200">Duplicate entry detected (deduplication response for AAPS).</response>
+    /// <response code="400">Invalid entry data.</response>
+    /// <response code="500">Internal server error.</response>
     [HttpPost]
     [Authorize]
     [NightscoutEndpoint("/api/v3/entries")]
@@ -376,7 +401,7 @@ public class EntriesController : BaseV3Controller<Entry>
             var processedEntry = _documentProcessingService.ProcessEntry(entry);
 
             // Update in database
-            var updatedEntry = await _entries.UpdateEntryAsync(
+            var updatedEntry = await _entryService.UpdateEntryAsync(
                 id,
                 processedEntry,
                 cancellationToken
@@ -428,7 +453,7 @@ public class EntriesController : BaseV3Controller<Entry>
 
         try
         {
-            var deleted = await _entries.DeleteEntryAsync(id, cancellationToken);
+            var deleted = await _entryService.DeleteEntryAsync(id, cancellationToken);
 
             if (!deleted)
             {
@@ -451,8 +476,14 @@ public class EntriesController : BaseV3Controller<Entry>
     }
 
     /// <summary>
-    /// Get entries modified since a given timestamp (for AAPS incremental sync)
+    /// Get entries modified since a given timestamp (for AAPS incremental sync).
     /// </summary>
+    /// <param name="lastModified">Unix timestamp in milliseconds. Only entries modified after this time are returned.</param>
+    /// <param name="limit">Maximum number of entries to return (1-1000, default 1000).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>V3 collection of <see cref="Entry"/> objects modified since the given timestamp.</returns>
+    /// <response code="200">Entries modified since the given timestamp.</response>
+    /// <response code="500">Internal server error.</response>
     [HttpGet("history/{lastModified:long}")]
     [NightscoutEndpoint("/api/v3/entries/history/{lastModified}")]
     [ProducesResponseType(typeof(object), 200)]
@@ -473,10 +504,16 @@ public class EntriesController : BaseV3Controller<Entry>
         {
             limit = Math.Min(Math.Max(limit, 1), 1000);
 
-            var entries = await _entries.GetEntriesModifiedSinceAsync(
-                lastModified,
-                limit,
-                cancellationToken
+            // Build a find query for entries since the given timestamp
+            var findQuery = $"{{\"date\":{{\"$gte\":{lastModified}}}}}";
+            var entries = await _entryService.GetEntriesWithAdvancedFilterAsync(
+                type: null,
+                count: limit,
+                skip: 0,
+                findQuery: findQuery,
+                dateString: null,
+                reverseResults: false,
+                cancellationToken: cancellationToken
             );
             var v3Entries = entries.ToV3Responses().ToList();
             return CreateV3SuccessResponse(v3Entries);
@@ -599,25 +636,6 @@ public class EntriesController : BaseV3Controller<Entry>
             return null;
 
         return JsonSerializer.Serialize(conditions);
-    }
-
-    private async Task<long> GetTotalCountAsync(
-        string? type,
-        string? findQuery,
-        CancellationToken cancellationToken
-    )
-    {
-        try
-        {
-            // Use the count endpoint to get total
-            return await _entries.CountEntriesAsync(findQuery, type, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to get total count for V3 entries, using estimate");
-            // Return a reasonable estimate if count fails
-            return 1000;
-        }
     }
 
     private DateTimeOffset GetLastModified(List<Entry> entries)

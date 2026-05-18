@@ -1,15 +1,21 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Legacy;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V3;
 
 /// <summary>
-/// Base controller for V3 API endpoints providing common V3 functionality
+/// Base controller for V3 API endpoints providing common V3 functionality.
 /// Implements pagination, field selection, sorting, filtering, and ETag support
+/// as defined by the Nightscout API v3 specification.
 /// </summary>
+/// <typeparam name="T">The domain model type this controller operates on.</typeparam>
+/// <seealso cref="IDocumentProcessingService"/>
+/// <seealso cref="V3QueryParameters"/>
+/// <seealso cref="V3CollectionResponse{T}"/>
+/// <seealso cref="V3FilterCriteria"/>
 [ApiController]
 public abstract class BaseV3Controller<T> : ControllerBase
     where T : class
@@ -17,6 +23,11 @@ public abstract class BaseV3Controller<T> : ControllerBase
     protected readonly IDocumentProcessingService _documentProcessingService;
     protected readonly ILogger _logger;
 
+    /// <summary>
+    /// Initializes the base V3 controller with shared services.
+    /// </summary>
+    /// <param name="documentProcessingService">Service for processing incoming documents (entries, treatments, etc.).</param>
+    /// <param name="logger">Logger instance for the derived controller.</param>
     protected BaseV3Controller(
         IDocumentProcessingService documentProcessingService,
         ILogger logger
@@ -27,10 +38,10 @@ public abstract class BaseV3Controller<T> : ControllerBase
     }
 
     /// <summary>
-    /// Parse V3 query parameters from the request
+    /// Parse V3 query parameters from the request, including limit, offset, fields, sort, filter, and conditional headers.
     /// </summary>
-    /// <returns>Parsed V3 query parameters</returns>
-    /// <exception cref="ArgumentException">Thrown when limit is out of tolerance (negative)</exception>
+    /// <returns>Parsed <see cref="V3QueryParameters"/> populated from the current request's query string.</returns>
+    /// <exception cref="V3ParameterOutOfToleranceException">Thrown when limit is negative, matching Nightscout V3 behavior.</exception>
     protected V3QueryParameters ParseV3QueryParameters()
     {
         var query = HttpContext.Request.Query;
@@ -75,7 +86,8 @@ public abstract class BaseV3Controller<T> : ControllerBase
     }
 
     /// <summary>
-    /// Exception thrown when a V3 API parameter is out of tolerance
+    /// Exception thrown when a V3 API parameter is out of tolerance.
+    /// Matches the Nightscout V3 API behavior of returning 400 with "Parameter {name} out of tolerance".
     /// </summary>
     public class V3ParameterOutOfToleranceException : Exception
     {
@@ -357,12 +369,14 @@ public abstract class BaseV3Controller<T> : ControllerBase
     }
 
     /// <summary>
-    /// Create a standardized V3 success response with metadata
+    /// Create a standardized V3 success response with metadata including pagination headers.
+    /// Returns the Nightscout V3-compatible envelope: <c>{"status": 200, "result": [...]}</c>.
     /// </summary>
-    /// <param name="data">Response data</param>
-    /// <param name="parameters">Query parameters</param>
-    /// <param name="totalCount">Total count for pagination</param>
-    /// <returns>Standardized success response</returns>
+    /// <typeparam name="TItem">The type of items in the collection.</typeparam>
+    /// <param name="data">Response data.</param>
+    /// <param name="parameters">The <see cref="V3QueryParameters"/> used for field selection and pagination.</param>
+    /// <param name="totalCount">Total count of items for pagination headers.</param>
+    /// <returns>A <see cref="V3CollectionResponse{T}"/> wrapped in the Nightscout V3 envelope.</returns>
     protected IActionResult CreateV3CollectionResponse<TItem>(
         IEnumerable<TItem> data,
         V3QueryParameters parameters,

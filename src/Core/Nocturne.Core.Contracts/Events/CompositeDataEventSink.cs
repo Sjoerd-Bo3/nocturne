@@ -12,42 +12,52 @@ public class CompositeDataEventSink<T>(
 {
     private readonly IReadOnlyList<IDataEventSink<T>> _sinks = sinks.ToList();
 
+    /// <inheritdoc />
     public async Task OnCreatedAsync(IReadOnlyList<T> items, CancellationToken ct = default)
     {
         foreach (var sink in _sinks)
             await InvokeAsync(sink, s => s.OnCreatedAsync(items, ct));
     }
 
+    /// <inheritdoc />
     public async Task OnCreatedAsync(T item, CancellationToken ct = default)
     {
         foreach (var sink in _sinks)
             await InvokeAsync(sink, s => s.OnCreatedAsync(item, ct));
     }
 
+    /// <inheritdoc />
     public async Task OnUpdatedAsync(T item, CancellationToken ct = default)
     {
         foreach (var sink in _sinks)
             await InvokeAsync(sink, s => s.OnUpdatedAsync(item, ct));
     }
 
+    /// <inheritdoc />
     public async Task BeforeDeleteAsync(string id, CancellationToken ct = default)
     {
         foreach (var sink in _sinks)
             await InvokeAsync(sink, s => s.BeforeDeleteAsync(id, ct));
     }
 
+    /// <inheritdoc />
     public async Task OnDeletedAsync(T? item, CancellationToken ct = default)
     {
         foreach (var sink in _sinks)
             await InvokeAsync(sink, s => s.OnDeletedAsync(item, ct));
     }
 
+    /// <inheritdoc />
     public async Task OnBulkDeletedAsync(long deletedCount, CancellationToken ct = default)
     {
         foreach (var sink in _sinks)
             await InvokeAsync(sink, s => s.OnBulkDeletedAsync(deletedCount, ct));
     }
 
+    /// <summary>
+    /// Invokes a single sink action, catching and logging any exception so that
+    /// one failing sink does not prevent others from receiving the event.
+    /// </summary>
     private async Task InvokeAsync(IDataEventSink<T> sink, Func<IDataEventSink<T>, Task> action)
     {
         try

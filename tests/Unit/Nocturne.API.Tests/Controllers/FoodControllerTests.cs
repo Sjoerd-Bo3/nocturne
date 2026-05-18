@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Controllers.V1;
-using Nocturne.API.Services;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Contracts.Repositories;
 using Xunit;

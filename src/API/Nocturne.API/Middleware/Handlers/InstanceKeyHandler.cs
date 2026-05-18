@@ -7,7 +7,7 @@ namespace Nocturne.API.Middleware.Handlers;
 /// <summary>
 /// Authentication handler for instance key (infrastructure service authentication).
 /// Validates the SHA1 hash of the instance key sent in the X-Instance-Key header.
-/// Used by SvelteKit SSR and the WebSocket bridge to authenticate with the API.
+/// Used by internal services (SSR, WebSocket bridge) to authenticate with the API.
 /// Grants full admin (*) permissions.
 /// </summary>
 public class InstanceKeyHandler : IAuthHandler

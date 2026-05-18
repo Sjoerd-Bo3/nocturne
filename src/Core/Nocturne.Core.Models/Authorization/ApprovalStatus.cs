@@ -3,8 +3,9 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models.Authorization;
 
 /// <summary>
-/// Approval status for subjects that request access
+/// Approval status for subjects that request access.
 /// </summary>
+/// <seealso cref="Subject"/>
 [JsonConverter(typeof(JsonStringEnumConverter<ApprovalStatus>))]
 public enum ApprovalStatus
 {

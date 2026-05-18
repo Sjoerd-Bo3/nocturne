@@ -5,9 +5,22 @@ using Nocturne.Core.Contracts.V4.Repositories;
 namespace Nocturne.API.Controllers.V4.Analytics;
 
 /// <summary>
-/// Controller for querying correlated data across all V4 repositories by correlation ID
+/// Controller for querying correlated data across all V4 repositories by correlation ID.
+/// A correlation ID links related records — for example, a sensor glucose reading with the
+/// bolus that was delivered in response to it.
 /// </summary>
+/// <remarks>
+/// Queries all supported V4 repositories in parallel and returns a composite result keyed by
+/// data type. The following repositories are searched:
+/// <see cref="ISensorGlucoseRepository"/>, <see cref="IMeterGlucoseRepository"/>,
+/// <see cref="ICalibrationRepository"/>, <see cref="IBolusRepository"/>,
+/// <see cref="ICarbIntakeRepository"/>, <see cref="IBGCheckRepository"/>,
+/// <see cref="INoteRepository"/>, and <see cref="IBolusCalculationRepository"/>.
+/// </remarks>
+/// <seealso cref="ISensorGlucoseRepository"/>
+/// <seealso cref="IBolusRepository"/>
 [ApiController]
+[Tags("Analytics")]
 [Route("api/v4/correlated")]
 [Authorize]
 [Produces("application/json")]
@@ -43,8 +56,16 @@ public class CorrelationController : ControllerBase
     }
 
     /// <summary>
-    /// Get all data correlated by a shared correlation ID across all V4 data types
+    /// Retrieves all records that share the given correlation ID across every V4 data type.
     /// </summary>
+    /// <param name="correlationId">The shared correlation ID to look up.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// An anonymous object with typed arrays for each data category
+    /// (<c>SensorGlucose</c>, <c>MeterGlucose</c>, <c>Calibrations</c>, <c>Boluses</c>,
+    /// <c>CarbIntakes</c>, <c>BGChecks</c>, <c>Notes</c>, <c>BolusCalculations</c>).
+    /// Arrays are empty when no matching records exist in that category.
+    /// </returns>
     [HttpGet("{correlationId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult> GetCorrelated(Guid correlationId, CancellationToken ct = default)

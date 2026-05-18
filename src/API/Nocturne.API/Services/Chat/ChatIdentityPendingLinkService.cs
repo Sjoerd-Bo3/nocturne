@@ -6,9 +6,24 @@ using Nocturne.Infrastructure.Data.Entities;
 namespace Nocturne.API.Services.Chat;
 
 /// <summary>
-/// Manages short-lived state tokens for the chat identity link flow
-/// (/connect slash command and OAuth2 finalize hop).
+/// Manages short-lived state tokens for the two-step chat identity link flow:
+/// the <c>/connect</c> slash command and the OAuth2 finalise hop.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Tokens are 32 random bytes encoded as 64-character uppercase hex strings. Each token row
+/// is deleted on first successful consumption (<see cref="TryConsumeAsync"/>), making the
+/// token single-use. Expired rows are not automatically purged; call
+/// <see cref="CleanupExpiredAsync"/> from a background sweep to reclaim space.
+/// </para>
+/// <para>
+/// <see cref="TryConsumeAsync"/> wraps the read-delete-commit sequence in a user-initiated
+/// transaction via the Npgsql retry execution strategy so the entire block can be safely
+/// retried on transient failures without double-consuming a token.
+/// </para>
+/// </remarks>
+/// <seealso cref="ChatIdentityDirectoryService"/>
+/// <seealso cref="ChatIdentityService"/>
 public sealed class ChatIdentityPendingLinkService(
     IDbContextFactory<NocturneDbContext> contextFactory,
     ILogger<ChatIdentityPendingLinkService> logger)

@@ -3,8 +3,12 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Response model for async processing requests
+/// Response model for async processing requests.
+/// Returned immediately when the server accepts a bulk import or processing job;
+/// the client polls <see cref="StatusUrl"/> to track progress.
 /// </summary>
+/// <seealso cref="ProcessingStatus"/>
+/// <seealso cref="ProcessingStatusResponse"/>
 public class AsyncProcessingResponse
 {
     /// <summary>
@@ -32,7 +36,7 @@ public class AsyncProcessingResponse
     public TimeSpan EstimatedProcessingTime { get; set; }
 
     /// <summary>
-    /// Gets the estimated completion time based on current time and estimated processing time
+    /// Estimated UTC completion time, computed as <c>UtcNow + <see cref="EstimatedProcessingTime"/></c>.
     /// </summary>
     [JsonPropertyName("estimatedCompletion")]
     public DateTime? EstimatedCompletion => DateTime.UtcNow.Add(EstimatedProcessingTime);
@@ -108,8 +112,12 @@ public class ProcessingStatusResponse : ProcessingStatus
 }
 
 /// <summary>
-/// Request model for bulk data processing
+/// Request model for bulk data processing, accepted as an async job.
 /// </summary>
+/// <seealso cref="Entry"/>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="DeviceStatus"/>
+/// <seealso cref="AsyncProcessingResponse"/>
 public class BulkDataRequest
 {
     /// <summary>

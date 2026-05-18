@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using Nocturne.Desktop.Tray.Helpers;
+using Nocturne.Core.Models.Widget;
 using Nocturne.Desktop.Tray.Models;
 using Windows.Foundation;
 using Windows.UI;
@@ -26,10 +27,10 @@ public sealed partial class MiniChart : UserControl
         this.SizeChanged += OnSizeChanged;
     }
 
-    private IReadOnlyList<GlucoseReading>? _readings;
+    private IReadOnlyList<V4GlucoseReading>? _readings;
     private TraySettings? _settings;
 
-    public void Update(IReadOnlyList<GlucoseReading> readings, TraySettings settings)
+    public void Update(IReadOnlyList<V4GlucoseReading> readings, TraySettings settings)
     {
         _readings = readings;
         _settings = settings;
@@ -203,7 +204,7 @@ public sealed partial class MiniChart : UserControl
             }
 
             var x = ((reading.Mills - windowStartMills) / (double)millsRange) * width;
-            var y = MgdlToY(reading.Mgdl, chartHeight);
+            var y = MgdlToY(reading.Sgv, chartHeight);
             segment.Points.Add(new Point(x, y));
             lastMills = reading.Mills;
         }
@@ -215,10 +216,10 @@ public sealed partial class MiniChart : UserControl
         foreach (var reading in _readings)
         {
             var x = ((reading.Mills - windowStartMills) / (double)millsRange) * width;
-            var y = MgdlToY(reading.Mgdl, chartHeight);
+            var y = MgdlToY(reading.Sgv, chartHeight);
 
             var color = GlucoseRangeHelper.GetColor(
-                reading.Mgdl,
+                reading.Sgv,
                 _settings.UrgentLowThreshold,
                 _settings.LowThreshold,
                 _settings.HighThreshold,

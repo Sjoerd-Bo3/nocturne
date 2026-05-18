@@ -31,23 +31,10 @@ public class TenantEntity
     public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Per-tenant API secret hash (SHA1, Nightscout-compatible)
-    /// </summary>
-    [Column("api_secret_hash")]
-    [MaxLength(128)]
-    public string? ApiSecretHash { get; set; }
-
-    /// <summary>
     /// Whether this tenant is active. Inactive tenants return 403.
     /// </summary>
     [Column("is_active")]
     public bool IsActive { get; set; } = true;
-
-    /// <summary>
-    /// Whether this is the auto-created default tenant for self-hosted deployments
-    /// </summary>
-    [Column("is_default")]
-    public bool IsDefault { get; set; }
 
     /// <summary>
     /// Timestamp of the most recent glucose reading for this tenant.
@@ -57,44 +44,20 @@ public class TenantEntity
     public DateTime? LastReadingAt { get; set; }
 
     /// <summary>
-    /// IANA timezone for this tenant (e.g. "America/New_York").
-    /// Used for schedule evaluation and display.
-    /// </summary>
-    [Column("timezone")]
-    [MaxLength(64)]
-    public string Timezone { get; set; } = "UTC";
-
-    /// <summary>
-    /// Preferred name for the person being monitored (e.g. "Alex").
-    /// Used in alert payloads. Falls back to DisplayName if null.
-    /// </summary>
-    [Column("subject_name")]
-    [MaxLength(128)]
-    public string? SubjectName { get; set; }
-
-    /// <summary>
-    /// Quiet hours start time. Null means quiet hours disabled.
-    /// </summary>
-    [Column("quiet_hours_start")]
-    public TimeOnly? QuietHoursStart { get; set; }
-
-    /// <summary>
-    /// Quiet hours end time.
-    /// </summary>
-    [Column("quiet_hours_end")]
-    public TimeOnly? QuietHoursEnd { get; set; }
-
-    /// <summary>
-    /// Whether critical-severity alerts bypass quiet hours.
-    /// </summary>
-    [Column("quiet_hours_override_critical")]
-    public bool QuietHoursOverrideCritical { get; set; } = true;
-
-    /// <summary>
     /// Whether unauthenticated users can request access to this tenant.
     /// </summary>
     [Column("allow_access_requests")]
     public bool AllowAccessRequests { get; set; } = true;
+
+    /// <summary>
+    /// When the onboarding wizard was completed or skipped. Null = not yet onboarded.
+    /// </summary>
+    [Column("onboarding_completed_at")]
+    public DateTime? OnboardingCompletedAt { get; set; }
+
+    /// <summary>Whether this tenant is a demo instance with synthetic data.</summary>
+    [Column("is_demo")]
+    public bool IsDemo { get; set; }
 
     /// <summary>
     /// When the tenant record was created
@@ -112,4 +75,9 @@ public class TenantEntity
     /// Collection of members belonging to this tenant
     /// </summary>
     public ICollection<TenantMemberEntity> Members { get; set; } = [];
+
+    /// <summary>
+    /// Demo configuration (null for non-demo tenants).
+    /// </summary>
+    public TenantDemoConfigEntity? DemoConfig { get; set; }
 }

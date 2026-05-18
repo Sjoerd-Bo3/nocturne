@@ -1,16 +1,27 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Devices;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models.V4;
 
 namespace Nocturne.API.Controllers.V4.Health;
 
 /// <summary>
-/// Controller for managing patient record data: records, devices, and insulins
+/// Controller for managing patient record data: clinical records, associated devices, and insulin configurations.
 /// </summary>
+/// <remarks>
+/// Three resource types are exposed under <c>/api/v4/patient-record</c>:
+/// <list type="bullet">
+///   <item><description><b>Records</b> — top-level patient health record via <see cref="IPatientRecordRepository"/>.</description></item>
+///   <item><description><b>Devices</b> — devices (pumps, CGMs) linked to the patient record via <see cref="IPatientDeviceRepository"/>.</description></item>
+///   <item><description><b>Insulins</b> — insulin types configured for the patient via the insulin catalog and patient insulin repository.</description></item>
+/// </list>
+/// </remarks>
+/// <seealso cref="IPatientRecordRepository"/>
+/// <seealso cref="IPatientDeviceRepository"/>
 [ApiController]
+[Tags("Health")]
 [Route("api/v4/patient-record")]
 [Authorize]
 [Produces("application/json")]
@@ -51,7 +62,7 @@ public class PatientRecordController : ControllerBase
     /// Update the patient record
     /// </summary>
     [HttpPut]
-    [RemoteCommand(Invalidates = ["GetPatientRecord"])]
+    [RemoteForm(Invalidates = ["GetPatientRecord"])]
     [ProducesResponseType(typeof(PatientRecord), StatusCodes.Status200OK)]
     public async Task<ActionResult<PatientRecord>> UpdatePatientRecord(
         [FromBody] PatientRecord model,

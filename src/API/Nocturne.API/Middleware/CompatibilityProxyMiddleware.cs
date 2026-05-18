@@ -12,6 +12,21 @@ namespace Nocturne.API.Middleware;
 /// normally, then fires a background comparison against the upstream Nightscout instance.
 /// No latency is added to the client response.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Runs after all authentication and authorization middleware, immediately before endpoint
+/// execution. Controlled by <see cref="CompatibilityProxyConfiguration.Enabled"/>.
+/// </para>
+/// <para>
+/// Uses <see cref="IRequestCloningService"/> to snapshot the request before the pipeline
+/// consumes it, <see cref="IRequestForwardingService"/> to send the clone to Nightscout,
+/// <see cref="IResponseComparisonService"/> to diff the responses, and
+/// <see cref="IDiscrepancyPersistenceService"/> to store any discrepancies.
+/// </para>
+/// </remarks>
+/// <seealso cref="CompatibilityProxyConfiguration"/>
+/// <seealso cref="IRequestCloningService"/>
+/// <seealso cref="IResponseComparisonService"/>
 public class CompatibilityProxyMiddleware
 {
     private readonly RequestDelegate _next;
@@ -24,8 +39,10 @@ public class CompatibilityProxyMiddleware
     private const int MaxResponseSizeBytes = 10 * 1024 * 1024; // 10 MB
 
     /// <summary>
-    /// Creates a new instance of CompatibilityProxyMiddleware
+    /// Creates a new instance of <see cref="CompatibilityProxyMiddleware"/>.
     /// </summary>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="logger">Logger for proxy and comparison diagnostics.</param>
     public CompatibilityProxyMiddleware(
         RequestDelegate next,
         ILogger<CompatibilityProxyMiddleware> logger)
@@ -35,8 +52,10 @@ public class CompatibilityProxyMiddleware
     }
 
     /// <summary>
-    /// Processes an HTTP request through the compatibility proxy pipeline
+    /// Processes an HTTP request through the compatibility proxy pipeline.
     /// </summary>
+    /// <param name="context">The current HTTP context.</param>
+    /// <returns>A task that completes when the middleware has finished processing.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
         // Only intercept GET requests on v1/v2/v3 API paths

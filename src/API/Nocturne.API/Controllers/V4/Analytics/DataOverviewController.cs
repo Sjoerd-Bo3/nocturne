@@ -1,15 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Analytics;
 using Nocturne.Core.Models.Services;
 
 namespace Nocturne.API.Controllers.V4.Analytics;
 
 /// <summary>
 /// Aggregated data overview for heatmap visualization.
-/// Provides year-level availability and day-level record counts.
+/// Provides year-level availability, day-level record counts, average glucose, and monthly GRI scores.
 /// </summary>
+/// <remarks>
+/// Responses are cached (300s for years and GRI timeline; 180s for daily summary)
+/// to reduce database load when the heatmap re-renders.
+/// </remarks>
+/// <seealso cref="IDataOverviewService"/>
+/// <seealso cref="DataOverviewYearsResponse"/>
+/// <seealso cref="DailySummaryResponse"/>
+/// <seealso cref="GriTimelineResponse"/>
 [ApiController]
+[Tags("Analytics")]
 [Route("api/v4/year-overview")]
 [Produces("application/json")]
 [ClientPropertyName("dataOverview")]
@@ -28,8 +37,10 @@ public class DataOverviewController : ControllerBase
     }
 
     /// <summary>
-    /// Get the list of years that contain data and available data sources
+    /// Gets the list of calendar years that contain glucose data and the available data sources.
     /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A <see cref="DataOverviewYearsResponse"/> with available years and data source names.</returns>
     [HttpGet("years")]
     [RemoteQuery]
     [ResponseCache(Duration = 300)]

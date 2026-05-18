@@ -3,13 +3,22 @@ using Nocturne.Core.Models;
 namespace Nocturne.Core.Contracts.Repositories;
 
 /// <summary>
-/// Repository port for alert tracker state and excursion persistence.
+/// Repository port for <see cref="AlertTrackerState"/> and <see cref="AlertExcursion"/> persistence.
+/// Consumed by <see cref="Nocturne.Core.Contracts.Alerts.IExcursionTracker"/> to track
+/// excursion state across evaluations.
 /// </summary>
+/// <seealso cref="AlertTrackerState"/>
+/// <seealso cref="AlertExcursion"/>
+/// <seealso cref="AlertRule"/>
+/// <seealso cref="Nocturne.Core.Contracts.Alerts.IExcursionTracker"/>
 public interface IAlertTrackerRepository
 {
     /// <summary>
     /// Get the tracker state for a specific alert rule.
     /// </summary>
+    /// <param name="alertRuleId">The unique identifier of the <see cref="AlertRule"/>.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The <see cref="AlertTrackerState"/> for the rule, or <c>null</c> if no state has been recorded yet.</returns>
     Task<AlertTrackerState?> GetTrackerStateAsync(
         Guid alertRuleId,
         CancellationToken ct = default);
@@ -17,6 +26,8 @@ public interface IAlertTrackerRepository
     /// <summary>
     /// Insert or update the tracker state for a rule.
     /// </summary>
+    /// <param name="state">The <see cref="AlertTrackerState"/> to persist.</param>
+    /// <param name="ct">Cancellation token.</param>
     Task UpsertTrackerStateAsync(
         AlertTrackerState state,
         CancellationToken ct = default);
@@ -24,6 +35,9 @@ public interface IAlertTrackerRepository
     /// <summary>
     /// Get the alert rule configuration.
     /// </summary>
+    /// <param name="alertRuleId">The unique identifier of the <see cref="AlertRule"/>.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The <see cref="AlertRule"/>, or <c>null</c> if not found.</returns>
     Task<AlertRule?> GetRuleAsync(
         Guid alertRuleId,
         CancellationToken ct = default);
@@ -31,14 +45,21 @@ public interface IAlertTrackerRepository
     /// <summary>
     /// Create a new excursion record and return it.
     /// </summary>
+    /// <param name="alertRuleId">The <see cref="AlertRule"/> that triggered the excursion.</param>
+    /// <param name="startedAt">UTC time when the excursion began.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The newly created <see cref="AlertExcursion"/>.</returns>
     Task<AlertExcursion> CreateExcursionAsync(
         Guid alertRuleId,
         DateTime startedAt,
         CancellationToken ct = default);
 
     /// <summary>
-    /// Close an excursion by setting its EndedAt timestamp.
+    /// Close an excursion by setting its <c>EndedAt</c> timestamp.
     /// </summary>
+    /// <param name="excursionId">The unique identifier of the <see cref="AlertExcursion"/> to close.</param>
+    /// <param name="endedAt">UTC time when the excursion ended.</param>
+    /// <param name="ct">Cancellation token.</param>
     Task CloseExcursionAsync(
         Guid excursionId,
         DateTime endedAt,
@@ -47,6 +68,9 @@ public interface IAlertTrackerRepository
     /// <summary>
     /// Record the start of hysteresis on an excursion.
     /// </summary>
+    /// <param name="excursionId">The unique identifier of the <see cref="AlertExcursion"/>.</param>
+    /// <param name="hysteresisStartedAt">UTC time when hysteresis began.</param>
+    /// <param name="ct">Cancellation token.</param>
     Task SetHysteresisStartedAsync(
         Guid excursionId,
         DateTime hysteresisStartedAt,
@@ -55,6 +79,8 @@ public interface IAlertTrackerRepository
     /// <summary>
     /// Clear the hysteresis timestamp on an excursion (when resuming from hysteresis).
     /// </summary>
+    /// <param name="excursionId">The unique identifier of the <see cref="AlertExcursion"/>.</param>
+    /// <param name="ct">Cancellation token.</param>
     Task ClearHysteresisAsync(
         Guid excursionId,
         CancellationToken ct = default);

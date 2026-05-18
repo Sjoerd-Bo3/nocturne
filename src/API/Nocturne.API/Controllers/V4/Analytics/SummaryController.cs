@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Extensions;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Analytics;
 using Nocturne.Core.Models.Widget;
+using Nocturne.API.Services.Glucose;
 
 namespace Nocturne.API.Controllers.V4.Analytics;
 
@@ -10,7 +11,23 @@ namespace Nocturne.API.Controllers.V4.Analytics;
 /// V4 Summary controller providing widget-friendly summary data.
 /// Designed for mobile widgets, watch faces, and other constrained displays.
 /// </summary>
+/// <remarks>
+/// Returns a compact <see cref="V4SummaryResponse"/> that aggregates current glucose,
+/// insulin-on-board (IOB), carbs-on-board (COB), active tracker states, and alarm status
+/// into a single low-latency response.
+///
+/// The optional <c>hours</c> query parameter controls how many hours of glucose history
+/// are included in the response; set it to <c>0</c> (the default) to retrieve only the
+/// most recent reading. Setting <c>includePredictions</c> to <c>true</c> appends the
+/// configured prediction curve (see <see cref="IPredictionService"/>).
+///
+/// This endpoint requires authentication. Callers that do not supply a valid bearer token
+/// receive <c>401 Unauthorized</c>.
+/// </remarks>
+/// <seealso cref="IWidgetSummaryService"/>
+/// <seealso cref="V4SummaryResponse"/>
 [ApiController]
+[Tags("Analytics")]
 [Route("api/v4/summary")]
 [Produces("application/json")]
 public class SummaryController : ControllerBase

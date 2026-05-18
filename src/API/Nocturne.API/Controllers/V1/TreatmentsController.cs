@@ -3,16 +3,20 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Authorization;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Legacy;
+using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
-/// Treatments controller that provides 1:1 compatibility with Nightscout treatments endpoints
-/// Implements the /api/v1/treatments/* endpoints from the legacy JavaScript implementation
+/// Treatments controller that provides 1:1 compatibility with Nightscout treatments endpoints.
+/// Implements the /api/v1/treatments/* endpoints from the legacy JavaScript implementation.
 /// </summary>
+/// <seealso cref="ITreatmentService"/>
+/// <seealso cref="IDocumentProcessingService"/>
 [ApiController]
+[Tags("V1")]
 [Route("api/v1/[controller]")]
 [Authorize(Policy = PolicyNames.HasPermissions)]
 public class TreatmentsController : ControllerBase
@@ -21,6 +25,12 @@ public class TreatmentsController : ControllerBase
     private readonly IDocumentProcessingService _documentProcessingService;
     private readonly ILogger<TreatmentsController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="TreatmentsController"/>.
+    /// </summary>
+    /// <param name="treatmentService">Service handling treatment CRUD operations.</param>
+    /// <param name="treatmentProcessingService">Service for async document ingestion and processing.</param>
+    /// <param name="logger">Logger instance.</param>
     public TreatmentsController(
         ITreatmentService treatmentService,
         IDocumentProcessingService treatmentProcessingService,

@@ -3,21 +3,28 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using Nocturne.API.Authorization;
 using Nocturne.API.Configuration;
+using Nocturne.API.Services.Audit;
 using Nocturne.API.Services.Auth;
+using Nocturne.API.Services.BackgroundServices;
+using Nocturne.Core.Contracts.Audit;
 using Nocturne.API.Extensions;
+using Nocturne.API.Filters;
 using Nocturne.API.Hubs;
 using Nocturne.API.Middleware;
 using Nocturne.API.Multitenancy;
 using OpenApi.Remote.Processors;
 using Nocturne.API.OpenApi;
+using Scalar.AspNetCore;
+using Nocturne.Aspire.Scalar;
 using Nocturne.Core.Constants;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Infrastructure.Cache.Extensions;
-using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Contracts.Entries;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Extensions;
 using Nocturne.Infrastructure.Data.Interceptors;
@@ -92,18 +99,28 @@ builder.Host.UseDefaultServiceProvider(options =>
 // when migrations run; the migrator string is optional in NSwag/Testing mode.
 var isTesting = builder.Environment.IsEnvironment("Testing");
 var aspirePostgreSqlConnection = builder.Configuration.GetConnectionString(ServiceNames.PostgreSql)
-    ?? (isTesting ? "Data Source=:memory:" : throw new InvalidOperationException(
+    ?? (isTesting ? "" : throw new InvalidOperationException(
         $"ConnectionStrings:{ServiceNames.PostgreSql} is required."));
 var migratorConnectionString = builder.Configuration.GetConnectionString($"{ServiceNames.PostgreSql}-migrator");
 
-builder.Services.AddPostgreSqlInfrastructure(
-    aspirePostgreSqlConnection,
-    config =>
-    {
-        config.EnableDetailedErrors = builder.Environment.IsDevelopment();
-        config.EnableSensitiveDataLogging = builder.Environment.IsDevelopment();
-    }
-);
+if (!isTesting)
+{
+    builder.Services.AddPostgreSqlInfrastructure(
+        aspirePostgreSqlConnection,
+        config =>
+        {
+            config.EnableDetailedErrors = builder.Environment.IsDevelopment();
+            config.EnableSensitiveDataLogging = builder.Environment.IsDevelopment();
+        }
+    );
+}
+else
+{
+    // In Testing mode, skip NpgsqlDataSource creation (test factories provide their
+    // own SQLite-backed IDbContextFactory) but still register repositories and shared
+    // services so the DI container can resolve them for endpoint routing.
+    builder.Services.AddDataServices();
+}
 
 builder.Services.AddDiscrepancyAnalysisRepository();
 builder.Services.AddAlertRepositories();
@@ -128,13 +145,25 @@ Console.WriteLine(
 builder.Services.AddResponseCaching();
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuditContext, AuditContext>();
+builder.Services.AddHostedService<AuditRetentionService>();
+builder.Services.AddHostedService<SoftDeleteCleanupService>();
 
 // Add native API services for strangler pattern
 // Note: NightscoutJsonFilter is added globally to apply null-omission and
 // NocturneOnly field exclusion to v1-v3 API responses only
+builder.Services.AddScoped<ReadAccessAuditFilter>();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<NightscoutJsonFilter>();
+    options.Filters.AddService<ReadAccessAuditFilter>();
+})
+.ConfigureApplicationPartManager(manager =>
+{
+    if (!builder.Environment.IsDevelopment())
+    {
+        manager.FeatureProviders.Add(new RemoveDevOnlyControllersFeatureProvider());
+    }
 });
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -160,13 +189,14 @@ builder.Services.AddOpenApiDocument(config =>
     });
 
     config.OperationProcessors.Add(new RemoteFunctionOperationProcessor());
+    config.OperationProcessors.Add(new ConsumesContentTypeOperationProcessor());
     config.OperationProcessors.Add(new ControllerNameTagOperationProcessor());
+    config.OperationProcessors.Add(new SummaryToDescriptionOperationProcessor());
 
     config.PostProcess = document =>
     {
         document.Info.Version = "0.0.1";
         document.Info.Title = "Nocturne API";
-        document.Info.Description = "Modern diabetes management API. For support, join our Discord.";
     };
 });
 
@@ -182,10 +212,12 @@ builder.Services.AddOpenApi("nocturne", options =>
             || ns.Contains(".Controllers.Authentication")
             || ns == "Nocturne.API.Controllers";
     };
-    options.AddOperationTransformer<FolderBasedTagOperationTransformer>();
+    options.AddOperationTransformer<SummaryToDescriptionOperationTransformer>();
     options.AddOperationTransformer<SecurityRequirementOperationTransformer>();
     options.AddDocumentTransformer<TagDescriptionDocumentTransformer>();
     options.AddDocumentTransformer<SecuritySchemeDocumentTransformer>();
+    options.AddDocumentTransformer<DiagramDescriptionDocumentTransformer>();
+    options.AddDocumentTransformer<ScalarExtensionsDocumentTransformer>();
 });
 
 builder.Services.AddOpenApi("nightscout", options =>
@@ -201,10 +233,12 @@ builder.Services.AddOpenApi("nightscout", options =>
             || ns.Contains(".Controllers.V3.")
             || ns.EndsWith(".Controllers.V3", StringComparison.Ordinal);
     };
-    options.AddOperationTransformer<FolderBasedTagOperationTransformer>();
+    options.AddOperationTransformer<SummaryToDescriptionOperationTransformer>();
     options.AddOperationTransformer<SecurityRequirementOperationTransformer>();
     options.AddDocumentTransformer<TagDescriptionDocumentTransformer>();
     options.AddDocumentTransformer<SecuritySchemeDocumentTransformer>();
+    options.AddDocumentTransformer<DiagramDescriptionDocumentTransformer>();
+    options.AddDocumentTransformer<ScalarExtensionsDocumentTransformer>();
 });
 
 // ── Service registration (grouped by concern) ──────────────────────────
@@ -274,7 +308,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
                              | ForwardedHeaders.XForwardedProto
                              | ForwardedHeaders.XForwardedHost;
     // Trust any proxy — the API is only reachable through the gateway.
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
 
@@ -285,6 +319,7 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseResponseCaching();
 app.UseCors();
+app.UseStaticFiles();
 app.UseForwardedHeaders();
 
 // Strip .json suffixes before routing so /api/v1/treatments.json matches
@@ -292,13 +327,29 @@ app.UseForwardedHeaders();
 // UseRouting so the rewritten path is what the router sees.
 app.UseMiddleware<JsonExtensionMiddleware>();
 
-// Explicit UseRouting so TenantSetupMiddleware and RecoveryModeMiddleware can
-// read endpoint metadata (e.g. [AllowDuringSetup]). Minimal hosting would
-// insert this automatically but we make it explicit for clarity.
+// Explicit UseRouting so TenantSetupMiddleware can read endpoint metadata
+// (e.g. [AllowDuringSetup]). Minimal hosting would insert this automatically
+// but we make it explicit for clarity.
 app.UseRouting();
 
-// Block most API traffic when recovery mode is active (orphaned subjects detected)
-app.UseMiddleware<RecoveryModeMiddleware>();
+// Documentation paths (/scalar, /openapi) bypass the entire tenant/auth
+// middleware stack — they're tenantless and publicly accessible.
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value ?? "";
+    if (path.StartsWith("/scalar", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/openapi", StringComparison.OrdinalIgnoreCase))
+    {
+        // Jump straight to the endpoint (MapOpenApi / MapScalarApiReference)
+        var endpoint = context.GetEndpoint();
+        if (endpoint != null)
+        {
+            await endpoint.RequestDelegate!(context);
+            return;
+        }
+    }
+    await next();
+});
 
 // Redirect OIDC callbacks from apex to the originating tenant subdomain
 app.UseMiddleware<OidcCallbackRedirectMiddleware>();
@@ -314,6 +365,9 @@ app.UseMiddleware<AuthenticationMiddleware>();
 
 // Add member scope middleware (resolves membership role and restricts scopes)
 app.UseMiddleware<MemberScopeMiddleware>();
+
+// Add audit context middleware (captures actor metadata for mutation audit log)
+app.UseMiddleware<AuditContextMiddleware>();
 
 // Add site security middleware (enforces authentication when site lockdown is enabled)
 app.UseMiddleware<SiteSecurityMiddleware>();
@@ -336,17 +390,39 @@ app.MapHub<DataHub>("/hubs/data");
 app.MapHub<AlarmHub>("/hubs/alarms");
 app.MapHub<AlertHub>("/hubs/alerts");
 app.MapHub<ConfigHub>("/hubs/config");
+app.MapHub<HomeAssistantHub>("/hubs/home-assistant");
 
 // Serve OpenAPI specs at /openapi/{documentName}.json
 app.MapOpenApi();
 
-// Scalar API docs are served by the Aspire host integration, not here.
-// OpenAPI specs are still served from this project at /openapi/{documentName}.json.
+// Scalar interactive API docs at /scalar/{documentName}
+app.MapScalarApiReference(options =>
+{
+    options.WithTheme(ScalarTheme.Mars);
+    options.WithOpenApiRoutePattern("/openapi/{documentName}.json");
+    options.AddDocument("nocturne", "Nocturne API", isDefault: true);
+    options.AddDocument("nightscout", "Nightscout API");
+    options.AddHeadContent(MermaidLazyLoader.HeadContent);
+
+    // Pre-configure authentication so Scalar's "Authorize" UI works out of the box.
+    options
+        .AddPreferredSecuritySchemes("oauth2", "bearer", "apiSecret")
+        .AddAuthorizationCodeFlow("oauth2", flow =>
+        {
+            flow.ClientId = "scalar";
+            flow.Pkce = Pkce.Sha256;
+            flow.SelectedScopes = ["*"];
+        })
+        .AddApiKeyAuthentication("apiSecret", apiKey =>
+        {
+            apiKey.Value = string.Empty;
+        });
+});
 
 // Add root endpoint to serve a basic info page
 app.MapGet(
     "/",
-    async (IEntryRepository entryRepository) =>
+    async (IEntryStore entryStore) =>
     {
         // Check database connection by fetching the latest entry
         string databaseStatus = "unknown";
@@ -354,7 +430,7 @@ app.MapGet(
 
         try
         {
-            var entry = await entryRepository.GetCurrentEntryAsync();
+            var entry = await entryStore.GetCurrentAsync();
 
             if (entry != null)
             {
@@ -429,9 +505,6 @@ if (!isNSwagGeneration && !app.Environment.IsEnvironment("Testing"))
     // Validate RLS, ownership, default privileges, and NoResetOnClose under the app role.
     await app.Services.ValidateDatabaseConfigurationAsync();
 
-    // Seed default tenant if none exists and backfill tenant_id on existing rows
-    await DefaultTenantSeeder.SeedDefaultTenantAsync(app.Services);
-
     // Sync config-managed OIDC providers to the database (satisfies FK constraints)
     await OidcProviderService.SyncConfigProvidersAsync(app.Services);
 }
@@ -480,6 +553,22 @@ static bool IsRunningInNSwagContext()
     return false;
 }
 
+/// <summary>
+/// Removes controllers in the .DevOnly namespace from non-development environments.
+/// Defined here to avoid creating a Nocturne.API.Infrastructure namespace that
+/// collides with relative namespace resolution in other files.
+/// </summary>
+file class RemoveDevOnlyControllersFeatureProvider
+    : Microsoft.AspNetCore.Mvc.Controllers.ControllerFeatureProvider
+{
+    protected override bool IsController(System.Reflection.TypeInfo typeInfo)
+    {
+        if (typeInfo.Namespace?.Contains(".DevOnly", StringComparison.Ordinal) == true)
+            return false;
+        return base.IsController(typeInfo);
+    }
+}
+
 // Make Program accessible for testing
 namespace Nocturne.API
 {
@@ -523,6 +612,7 @@ internal class NSwagStartup
             });
 
             config.OperationProcessors.Add(new RemoteFunctionOperationProcessor());
+            config.OperationProcessors.Add(new ConsumesContentTypeOperationProcessor());
             config.OperationProcessors.Add(new ControllerNameTagOperationProcessor());
         });
     }

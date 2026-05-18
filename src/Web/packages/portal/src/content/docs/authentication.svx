@@ -13,7 +13,8 @@ By the end, you'll have a working integration that can read glucose entries on b
 
 Nocturne uses **OAuth 2.0 Authorization Code with PKCE** (Proof Key for Code Exchange).
 Every client is a public client — there are no client secrets. PKCE replaces the secret,
-which makes this flow safe for mobile apps, desktop apps, and SPAs.
+which makes this flow safe for desktop apps and SPAs. For mobile apps or devices
+with limited input, see the [Device Authorization flow guide](/docs/mobile-authentication).
 
 ## 1. Register your app
 
@@ -259,14 +260,26 @@ Scopes control what your app can access. Request only what you need.
 | `treatments.read` | Read treatments (insulin, carbs, notes) |
 | `treatments.readwrite` | Read and write treatments |
 | `devicestatus.read` | Read pump and CGM device status |
+| `devicestatus.readwrite` | Read and write device status |
 | `profile.read` | Read user profile and settings |
-| `health.read` | Shorthand for all four `.read` scopes above |
+| `profile.readwrite` | Read and write profile |
+| `heartrate.read` | Read heart rate data |
+| `heartrate.readwrite` | Read and write heart rate data |
+| `stepcount.read` | Read step count data |
+| `stepcount.readwrite` | Read and write step count data |
+| `notifications.read` | Read notifications |
+| `notifications.readwrite` | Read and write notifications |
+| `reports.read` | Read reports |
+| `identity.read` | Read account identity |
+| `sharing.readwrite` | Manage sharing settings |
+| `health.read` | Shorthand for all `.read` health scopes |
+| `health.readwrite` | Shorthand for all `.readwrite` health scopes |
 | `*` | Full access (use sparingly) |
 
 A `readwrite` scope always implies `read` — you don't need to request both.
 
 <Callout type="info" title="Scope expansion">
-  <code>health.read</code> is a convenience alias. When you request it, the consent
-  screen shows the individual scopes it expands to: entries, treatments, device status,
-  and profile — all read-only.
+  <code>health.read</code> and <code>health.readwrite</code> are convenience aliases.
+  When you request one, the consent screen shows the individual scopes it expands to:
+  entries, treatments, device status, profile, heart rate, and step count.
 </Callout>

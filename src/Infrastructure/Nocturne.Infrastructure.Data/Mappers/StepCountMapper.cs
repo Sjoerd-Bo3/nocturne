@@ -20,12 +20,11 @@ public static class StepCountMapper
                 ? Guid.CreateVersion7()
                 : ParseIdToGuid(stepCount.Id),
             OriginalId = MongoIdUtils.IsValidMongoId(stepCount.Id) ? stepCount.Id : null,
-            Mills = stepCount.Mills,
+            Timestamp = stepCount.Timestamp,
             Metric = stepCount.Metric,
             Source = stepCount.Source,
             Device = stepCount.Device,
             EnteredBy = stepCount.EnteredBy,
-            CreatedAt = stepCount.CreatedAt,
             UtcOffset = stepCount.UtcOffset,
         };
     }
@@ -38,12 +37,11 @@ public static class StepCountMapper
         return new StepCount
         {
             Id = entity.OriginalId ?? entity.Id.ToString(),
-            Mills = entity.Mills,
+            Timestamp = entity.Timestamp,
             Metric = entity.Metric,
             Source = entity.Source,
             Device = entity.Device,
             EnteredBy = entity.EnteredBy,
-            CreatedAt = entity.CreatedAt,
             UtcOffset = entity.UtcOffset,
         };
     }
@@ -53,12 +51,11 @@ public static class StepCountMapper
     /// </summary>
     public static void UpdateEntity(StepCountEntity entity, StepCount stepCount)
     {
-        entity.Mills = stepCount.Mills;
+        entity.Timestamp = stepCount.Timestamp;
         entity.Metric = stepCount.Metric;
         entity.Source = stepCount.Source;
         entity.Device = stepCount.Device;
         entity.EnteredBy = stepCount.EnteredBy;
-        entity.CreatedAt = stepCount.CreatedAt;
         entity.UtcOffset = stepCount.UtcOffset;
         entity.SysUpdatedAt = DateTime.UtcNow;
     }

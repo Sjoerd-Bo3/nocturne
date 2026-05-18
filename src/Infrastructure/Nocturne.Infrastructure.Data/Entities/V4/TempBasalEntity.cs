@@ -10,7 +10,7 @@ namespace Nocturne.Infrastructure.Data.Entities.V4;
 /// Maps to Nocturne.Core.Models.V4.TempBasal
 /// </summary>
 [Table("temp_basals")]
-public class TempBasalEntity : ITenantScoped
+public class TempBasalEntity : ITenantScoped, IAuditable, ISoftDeletable
 {
     /// <summary>
     /// The unique identifier of the tenant this record belongs to.
@@ -79,12 +79,14 @@ public class TempBasalEntity : ITenantScoped
     /// <summary>
     /// System tracking: when record was inserted
     /// </summary>
+    [AuditIgnored]
     [Column("sys_created_at")]
     public DateTime SysCreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// System tracking: when record was last updated
     /// </summary>
+    [AuditIgnored]
     [Column("sys_updated_at")]
     public DateTime SysUpdatedAt { get; set; } = DateTime.UtcNow;
 
@@ -114,6 +116,12 @@ public class TempBasalEntity : ITenantScoped
     public Guid? DeviceId { get; set; }
 
     /// <summary>
+    /// Foreign key to the PatientDevice table.
+    /// </summary>
+    [Column("patient_device_id")]
+    public Guid? PatientDeviceId { get; set; }
+
+    /// <summary>
     /// Pump-specific record identifier for deduplication
     /// </summary>
     [Column("pump_record_id")]
@@ -127,8 +135,22 @@ public class TempBasalEntity : ITenantScoped
     public Guid? ApsSnapshotId { get; set; }
 
     /// <summary>
+    /// Snapshot of insulin pharmacokinetic settings at the time this temp basal was set (JSONB).
+    /// </summary>
+    [Column("insulin_context", TypeName = "jsonb")]
+    public string? InsulinContextJson { get; set; }
+
+    /// <summary>
     /// Catch-all JSONB column for fields not mapped to dedicated columns
     /// </summary>
     [Column("additional_properties", TypeName = "jsonb")]
     public string? AdditionalPropertiesJson { get; set; }
+
+    /// <summary>
+    /// Soft-delete timestamp. When non-null the record is treated as deleted
+    /// by the global query filter and is invisible above the repository layer.
+    /// </summary>
+    [AuditIgnored]
+    [Column("deleted_at")]
+    public DateTime? DeletedAt { get; set; }
 }

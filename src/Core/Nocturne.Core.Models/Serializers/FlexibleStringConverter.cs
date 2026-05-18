@@ -7,6 +7,10 @@ namespace Nocturne.Core.Models.Serializers;
 /// JSON converter that handles flexible string deserialization.
 /// Converts numbers, booleans, and other primitives to their string representation.
 /// </summary>
+/// <remarks>
+/// Useful for Nightscout fields that are typed as strings but may contain numeric or boolean
+/// values in some client implementations. Objects and arrays are returned as <c>null</c>.
+/// </remarks>
 public class FlexibleStringConverter : JsonConverter<string?>
 {
     public override string? Read(

@@ -1,15 +1,32 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Devices;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V4.Devices;
 
 /// <summary>
 /// Device age endpoints for tracking consumable ages (CAGE, SAGE, IAGE, BAGE).
-/// Uses the V4 DeviceEvents system.
+/// Uses the V4 DeviceEvents system via <see cref="IDeviceAgeService"/>.
 /// </summary>
+/// <remarks>
+/// Each endpoint accepts optional threshold parameters (<c>info</c>, <c>warn</c>, <c>urgent</c>
+/// in hours) and a <c>display</c> unit (<c>hours</c> or <c>days</c>) that are forwarded as a
+/// <see cref="DeviceAgePreferences"/> object to the service. Defaults are used when parameters
+/// are not supplied.
+///
+/// <b>CAGE</b> — cannula/site age from <c>Site Change</c> events.<br/>
+/// <b>SAGE</b> — sensor age from <c>Sensor Start</c> and <c>Sensor Change</c> events.<br/>
+/// <b>IAGE</b> — insulin reservoir age from reservoir-change events.<br/>
+/// <b>BAGE</b> — pump battery age from battery-change events.<br/>
+///
+/// <c>GET /all</c> returns all four ages in a single round-trip using default preferences.
+/// </remarks>
+/// <seealso cref="IDeviceAgeService"/>
+/// <seealso cref="DeviceAgeInfo"/>
+/// <seealso cref="SensorAgeInfo"/>
 [ApiController]
+[Tags("Devices")]
 [Authorize]
 [Route("api/v4/deviceage")]
 public class DeviceAgeController : ControllerBase

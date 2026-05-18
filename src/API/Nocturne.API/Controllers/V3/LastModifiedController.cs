@@ -1,14 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Platform;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V3;
 
 /// <summary>
-/// LastModified controller that provides timestamps for when collections were last modified
+/// LastModified controller that provides timestamps for when collections were last modified.
+/// Used by clients (particularly AAPS) to determine which collections need syncing.
 /// </summary>
+/// <seealso cref="IStatusService"/>
+/// <seealso cref="LastModifiedResponse"/>
 [ApiController]
+[Tags("V3")]
 [Route("api/v3/[controller]")]
 public class LastModifiedController : ControllerBase
 {
@@ -25,9 +29,14 @@ public class LastModifiedController : ControllerBase
     }
 
     /// <summary>
-    /// Get last modified timestamps for all collections
+    /// Get last modified timestamps for all collections.
     /// </summary>
-    /// <returns>Last modified timestamps for each collection</returns>
+    /// <returns>A <see cref="LastModifiedResponse"/> with per-collection timestamps and server time.</returns>
+    /// <remarks>
+    /// On error, returns a minimal <see cref="LastModifiedResponse"/> with null timestamps
+    /// to maintain compatibility with clients that depend on this endpoint always returning 200.
+    /// </remarks>
+    /// <response code="200">Last modified timestamps for each collection.</response>
     [HttpGet]
     [NightscoutEndpoint("/api/v3/lastModified")]
     [ProducesResponseType(typeof(LastModifiedResponse), 200)]

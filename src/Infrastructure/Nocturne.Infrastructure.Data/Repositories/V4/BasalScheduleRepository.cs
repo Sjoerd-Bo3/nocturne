@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Nocturne.Core.Contracts.Audit;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models.V4;
+using Nocturne.Infrastructure.Data.Extensions;
 using Nocturne.Infrastructure.Data.Mappers.V4;
+using Nocturne.Infrastructure.Data.Services;
 
 namespace Nocturne.Infrastructure.Data.Repositories.V4;
 
@@ -11,17 +14,20 @@ namespace Nocturne.Infrastructure.Data.Repositories.V4;
 /// </summary>
 public class BasalScheduleRepository : IBasalScheduleRepository
 {
-    private readonly NocturneDbContext _context;
+    private readonly ITenantDbContextFactory _contextFactory;
+    private readonly IAuditContext _auditContext;
     private readonly ILogger<BasalScheduleRepository> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BasalScheduleRepository"/> class.
     /// </summary>
-    /// <param name="context">The database context.</param>
+    /// <param name="contextFactory">The tenant database context factory.</param>
+    /// <param name="auditContext">The audit context for tracking mutations.</param>
     /// <param name="logger">The logger instance.</param>
-    public BasalScheduleRepository(NocturneDbContext context, ILogger<BasalScheduleRepository> logger)
+    public BasalScheduleRepository(ITenantDbContextFactory contextFactory, IAuditContext auditContext, ILogger<BasalScheduleRepository> logger)
     {
-        _context = context;
+        _contextFactory = contextFactory;
+        _auditContext = auditContext;
         _logger = logger;
     }
 
@@ -48,7 +54,8 @@ public class BasalScheduleRepository : IBasalScheduleRepository
         CancellationToken ct = default
     )
     {
-        var query = _context.BasalSchedules.AsNoTracking().AsQueryable();
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var query = ctx.BasalSchedules.AsNoTracking().AsQueryable();
         if (from.HasValue)
             query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue)
@@ -70,7 +77,8 @@ public class BasalScheduleRepository : IBasalScheduleRepository
     /// <returns>The basal schedule, or null if not found.</returns>
     public async Task<BasalSchedule?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var entity = await _context.BasalSchedules.FindAsync([id], ct);
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entity = await ctx.BasalSchedules.FindAsync([id], ct);
         return entity is null ? null : BasalScheduleMapper.ToDomainModel(entity);
     }
 
@@ -82,7 +90,8 @@ public class BasalScheduleRepository : IBasalScheduleRepository
     /// <returns>The basal schedule, or null if not found.</returns>
     public async Task<BasalSchedule?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
-        var entity = await _context.BasalSchedules.FirstOrDefaultAsync(e => e.LegacyId == legacyId, ct);
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entity = await ctx.BasalSchedules.FirstOrDefaultAsync(e => e.LegacyId == legacyId, ct);
         return entity is null ? null : BasalScheduleMapper.ToDomainModel(entity);
     }
 
@@ -97,12 +106,33 @@ public class BasalScheduleRepository : IBasalScheduleRepository
         CancellationToken ct = default
     )
     {
-        var entities = await _context
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entities = await ctx
             .BasalSchedules.AsNoTracking()
             .Where(e => e.ProfileName == profileName)
             .OrderByDescending(e => e.Timestamp)
             .ToListAsync(ct);
         return entities.Select(BasalScheduleMapper.ToDomainModel);
+    }
+
+    /// <summary>
+    /// Gets the most recent basal schedule for a profile that was active at-or-before the given timestamp.
+    /// </summary>
+    /// <param name="profileName">The name of the profile.</param>
+    /// <param name="timestamp">The point-in-time to query against.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The matching basal schedule, or null if none found.</returns>
+    public async Task<BasalSchedule?> GetActiveAtAsync(
+        string profileName, DateTime timestamp, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entity = await ctx.BasalSchedules
+            .AsNoTracking()
+            .Where(e => e.ProfileName == profileName && e.Timestamp <= timestamp)
+            .OrderByDescending(e => e.Timestamp)
+            .FirstOrDefaultAsync(ct);
+
+        return entity is null ? null : BasalScheduleMapper.ToDomainModel(entity);
     }
 
     /// <summary>
@@ -113,9 +143,10 @@ public class BasalScheduleRepository : IBasalScheduleRepository
     /// <returns>The created basal schedule.</returns>
     public async Task<BasalSchedule> CreateAsync(BasalSchedule model, CancellationToken ct = default)
     {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
         var entity = BasalScheduleMapper.ToEntity(model);
-        _context.BasalSchedules.Add(entity);
-        await _context.SaveChangesAsync(ct);
+        ctx.BasalSchedules.Add(entity);
+        await ctx.SaveChangesAsync(ct);
         return BasalScheduleMapper.ToDomainModel(entity);
     }
 
@@ -128,11 +159,12 @@ public class BasalScheduleRepository : IBasalScheduleRepository
     /// <returns>The updated basal schedule.</returns>
     public async Task<BasalSchedule> UpdateAsync(Guid id, BasalSchedule model, CancellationToken ct = default)
     {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
         var entity =
-            await _context.BasalSchedules.FindAsync([id], ct)
+            await ctx.BasalSchedules.FindAsync([id], ct)
             ?? throw new KeyNotFoundException($"BasalSchedule {id} not found");
         BasalScheduleMapper.UpdateEntity(entity, model);
-        await _context.SaveChangesAsync(ct);
+        await ctx.SaveChangesAsync(ct);
         return BasalScheduleMapper.ToDomainModel(entity);
     }
 
@@ -143,11 +175,61 @@ public class BasalScheduleRepository : IBasalScheduleRepository
     /// <param name="ct">The cancellation token.</param>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
         var entity =
-            await _context.BasalSchedules.FindAsync([id], ct)
+            await ctx.BasalSchedules.FindAsync([id], ct)
             ?? throw new KeyNotFoundException($"BasalSchedule {id} not found");
-        _context.BasalSchedules.Remove(entity);
-        await _context.SaveChangesAsync(ct);
+        entity.DeletedAt = DateTime.UtcNow;
+        await ctx.SaveChangesAsync(ct);
+    }
+
+    /// <inheritdoc />
+    public async Task<BasalSchedule> RestoreAsync(Guid id, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entity = await ctx.BasalSchedules.IgnoreQueryFilters()
+            .Where(e => e.TenantId == ctx.TenantId && e.Id == id && e.DeletedAt != null)
+            .FirstOrDefaultAsync(ct)
+            ?? throw new KeyNotFoundException($"Soft-deleted BasalSchedule {id} not found");
+        entity.DeletedAt = null;
+        await ctx.SaveChangesAsync(ct);
+        return BasalScheduleMapper.ToDomainModel(entity);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<BasalSchedule>> BulkRestoreAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var idSet = ids.ToHashSet();
+        var entities = await ctx.BasalSchedules.IgnoreQueryFilters()
+            .Where(e => e.TenantId == ctx.TenantId && idSet.Contains(e.Id) && e.DeletedAt != null)
+            .ToListAsync(ct);
+        foreach (var entity in entities)
+            entity.DeletedAt = null;
+        await ctx.SaveChangesAsync(ct);
+        return entities.Select(BasalScheduleMapper.ToDomainModel);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<BasalSchedule>> GetDeletedAsync(int limit, int offset, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entities = await ctx.BasalSchedules.IgnoreQueryFilters()
+            .Where(e => e.TenantId == ctx.TenantId && e.DeletedAt != null)
+            .OrderByDescending(e => e.DeletedAt)
+            .Skip(offset).Take(limit)
+            .AsNoTracking()
+            .ToListAsync(ct);
+        return entities.Select(BasalScheduleMapper.ToDomainModel);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> CountDeletedAsync(CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        return await ctx.BasalSchedules.IgnoreQueryFilters()
+            .Where(e => e.TenantId == ctx.TenantId && e.DeletedAt != null)
+            .CountAsync(ct);
     }
 
     /// <summary>
@@ -158,7 +240,9 @@ public class BasalScheduleRepository : IBasalScheduleRepository
     /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
-        return await _context.BasalSchedules.Where(e => e.LegacyId == legacyId).ExecuteDeleteAsync(ct);
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        return await ctx.AuditedSoftDeleteAsync(
+            ctx.BasalSchedules.Where(e => e.LegacyId == legacyId), _auditContext, ct);
     }
 
     /// <summary>
@@ -169,9 +253,10 @@ public class BasalScheduleRepository : IBasalScheduleRepository
     /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteByLegacyIdPrefixAsync(string prefix, CancellationToken ct = default)
     {
-        return await _context
-            .BasalSchedules.Where(e => e.LegacyId != null && e.LegacyId.StartsWith(prefix))
-            .ExecuteDeleteAsync(ct);
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        return await ctx.AuditedSoftDeleteAsync(
+            ctx.BasalSchedules.Where(e => e.LegacyId != null && e.LegacyId.StartsWith(prefix)),
+            _auditContext, ct);
     }
 
     /// <summary>
@@ -183,7 +268,8 @@ public class BasalScheduleRepository : IBasalScheduleRepository
     /// <returns>The count of matching records.</returns>
     public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
-        var query = _context.BasalSchedules.AsNoTracking().AsQueryable();
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var query = ctx.BasalSchedules.AsNoTracking().AsQueryable();
         if (from.HasValue)
             query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue)
@@ -202,7 +288,8 @@ public class BasalScheduleRepository : IBasalScheduleRepository
         CancellationToken ct = default
     )
     {
-        var entities = await _context
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entities = await ctx
             .BasalSchedules.AsNoTracking()
             .Where(e => e.CorrelationId == correlationId)
             .ToListAsync(ct);
@@ -236,31 +323,49 @@ public class BasalScheduleRepository : IBasalScheduleRepository
             .Select(e => e.LegacyId!)
             .ToHashSet();
 
-        if (legacyIds.Count > 0)
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var strategy = ctx.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            var existingIds = await _context
-                .BasalSchedules.AsNoTracking()
-                .Where(e => legacyIds.Contains(e.LegacyId!))
-                .Select(e => e.LegacyId)
-                .ToListAsync(ct);
+            await using var tx = await ctx.Database.BeginTransactionAsync(ct);
 
-            var existingSet = existingIds.ToHashSet();
-            entities = entities
-                .Where(e => string.IsNullOrEmpty(e.LegacyId) || !existingSet.Contains(e.LegacyId))
-                .ToList();
-        }
+            if (legacyIds.Count > 0)
+            {
+                var existingRecords = await ctx.BasalSchedules.IgnoreQueryFilters().AsNoTracking()
+                    .Where(e => e.TenantId == ctx.TenantId)
+                    .Where(e => legacyIds.Contains(e.LegacyId!))
+                    .Select(e => new { e.LegacyId, IsSoftDeleted = e.DeletedAt != null })
+                    .ToListAsync(ct);
 
-        if (entities.Count == 0)
-            return [];
+                var existingSet = existingRecords.Select(r => r.LegacyId).ToHashSet();
+                var softDeletedCount = existingRecords.Count(r => r.IsSoftDeleted);
 
-        const int batchSize = 500;
-        foreach (var batch in entities.Chunk(batchSize))
-        {
-            _context.BasalSchedules.AddRange(batch);
-            await _context.SaveChangesAsync(ct);
-            _context.ChangeTracker.Clear();
-        }
+                if (softDeletedCount > 0)
+                    _logger.LogInformation(
+                        "Skipped {Count} previously-deleted {Type} records during import",
+                        softDeletedCount, "BasalSchedule");
 
-        return entities.Select(BasalScheduleMapper.ToDomainModel);
+                entities = entities
+                    .Where(e => string.IsNullOrEmpty(e.LegacyId) || !existingSet.Contains(e.LegacyId))
+                    .ToList();
+            }
+
+            if (entities.Count == 0)
+            {
+                await tx.CommitAsync(ct);
+                return [];
+            }
+
+            const int batchSize = 500;
+            foreach (var batch in entities.Chunk(batchSize))
+            {
+                ctx.BasalSchedules.AddRange(batch);
+                await ctx.SaveChangesAsync(ct);
+                ctx.ChangeTracker.Clear();
+            }
+
+            await tx.CommitAsync(ct);
+            return entities.Select(BasalScheduleMapper.ToDomainModel);
+        });
     }
 }

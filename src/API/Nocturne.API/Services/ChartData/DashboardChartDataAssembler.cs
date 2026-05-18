@@ -2,6 +2,11 @@ using Nocturne.Core.Models;
 
 namespace Nocturne.API.Services.ChartData;
 
+/// <summary>
+/// Assembles a <see cref="DashboardChartData"/> DTO by copying fields from a fully-populated
+/// <see cref="ChartDataContext"/> after all pipeline stages have run.
+/// </summary>
+/// <seealso cref="IChartDataAssembler"/>
 internal sealed class DashboardChartDataAssembler : IChartDataAssembler
 {
     public DashboardChartData Assemble(ChartDataContext context)
@@ -20,6 +25,7 @@ internal sealed class DashboardChartDataAssembler : IChartDataAssembler
             BolusMarkers = context.BolusMarkers,
             CarbMarkers = context.CarbMarkers,
             DeviceEventMarkers = context.DeviceEventMarkers,
+            BasalInjectionMarkers = context.BasalInjectionMarkers,
             BgCheckMarkers = context.BgCheckMarkers,
             PumpModeSpans = context.PumpModeSpans,
             ProfileSpans = context.ProfileSpans,
@@ -29,6 +35,8 @@ internal sealed class DashboardChartDataAssembler : IChartDataAssembler
             BasalDeliverySpans = context.BasalDeliverySpans,
             SystemEventMarkers = context.SystemEventMarkers,
             TrackerMarkers = context.TrackerMarkers,
+            HeartRateSeries = context.HeartRateSeries,
+            StepSeries = context.StepSeries,
         };
     }
 }

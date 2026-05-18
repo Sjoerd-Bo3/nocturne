@@ -3,11 +3,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Infrastructure;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Contracts.Storage;
 using Nocturne.Infrastructure.Data.Abstractions;
 using Nocturne.Infrastructure.Data.Configuration;
+using Nocturne.Core.Contracts.Audit;
 using Nocturne.Infrastructure.Data.Interceptors;
 using Nocturne.Infrastructure.Data.Repositories;
 using Nocturne.Infrastructure.Data.Services;
@@ -45,14 +47,18 @@ public static class ServiceCollectionExtensions
             );
         }
 
-        // Register the tenant connection interceptor as a singleton so the
-        // role-attribute cache is shared across all DbContext instances.
+        // Register interceptors as singletons so caches are shared across all DbContext instances.
         services.TryAddSingleton<TenantConnectionInterceptor>();
+        services.TryAddSingleton<MutationAuditInterceptor>();
+
+        // Audit config cache (singleton — uses IDbContextFactory internally)
+        services.TryAddSingleton<ITenantAuditConfigCache, TenantAuditConfigCache>();
 
         // Register NpgsqlDataSource as a singleton - this manages the connection pool
         var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(
             postgreSqlConfig.ConnectionString
         );
+        dataSourceBuilder.ConnectionStringBuilder.MaxPoolSize = postgreSqlConfig.MaxPoolSize;
         var dataSource = dataSourceBuilder.Build();
         services.AddSingleton(dataSource);
 
@@ -85,7 +91,9 @@ public static class ServiceCollectionExtensions
                 }
 
                 options.EnableServiceProviderCaching();
-                options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>());
+                options.AddInterceptors(
+                    sp.GetRequiredService<TenantConnectionInterceptor>(),
+                    sp.GetRequiredService<MutationAuditInterceptor>());
             },
             poolSize: 128
         );
@@ -105,20 +113,22 @@ public static class ServiceCollectionExtensions
             return context;
         });
 
+        // Register tenant-aware context factory for V4 repositories
+        services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
+
         // Register deduplication service (required by repositories)
         services.AddScoped<IDeduplicationService, DeduplicationService>();
 
         // Register all repositories via their port interfaces
-        services.AddScoped<IEntryRepository, EntryRepository>();
-        services.AddScoped<ITreatmentRepository, TreatmentRepository>();
-        services.AddScoped<IProfileRepository, ProfileRepository>();
-        services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
         services.AddScoped<IFoodRepository, FoodRepository>();
-        services.AddScoped<IActivityRepository, ActivityRepository>();
+
         services.AddScoped<ISettingsRepository, SettingsRepository>();
 
         // Register Nightscout query parser
         services.AddScoped<IQueryParser, QueryParser>();
+
+        // Register avatar storage
+        services.AddScoped<IAvatarStore, DatabaseAvatarStore>();
 
         return services;
     }
@@ -165,14 +175,19 @@ public static class ServiceCollectionExtensions
             options.MaxRetryCount = config.MaxRetryCount;
             options.MaxRetryDelaySeconds = config.MaxRetryDelaySeconds;
             options.CommandTimeoutSeconds = config.CommandTimeoutSeconds;
+            options.MaxPoolSize = config.MaxPoolSize;
         });
 
-        // Register the tenant connection interceptor as a singleton so the
-        // role-attribute cache is shared across all DbContext instances.
+        // Register interceptors as singletons so caches are shared across all DbContext instances.
         services.TryAddSingleton<TenantConnectionInterceptor>();
+        services.TryAddSingleton<MutationAuditInterceptor>();
+
+        // Audit config cache (singleton — uses IDbContextFactory internally)
+        services.TryAddSingleton<ITenantAuditConfigCache, TenantAuditConfigCache>();
 
         // Register NpgsqlDataSource as a singleton - this manages the connection pool
         var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(config.ConnectionString);
+        dataSourceBuilder.ConnectionStringBuilder.MaxPoolSize = config.MaxPoolSize;
         var dataSource = dataSourceBuilder.Build();
         services.AddSingleton(dataSource);
 
@@ -205,12 +220,29 @@ public static class ServiceCollectionExtensions
                 }
 
                 options.EnableServiceProviderCaching();
-                options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>());
+                options.AddInterceptors(
+                    sp.GetRequiredService<TenantConnectionInterceptor>(),
+                    sp.GetRequiredService<MutationAuditInterceptor>());
             },
             poolSize: 128
         );
 
+        // Register scoped DbContext, repositories, and shared services.
+        AddDataServices(services);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Register scoped NocturneDbContext, repository interfaces, deduplication, and query parser.
+    /// Called by AddPostgreSqlInfrastructure; also usable independently by test factories
+    /// that provide their own IDbContextFactory without creating an NpgsqlDataSource.
+    /// </summary>
+    public static IServiceCollection AddDataServices(this IServiceCollection services)
+    {
         // Register scoped NocturneDbContext that sets TenantId from ITenantAccessor.
+        // All existing constructor injections of NocturneDbContext continue to work.
+        // The context is returned to the pool when the scope ends.
         services.AddScoped(sp =>
         {
             var factory = sp.GetRequiredService<IDbContextFactory<NocturneDbContext>>();
@@ -223,20 +255,22 @@ public static class ServiceCollectionExtensions
             return context;
         });
 
+        // Register tenant-aware context factory for V4 repositories
+        services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
+
         // Register deduplication service (required by repositories)
         services.AddScoped<IDeduplicationService, DeduplicationService>();
 
         // Register all repositories via their port interfaces
-        services.AddScoped<IEntryRepository, EntryRepository>();
-        services.AddScoped<ITreatmentRepository, TreatmentRepository>();
-        services.AddScoped<IProfileRepository, ProfileRepository>();
-        services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
         services.AddScoped<IFoodRepository, FoodRepository>();
-        services.AddScoped<IActivityRepository, ActivityRepository>();
+
         services.AddScoped<ISettingsRepository, SettingsRepository>();
 
         // Register Nightscout query parser
         services.AddScoped<IQueryParser, QueryParser>();
+
+        // Register avatar storage
+        services.AddScoped<IAvatarStore, DatabaseAvatarStore>();
 
         return services;
     }
@@ -293,10 +327,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITrackerRepository, TrackerRepository>();
         services.AddScoped<IStateSpanRepository, StateSpanRepository>();
         services.AddScoped<ISystemEventRepository, SystemEventRepository>();
-        services.AddScoped<ITreatmentFoodRepository, TreatmentFoodRepository>();
         services.AddScoped<IUserFoodFavoriteRepository, UserFoodFavoriteRepository>();
-        services.AddScoped<EntryRepository>();
-        services.AddScoped<TreatmentRepository>();
+        services.AddScoped<ITreatmentFoodRepository, TreatmentFoodRepository>();
         return services;
     }
 }

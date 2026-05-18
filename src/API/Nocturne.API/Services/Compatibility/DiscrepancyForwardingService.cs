@@ -9,18 +9,18 @@ using Nocturne.Core.Models;
 namespace Nocturne.API.Services.Compatibility;
 
 /// <summary>
-/// Service for forwarding discrepancies to a remote endpoint
+/// Forwards compatibility-proxy discrepancy analysis results to an external Nocturne
+/// telemetry endpoint and/or writes them to the local filesystem for offline review.
 /// </summary>
+/// <seealso cref="DiscrepancyForwardingService"/>
 public interface IDiscrepancyForwardingService
 {
     /// <summary>
-    /// Forward a discrepancy analysis to the configured remote endpoint
+    /// Forwards a discrepancy analysis. The call is a no-op (returns <see langword="true"/>)
+    /// when the analysis falls below <c>MinimumSeverity</c> or when both
+    /// <c>Enabled</c> and <c>SaveRawData</c> are <see langword="false"/>.
+    /// File saving and remote forwarding can be enabled independently.
     /// </summary>
-    /// <param name="analysis">The discrepancy analysis to forward</param>
-    /// <param name="requestMethod">The HTTP method of the original request</param>
-    /// <param name="requestPath">The path of the original request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>True if forwarding succeeded, false otherwise</returns>
     Task<bool> ForwardDiscrepancyAsync(
         ResponseComparisonResult analysis,
         string requestMethod,
@@ -30,8 +30,28 @@ public interface IDiscrepancyForwardingService
 }
 
 /// <summary>
-/// Implementation of discrepancy forwarding service
+/// <see cref="IDiscrepancyForwardingService"/> implementation that supports both file-based
+/// and HTTP forwarding of discrepancy payloads.
 /// </summary>
+/// <remarks>
+/// <para>
+/// File names embed a UTC timestamp and a sanitised correlation ID so that they sort
+/// chronologically and can be correlated back to the originating request. Relative
+/// <c>DataDirectory</c> paths are resolved relative to <c>AppContext.BaseDirectory</c>.
+/// </para>
+/// <para>
+/// HTTP forwarding always targets the fixed path <c>/api/v4/discrepancy/ingest</c> on the
+/// configured <c>EndpointUrl</c>. Retries use exponential back-off; 4xx responses are not
+/// retried because they indicate a permanent client-side error. The HTTP client is named
+/// <see cref="HttpClientName"/> and must be registered in the DI container.
+/// </para>
+/// <para>
+/// Severity is determined by examining <see cref="ResponseMatchType"/> and the highest
+/// <see cref="DiscrepancySeverity"/> among individual discrepancies. The check-order is:
+/// match type (critical/major) → individual discrepancy severity (critical → major → minor).
+/// </para>
+/// </remarks>
+/// <seealso cref="IDiscrepancyForwardingService"/>
 public class DiscrepancyForwardingService : IDiscrepancyForwardingService
 {
     private readonly IHttpClientFactory _httpClientFactory;

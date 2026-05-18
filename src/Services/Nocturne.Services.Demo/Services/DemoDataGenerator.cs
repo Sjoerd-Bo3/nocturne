@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 using Nocturne.Core.Constants;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Devices;
 using Nocturne.Core.Models;
 using Nocturne.Services.Demo.Configuration;
 

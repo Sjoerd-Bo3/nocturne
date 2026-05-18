@@ -2,29 +2,41 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Authorization;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Profiles;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
-/// Profile controller that provides 1:1 compatibility with Nightscout profile endpoints
-/// Implements the /api/v1/profile/* endpoints from the legacy JavaScript implementation
+/// Profile controller that provides 1:1 compatibility with Nightscout profile endpoints.
+/// Implements the /api/v1/profile/* endpoints from the legacy JavaScript implementation.
 /// </summary>
+/// <seealso cref="IProfileProjectionService"/>
+/// <seealso cref="IProfileWriteService"/>
 [ApiController]
+[Tags("V1")]
 [Route("api/v1/[controller]")]
 [Authorize(Policy = PolicyNames.HasPermissions)]
 public class ProfileController : ControllerBase
 {
-    private readonly IProfileDataService _profileDataService;
+    private readonly IProfileProjectionService _projectionService;
+    private readonly IProfileWriteService _writeService;
     private readonly ILogger<ProfileController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ProfileController"/>.
+    /// </summary>
+    /// <param name="projectionService">Service for reading legacy profile projections from V4 data.</param>
+    /// <param name="writeService">Service for profile write operations.</param>
+    /// <param name="logger">Logger instance.</param>
     public ProfileController(
-        IProfileDataService profileDataService,
+        IProfileProjectionService projectionService,
+        IProfileWriteService writeService,
         ILogger<ProfileController> logger
     )
     {
-        _profileDataService = profileDataService;
+        _projectionService = projectionService;
+        _writeService = writeService;
         _logger = logger;
     }
 
@@ -53,10 +65,10 @@ public class ProfileController : ControllerBase
         {
             // Limit count to reasonable maximum to prevent abuse
             count = Math.Max(1, Math.Min(count, 1000));
-            var profiles = await _profileDataService.GetProfilesAsync(
+            var profiles = await _projectionService.GetProfilesAsync(
                 count: count,
                 skip: 0,
-                cancellationToken: cancellationToken
+                ct: cancellationToken
             );
             var profilesArray = profiles.ToArray();
 
@@ -165,7 +177,7 @@ public class ProfileController : ControllerBase
                 return Ok(Array.Empty<Profile>());
             }
 
-            var createdProfiles = await _profileDataService.CreateProfilesAsync(
+            var createdProfiles = await _writeService.CreateProfilesAsync(
                 profiles,
                 cancellationToken
             );
@@ -202,7 +214,7 @@ public class ProfileController : ControllerBase
 
         try
         {
-            var profile = await _profileDataService.GetCurrentProfileAsync(cancellationToken);
+            var profile = await _projectionService.GetCurrentProfileAsync(cancellationToken);
 
             if (profile == null)
             {
@@ -278,7 +290,7 @@ public class ProfileController : ControllerBase
             if (isId)
             {
                 // Fetch specific profile by ID
-                var profile = await _profileDataService.GetProfileByIdAsync(
+                var profile = await _projectionService.GetProfileByIdAsync(
                     spec,
                     cancellationToken
                 );

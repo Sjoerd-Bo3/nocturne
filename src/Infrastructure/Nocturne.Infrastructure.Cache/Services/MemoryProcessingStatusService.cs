@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Infrastructure;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Constants;
 

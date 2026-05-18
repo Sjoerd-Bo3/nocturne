@@ -43,9 +43,13 @@ public class OpenApsPreferences
 }
 
 /// <summary>
-/// OpenAPS loop status result from analyzeData()
-/// Maintains 1:1 compatibility with the legacy implementation
+/// OpenAPS loop status result from analyzeData().
+/// Maintains 1:1 compatibility with the legacy implementation.
 /// </summary>
+/// <seealso cref="OpenApsCommand"/>
+/// <seealso cref="OpenApsIob"/>
+/// <seealso cref="OpenApsPredBg"/>
+/// <seealso cref="OpenApsLoopStatus"/>
 public class OpenApsAnalysisResult
 {
     /// <summary>

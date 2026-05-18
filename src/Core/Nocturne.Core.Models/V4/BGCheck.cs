@@ -1,8 +1,28 @@
 namespace Nocturne.Core.Models.V4;
 
 /// <summary>
-/// Blood glucose check record (finger stick or sensor check)
+/// Blood glucose check record (finger stick or sensor check) with user-entered glucose value.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This is the V4 equivalent of a legacy <see cref="Treatment"/> with type <c>mbg</c>
+/// (manual blood glucose). The <see cref="Glucose"/> value and <see cref="Units"/> are the
+/// source of truth as entered by the user; <see cref="Mgdl"/> and <see cref="Mmol"/> are
+/// computed properties that normalize to both unit systems.
+/// </para>
+/// <para>
+/// <see cref="Mgdl"/> is computed as: if <see cref="Units"/> is <see cref="GlucoseUnit.Mmol"/>,
+/// then <c>Glucose * 18.0182</c>; otherwise <c>Glucose</c> as-is.
+/// <see cref="Mmol"/> is the inverse: if already mmol/L, returns <c>Glucose</c>; otherwise
+/// <c>Glucose / 18.0182</c>.
+/// </para>
+/// </remarks>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="IV4Record"/>
+/// <seealso cref="MeterGlucose"/>
+/// <seealso cref="SensorGlucose"/>
+/// <seealso cref="GlucoseType"/>
+/// <seealso cref="GlucoseUnit"/>
 public class BGCheck : IV4Record
 {
     /// <summary>
@@ -66,23 +86,29 @@ public class BGCheck : IV4Record
     public double Glucose { get; set; }
 
     /// <summary>
-    /// Source type of the glucose reading (Finger, Sensor)
+    /// Source type of the glucose reading (<see cref="V4.GlucoseType.Finger"/> or <see cref="V4.GlucoseType.Sensor"/>).
     /// </summary>
     public GlucoseType? GlucoseType { get; set; }
 
     /// <summary>
-    /// Unit of measurement for the Glucose value (source of truth)
+    /// Unit of measurement for the <see cref="Glucose"/> value (source of truth).
     /// </summary>
     public GlucoseUnit? Units { get; set; }
 
     /// <summary>
-    /// Glucose in mg/dL (computed from Glucose + Units)
+    /// Glucose in mg/dL, computed from <see cref="Glucose"/> and <see cref="Units"/>.
     /// </summary>
+    /// <remarks>
+    /// Computed as <c>Units == GlucoseUnit.Mmol ? Glucose * 18.0182 : Glucose</c>.
+    /// </remarks>
     public double Mgdl => Units == GlucoseUnit.Mmol ? Glucose * 18.0182 : Glucose;
 
     /// <summary>
-    /// Glucose in mmol/L (computed from Glucose + Units)
+    /// Glucose in mmol/L, computed from <see cref="Glucose"/> and <see cref="Units"/>.
     /// </summary>
+    /// <remarks>
+    /// Computed as <c>Units == GlucoseUnit.Mmol ? Glucose : Glucose / 18.0182</c>.
+    /// </remarks>
     public double Mmol => Units == GlucoseUnit.Mmol ? Glucose : Glucose / 18.0182;
 
     /// <summary>

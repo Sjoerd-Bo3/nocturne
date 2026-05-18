@@ -3,8 +3,10 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Category of state span for grouping and UI filtering
+/// Category of state span for grouping and UI filtering.
+/// Used by <see cref="StateSpan.Category"/> to classify the nature of the time period.
 /// </summary>
+/// <seealso cref="StateSpan"/>
 [JsonConverter(typeof(JsonStringEnumConverter<StateSpanCategory>))]
 public enum StateSpanCategory
 {

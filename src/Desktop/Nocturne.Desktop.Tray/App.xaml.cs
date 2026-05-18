@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;
+using Nocturne.Core.Models.Widget;
 using Nocturne.Desktop.Tray.Services;
 using Nocturne.Desktop.Tray.TrayIcon;
 using Nocturne.Desktop.Tray.Views;
@@ -180,14 +181,6 @@ public partial class App : Application
         if (history.Count > 0)
         {
             _glucoseState.SetHistory(history);
-            return;
-        }
-
-        // Fallback: fetch from v1 entries endpoint which queries by time range directly
-        var readings = await _nocturneClient.FetchRecentReadingsAsync(hours, _appCts.Token);
-        if (readings.Count > 0)
-        {
-            _glucoseState.SetHistory(readings);
         }
         else if (current is not null)
         {
@@ -195,7 +188,7 @@ public partial class App : Application
         }
     }
 
-    private void OnGlucoseReading(Models.GlucoseReading reading)
+    private void OnGlucoseReading(V4GlucoseReading reading)
     {
         _hiddenWindow.DispatcherQueue.TryEnqueue(
             DispatcherQueuePriority.Normal,
@@ -226,7 +219,7 @@ public partial class App : Application
                 try
                 {
                     var hours = _settingsService.Settings.ChartHours;
-                    var readings = await _nocturneClient.FetchRecentReadingsAsync(hours, _appCts.Token);
+                    var (_, readings) = await _nocturneClient.FetchSummaryAsync(hours, _appCts.Token);
                     if (readings.Count > 0)
                     {
                         _glucoseState.MergeReadings(readings);

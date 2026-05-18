@@ -12,7 +12,10 @@ namespace Nocturne.API.Controllers.V4.Identity;
 /// Tenant-scoped chat identity link management. Backed by the global
 /// ChatIdentityDirectory table via <see cref="ChatIdentityService"/>.
 /// </summary>
+/// <seealso cref="ChatIdentityService"/>
+/// <seealso cref="ITenantAccessor"/>
 [ApiController]
+[Tags("Identity")]
 [Authorize]
 [Route("api/v4/chat-identity")]
 public class ChatIdentityController : ControllerBase
@@ -20,6 +23,11 @@ public class ChatIdentityController : ControllerBase
     private readonly ChatIdentityService _service;
     private readonly ITenantAccessor _tenantAccessor;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ChatIdentityController"/>.
+    /// </summary>
+    /// <param name="service">Service managing chat identity link storage and retrieval.</param>
+    /// <param name="tenantAccessor">Accessor for the current request tenant context.</param>
     public ChatIdentityController(
         ChatIdentityService service,
         ITenantAccessor tenantAccessor)
@@ -28,6 +36,11 @@ public class ChatIdentityController : ControllerBase
         _tenantAccessor = tenantAccessor;
     }
 
+    /// <summary>
+    /// Resolves the authenticated user's subject ID or throws if unavailable.
+    /// </summary>
+    /// <returns>The authenticated subject's <see cref="Guid"/>.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="AuthContext"/> is missing or has no subject ID.</exception>
     private Guid GetUserIdOrThrow()
     {
         var authContext = HttpContext.Items["AuthContext"] as AuthContext

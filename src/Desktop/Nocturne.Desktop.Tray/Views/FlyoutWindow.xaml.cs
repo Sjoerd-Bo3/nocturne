@@ -3,6 +3,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Nocturne.Desktop.Tray.Helpers;
+using Nocturne.Desktop.Tray.Extensions;
 using Nocturne.Desktop.Tray.Models;
 using Nocturne.Desktop.Tray.Services;
 using Windows.Graphics;
@@ -72,7 +73,7 @@ public sealed partial class FlyoutWindow : Window
         }
     }
 
-    public new void Show()
+    public void Show()
     {
         RefreshContent();
         PositionNearTaskbar();
@@ -84,7 +85,7 @@ public sealed partial class FlyoutWindow : Window
         this.Activated += OnDeactivated;
     }
 
-    public new void Hide()
+    public void Hide()
     {
         var appWindow = GetAppWindow();
         appWindow.Hide();
@@ -101,7 +102,7 @@ public sealed partial class FlyoutWindow : Window
 
         UpdateConnectionStatus(_glucoseState.IsConnected);
 
-        DeviceText.Text = _glucoseState.CurrentReading?.Device ?? "";
+        DeviceText.Text = "";
     }
 
     public void UpdateConnectionStatus(bool isConnected)

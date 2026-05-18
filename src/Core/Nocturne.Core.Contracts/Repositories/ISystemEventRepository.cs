@@ -3,8 +3,11 @@ using Nocturne.Core.Models;
 namespace Nocturne.Core.Contracts.Repositories;
 
 /// <summary>
-/// Repository port for SystemEvent operations.
+/// Repository port for <see cref="SystemEvent"/> operations.
 /// </summary>
+/// <seealso cref="SystemEvent"/>
+/// <seealso cref="SystemEventType"/>
+/// <seealso cref="SystemEventCategory"/>
 public interface ISystemEventRepository
 {
     /// <summary>

@@ -1,9 +1,27 @@
 namespace Nocturne.Core.Models.V4;
 
 /// <summary>
-/// Temporary basal rate change record — a time-ranged event
-/// representing a deviation from the scheduled basal rate
+/// Temporary basal rate change record -- a time-ranged event
+/// representing a deviation from the scheduled basal rate.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This is the V4 equivalent of legacy <see cref="Treatment"/> records with event type
+/// "Temp Basal". Unlike most <see cref="IV4Record"/> types, <see cref="TempBasal"/> has
+/// both a <see cref="StartTimestamp"/> and an <see cref="EndTimestamp"/> (span-based),
+/// and does not implement <see cref="IV4Record"/> directly.
+/// </para>
+/// <para>
+/// <see cref="Origin"/> indicates whether the temp basal was set by an APS algorithm,
+/// manually by the user, or inferred from pump data.
+/// </para>
+/// </remarks>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="TempBasalOrigin"/>
+/// <seealso cref="Bolus"/>
+/// <seealso cref="ApsSnapshot"/>
+/// <seealso cref="BasalSchedule"/>
+/// <seealso cref="Device"/>
 public class TempBasal
 {
     /// <summary>
@@ -22,12 +40,13 @@ public class TempBasal
     public DateTime? EndTimestamp { get; set; }
 
     /// <summary>
-    /// Start timestamp in Unix milliseconds (computed for v1/v3 compatibility)
+    /// Start timestamp in Unix milliseconds, computed from <see cref="StartTimestamp"/>.
     /// </summary>
     public long StartMills => new DateTimeOffset(StartTimestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
 
     /// <summary>
-    /// End timestamp in Unix milliseconds (computed for v1/v3 compatibility)
+    /// End timestamp in Unix milliseconds, computed from <see cref="EndTimestamp"/>.
+    /// Returns <c>null</c> when <see cref="EndTimestamp"/> is not set.
     /// </summary>
     public long? EndMills => EndTimestamp.HasValue ? new DateTimeOffset(EndTimestamp.Value, TimeSpan.Zero).ToUnixTimeMilliseconds() : null;
 
@@ -82,24 +101,38 @@ public class TempBasal
     public double? ScheduledRate { get; set; }
 
     /// <summary>
-    /// Origin of this temp basal (Algorithm, Scheduled, Manual, Suspended, Inferred)
+    /// Origin of this temp basal: <see cref="TempBasalOrigin.Algorithm"/>,
+    /// <see cref="TempBasalOrigin.Scheduled"/>, <see cref="TempBasalOrigin.Manual"/>,
+    /// <see cref="TempBasalOrigin.Suspended"/>, or <see cref="TempBasalOrigin.Inferred"/>.
     /// </summary>
     public TempBasalOrigin Origin { get; set; }
 
     /// <summary>
-    /// Foreign key to the Device table
+    /// Foreign key to the <see cref="Device"/> table.
     /// </summary>
     public Guid? DeviceId { get; set; }
 
     /// <summary>
-    /// Pump-specific record identifier for deduplication
+    /// Foreign key to the <see cref="PatientDevice"/> table.
+    /// </summary>
+    public Guid? PatientDeviceId { get; set; }
+
+    /// <summary>
+    /// Pump-specific record identifier for deduplication.
     /// </summary>
     public string? PumpRecordId { get; set; }
 
     /// <summary>
-    /// FK to the ApsSnapshot whose algorithm decision set this temp basal
+    /// FK to the <see cref="ApsSnapshot"/> whose algorithm decision set this temp basal.
     /// </summary>
     public Guid? ApsSnapshotId { get; set; }
+
+    /// <summary>
+    /// Snapshot of the insulin pharmacokinetic settings active when this temp basal was set.
+    /// Used by the IOB calculator for per-insulin basal IOB decay curves.
+    /// When null, falls back to profile-level DIA.
+    /// </summary>
+    public TreatmentInsulinContext? InsulinContext { get; set; }
 
     /// <summary>
     /// Catch-all for fields not mapped to dedicated columns

@@ -8,7 +8,7 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Maps to Nocturne.Core.Models.Settings
 /// </summary>
 [Table("settings")]
-public class SettingsEntity : ITenantScoped
+public class SettingsEntity : ITenantScoped, IAuditable
 {
     /// <summary>
     /// Identifier of the tenant this setting belongs to
@@ -120,12 +120,14 @@ public class SettingsEntity : ITenantScoped
     /// <summary>
     /// System-generated creation timestamp for audit tracking
     /// </summary>
+    [AuditIgnored]
     [Column("sys_created_at")]
     public DateTime SysCreatedAt { get; set; }
 
     /// <summary>
     /// System-generated update timestamp for audit tracking
     /// </summary>
+    [AuditIgnored]
     [Column("sys_updated_at")]
     public DateTime SysUpdatedAt { get; set; }
 

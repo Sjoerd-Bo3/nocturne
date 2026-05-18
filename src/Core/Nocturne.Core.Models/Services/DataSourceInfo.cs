@@ -87,11 +87,24 @@ public class DataSourceInfo
     public string Icon { get; set; } = string.Empty;
 
     /// <summary>
+    /// If this data source is from a server connector, the connector's identifier.
+    /// Null for uploader apps and unknown sources.
+    /// </summary>
+    [JsonPropertyName("connectorId")]
+    public string? ConnectorId { get; set; }
+
+    /// <summary>
+    /// When the connector last successfully completed a sync.
+    /// Null for non-connector data sources.
+    /// </summary>
+    [JsonPropertyName("lastSuccessfulSync")]
+    public DateTimeOffset? LastSuccessfulSync { get; set; }
+
+    /// <summary>
     /// Whether this source is currently considered healthy (received data recently)
     /// </summary>
     [JsonPropertyName("isHealthy")]
-    public bool IsHealthy =>
-        Status == "active" || (MinutesSinceLastData.HasValue && MinutesSinceLastData.Value < 15);
+    public bool IsHealthy => Status == "active";
 }
 
 /// <summary>
@@ -228,39 +241,52 @@ public class SelectOption
 }
 
 /// <summary>
-/// Represents an uploader application that can push data to Nocturne
+/// Platform an uploader app runs on
+/// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter<UploaderPlatform>))]
+public enum UploaderPlatform
+{
+    [JsonStringEnumMemberName("android")] Android,
+    [JsonStringEnumMemberName("ios")] iOS,
+    [JsonStringEnumMemberName("desktop")] Desktop,
+    [JsonStringEnumMemberName("web")] Web,
+}
+
+/// <summary>
+/// Category of uploader app
+/// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter<UploaderCategory>))]
+public enum UploaderCategory
+{
+    [JsonStringEnumMemberName("cgm")] Cgm,
+    [JsonStringEnumMemberName("aid-system")] AidSystem,
+    [JsonStringEnumMemberName("uploader")] Uploader,
+}
+
+/// <summary>
+/// Represents an uploader application that can push data to Nocturne.
+/// Display strings (name, description, setup instructions) live on the frontend,
+/// keyed by <see cref="Id"/>.
 /// </summary>
 public class UploaderApp
 {
     /// <summary>
-    /// Unique identifier
+    /// Unique identifier (e.g. "xdrip", "loop", "aaps")
     /// </summary>
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 
     /// <summary>
-    /// Display name
-    /// </summary>
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Platform: android, ios, desktop, web
+    /// Platform the app runs on
     /// </summary>
     [JsonPropertyName("platform")]
-    public string Platform { get; set; } = string.Empty;
+    public UploaderPlatform Platform { get; set; }
 
     /// <summary>
-    /// Short description
-    /// </summary>
-    [JsonPropertyName("description")]
-    public string Description { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Category: cgm, pump, aid-system, uploader
+    /// Category of uploader
     /// </summary>
     [JsonPropertyName("category")]
-    public string Category { get; set; } = string.Empty;
+    public UploaderCategory Category { get; set; }
 
     /// <summary>
     /// Icon identifier
@@ -269,34 +295,10 @@ public class UploaderApp
     public string Icon { get; set; } = string.Empty;
 
     /// <summary>
-    /// Setup instructions
-    /// </summary>
-    [JsonPropertyName("setupInstructions")]
-    public List<SetupStep>? SetupInstructions { get; set; }
-
-    /// <summary>
     /// URL for app download or more info
     /// </summary>
     [JsonPropertyName("url")]
     public string? Url { get; set; }
-}
-
-/// <summary>
-/// A step in setup instructions
-/// </summary>
-public class SetupStep
-{
-    [JsonPropertyName("step")]
-    public int Step { get; set; }
-
-    [JsonPropertyName("title")]
-    public string Title { get; set; } = string.Empty;
-
-    [JsonPropertyName("description")]
-    public string Description { get; set; } = string.Empty;
-
-    [JsonPropertyName("imageUrl")]
-    public string? ImageUrl { get; set; }
 }
 
 /// <summary>

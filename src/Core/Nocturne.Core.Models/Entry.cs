@@ -6,8 +6,18 @@ using Nocturne.Core.Models.Serializers;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Represents an entry for glucose readings, similar to the legacy sgv collection
+/// Represents an entry for glucose readings, similar to the legacy sgv collection.
 /// </summary>
+/// <remarks>
+/// Follows the mills-first timestamp pattern: <see cref="Mills"/> is the source of truth.
+/// <see cref="Date"/> and <see cref="DateString"/> are computed properties that derive from Mills
+/// (or fall back to each other when Mills is not set). All three properties are mutually computed
+/// to ensure consistency regardless of which field the client provides.
+/// </remarks>
+/// <seealso cref="ProcessableDocumentBase"/>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="DeviceStatus"/>
+/// <seealso cref="Direction"/>
 public class Entry : ProcessableDocumentBase
 {
     /// <summary>
@@ -28,6 +38,11 @@ public class Entry : ProcessableDocumentBase
         {
             if (_mills != 0)
                 return _mills;
+
+            // Nightscout returns "date" (Unix ms) as the primary timestamp on entries.
+            // "mills" is only added by some clients, so fall back to "date" first.
+            if (_dateMills != 0)
+                return _dateMills;
 
             // If mills is not set but date is available, calculate it
             if (_date.HasValue)
@@ -59,6 +74,19 @@ public class Entry : ProcessableDocumentBase
         set => _mills = value;
     }
     private long _mills;
+
+    /// <summary>
+    /// Captures the Nightscout "date" field (Unix milliseconds).
+    /// Nightscout entries use "date" as their primary timestamp; "mills" is not always present.
+    /// </summary>
+    [JsonPropertyName("date")]
+    [JsonConverter(typeof(FlexibleLongConverter))]
+    public long DateMills
+    {
+        get => _dateMills;
+        set => _dateMills = value;
+    }
+    private long _dateMills;
 
     /// <summary>
     /// Gets or sets the date and time when this glucose reading was taken.
@@ -343,27 +371,58 @@ public class Entry : ProcessableDocumentBase
     [NocturneOnly]
     public string[]? Sources { get; set; }
 
+    /// <summary>
+    /// Gets or sets the application identifier that created this entry.
+    /// </summary>
     [JsonPropertyName("app")]
     public string? App { get; set; }
 
+    /// <summary>
+    /// Gets or sets the glucose units (e.g., "mg/dl", "mmol"). V3 compatibility field.
+    /// </summary>
     [JsonPropertyName("units")]
     public string? Units { get; set; }
 
+    /// <summary>
+    /// Gets or sets whether this entry is valid. V3 compatibility field.
+    /// </summary>
     [JsonPropertyName("isValid")]
     public bool? IsValid { get; set; }
 
+    /// <summary>
+    /// Gets or sets whether this entry is read-only. V3 compatibility field.
+    /// </summary>
     [JsonPropertyName("isReadOnly")]
     public bool? IsReadOnly { get; set; }
 
+    /// <summary>
+    /// Gets the V3 API identifier - alias for <see cref="ProcessableDocumentBase.Id"/>.
+    /// </summary>
     [JsonPropertyName("identifier")]
     public string? Identifier => Id;
 
+    /// <summary>
+    /// Gets or sets the server-modified timestamp (Unix milliseconds). V3 compatibility field.
+    /// </summary>
     [JsonPropertyName("srvModified")]
     public long? SrvModified { get; set; }
 
+    /// <summary>
+    /// Gets or sets the server-created timestamp (Unix milliseconds). V3 compatibility field.
+    /// </summary>
     [JsonPropertyName("srvCreated")]
     public long? SrvCreated { get; set; }
 
+    /// <summary>
+    /// Gets or sets the subject identifier. V3 compatibility field.
+    /// </summary>
     [JsonPropertyName("subject")]
     public string? Subject { get; set; }
+
+    /// <summary>
+    /// Catches unknown JSON fields during v1/v3 deserialization so they survive round-trip
+    /// through the API (e.g. <c>glucoseProcessing</c>, <c>smoothedMgdl</c>).
+    /// </summary>
+    [System.Text.Json.Serialization.JsonExtensionData]
+    public Dictionary<string, object>? AdditionalProperties { get; set; }
 }

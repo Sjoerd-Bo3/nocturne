@@ -35,12 +35,34 @@ public class InAppNotificationEntity : ITenantScoped
     public string UserId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Type of notification for categorization and handling
+    /// Open-ended notification type string (e.g., "tracker.alert", "glucose.predicted_low")
     /// </summary>
     [Required]
     [Column("type")]
+    [MaxLength(100)]
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Broad rendering category that determines visual treatment
+    /// </summary>
+    [Required]
+    [Column("category")]
+    [MaxLength(20)]
+    public NotificationCategory Category { get; set; }
+
+    /// <summary>
+    /// Optional icon override (Lucide icon name) for custom notification rendering
+    /// </summary>
+    [Column("icon")]
     [MaxLength(50)]
-    public InAppNotificationType Type { get; set; }
+    public string? Icon { get; set; }
+
+    /// <summary>
+    /// Optional source system or subsystem that created this notification
+    /// </summary>
+    [Column("source")]
+    [MaxLength(100)]
+    public string? Source { get; set; }
 
     /// <summary>
     /// Urgency level for prioritization and visual styling

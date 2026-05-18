@@ -1,5 +1,4 @@
 using System.IdentityModel.Tokens.Jwt;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Authorization;
 

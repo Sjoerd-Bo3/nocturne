@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
 using Nocturne.Connectors.Core.Services;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Profiles;
 using Nocturne.Core.Models.Configuration;
 
 namespace Nocturne.API.Controllers.V4.Profiles;
@@ -12,7 +12,9 @@ namespace Nocturne.API.Controllers.V4.Profiles;
 /// This endpoint provides aggregated settings for all frontend settings pages.
 /// Supports both GET (read) and PUT (write) operations for settings persistence.
 /// </summary>
+/// <seealso cref="IUISettingsService"/>
 [ApiController]
+[Tags("Profiles")]
 [Route("api/v4/ui-settings")]
 [ClientPropertyName("uiSettings")]
 public class UISettingsController : ControllerBase
@@ -22,6 +24,13 @@ public class UISettingsController : ControllerBase
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IUISettingsService _settingsService;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="UISettingsController"/>.
+    /// </summary>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="configuration">Application configuration (used for DemoMode settings).</param>
+    /// <param name="httpClientFactory">Factory for creating HTTP clients to proxy demo service calls.</param>
+    /// <param name="settingsService">Service for persisting and retrieving UI settings.</param>
     public UISettingsController(
         ILogger<UISettingsController> logger,
         IConfiguration configuration,
@@ -379,6 +388,11 @@ public class UISettingsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Resolves the authenticated user's ID from standard name identifier or sub claims.
+    /// Falls back to a fixed development placeholder when auth is not fully configured.
+    /// </summary>
+    /// <returns>The user identifier string.</returns>
     private string GetUserId()
     {
         var userId =
@@ -490,15 +504,6 @@ public class UISettingsController : ControllerBase
                         AscendDurationSeconds = 45,
                     },
                 },
-            },
-            QuietHours = new QuietHoursConfiguration
-            {
-                Enabled = false,
-                StartTime = "22:00",
-                EndTime = "07:00",
-                AllowCritical = true,
-                ReduceVolume = true,
-                QuietVolume = 30,
             },
         };
     }

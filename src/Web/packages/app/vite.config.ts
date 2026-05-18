@@ -1,11 +1,11 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, searchForWorkspaceRoot } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import commonjs from "vite-plugin-commonjs";
 import lingo from 'vite-plugin-lingo';
 import tailwindcss from "@tailwindcss/vite";
-import { resolve } from "path";
 import { setupBridge } from "@nocturne/bridge";
-import { wuchale } from '@wuchale/vite-plugin'
+// WUCHALE-DISABLED: wuchale temporarily disabled — see also hooks.server.ts and +layout.ts
+// import { wuchale } from '@wuchale/vite-plugin'
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
       route: '/_translations',  // Route where editor UI is served
       localesDir: '../../locales',  // Path to .po files
     }),
-      wuchale(),
+      // wuchale(),
       // Custom plugin to integrate WebSocket bridge into Vite dev server
       {
         name: "websocket-bridge",
@@ -88,15 +88,28 @@ export default defineConfig(({ mode }) => {
             clientPort: parseInt(process.env.VITE_HMR_CLIENT_PORT, 10),
           }
         : undefined,
+      warmup: {
+        clientFiles: [
+          "./src/app.css",
+          "./src/routes/+layout.svelte",
+          "./src/routes/+layout.ts",
+          "./src/routes/(authenticated)/+layout.svelte",
+          "./src/routes/(authenticated)/+page.svelte",
+        ],
+        ssrFiles: [
+          "./src/hooks.server.ts",
+          "./src/routes/+layout.server.ts",
+          "./src/routes/(authenticated)/+layout.server.ts",
+          "./src/routes/(authenticated)/+page.server.ts",
+        ],
+      },
       watch: {
         ignored: ["**/node_modules/**", "**/.git/**"],
         usePolling: false,
       },
       fs: {
-        allow: [
-          "../node_modules", // This is for src/Web/packages/node_modules
-          resolve(__dirname, "../../node_modules"), // This is for src/Web/node_modules
-        ],
+        allow: [searchForWorkspaceRoot(process.cwd())],
+        strict: false, // pnpm symlinks into its content-addressable store
       },
     },
   };

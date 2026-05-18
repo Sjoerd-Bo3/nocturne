@@ -11,12 +11,15 @@ namespace Nocturne.Infrastructure.Data.Entities;
 [Table("chat_identity_pending_links")]
 public class ChatIdentityPendingLinkEntity
 {
+    /// <summary>Cryptographically random token that acts as primary key and lookup handle.</summary>
     [Key, Column("token"), MaxLength(64)]
     public string Token { get; set; } = string.Empty;
 
+    /// <summary>Chat platform identifier (e.g. "discord", "telegram").</summary>
     [Column("platform"), MaxLength(16)]
     public string Platform { get; set; } = string.Empty;
 
+    /// <summary>User's unique ID on the chat platform.</summary>
     [Column("platform_user_id"), MaxLength(256)]
     public string PlatformUserId { get; set; } = string.Empty;
 
@@ -28,9 +31,11 @@ public class ChatIdentityPendingLinkEntity
     [Column("source"), MaxLength(32)]
     public string Source { get; set; } = string.Empty;
 
+    /// <summary>When this pending link token was issued.</summary>
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>Absolute expiry; tokens past this time are invalid and garbage-collected.</summary>
     [Column("expires_at")]
     public DateTime ExpiresAt { get; set; }
 }

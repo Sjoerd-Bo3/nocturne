@@ -3,7 +3,6 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 
 namespace Nocturne.API.Middleware.Handlers;

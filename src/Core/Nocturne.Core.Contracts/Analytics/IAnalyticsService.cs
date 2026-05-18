@@ -1,0 +1,123 @@
+using Nocturne.Core.Models;
+
+namespace Nocturne.Core.Contracts.Analytics;
+
+/// <summary>
+/// Interface for privacy-first analytics collection service
+/// Collects anonymous usage data to help improve Nocturne while respecting user privacy
+/// </summary>
+public interface IAnalyticsService
+{
+    /// <summary>
+    /// Track an API endpoint call with anonymous usage data
+    /// </summary>
+    /// <param name="endpoint">API endpoint path (e.g., "/api/v1/entries")</param>
+    /// <param name="method">HTTP method (GET, POST, etc.)</param>
+    /// <param name="responseTime">Response time in milliseconds</param>
+    /// <param name="statusCode">HTTP status code</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task TrackApiCallAsync(
+        string endpoint,
+        string method,
+        long responseTime,
+        int statusCode,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Track a page view or UI navigation event
+    /// </summary>
+    /// <param name="page">Page identifier (e.g., "dashboard", "reports")</param>
+    /// <param name="userAgent">User agent string for device type detection</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task TrackPageViewAsync(
+        string page,
+        string? userAgent = null,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Track feature usage (e.g., connector activation, report generation)
+    /// </summary>
+    /// <param name="feature">Feature name</param>
+    /// <param name="action">Action taken (e.g., "enabled", "disabled", "used")</param>
+    /// <param name="metadata">Additional anonymous metadata</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task TrackFeatureUsageAsync(
+        string feature,
+        string action,
+        Dictionary<string, object>? metadata = null,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Track system events (startup, shutdown, errors)
+    /// </summary>
+    /// <param name="eventType">Type of system event</param>
+    /// <param name="message">Anonymous event message</param>
+    /// <param name="severity">Event severity level</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task TrackSystemEventAsync(
+        string eventType,
+        string message,
+        string severity = "info",
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Track custom analytics event
+    /// </summary>
+    /// <param name="analyticsEvent">Analytics event to track</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task TrackCustomEventAsync(
+        AnalyticsEvent analyticsEvent,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Get current system information for analytics reporting
+    /// </summary>
+    /// <returns>Anonymous system information</returns>
+    SystemInfo GetSystemInfo();
+
+    /// <summary>
+    /// Get performance metrics for the current time period
+    /// </summary>
+    /// <returns>Performance metrics</returns>
+    PerformanceMetrics GetPerformanceMetrics();
+
+    /// <summary>
+    /// Get usage statistics for the current time period
+    /// </summary>
+    /// <returns>Usage statistics</returns>
+    UsageStatistics GetUsageStatistics();
+
+    /// <summary>
+    /// Check if analytics collection is enabled
+    /// </summary>
+    /// <returns>True if analytics collection is enabled</returns>
+    bool IsAnalyticsEnabled();
+
+    /// <summary>
+    /// Get the current analytics configuration
+    /// </summary>
+    /// <returns>Analytics collection configuration</returns>
+    AnalyticsCollectionConfig GetAnalyticsConfig();
+
+    /// <summary>
+    /// Update analytics collection configuration
+    /// </summary>
+    /// <param name="config">New configuration</param>
+    Task UpdateAnalyticsConfigAsync(AnalyticsCollectionConfig config);
+
+    /// <summary>
+    /// Get analytics data that would be transmitted (for transparency)
+    /// </summary>
+    /// <returns>Current analytics data pending transmission</returns>
+    Task<AnalyticsBatch?> GetPendingAnalyticsDataAsync();
+
+    /// <summary>
+    /// Clear all stored analytics data
+    /// </summary>
+    Task ClearAnalyticsDataAsync();
+}

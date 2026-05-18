@@ -57,6 +57,46 @@ for (const name of usedSchemaNames) {
   }
 }
 
+// Normalize property name the way OpenAPI Generator does:
+// strip leading underscore, convert snake_case to camelCase
+function normalize(name) {
+  return name.replace(/^_/, '').replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+// Deduplicate allOf compositions: remove properties from composed object
+// that resolve to the same generated field name as a parent property
+// (e.g., parent has "id" and child has "_id" — both become "id" in codegen)
+for (const schema of Object.values(filteredSchemas)) {
+  if (!schema.allOf || schema.allOf.length < 2) continue;
+
+  // Collect normalized property names from all $ref'd parent schemas
+  const parentNormalized = new Set();
+  for (const part of schema.allOf) {
+    if (part['$ref']) {
+      const parentName = part['$ref'].replace('#/components/schemas/', '');
+      const parent = filteredSchemas[parentName];
+      if (parent?.properties) {
+        for (const prop of Object.keys(parent.properties)) {
+          parentNormalized.add(normalize(prop));
+        }
+      }
+    }
+  }
+
+  // Remove properties from inline composed objects that collide after normalization
+  if (parentNormalized.size > 0) {
+    for (const part of schema.allOf) {
+      if (!part['$ref'] && part.properties) {
+        for (const prop of Object.keys(part.properties)) {
+          if (parentNormalized.has(normalize(prop))) {
+            delete part.properties[prop];
+          }
+        }
+      }
+    }
+  }
+}
+
 const output = {
   openapi: spec.openapi,
   info: {

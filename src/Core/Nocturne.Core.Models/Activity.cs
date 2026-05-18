@@ -3,9 +3,12 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Represents a Nightscout activity record for the API
-/// Compatible with the legacy Nightscout activity collection
+/// Represents a Nightscout activity record for the API.
+/// Compatible with the legacy Nightscout activity collection.
 /// </summary>
+/// <seealso cref="ProcessableDocumentBase"/>
+/// <seealso cref="Entry"/>
+/// <seealso cref="Treatment"/>
 public class Activity : ProcessableDocumentBase
 {
     /// <summary>

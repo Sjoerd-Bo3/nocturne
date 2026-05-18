@@ -6,7 +6,14 @@ namespace Nocturne.Core.Models;
 /// <summary>
 /// Represents the type of treatment event.
 /// 1:1 compatibility with Nightscout event types.
+/// <para>
+/// The <see cref="EnumMemberAttribute"/> values on each member define the exact string representation
+/// used by the Nightscout API (e.g., <c>"Meal Bolus"</c>, <c>"Site Change"</c>).
+/// </para>
 /// </summary>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="EventTypeConfiguration"/>
+/// <seealso cref="EventTypeConfigurations"/>
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum TreatmentEventType
 {

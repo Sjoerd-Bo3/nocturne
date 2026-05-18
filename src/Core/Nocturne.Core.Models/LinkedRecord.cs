@@ -3,8 +3,16 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Represents a link between a record and its canonical group for deduplication
+/// Represents a link between a record and its canonical group for deduplication.
 /// </summary>
+/// <remarks>
+/// The <see cref="RecordType"/> property determines which table the <see cref="RecordId"/> references:
+/// <see cref="RecordType.Entry"/> maps to <see cref="Entry"/>,
+/// <see cref="RecordType.Treatment"/> maps to <see cref="Treatment"/>,
+/// <see cref="RecordType.StateSpan"/> maps to <see cref="StateSpan"/>,
+/// and other values map to V4 tables.
+/// </remarks>
+/// <seealso cref="RecordType"/>
 public class LinkedRecord
 {
     /// <summary>

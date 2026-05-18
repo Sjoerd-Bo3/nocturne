@@ -8,7 +8,7 @@ namespace Nocturne.Infrastructure.Data.Entities;
 /// Maps to Nocturne.Core.Models.StateSpan
 /// </summary>
 [Table("state_spans")]
-public class StateSpanEntity : ITenantScoped
+public class StateSpanEntity : ITenantScoped, IAuditable
 {
     /// <summary>
     /// Identifier of the tenant this state span belongs to
@@ -82,12 +82,14 @@ public class StateSpanEntity : ITenantScoped
     /// <summary>
     /// System tracking: when record was created
     /// </summary>
+    [AuditIgnored]
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// System tracking: when record was last updated
     /// </summary>
+    [AuditIgnored]
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -6,10 +6,12 @@ using Nocturne.Infrastructure.Data.Abstractions;
 namespace Nocturne.API.Controllers.V4.TenantAdmin;
 
 /// <summary>
-/// Controller for discrepancy analysis and compatibility dashboard
-/// Provides endpoints for monitoring Nightscout/Nocturne compatibility
+/// Controller for discrepancy analysis and compatibility dashboard.
+/// Provides endpoints for monitoring Nightscout/Nocturne compatibility.
 /// </summary>
+/// <seealso cref="IDiscrepancyAnalysisRepository"/>
 [ApiController]
+[Tags("TenantAdmin")]
 [Route("api/v4/[controller]")]
 [Produces("application/json")]
 public class DiscrepancyController : ControllerBase
@@ -18,6 +20,11 @@ public class DiscrepancyController : ControllerBase
 
     private readonly ILogger<DiscrepancyController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="DiscrepancyController"/>.
+    /// </summary>
+    /// <param name="discrepancyRepository">Repository for storing and querying discrepancy analysis records.</param>
+    /// <param name="logger">Logger instance.</param>
     public DiscrepancyController(
         IDiscrepancyAnalysisRepository discrepancyRepository,
         ILogger<DiscrepancyController> logger
@@ -318,6 +325,11 @@ public class DiscrepancyController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Maps a <see cref="CompatibilityMetrics"/> score to a human-readable health status label.
+    /// </summary>
+    /// <param name="metrics">Compatibility metrics containing the score and request counts.</param>
+    /// <returns>One of: "No Data", "Excellent", "Good", "Fair", "Poor", or "Critical".</returns>
     private static string DetermineHealthStatus(CompatibilityMetrics metrics)
     {
         if (metrics.TotalRequests == 0)

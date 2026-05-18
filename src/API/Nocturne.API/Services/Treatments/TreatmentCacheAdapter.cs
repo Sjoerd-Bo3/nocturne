@@ -4,9 +4,19 @@ using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Constants;
 using Nocturne.Infrastructure.Cache.Keys;
+using Nocturne.API.Services.Platform;
 
 namespace Nocturne.API.Services.Treatments;
 
+/// <summary>
+/// <see cref="ITreatmentCache"/> implementation that owns cache key construction, TTL policy,
+/// and demo-mode isolation for <see cref="Treatment"/> queries.
+/// Only caches skip=0 queries with common counts (10, 50, 100) and no find filter to keep
+/// cache cardinality bounded. Invalidation clears all recent-treatment entries for the tenant.
+/// </summary>
+/// <seealso cref="ITreatmentCache"/>
+/// <seealso cref="TreatmentService"/>
+/// <seealso cref="IDemoModeService"/>
 public class TreatmentCacheAdapter : ITreatmentCache
 {
     private readonly ICacheService _cache;
@@ -14,6 +24,13 @@ public class TreatmentCacheAdapter : ITreatmentCache
     private readonly ITenantAccessor _tenant;
     private readonly ILogger<TreatmentCacheAdapter> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="TreatmentCacheAdapter"/>.
+    /// </summary>
+    /// <param name="cache">The distributed cache service for get/set/remove operations.</param>
+    /// <param name="demoMode">Demo mode service used to isolate demo and real data cache keys.</param>
+    /// <param name="tenant">Provides the current tenant context for scoping all cache keys.</param>
+    /// <param name="logger">The logger instance.</param>
     public TreatmentCacheAdapter(
         ICacheService cache,
         IDemoModeService demoMode,

@@ -1,8 +1,10 @@
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Direction information for glucose trend analysis
+/// Direction information for glucose trend analysis, including the arrow symbol and label.
 /// </summary>
+/// <seealso cref="Direction"/>
+/// <seealso cref="DeltaInfo"/>
 public class DirectionInfo
 {
     /// <summary>
@@ -37,8 +39,10 @@ public class DirectionInfo
 }
 
 /// <summary>
-/// Delta information for glucose changes
+/// Delta information for glucose changes between the current and previous readings.
 /// </summary>
+/// <seealso cref="DirectionInfo"/>
+/// <seealso cref="Entry"/>
 public class DeltaInfo
 {
     /// <summary>

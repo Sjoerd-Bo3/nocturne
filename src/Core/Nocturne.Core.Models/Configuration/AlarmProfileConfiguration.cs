@@ -7,6 +7,9 @@ namespace Nocturne.Core.Models.Configuration;
 /// Stored as JSONB in the database for flexibility and easy extensibility.
 /// Each user can have multiple alarm profiles with complex, customizable behavior.
 /// </summary>
+/// <seealso cref="UserAlarmConfiguration"/>
+/// <seealso cref="AlarmTriggerType"/>
+/// <seealso cref="AlarmPriority"/>
 public class AlarmProfileConfiguration
 {
     /// <summary>
@@ -289,7 +292,7 @@ public class AlarmVisualSettings
     /// Flash frequency in milliseconds
     /// </summary>
     [JsonPropertyName("flashIntervalMs")]
-    public int FlashIntervalMs { get; set; } = 500;
+    public int FlashIntervalMs { get; set; } = 1000;
 
     /// <summary>
     /// Whether to show a persistent banner until acknowledged
@@ -454,6 +457,8 @@ public class TimeRange
 /// Complete user alarm configuration containing all profiles and global settings.
 /// This is the root object stored in JSONB.
 /// </summary>
+/// <seealso cref="AlarmProfileConfiguration"/>
+/// <seealso cref="NotificationChannelsConfig"/>
 public class UserAlarmConfiguration
 {
     /// <summary>
@@ -493,12 +498,6 @@ public class UserAlarmConfiguration
     public List<AlarmProfileConfiguration> Profiles { get; set; } = new();
 
     /// <summary>
-    /// Quiet hours configuration
-    /// </summary>
-    [JsonPropertyName("quietHours")]
-    public QuietHoursConfiguration QuietHours { get; set; } = new();
-
-    /// <summary>
     /// Custom sounds uploaded by the user
     /// </summary>
     [JsonPropertyName("customSounds")]
@@ -518,55 +517,27 @@ public class UserAlarmConfiguration
 }
 
 /// <summary>
-/// Enhanced quiet hours configuration
-/// </summary>
-public class QuietHoursConfiguration
-{
-    [JsonPropertyName("enabled")]
-    public bool Enabled { get; set; }
-
-    [JsonPropertyName("startTime")]
-    public string StartTime { get; set; } = "22:00";
-
-    [JsonPropertyName("endTime")]
-    public string EndTime { get; set; } = "07:00";
-
-    /// <summary>
-    /// Allow critical alarms during quiet hours
-    /// </summary>
-    [JsonPropertyName("allowCritical")]
-    public bool AllowCritical { get; set; } = true;
-
-    /// <summary>
-    /// Reduce volume during quiet hours instead of silencing
-    /// </summary>
-    [JsonPropertyName("reduceVolume")]
-    public bool ReduceVolume { get; set; } = true;
-
-    /// <summary>
-    /// Volume level during quiet hours (percentage)
-    /// </summary>
-    [JsonPropertyName("quietVolume")]
-    public int QuietVolume { get; set; } = 30;
-}
-
-/// <summary>
 /// Reference to a custom uploaded sound
 /// </summary>
 public class CustomSoundReference
 {
+    /// <summary>Unique identifier for this custom sound.</summary>
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 
+    /// <summary>User-defined display name for the sound.</summary>
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>URL to the uploaded audio file.</summary>
     [JsonPropertyName("url")]
     public string Url { get; set; } = string.Empty;
 
+    /// <summary>Duration of the sound in seconds, if known.</summary>
     [JsonPropertyName("durationSeconds")]
     public int? DurationSeconds { get; set; }
 
+    /// <summary>When this sound was uploaded.</summary>
     [JsonPropertyName("uploadedAt")]
     public DateTimeOffset UploadedAt { get; set; } = DateTimeOffset.UtcNow;
 }
@@ -576,15 +547,19 @@ public class CustomSoundReference
 /// </summary>
 public class EmergencyContactConfig
 {
+    /// <summary>Unique identifier for this contact.</summary>
     [JsonPropertyName("id")]
     public string Id { get; set; } = Guid.NewGuid().ToString();
 
+    /// <summary>Display name for the contact.</summary>
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>Phone number for SMS or call notifications.</summary>
     [JsonPropertyName("phone")]
     public string? Phone { get; set; }
 
+    /// <summary>Email address for email notifications.</summary>
     [JsonPropertyName("email")]
     public string? Email { get; set; }
 
@@ -609,15 +584,19 @@ public class EmergencyContactConfig
 /// </summary>
 public class NotificationChannelsConfig
 {
+    /// <summary>Web push notification channel configuration.</summary>
     [JsonPropertyName("push")]
     public ChannelConfig Push { get; set; } = new() { Enabled = true };
 
+    /// <summary>Email notification channel configuration.</summary>
     [JsonPropertyName("email")]
     public ChannelConfig Email { get; set; } = new();
 
+    /// <summary>SMS notification channel configuration.</summary>
     [JsonPropertyName("sms")]
     public ChannelConfig Sms { get; set; } = new();
 
+    /// <summary>Pushover notification channel configuration (optional third-party service).</summary>
     [JsonPropertyName("pushover")]
     public PushoverChannelConfig? Pushover { get; set; }
 }
@@ -627,6 +606,7 @@ public class NotificationChannelsConfig
 /// </summary>
 public class ChannelConfig
 {
+    /// <summary>Whether this notification channel is enabled.</summary>
     [JsonPropertyName("enabled")]
     public bool Enabled { get; set; }
 
@@ -642,9 +622,11 @@ public class ChannelConfig
 /// </summary>
 public class PushoverChannelConfig : ChannelConfig
 {
+    /// <summary>Pushover user key for delivering notifications.</summary>
     [JsonPropertyName("userKey")]
     public string? UserKey { get; set; }
 
+    /// <summary>Pushover application API token.</summary>
     [JsonPropertyName("apiToken")]
     public string? ApiToken { get; set; }
 }
@@ -654,15 +636,25 @@ public class PushoverChannelConfig : ChannelConfig
 /// </summary>
 public static class BuiltInSounds
 {
+    /// <summary>Standard alarm sound.</summary>
     public const string Default = "alarm-default";
+    /// <summary>Loud, attention-grabbing alarm for urgent conditions.</summary>
     public const string Urgent = "alarm-urgent";
+    /// <summary>Warning tone for high glucose alerts.</summary>
     public const string High = "alarm-high";
+    /// <summary>Warning tone for low glucose alerts.</summary>
     public const string Low = "alarm-low";
+    /// <summary>General alert notification sound.</summary>
     public const string Alert = "alert";
+    /// <summary>Pleasant chime notification.</summary>
     public const string Chime = "chime";
+    /// <summary>Bell ring notification.</summary>
     public const string Bell = "bell";
+    /// <summary>Emergency siren for critical conditions.</summary>
     public const string Siren = "siren";
+    /// <summary>Simple beep notification.</summary>
     public const string Beep = "beep";
+    /// <summary>Gentle, quiet notification for low-priority alerts.</summary>
     public const string Soft = "soft";
 
     public static readonly List<SoundPreset> All = new()

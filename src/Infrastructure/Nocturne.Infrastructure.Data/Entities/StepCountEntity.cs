@@ -33,10 +33,10 @@ public class StepCountEntity : ITenantScoped
     public string? OriginalId { get; set; }
 
     /// <summary>
-    /// Time in milliseconds since Unix epoch
+    /// Canonical timestamp as UTC DateTime (timestamptz)
     /// </summary>
-    [Column("mills")]
-    public long Mills { get; set; }
+    [Column("timestamp")]
+    public DateTime Timestamp { get; set; }
 
     /// <summary>
     /// Step count or movement metric value (absolute total or delta, depending on source bitmask)
@@ -63,13 +63,6 @@ public class StepCountEntity : ITenantScoped
     [Column("entered_by")]
     [MaxLength(255)]
     public string? EnteredBy { get; set; }
-
-    /// <summary>
-    /// When this record was created (ISO 8601)
-    /// </summary>
-    [Column("created_at")]
-    [MaxLength(50)]
-    public string? CreatedAt { get; set; }
 
     /// <summary>
     /// UTC offset in minutes

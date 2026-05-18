@@ -4,11 +4,16 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models.Serializers;
 
 /// <summary>
-/// JSON converter that handles flexible LoopTargetRange serialization for Nightscout compatibility.
-/// Nightscout Loop may send targetRange as either:
-/// - An array: [minValue, maxValue] (e.g., [100, 120])
-/// - An object: { "minValue": 100, "maxValue": 120 }
+/// JSON converter that handles flexible <see cref="LoopTargetRange"/> serialization for Nightscout compatibility.
 /// </summary>
+/// <remarks>
+/// Nightscout Loop may send targetRange as either:
+/// <list type="bullet">
+/// <item><description>An array: [minValue, maxValue] (e.g., [100, 120])</description></item>
+/// <item><description>An object: { "minValue": 100, "maxValue": 120 }</description></item>
+/// </list>
+/// On write, always outputs the object format for consistency.
+/// </remarks>
 public class LoopTargetRangeConverter : JsonConverter<LoopTargetRange?>
 {
     public override LoopTargetRange? Read(

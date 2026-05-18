@@ -4,9 +4,12 @@ using Nocturne.Core.Models.Serializers;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Loop notification data model matching the legacy loop.js data structure
-/// Maintains 1:1 compatibility with the original Nightscout Loop implementation
+/// Loop notification data model matching the legacy loop.js data structure.
+/// Maintains 1:1 compatibility with the original Nightscout Loop implementation.
 /// </summary>
+/// <seealso cref="LoopSettings"/>
+/// <seealso cref="LoopConfiguration"/>
+/// <seealso cref="LoopProfileSettings"/>
 public class LoopNotificationData
 {
     /// <summary>
@@ -183,8 +186,10 @@ public class LoopOverridePreset
     public double? Duration { get; set; }
 
     /// <summary>
-    /// Duration converted to minutes for consistency with Treatment.Duration
+    /// <see cref="Duration"/> converted from seconds to minutes for consistency with <see cref="Treatment.Duration"/>.
+    /// Returns <see langword="null"/> if <see cref="Duration"/> is not set.
     /// </summary>
+    /// <remarks>Loop stores duration in seconds externally; Nocturne uses minutes internally.</remarks>
     [JsonIgnore]
     public double? DurationMinutes => Duration.HasValue ? Duration.Value / 60.0 : null;
 

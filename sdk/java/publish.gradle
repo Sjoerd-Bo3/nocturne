@@ -1,0 +1,51 @@
+// Publishing overlay — appended to the generated build.gradle
+// Configures Maven Central publishing via Sonatype Central Portal REST API
+
+apply plugin: 'signing'
+
+group = 'org.nightscoutfoundation'
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+// Configure the existing maven publication with POM metadata
+publishing.publications.configureEach {
+    pom {
+        name = 'Nocturne Java SDK'
+        description = 'Java client for the Nocturne (Nightscout) diabetes management API'
+        url = 'https://github.com/nightscout/nocturne'
+
+        licenses {
+            license {
+                name = 'AGPL-3.0-only'
+                url = 'https://www.gnu.org/licenses/agpl-3.0.html'
+            }
+        }
+
+        developers {
+            developer {
+                id = 'nightscout'
+                name = 'Nightscout Foundation'
+                organization = 'Nightscout Foundation'
+                organizationUrl = 'https://www.nightscoutfoundation.org'
+            }
+        }
+
+        scm {
+            connection = 'scm:git:git://github.com/nightscout/nocturne.git'
+            developerConnection = 'scm:git:ssh://github.com/nightscout/nocturne.git'
+            url = 'https://github.com/nightscout/nocturne'
+        }
+    }
+}
+
+signing {
+    def signingKey = System.getenv('SIGNING_KEY')
+    def signingPassword = System.getenv('SIGNING_PASSWORD')
+    if (signingKey && signingPassword) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
+        sign publishing.publications
+    }
+}

@@ -1,15 +1,16 @@
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
-using Nocturne.Core.Contracts;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
 
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Service for managing OAuth Device Authorization Grant (RFC 8628) device codes.
-/// Handles device code creation, user code lookup, and approval/denial flows.
+/// Manages OAuth Device Authorization Grant (RFC 8628) device codes, including creation,
+/// user-code lookup, and approval/denial flows.
 /// </summary>
+/// <seealso cref="IOAuthDeviceCodeService"/>
+/// <seealso cref="IOAuthGrantService"/>
 public class OAuthDeviceCodeService : IOAuthDeviceCodeService
 {
     /// <summary>
@@ -30,8 +31,13 @@ public class OAuthDeviceCodeService : IOAuthDeviceCodeService
     private readonly ILogger<OAuthDeviceCodeService> _logger;
 
     /// <summary>
-    /// Creates a new instance of OAuthDeviceCodeService
+    /// Initialises a new <see cref="OAuthDeviceCodeService"/>.
     /// </summary>
+    /// <param name="db">Database context for reading and writing device code records.</param>
+    /// <param name="jwtService">Used to generate and hash the opaque device code value.</param>
+    /// <param name="clientService">Used to look up registered OAuth clients by ID.</param>
+    /// <param name="grantService">Used to create or update grants when a device code is approved.</param>
+    /// <param name="logger">Logger instance.</param>
     public OAuthDeviceCodeService(
         NocturneDbContext db,
         IJwtService jwtService,
@@ -307,9 +313,12 @@ public class OAuthDeviceCodeService : IOAuthDeviceCodeService
     }
 
     /// <summary>
-    /// Normalize a user code by stripping hyphens, spaces, and converting to uppercase.
-    /// This ensures "abcd-1234", "ABCD 1234", "abcd1234" all match the stored format.
+    /// Normalises a user code by stripping hyphens and spaces and converting to uppercase.
+    /// Ensures that <c>abcd-1234</c>, <c>ABCD 1234</c>, and <c>abcd1234</c> all match
+    /// the stored database format.
     /// </summary>
+    /// <param name="userCode">The raw user-entered or generated code.</param>
+    /// <returns>The normalised code suitable for database lookup.</returns>
     private static string NormalizeUserCode(string userCode)
     {
         return userCode
@@ -319,9 +328,10 @@ public class OAuthDeviceCodeService : IOAuthDeviceCodeService
     }
 
     /// <summary>
-    /// Generate a cryptographically random user code using the reduced alphabet.
-    /// Format: XXXX-YYYY (8 characters from the reduced alphabet with a hyphen after the first 4).
+    /// Generates a cryptographically random user code using the reduced <see cref="UserCodeAlphabet"/>.
     /// </summary>
+    /// <remarks>Format is <c>XXXX-YYYY</c> — eight characters from the reduced alphabet separated by a hyphen.</remarks>
+    /// <returns>A formatted user code string.</returns>
     private static string GenerateUserCode()
     {
         var bytes = RandomNumberGenerator.GetBytes(UserCodeLength);

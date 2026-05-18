@@ -15,10 +15,14 @@ public sealed record PublicAccessInfo(
 );
 
 /// <summary>
-/// Caches the Public system subject's resolved permissions per tenant.
-/// Used by AuthenticationMiddleware to populate auth context for unauthenticated
-/// requests when a tenant is resolved.
+/// Caches the Public system subject's resolved permissions per tenant to avoid repeated
+/// database queries on every unauthenticated request. Used by the authentication middleware
+/// to populate the auth context when a tenant is resolved but no credentials are present.
 /// </summary>
+/// <remarks>
+/// Cache entries have a fixed TTL of 2 minutes. Call <see cref="Evict"/> when tenant roles
+/// or the Public subject's membership changes to ensure stale permissions are not served.
+/// </remarks>
 public sealed class PublicAccessCacheService
 {
     private readonly IMemoryCache _cache;
@@ -27,6 +31,12 @@ public sealed class PublicAccessCacheService
 
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(2);
 
+    /// <summary>
+    /// Initialises a new <see cref="PublicAccessCacheService"/>.
+    /// </summary>
+    /// <param name="cache">In-memory cache for storing resolved permission sets.</param>
+    /// <param name="dbContextFactory">Factory for creating a <see cref="NocturneDbContext"/> for DB lookups.</param>
+    /// <param name="logger">Logger instance.</param>
     public PublicAccessCacheService(
         IMemoryCache cache,
         IDbContextFactory<NocturneDbContext> dbContextFactory,
@@ -38,9 +48,14 @@ public sealed class PublicAccessCacheService
     }
 
     /// <summary>
-    /// Get the Public subject's effective permissions for the given tenant.
-    /// Returns null if the membership doesn't exist, has no roles, or has no permissions.
+    /// Returns the Public system subject's effective permissions for the given tenant.
+    /// The result is cached for 2 minutes to avoid repeated database queries.
     /// </summary>
+    /// <param name="tenantId">The tenant to resolve Public access for.</param>
+    /// <returns>
+    /// A <see cref="PublicAccessInfo"/> with the resolved permissions, or <see langword="null"/>
+    /// if the Public subject has no membership, no roles, or no effective permissions on the tenant.
+    /// </returns>
     public async Task<PublicAccessInfo?> GetPublicAccessAsync(Guid tenantId)
     {
         var cacheKey = $"public-permissions:{tenantId}";
@@ -59,8 +74,10 @@ public sealed class PublicAccessCacheService
     }
 
     /// <summary>
-    /// Evict the cached permissions for a tenant (e.g., when roles change).
+    /// Evicts the cached permissions for the specified tenant.
+    /// Call this when the Public subject's roles or direct permissions change.
     /// </summary>
+    /// <param name="tenantId">The tenant whose cached Public permissions should be invalidated.</param>
     public void Evict(Guid tenantId)
     {
         _cache.Remove($"public-permissions:{tenantId}");

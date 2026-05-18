@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +14,7 @@ using Nocturne.API.Middleware.Handlers;
 using Nocturne.API.Services.Auth;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Core.Models.Configuration;
+using Nocturne.Infrastructure.Data;
 using Xunit;
 
 namespace Nocturne.API.Tests.Middleware;
@@ -91,6 +94,8 @@ public class AuthHandlerPriorityTests
             Mock.Of<IDbContextFactory<Nocturne.Infrastructure.Data.NocturneDbContext>>(),
             NullLogger<PublicAccessCacheService>.Instance);
 
+        var scopeFactory = CreateScopeFactoryWithDb();
+
         var middleware = new AuthenticationMiddleware(
             next: _ => Task.CompletedTask,
             logger: NullLogger<AuthenticationMiddleware>.Instance,
@@ -99,7 +104,7 @@ public class AuthHandlerPriorityTests
                 e.EnvironmentName == "Production"),
             publicAccessCacheService: publicAccessCacheService,
             oidcOptions: Options.Create(new OidcOptions()),
-            scopeFactory: Mock.Of<IServiceScopeFactory>());
+            scopeFactory: scopeFactory);
 
         var httpContext = new DefaultHttpContext();
         await middleware.InvokeAsync(httpContext);
@@ -200,6 +205,29 @@ public class AuthHandlerPriorityTests
         authContext!.IsAuthenticated.Should().BeFalse(
             "when a handler explicitly fails (not skip), the chain should stop " +
             "and return unauthenticated rather than falling through to later handlers");
+    }
+
+    /// <summary>
+    /// Creates a real IServiceScopeFactory backed by SQLite in-memory so the middleware
+    /// can resolve NocturneDbContext when looking up platform admin flags.
+    /// </summary>
+    private static IServiceScopeFactory CreateScopeFactoryWithDb()
+    {
+        var connection = new SqliteConnection("DataSource=:memory:");
+        connection.Open();
+
+        var services = new ServiceCollection();
+        services.AddDbContext<NocturneDbContext>(options =>
+            options.UseSqlite(connection)
+                .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+        var sp = services.BuildServiceProvider();
+
+        // Ensure schema is created
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<NocturneDbContext>();
+        db.Database.EnsureCreated();
+
+        return sp.GetRequiredService<IServiceScopeFactory>();
     }
 
     private sealed class StubAuthHandler(int priority, string name, AuthResult result)

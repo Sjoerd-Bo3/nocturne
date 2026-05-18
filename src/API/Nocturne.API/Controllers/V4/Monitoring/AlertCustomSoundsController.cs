@@ -10,7 +10,9 @@ namespace Nocturne.API.Controllers.V4.Monitoring;
 /// <summary>
 /// Controller for managing custom alert sounds (upload, list, stream, delete).
 /// </summary>
+/// <seealso cref="NocturneDbContext"/>
 [ApiController]
+[Tags("Monitoring")]
 [Authorize]
 [Route("api/v4/alert-sounds")]
 public class AlertCustomSoundsController : ControllerBase
@@ -18,6 +20,11 @@ public class AlertCustomSoundsController : ControllerBase
     private readonly IDbContextFactory<NocturneDbContext> _contextFactory;
     private readonly ILogger<AlertCustomSoundsController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="AlertCustomSoundsController"/>.
+    /// </summary>
+    /// <param name="contextFactory">Factory for creating <see cref="NocturneDbContext"/> instances.</param>
+    /// <param name="logger">Logger instance.</param>
     public AlertCustomSoundsController(
         IDbContextFactory<NocturneDbContext> contextFactory,
         ILogger<AlertCustomSoundsController> logger)

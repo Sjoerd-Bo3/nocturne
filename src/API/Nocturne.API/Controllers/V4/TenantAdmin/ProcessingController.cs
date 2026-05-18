@@ -1,19 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V4.TenantAdmin;
 
 /// <summary>
-/// Controller for async processing status tracking
+/// Controller for async processing status tracking.
 /// </summary>
+/// <seealso cref="IProcessingStatusService"/>
 [ApiController]
+[Tags("TenantAdmin")]
 [Route("api/v4/processing")]
 public class ProcessingController : ControllerBase
 {
     private readonly IProcessingStatusService _processingStatusService;
     private readonly ILogger<ProcessingController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ProcessingController"/>.
+    /// </summary>
+    /// <param name="processingStatusService">Service for querying and awaiting async processing status records.</param>
+    /// <param name="logger">Logger instance.</param>
     public ProcessingController(
         IProcessingStatusService processingStatusService,
         ILogger<ProcessingController> logger
@@ -28,7 +34,6 @@ public class ProcessingController : ControllerBase
     [ProducesResponseType(typeof(ProcessingStatusResponse), 200)]
     [ProducesResponseType(typeof(object), 404)]
     [ProducesResponseType(typeof(object), 500)]
-    /// <inheritdoc cref="IProcessingStatusService.GetStatusAsync"/>
     public async Task<ActionResult<ProcessingStatusResponse>> GetProcessingStatus(
         string correlationId,
         CancellationToken cancellationToken = default
@@ -125,7 +130,6 @@ public class ProcessingController : ControllerBase
     [ProducesResponseType(typeof(object), 404)]
     [ProducesResponseType(typeof(object), 408)]
     [ProducesResponseType(typeof(object), 500)]
-    /// <inheritdoc cref="IProcessingStatusService.WaitForCompletionAsync"/>
     public async Task<ActionResult<ProcessingStatusResponse>> WaitForCompletion(
         string correlationId,
         [FromQuery] int timeoutSeconds = 30,

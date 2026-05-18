@@ -3,10 +3,17 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Represents the main data structure used by Nightscout clients
-/// Contains all necessary data for glucose monitoring and treatment tracking
-/// This class provides 1:1 backwards compatibility with the legacy JavaScript DData implementation
+/// Represents the main data structure used by Nightscout clients.
+/// Contains all necessary data for glucose monitoring and treatment tracking.
+/// This class provides 1:1 backwards compatibility with the legacy JavaScript DData implementation.
 /// </summary>
+/// <seealso cref="Entry"/>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="DeviceStatus"/>
+/// <seealso cref="Profile"/>
+/// <seealso cref="Food"/>
+/// <seealso cref="Activity"/>
+/// <seealso cref="DDataResponse"/>
 public class DData
 {
     /// <summary>

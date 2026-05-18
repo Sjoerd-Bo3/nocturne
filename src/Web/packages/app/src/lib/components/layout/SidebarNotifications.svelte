@@ -3,18 +3,18 @@
   import { Button } from "$lib/components/ui/button";
   import { Bell, ChevronRight } from "lucide-svelte";
   import { cn } from "$lib/utils";
-  import { getRealtimeStore } from "$lib/stores/realtime-store.svelte";
+  import { tryGetRealtimeStore } from "$lib/stores/realtime-store.svelte";
   import { executeAction } from "$api/generated/notifications.generated.remote";
   import {
     NotificationUrgency,
-    InAppNotificationType,
     type InAppNotificationDto,
   } from "$lib/api/generated/nocturne-api-client";
   import NotificationItem from "./NotificationItem.svelte";
   import { MealMatchReviewDialog } from "$lib/components/meal-matching";
+  import DndPanel from "$lib/components/alerts/DndPanel.svelte";
 
   // Get the realtime store for reactive notification data
-  const realtimeStore = getRealtimeStore();
+  const realtimeStore = tryGetRealtimeStore();
 
   // State
   let isOpen = $state(false);
@@ -30,7 +30,7 @@
       [NotificationUrgency.Info]: 3,
     };
 
-    return [...realtimeStore.inAppNotifications].sort((a, b) => {
+    return [...(realtimeStore?.inAppNotifications ?? [])].sort((a, b) => {
       // First sort by urgency
       const urgencyA = urgencyOrder[a.urgency ?? NotificationUrgency.Info] ?? 3;
       const urgencyB = urgencyOrder[b.urgency ?? NotificationUrgency.Info] ?? 3;
@@ -46,18 +46,18 @@
 
   // Count by urgency level for badge
   const urgentCount = $derived(
-    realtimeStore.inAppNotifications.filter(
+    (realtimeStore?.inAppNotifications ?? []).filter(
       (n) => n.urgency === NotificationUrgency.Urgent
     ).length
   );
   const hazardCount = $derived(
-    realtimeStore.inAppNotifications.filter(
+    (realtimeStore?.inAppNotifications ?? []).filter(
       (n) => n.urgency === NotificationUrgency.Hazard
     ).length
   );
 
   // Badge count is total notifications
-  const badgeCount = $derived(realtimeStore.inAppNotifications.length);
+  const badgeCount = $derived((realtimeStore?.inAppNotifications ?? []).length);
 
   // Badge color based on highest urgency
   const badgeVariant = $derived<"destructive" | "warning" | "secondary">(
@@ -77,7 +77,7 @@
 
     // Handle review action for meal match notifications
     if (
-      notification.type === InAppNotificationType.SuggestedMealMatch &&
+      notification.type === "meal_matching.suggested_match" &&
       actionId === "review"
     ) {
       reviewNotification = notification;
@@ -138,6 +138,10 @@
             Manage
           </a>
         {/if}
+      </div>
+
+      <div class="border-b">
+        <DndPanel onNavigate={() => (isOpen = false)} />
       </div>
 
       {#if badgeCount === 0}

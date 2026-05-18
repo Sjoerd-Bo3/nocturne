@@ -2,6 +2,12 @@ using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Contracts.V4.Repositories;
 
+/// <summary>
+/// Repository port for <see cref="PatientInsulin"/> records that describe the insulin formulations
+/// prescribed to the patient, including basal and bolus designations.
+/// </summary>
+/// <seealso cref="PatientInsulin"/>
+/// <seealso cref="PatientRecord"/>
 public interface IPatientInsulinRepository
 {
     /// <summary>Returns all insulin records for the patient, including discontinued ones.</summary>

@@ -1,45 +1,34 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { invalidateAll } from "$app/navigation";
+  import { browser } from "$app/environment";
 
   import * as Sidebar from "$lib/components/ui/sidebar";
   import * as Collapsible from "$lib/components/ui/collapsible";
   import * as Select from "$lib/components/ui/select";
   import SidebarGlucoseWidget from "./SidebarGlucoseWidget.svelte";
   import SidebarNotifications from "./SidebarNotifications.svelte";
+  import SidebarDndToggle from "$lib/components/alerts/SidebarDndToggle.svelte";
   import UserMenu from "./UserMenu.svelte";
   import LanguageSelector from "$lib/components/LanguageSelector.svelte";
   import { updateLanguagePreference } from "$api/user-preferences.remote";
   import { hasLanguagePreference } from "$lib/stores/appearance-store.svelte";
-  import {
-    actingAs,
-    followerTargets,
-    type ActingAsTarget,
-  } from "$lib/stores/acting-as";
   import { getMyTenants } from "$lib/api/generated/myTenants.generated.remote";
   import {
     Home,
     BarChart3,
-    FileText,
+    PieChart,
     Settings,
-    Activity,
     Clock,
     User,
     ChevronDown,
     Syringe,
-    LineChart,
-    PieChart,
-    TrendingUp,
-    Droplets,
     Apple,
     Utensils,
     Bell,
+    BellOff,
     HeartHandshake,
     Plug,
     Calendar,
-    CalendarDays,
-    BatteryFull,
-    Sunrise,
     CheckCircle,
     Terminal,
     TestTube,
@@ -52,9 +41,14 @@
     HeartPulse,
     ListChecks,
     Shield,
+    ScrollText,
     Eye,
     Users,
+    PlayCircle,
+    History as HistoryIcon,
+    SlidersHorizontal,
   } from "lucide-svelte";
+  import { getSidebarReportItems } from "$lib/navigation/report-navigation";
   import type { AuthUser } from "$lib/stores/auth-store.svelte";
 
   interface Props {
@@ -66,84 +60,127 @@
     effectivePermissions?: string[];
     /** Whether the current user is a platform administrator */
     isPlatformAdmin?: boolean;
+    /** Whether the current session is a guest link session (read-only) */
+    isGuestSession?: boolean;
   }
 
-  const { user = null, tenantCount = 0, effectivePermissions = [], isPlatformAdmin = false }: Props = $props();
+  const { user = null, tenantCount = 0, effectivePermissions = [], isPlatformAdmin = false, isGuestSession = false }: Props = $props();
 
   const canManageRoles = $derived(
     effectivePermissions.includes("roles.manage") ||
       effectivePermissions.includes("*"),
   );
+  const canViewAudit = $derived(
+    effectivePermissions.includes("audit.read") ||
+      effectivePermissions.includes("audit.manage") ||
+      effectivePermissions.includes("*"),
+  );
   const sidebar = Sidebar.useSidebar();
 
-  // Follower target selector state
-  let targets = $state<ActingAsTarget[]>([]);
-  let selectedValue = $state<string>("__self__");
+  // Defer localStorage check to after hydration so SSR and client initial render
+  // both produce the same DOM (avoids hydration mismatch from conditional rendering).
+  let langPrefKnown = $state(false);
+  $effect(() => {
+    langPrefKnown = hasLanguagePreference();
+  });
+
+  // Tenant switcher state
+  interface TenantTarget {
+    id: string;
+    slug: string;
+    displayName: string | null;
+  }
+  let tenantTargets = $state<TenantTarget[]>([]);
+  let totalTenantCount = $state(0);
+  let selectedTenantSlug = $state<string | null>(null);
+  let defaultTenantSlug = $state<string | null>(null);
+  let baseDomain = $state<string | null>(null);
+  let currentSlug = $state<string | null>(null);
+
+  // Derive subdomain info from hostname
+  $effect(() => {
+    if (!browser) return;
+    const parts = window.location.hostname.split(".");
+    if (parts.length > 2 && window.location.hostname !== "localhost") {
+      currentSlug = parts[0];
+      baseDomain = parts.slice(1).join(".");
+    }
+  });
 
   /**
-   * Fetch available follower targets from the API. Gracefully handles errors.
+   * Fetch available tenants from the API. Only populates targets when
+   * subdomain-based multitenancy is active (baseDomain is set).
    */
-  async function loadFollowerTargets() {
+  async function loadTenantTargets() {
+    if (!baseDomain || isGuestSession) return;
     try {
       const tenants = await getMyTenants();
-      const fetched: ActingAsTarget[] = (tenants ?? [])
-        .filter((t): t is typeof t & { id: string } => !!t.id && !t.isDefault)
+      totalTenantCount = (tenants ?? []).length;
+      defaultTenantSlug = (tenants ?? [])[0]?.slug ?? null;
+
+      tenantTargets = (tenants ?? [])
+        .filter(
+          (t): t is typeof t & { id: string; slug: string } =>
+            !!t.id && !!t.slug && t.slug !== currentSlug,
+        )
         .map((t) => ({
-          subjectId: t.id,
+          id: t.id,
+          slug: t.slug,
           displayName: t.displayName ?? null,
-          email: null,
-          scopes: [],
-          label: t.slug ?? null,
         }));
-      targets = fetched;
-      followerTargets.set(fetched);
+
+      // Pre-select based on current subdomain
+      selectedTenantSlug =
+        currentSlug && currentSlug !== defaultTenantSlug
+          ? currentSlug
+          : null;
     } catch {
       // Silently fail
     }
   }
 
-  function handleTargetChange(value: string | undefined) {
-    if (!value) return;
-    selectedValue = value;
+  function handleTenantChange(value: string | undefined) {
+    if (!value || !baseDomain) return;
 
+    let targetSlug: string | null = null;
     if (value === "__self__") {
-      actingAs.set(null);
+      targetSlug = currentSlug;
     } else {
-      const target = targets.find((t) => t.subjectId === value);
-      if (target) {
-        actingAs.set(target);
-      }
+      targetSlug = tenantTargets.find((t) => t.id === value)?.slug ?? null;
     }
 
-    // Refresh all page data to reflect the new context
-    invalidateAll();
+    if (targetSlug && targetSlug !== currentSlug) {
+      const host = `${targetSlug}.${baseDomain}`;
+      window.location.href = `${window.location.protocol}//${host}/`;
+    }
   }
 
-  /**
-   * Format a target for display. Shows "{displayName} ({label})" if label is
-   * present, otherwise just "{displayName}".
-   */
-  function formatTargetLabel(target: ActingAsTarget): string {
-    const name = target.displayName || target.email || "Unknown";
-    return target.label ? `${name} (${target.label})` : name;
+  function formatTenantLabel(target: TenantTarget): string {
+    return target.displayName
+      ? `${target.displayName} (${target.slug})`
+      : target.slug;
   }
 
   // Use $effect so this runs when `user` becomes available after client-side
   // login navigation (onMount alone misses that case).
   $effect(() => {
     if (user) {
-      loadFollowerTargets();
+      loadTenantTargets();
     }
   });
 
   type NavItem = {
     title: string;
     href?: string;
-    icon: typeof Home;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    icon: any;
     strict?: boolean;
     isActive?: boolean;
     children?: NavItem[];
   };
+
+  /** Read-only navigation items shown to guest sessions. */
+  const guestNavTitles = new Set(["Dashboard", "Calendar", "Time Spans", "Reports", "Clock"]);
 
   const navigation: NavItem[] = $derived.by(() => {
     const items: NavItem[] = [
@@ -168,65 +205,7 @@
       icon: BarChart3,
       children: [
         { title: "Overview", href: "/reports", icon: PieChart, strict: true },
-        { title: "AGP", href: "/reports/agp", icon: LineChart },
-        { title: "IDP", href: "/reports/idp", icon: Droplets },
-        {
-          title: "Executive Summary",
-          href: "/reports/executive-summary",
-          icon: FileText,
-        },
-        {
-          title: "Day in Review",
-          href: "/reports/day-in-review",
-          icon: Clock,
-        },
-        {
-          title: "Week to Week",
-          href: "/reports/week-to-week",
-          icon: Sunrise,
-        },
-        {
-          title: "Month to Month",
-          href: "/calendar",
-          icon: Calendar,
-        },
-        {
-          title: "Year Overview",
-          href: "/reports/year-overview",
-          icon: CalendarDays,
-        },
-        { title: "Readings", href: "/reports/readings", icon: Activity },
-        { title: "Treatments", href: "/reports/treatments", icon: Syringe },
-        {
-          title: "Insulin Delivery",
-          href: "/reports/insulin-delivery",
-          icon: Droplets,
-        },
-        {
-          title: "Basal Analysis",
-          href: "/reports/basal-analysis",
-          icon: TrendingUp,
-        },
-        {
-          title: "Battery",
-          href: "/reports/battery",
-          icon: BatteryFull,
-        },
-        {
-          title: "Glucose Distribution",
-          href: "/reports/glucose-distribution",
-          icon: PieChart,
-        },
-        {
-          title: "Site Change Impact",
-          href: "/reports/site-change-impact",
-          icon: Syringe,
-        },
-        {
-          title: "Data Quality",
-          href: "/reports/data-quality",
-          icon: ShieldCheck,
-        },
+        ...getSidebarReportItems(),
       ],
     },
     {
@@ -234,6 +213,14 @@
       href: "/clock",
       icon: Clock,
     },
+    ];
+
+    // Guest sessions only see read-only navigation
+    if (isGuestSession) {
+      return items.filter((i) => guestNavTitles.has(i.title));
+    }
+
+    items.push(
     {
       title: "Food",
       href: "/food",
@@ -251,7 +238,7 @@
         { title: "Packing", href: "/tools/packing", icon: Wrench },
       ],
     },
-    ];
+    );
 
     if (tenantCount >= 2) {
       items.push({
@@ -262,6 +249,16 @@
     }
 
     items.push(
+    {
+      title: "Alerts",
+      icon: Bell,
+      children: [
+        { title: "Rules", href: "/alerts", icon: Bell, strict: true },
+        { title: "Simulator", href: "/alerts/simulator", icon: PlayCircle },
+        { title: "Do Not Disturb", href: "/alerts/dnd", icon: BellOff },
+        { title: "History", href: "/alerts/history", icon: HistoryIcon },
+      ],
+    },
     {
       title: "Dev Tools",
       icon: Terminal,
@@ -297,7 +294,6 @@
           href: "/settings/data-quality",
           icon: ShieldCheck,
         },
-        { title: "Alerts", href: "/settings/alerts", icon: Bell },
         {
           title: "Notifications & Trackers",
           href: "/settings/trackers",
@@ -307,6 +303,9 @@
         { title: "Members", href: "/settings/members", icon: Users },
         ...(canManageRoles
           ? [{ title: "Roles", href: "/settings/roles", icon: Shield }]
+          : []),
+        ...(canViewAudit
+          ? [{ title: "Audit Log", href: "/settings/audit", icon: ScrollText }]
           : []),
         {
           title: "Support & Community",
@@ -374,11 +373,16 @@
     class="flex flex-row items-center justify-between p-4 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2"
   >
     <div class="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-      <div
-        class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary"
-      >
-        <Activity class="h-4 w-4 text-primary-foreground" />
-      </div>
+      <img
+        src="/logos/nocturne.png"
+        alt="Nocturne"
+        class="h-8 w-8 rounded-lg dark:block hidden"
+      />
+      <img
+        src="/logos/nocturne-light.png"
+        alt="Nocturne"
+        class="h-8 w-8 rounded-lg dark:hidden block"
+      />
       <span class="text-lg font-bold">Nocturne</span>
     </div>
     <Sidebar.Trigger />
@@ -393,8 +397,8 @@
 
   <Sidebar.Separator />
 
-  <!-- Follower target selector (only visible when targets are available) -->
-  {#if targets.length > 0}
+  <!-- Tenant switcher (only visible when multiple tenants are available, hidden for guests) -->
+  {#if totalTenantCount > 1 && tenantTargets.length > 0 && !isGuestSession}
     <div class="border-b px-3 py-2 group-data-[collapsible=icon]:hidden">
       <p
         class="mb-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1.5"
@@ -404,25 +408,28 @@
       </p>
       <Select.Root
         type="single"
-        value={selectedValue}
-        onValueChange={handleTargetChange}
+        value={selectedTenantSlug
+          ? (tenantTargets.find((t) => t.slug === selectedTenantSlug)?.id ??
+            "__self__")
+          : "__self__"}
+        onValueChange={handleTenantChange}
       >
         <Select.Trigger size="sm" class="w-full">
-          {#if selectedValue === "__self__"}
+          {#if !selectedTenantSlug}
             My Data
           {:else}
-            {#each targets as target}
-              {#if target.subjectId === selectedValue}
-                {formatTargetLabel(target)}
+            {#each tenantTargets as target}
+              {#if target.slug === selectedTenantSlug}
+                {formatTenantLabel(target)}
               {/if}
             {/each}
           {/if}
         </Select.Trigger>
         <Select.Content>
           <Select.Item value="__self__">My Data</Select.Item>
-          {#each targets as target}
-            <Select.Item value={target.subjectId}>
-              {formatTargetLabel(target)}
+          {#each tenantTargets as target}
+            <Select.Item value={target.id}>
+              {formatTenantLabel(target)}
             </Select.Item>
           {/each}
         </Select.Content>
@@ -465,13 +472,17 @@
                   <Sidebar.MenuSub>
                     {#each item.children as child}
                       <Sidebar.MenuSubItem>
-                        <Sidebar.MenuSubButton
-                          href={child.href}
-                          isActive={isActive(child)}
-                        >
-                          <child.icon class="h-4 w-4" />
-                          <span>{child.title}</span>
-                        </Sidebar.MenuSubButton>
+                        {#if child.href === "/alerts/dnd"}
+                          <SidebarDndToggle />
+                        {:else}
+                          <Sidebar.MenuSubButton
+                            href={child.href}
+                            isActive={isActive(child)}
+                          >
+                            <child.icon class="h-4 w-4" />
+                            <span>{child.title}</span>
+                          </Sidebar.MenuSubButton>
+                        {/if}
                       </Sidebar.MenuSubItem>
                     {/each}
                   </Sidebar.MenuSub>
@@ -500,7 +511,7 @@
 
   <Sidebar.Footer class="p-2">
     <Sidebar.Menu>
-      {#if !hasLanguagePreference()}
+      {#if !langPrefKnown}
         <Sidebar.MenuItem class="group-data-[collapsible=icon]:hidden">
           <LanguageSelector
             onLanguageChange={user
@@ -513,12 +524,13 @@
       <Sidebar.MenuItem
         class="flex items-center gap-2 min-w-0 group-data-[collapsible=icon]:flex-col"
       >
-        {#if user}
+        {#if user && !isGuestSession}
           <SidebarNotifications />
         {/if}
         <UserMenu
           {user}
           {isPlatformAdmin}
+          {isGuestSession}
           collapsed={sidebar.state === "collapsed"}
           class="flex-1 min-w-0"
         />

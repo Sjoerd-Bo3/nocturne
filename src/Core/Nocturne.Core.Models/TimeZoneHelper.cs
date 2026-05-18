@@ -6,9 +6,13 @@ namespace Nocturne.Core.Models;
 public static class TimeZoneHelper
 {
     /// <summary>
-    /// Resolves a timezone ID (IANA or Windows) to a TimeZoneInfo, with fallback to UTC.
+    /// Resolves a timezone ID (IANA or Windows) to a <see cref="TimeZoneInfo"/>, with fallback to UTC.
     /// Uses .NET built-in IANA/Windows conversion APIs for comprehensive timezone support.
+    /// On Windows, IANA IDs are converted to Windows IDs via <c>TryConvertIanaIdToWindowsId</c>;
+    /// on Linux the reverse conversion is also attempted.
     /// </summary>
+    /// <param name="timezoneId">IANA timezone ID (e.g., "America/New_York") or Windows timezone ID (e.g., "Eastern Standard Time")</param>
+    /// <returns>The resolved <see cref="TimeZoneInfo"/>, or <see cref="TimeZoneInfo.Utc"/> if the ID cannot be resolved</returns>
     public static TimeZoneInfo GetTimeZoneInfoFromId(string timezoneId)
     {
         try

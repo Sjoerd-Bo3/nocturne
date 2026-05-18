@@ -23,9 +23,12 @@ public static class TotpHelper
     }
 
     /// <summary>
-    /// Computes a 6-digit TOTP code for the given secret and Unix timestamp (seconds).
-    /// Implements RFC 6238 with HMAC-SHA1.
+    /// Computes a 6-digit TOTP code for the given secret and Unix timestamp (seconds),
+    /// implementing RFC 6238 with HMAC-SHA1 and a 30-second time step.
     /// </summary>
+    /// <param name="secret">The raw shared secret bytes.</param>
+    /// <param name="unixTimeSeconds">Current time as Unix seconds since epoch.</param>
+    /// <returns>A zero-padded 6-digit OTP string.</returns>
     public static string ComputeTotp(byte[] secret, long unixTimeSeconds)
     {
         var counter = unixTimeSeconds / TimeStep;
@@ -50,9 +53,13 @@ public static class TotpHelper
     }
 
     /// <summary>
-    /// Verifies a TOTP code against the current time, accepting +/- 1 time step (90-second window).
-    /// Uses constant-time comparison to prevent timing attacks.
+    /// Verifies a TOTP code against the current time, accepting codes from the previous, current,
+    /// and next time step (a ±1 step / 90-second window). Uses constant-time comparison to prevent
+    /// timing side-channel attacks.
     /// </summary>
+    /// <param name="secret">The raw shared secret bytes.</param>
+    /// <param name="code">The 6-digit code string provided by the user.</param>
+    /// <returns><see langword="true"/> if the code matches any adjacent time step.</returns>
     public static bool Verify(byte[] secret, string code)
     {
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -73,8 +80,10 @@ public static class TotpHelper
     }
 
     /// <summary>
-    /// Encodes binary data as RFC 4648 base32 (no padding).
+    /// Encodes binary data as RFC 4648 Base32 without padding characters.
     /// </summary>
+    /// <param name="data">The raw bytes to encode.</param>
+    /// <returns>An uppercase Base32 string without trailing <c>=</c> padding.</returns>
     public static string ToBase32(byte[] data)
     {
         var sb = new StringBuilder((data.Length * 8 + 4) / 5);
@@ -102,8 +111,12 @@ public static class TotpHelper
     }
 
     /// <summary>
-    /// Builds an otpauth:// provisioning URI for use with authenticator apps.
+    /// Builds an <c>otpauth://totp/</c> provisioning URI suitable for QR code generation
+    /// and import into standard authenticator applications.
     /// </summary>
+    /// <param name="username">The account username or email shown in the authenticator app.</param>
+    /// <param name="secret">The raw shared secret bytes to encode.</param>
+    /// <returns>A fully formed <c>otpauth://totp/Nocturne:{username}?…</c> URI string.</returns>
     public static string BuildProvisioningUri(string username, byte[] secret)
     {
         var base32Secret = ToBase32(secret);

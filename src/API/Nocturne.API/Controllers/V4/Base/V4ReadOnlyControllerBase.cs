@@ -6,6 +6,16 @@ using Nocturne.Core.Models.V4;
 
 namespace Nocturne.API.Controllers.V4.Base;
 
+/// <summary>
+/// Base controller for read-only V4 API endpoints providing list and get-by-ID operations
+/// with pagination, date range filtering, device/source filtering, and sort ordering.
+/// </summary>
+/// <typeparam name="TModel">The V4 domain model type, must implement <see cref="IV4Record"/>.</typeparam>
+/// <typeparam name="TRepository">The repository interface, must implement <see cref="IV4Repository{TModel}"/>.</typeparam>
+/// <seealso cref="IV4Record"/>
+/// <seealso cref="IV4Repository{TModel}"/>
+/// <seealso cref="PaginatedResponse{T}"/>
+/// <seealso cref="V4CrudControllerBase{TModel, TCreateRequest, TUpdateRequest, TRepository}"/>
 public abstract class V4ReadOnlyControllerBase<TModel, TRepository>(TRepository repository) : ControllerBase
     where TModel : class, IV4Record
     where TRepository : IV4Repository<TModel>

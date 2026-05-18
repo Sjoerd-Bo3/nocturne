@@ -1,8 +1,23 @@
 namespace Nocturne.Core.Models.V4;
 
 /// <summary>
-/// Blood glucose meter reading
+/// Blood glucose meter reading from a dedicated glucometer device.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Corresponds to legacy <see cref="Entry"/> records with type <c>mbg</c> or <c>cal</c> that carry
+/// a meter glucose value. Unlike <see cref="BGCheck"/> (which is user-entered), <see cref="MeterGlucose"/>
+/// is sourced directly from the meter via upload (e.g., through a connector or xDrip).
+/// </para>
+/// <para>
+/// <see cref="Mmol"/> is computed from <see cref="Mgdl"/> using the standard conversion factor
+/// (18.0182). <see cref="Mgdl"/> is always the source of truth.
+/// </para>
+/// </remarks>
+/// <seealso cref="Entry"/>
+/// <seealso cref="IV4Record"/>
+/// <seealso cref="BGCheck"/>
+/// <seealso cref="SensorGlucose"/>
 public class MeterGlucose : IV4Record
 {
     /// <summary>
@@ -66,8 +81,11 @@ public class MeterGlucose : IV4Record
     public double Mgdl { get; set; }
 
     /// <summary>
-    /// Glucose value in mmol/L (computed from Mgdl)
+    /// Glucose value in mmol/L, computed from <see cref="Mgdl"/>.
     /// </summary>
+    /// <remarks>
+    /// Computed as <c>Mgdl / 18.0182</c>. The mg/dL value is the source of truth.
+    /// </remarks>
     public double Mmol => Mgdl / 18.0182;
 
     /// <summary>

@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant C as Client
+    participant G as YARP Gateway
+    participant A as Nocturne API
+    participant MW as Middleware Pipeline
+    participant S as Service Layer
+    participant EF as EF Core
+    participant DB as PostgreSQL
+
+    C->>G: HTTPS request
+    G->>A: HTTP (forwarded headers)
+    A->>MW: TenantResolution → Auth → MemberScope
+    MW->>A: Routed to Controller
+    A->>S: Service method call
+    S->>EF: Repository query
+    EF->>DB: SQL (with RLS tenant context)
+    DB-->>EF: Result set
+    EF-->>S: Domain model
+    S-->>A: Response DTO
+    A-->>G: HTTP response
+    G-->>C: HTTPS response

@@ -1,8 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Data transfer object for in-app notifications displayed to users
+/// Data transfer object for in-app notifications displayed to users in the Nocturne frontend.
 /// </summary>
+/// <seealso cref="NotificationCategory"/>
+/// <seealso cref="NotificationUrgency"/>
+/// <seealso cref="NotificationActionDto"/>
+/// <seealso cref="NotificationTemplate"/>
 public class InAppNotificationDto
 {
     /// <summary>
@@ -11,9 +17,14 @@ public class InAppNotificationDto
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Type of notification for categorization and handling
+    /// Dotted string type for categorization and handling (e.g., "tracker.alert", "glucose.predicted_low")
     /// </summary>
-    public InAppNotificationType Type { get; set; }
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Broad rendering category that determines visual treatment
+    /// </summary>
+    public NotificationCategory Category { get; set; }
 
     /// <summary>
     /// Urgency level for prioritization and visual styling
@@ -34,6 +45,16 @@ public class InAppNotificationDto
     /// When the notification was created
     /// </summary>
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// Lucide icon name for the notification (e.g., "alert-triangle", "bell")
+    /// </summary>
+    public string? Icon { get; set; }
+
+    /// <summary>
+    /// Subsystem or service that created the notification (e.g., "TrackerService", "ConnectorSync")
+    /// </summary>
+    public string? Source { get; set; }
 
     /// <summary>
     /// Optional source identifier for the notification (e.g., food entry ID for meal match)
@@ -138,4 +159,40 @@ public class NotificationEvent
     /// Why the notification was archived (for archived events)
     /// </summary>
     public NotificationArchiveReason? ArchiveReason { get; set; }
+}
+
+/// <summary>
+/// Request to create a notification programmatically (for third-party integrations).
+/// If a <see cref="NotificationTemplate"/> is registered for the given <see cref="Type"/>,
+/// its defaults are merged with the values provided here.
+/// </summary>
+/// <seealso cref="InAppNotificationDto"/>
+/// <seealso cref="NotificationTemplate"/>
+public class CreateNotificationRequest
+{
+    /// <summary>
+    /// Structured type string (e.g., "dexcom.connection_lost")
+    /// </summary>
+    [Required]
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Notification title
+    /// </summary>
+    [Required]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Rendering category. Required if no template is registered for the type.
+    /// </summary>
+    public NotificationCategory? Category { get; set; }
+
+    public NotificationUrgency? Urgency { get; set; }
+    public string? Subtitle { get; set; }
+    public string? SourceId { get; set; }
+    public string? Icon { get; set; }
+    public string? Source { get; set; }
+    public List<NotificationActionDto>? Actions { get; set; }
+    public ResolutionConditions? ResolutionConditions { get; set; }
+    public Dictionary<string, object>? Metadata { get; set; }
 }

@@ -1,4 +1,5 @@
 using Nocturne.API.Extensions;
+using Nocturne.Core.Models.Authorization;
 
 namespace Nocturne.API.Middleware;
 
@@ -7,12 +8,34 @@ namespace Nocturne.API.Middleware;
 /// When site lockdown is enabled, unauthenticated requests to protected routes
 /// will be denied with a 401 Unauthorized response.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Pipeline order (position 7 of 7 custom middleware -- last before ASP.NET authorization):
+/// <see cref="JsonExtensionMiddleware"/>,
+/// <see cref="OidcCallbackRedirectMiddleware"/>, <see cref="Multitenancy.TenantResolutionMiddleware"/>,
+/// <see cref="TenantSetupMiddleware"/>, <see cref="AuthenticationMiddleware"/>,
+/// <see cref="MemberScopeMiddleware"/>, <b>SiteSecurityMiddleware</b>.
+/// </para>
+/// <para>
+/// Reads the <see cref="AuthContext"/> populated by <see cref="AuthenticationMiddleware"/>
+/// via <see cref="Extensions.HttpContextExtensions.GetAuthContext"/>. Controlled by the
+/// <c>Security:RequireAuthentication</c> configuration key.
+/// </para>
+/// </remarks>
+/// <seealso cref="AuthenticationMiddleware"/>
+/// <seealso cref="MemberScopeMiddleware"/>
 public class SiteSecurityMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<SiteSecurityMiddleware> _logger;
     private readonly IConfiguration _configuration;
 
+    /// <summary>
+    /// Creates a new instance of <see cref="SiteSecurityMiddleware"/>.
+    /// </summary>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="logger">Logger for site lockdown diagnostics.</param>
+    /// <param name="configuration">Application configuration for reading <c>Security:RequireAuthentication</c>.</param>
     public SiteSecurityMiddleware(
         RequestDelegate next,
         ILogger<SiteSecurityMiddleware> logger,
@@ -24,6 +47,11 @@ public class SiteSecurityMiddleware
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Enforces site-wide authentication when lockdown is enabled.
+    /// </summary>
+    /// <param name="context">The current HTTP context.</param>
+    /// <returns>A task that completes when the middleware has finished processing.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
         // Check if authentication is required for the site
@@ -69,15 +97,24 @@ public class SiteSecurityMiddleware
     }
 
     /// <summary>
-    /// Determine if a route should be publicly accessible even when lockdown is enabled
+    /// Determine if a route should be publicly accessible even when lockdown is enabled.
     /// </summary>
+    /// <param name="path">The lowercased request path to evaluate.</param>
+    /// <returns><see langword="true"/> if the route is always public (auth, health, docs, assets); otherwise <see langword="false"/>.</returns>
     private static bool IsPublicRoute(string path)
     {
         // Authentication and authorization endpoints must remain accessible
         if (path.StartsWith("/api/v4/auth/") ||
-            path.StartsWith("/api/v4/oidc/") ||
+            path.StartsWith("/api/auth/oidc/") ||
+            path.StartsWith("/api/oauth/") ||
             path.StartsWith("/api/v4/oauth/") ||
             path.StartsWith("/api/v4/local/"))
+        {
+            return true;
+        }
+
+        // Well-known discovery endpoints (OIDC, OAuth metadata)
+        if (path.StartsWith("/.well-known/"))
         {
             return true;
         }

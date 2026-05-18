@@ -8,9 +8,16 @@ namespace Nocturne.API.Services.Auth;
 public static class RegistrationScopeValidator
 {
     /// <summary>
-    /// Validate a space-delimited scope string from a DCR request.
-    /// Returns null if valid, or a list of unknown scopes if invalid.
+    /// Validates a space-delimited scope string from a DCR request against the
+    /// canonical <see cref="OAuthScopes.ValidRequestScopes"/> registry.
     /// </summary>
+    /// <param name="scopeString">
+    /// A space-delimited list of requested scopes, or <see langword="null"/> / empty to request no specific scopes.
+    /// </param>
+    /// <returns>
+    /// <see langword="null"/> when all requested scopes are valid (or no scopes were requested);
+    /// otherwise a list of the unrecognised scope values.
+    /// </returns>
     public static List<string>? ValidateScopes(string? scopeString)
     {
         if (string.IsNullOrWhiteSpace(scopeString))

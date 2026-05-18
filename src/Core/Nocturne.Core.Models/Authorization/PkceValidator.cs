@@ -15,6 +15,9 @@ public static class PkceValidator
     /// Validates a code_verifier against a stored code_challenge using the S256 method.
     /// Computes SHA-256 of the verifier, base64url-encodes it, and compares.
     /// </summary>
+    /// <param name="codeVerifier">The code_verifier sent by the client in the token request.</param>
+    /// <param name="storedCodeChallenge">The code_challenge stored from the authorization request.</param>
+    /// <returns><c>true</c> if the verifier produces the stored challenge; <c>false</c> otherwise.</returns>
     public static bool ValidateCodeChallenge(string codeVerifier, string storedCodeChallenge)
     {
         if (string.IsNullOrEmpty(codeVerifier) || string.IsNullOrEmpty(storedCodeChallenge))
@@ -28,6 +31,8 @@ public static class PkceValidator
     /// Computes the S256 code_challenge for a given code_verifier.
     /// SHA-256 hash, then base64url-encoded (RFC 7636 Appendix B).
     /// </summary>
+    /// <param name="codeVerifier">The code_verifier to hash.</param>
+    /// <returns>The base64url-encoded SHA-256 hash of <paramref name="codeVerifier"/>.</returns>
     public static string ComputeCodeChallenge(string codeVerifier)
     {
         var bytes = Encoding.ASCII.GetBytes(codeVerifier);
@@ -39,6 +44,7 @@ public static class PkceValidator
     /// Generates a cryptographically random code_verifier (43 characters, URL-safe per RFC 7636).
     /// Uses <see cref="RandomNumberGenerator"/> for secure random bytes.
     /// </summary>
+    /// <returns>A base64url-encoded random string suitable for use as a PKCE code_verifier.</returns>
     public static string GenerateCodeVerifier()
     {
         var bytes = RandomNumberGenerator.GetBytes(CodeVerifierByteLength);

@@ -8,6 +8,8 @@ namespace Nocturne.Core.Models;
 /// Heart rate data is time-series sensor data similar to glucose entries,
 /// typically sourced from wearable devices via xDrip.
 /// </summary>
+/// <seealso cref="StepCount"/>
+/// <seealso cref="ProcessableDocumentBase"/>
 public class HeartRate : ProcessableDocumentBase
 {
     /// <summary>
@@ -24,10 +26,21 @@ public class HeartRate : ProcessableDocumentBase
         DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
 
     /// <summary>
-    /// Gets or sets the timestamp in milliseconds since Unix epoch
+    /// Gets or sets the timestamp in milliseconds since Unix epoch.
+    /// Setting Mills converts the value to Timestamp internally (v1 compatibility).
     /// </summary>
     [JsonPropertyName("mills")]
-    public override long Mills { get; set; }
+    public override long Mills
+    {
+        get => new DateTimeOffset(Timestamp, TimeSpan.Zero).ToUnixTimeMilliseconds();
+        set => Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(value).UtcDateTime;
+    }
+
+    /// <summary>
+    /// Canonical timestamp as UTC DateTime (source of truth)
+    /// </summary>
+    [JsonPropertyName("timestamp")]
+    public DateTime Timestamp { get; set; }
 
     /// <summary>
     /// Gets or sets the UTC offset in minutes

@@ -35,6 +35,9 @@ namespace Nocturne.Infrastructure.Data.Migrations
             "oauth_clients",
         ];
 
+        /// <summary>
+        /// Adds tenant_id columns and RLS policies to OAuth tables, making them tenant-scoped.
+        /// </summary>
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Clean-slate: delete all existing OAuth rows before adding NOT NULL tenant_id.

@@ -1,13 +1,17 @@
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
+using Nocturne.Core.Contracts.Glucose;
 
 namespace Nocturne.Core.Contracts.V4;
 
 /// <summary>
 /// Decomposes legacy Treatment records into v4 granular models (Bolus, CarbIntake, BGCheck, Note, BolusCalculation)
-/// and delegates StateSpan-backed types (TempBasal, ProfileSwitch) to IStateSpanService.
+/// and delegates StateSpan-backed types (TempBasal, ProfileSwitch) to <see cref="IStateSpanService"/>.
 /// Handles idempotent create-or-update based on LegacyId matching.
 /// </summary>
+/// <seealso cref="IDecompositionPipeline"/>
+/// <seealso cref="IEntryDecomposer"/>
+/// <seealso cref="IStateSpanService"/>
 public interface ITreatmentDecomposer
 {
     /// <summary>
@@ -24,10 +28,30 @@ public interface ITreatmentDecomposer
     Task<DecompositionResult> DecomposeAsync(Treatment treatment, CancellationToken ct = default);
 
     /// <summary>
+    /// Decomposes a batch of legacy Treatments into v4 records using bulk-insert operations,
+    /// eliminating per-record DB round-trips. State span treatments (TempBasal, ProfileSwitch,
+    /// Override, TemporaryTarget) are upserted individually since they require idempotent semantics.
+    /// Bolus-to-BolusCalculation linking is performed in a post-insert pass.
+    /// </summary>
+    /// <param name="treatments">The batch of legacy Treatments to decompose.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A single <see cref="DecompositionResult"/> containing all created v4 records.</returns>
+    Task<DecompositionResult> DecomposeBatchAsync(
+        IReadOnlyList<Treatment> treatments, CancellationToken ct = default);
+
+    /// <summary>
     /// Deletes all v4 records that were decomposed from a legacy Treatment with the given ID.
     /// </summary>
     /// <param name="legacyId">The legacy Treatment ID</param>
     /// <param name="ct">Cancellation token</param>
     /// <returns>Total number of v4 records deleted across all tables</returns>
     Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Bulk-deletes V4 treatment records matching the optional find filter (time range).
+    /// </summary>
+    /// <param name="find">Optional Nightscout-compatible find query for time range filtering.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Total number of V4 records deleted across all treatment tables.</returns>
+    Task<long> BulkDeleteAsync(string? find, CancellationToken ct = default);
 }

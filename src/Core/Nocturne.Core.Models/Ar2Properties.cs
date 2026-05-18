@@ -1,8 +1,12 @@
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// AR2 forecast properties with 1:1 legacy compatibility
+/// AR2 forecast properties with 1:1 legacy compatibility.
+/// AR2 (Auto-Regressive model of order 2) predicts future glucose values from the two most recent readings.
 /// </summary>
+/// <seealso cref="Ar2Forecast"/>
+/// <seealso cref="Ar2State"/>
+/// <seealso cref="ForecastPoint"/>
 public class Ar2Properties
 {
     /// <summary>
@@ -27,8 +31,10 @@ public class Ar2Properties
 }
 
 /// <summary>
-/// AR2 forecast calculation results
+/// AR2 forecast calculation results containing predicted glucose points and an average loss metric.
 /// </summary>
+/// <seealso cref="Ar2Properties"/>
+/// <seealso cref="ForecastPoint"/>
 public class Ar2Forecast
 {
     /// <summary>

@@ -75,7 +75,8 @@ public class V4ReadOnlyControllerBaseTests
     {
         var result = await _controller.GetAll(null, null, 100, 0, "invalid", null, null);
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
+        var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(400);
     }
 
     [Fact]

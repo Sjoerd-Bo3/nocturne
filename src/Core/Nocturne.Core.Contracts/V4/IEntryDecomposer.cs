@@ -7,6 +7,10 @@ namespace Nocturne.Core.Contracts.V4;
 /// Decomposes legacy Entry records into v4 granular models (SensorGlucose, MeterGlucose, Calibration).
 /// Handles idempotent create-or-update based on LegacyId matching.
 /// </summary>
+/// <seealso cref="IDecompositionPipeline"/>
+/// <seealso cref="ITreatmentDecomposer"/>
+/// <seealso cref="IProfileDecomposer"/>
+/// <seealso cref="IDeviceStatusDecomposer"/>
 public interface IEntryDecomposer
 {
     /// <summary>
@@ -28,4 +32,27 @@ public interface IEntryDecomposer
     /// <param name="ct">Cancellation token</param>
     /// <returns>Total number of v4 records deleted across all tables</returns>
     Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Bulk-deletes V4 records matching the given MongoDB-style find query.
+    /// Parses time bounds from the find JSON and deletes across all glucose repositories.
+    /// </summary>
+    /// <param name="find">Optional MongoDB-style find query for time-range extraction.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Total number of records deleted across all V4 tables.</returns>
+    Task<long> BulkDeleteAsync(string? find, CancellationToken ct = default);
+
+    /// <summary>
+    /// Decomposes a batch of legacy entries into v4 records using bulk-insert,
+    /// eliminating per-entry round-trips. All entries share a single
+    /// <see cref="DecompositionResult.CorrelationId"/>.
+    /// </summary>
+    /// <param name="entries">The legacy entries to decompose.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// A <see cref="DecompositionResult"/> whose <see cref="DecompositionResult.CreatedRecords"/>
+    /// contains all bulk-inserted v4 records. Entries with unrecognised types are skipped.
+    /// </returns>
+    Task<DecompositionResult> DecomposeBatchAsync(
+        IReadOnlyList<Entry> entries, CancellationToken ct = default);
 }

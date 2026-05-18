@@ -5,8 +5,20 @@ using Nocturne.Core.Models.Serializers;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Represents device status information from various devices
+/// Represents device status information from various devices (pumps, CGMs, AID systems).
 /// </summary>
+/// <remarks>
+/// Device status records are submitted by diabetes management apps (Loop, OpenAPS/AAPS, xDrip+)
+/// and contain nested status objects for the specific systems they manage.
+/// The <see cref="UploaderBattery"/> property is a computed convenience alias for <see cref="UploaderStatus.Battery"/>.
+/// Unknown top-level keys (e.g. AAPS <c>configuration</c>) are captured in <see cref="ExtensionData"/>.
+/// </remarks>
+/// <seealso cref="ProcessableDocumentBase"/>
+/// <seealso cref="Entry"/>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="OpenApsStatus"/>
+/// <seealso cref="LoopStatus"/>
+/// <seealso cref="PumpStatus"/>
 public class DeviceStatus : ProcessableDocumentBase
 {
     /// <summary>
@@ -145,6 +157,12 @@ public class DeviceStatus : ProcessableDocumentBase
     /// </summary>
     [JsonPropertyName("mmtune")]
     public OpenApsMmTune? MmTune { get; set; }
+
+    /// <summary>
+    /// Captures unknown top-level JSON keys not mapped to typed properties (e.g. AAPS <c>configuration</c>).
+    /// </summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 }
 
 /// <summary>

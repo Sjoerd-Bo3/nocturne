@@ -10,7 +10,7 @@ namespace Nocturne.Infrastructure.Data.Entities.V4;
 /// Maps to Nocturne.Core.Models.V4.UploaderSnapshot
 /// </summary>
 [Table("uploader_snapshots")]
-public class UploaderSnapshotEntity : ITenantScoped
+public class UploaderSnapshotEntity : ITenantScoped, ISoftDeletable
 {
     /// <summary>
     /// The unique identifier of the tenant this record belongs to.
@@ -42,6 +42,12 @@ public class UploaderSnapshotEntity : ITenantScoped
     [Column("device")]
     [MaxLength(256)]
     public string? Device { get; set; }
+
+    /// <summary>
+    /// Links records that were decomposed from the same legacy DeviceStatus
+    /// </summary>
+    [Column("correlation_id")]
+    public Guid? CorrelationId { get; set; }
 
     /// <summary>
     /// Original v1/v3 record ID for migration traceability
@@ -111,4 +117,11 @@ public class UploaderSnapshotEntity : ITenantScoped
     /// </summary>
     [Column("additional_properties", TypeName = "jsonb")]
     public string? AdditionalPropertiesJson { get; set; }
+
+    /// <summary>
+    /// Soft-delete timestamp. When non-null the record is treated as deleted
+    /// by the global query filter and is invisible above the repository layer.
+    /// </summary>
+    [Column("deleted_at")]
+    public DateTime? DeletedAt { get; set; }
 }

@@ -36,7 +36,7 @@ export function buildBotApiClient(api: ApiClient): BotApiClient {
       markFailed: (deliveryId, request, signal) =>
         api.alerts.markFailed(deliveryId, request, signal),
       getPendingDeliveries: (channelType, signal) =>
-        api.alerts.getPendingDeliveries(channelType, signal),
+        api.alerts.getPendingDeliveries(channelType as import('$api-clients').ChannelType[] | undefined, signal),
     },
     system: {
       heartbeat: (request, signal) => api.system.heartbeat(request, signal),
@@ -99,7 +99,7 @@ export function buildBotApiClient(api: ApiClient): BotApiClient {
  * the target tenant.
  *
  * Mechanism: constructs a fresh ApiClient whose X-Forwarded-Host is
- * `<tenantSlug>.<publicBaseDomain-without-port>`, which causes the
+ * `<tenantSlug>.<baseDomain-without-port>`, which causes the
  * TenantResolutionMiddleware on the API side to resolve to the correct tenant.
  */
 export function buildScopedBotApiClient(
@@ -111,10 +111,10 @@ export function buildScopedBotApiClient(
     throw new Error("API base URL not configured");
   }
 
-  const baseDomain = process.env.PUBLIC_BASE_DOMAIN;
+  const baseDomain = process.env.BASE_DOMAIN;
   if (!baseDomain) {
     throw new Error(
-      "PUBLIC_BASE_DOMAIN is required to build scoped bot api client",
+      "BASE_DOMAIN is required to build scoped bot api client",
     );
   }
 
@@ -124,7 +124,7 @@ export function buildScopedBotApiClient(
 
   const scopedApiClient = createServerApiClient(apiBaseUrl, fetchFn, {
     hashedInstanceKey: getHashedInstanceKey(),
-    extraHeaders: { "X-Forwarded-Host": hostHeader },
+    extraHeaders: { "X-Forwarded-Host": hostHeader, "X-Forwarded-Proto": "https" },
   });
 
   return buildBotApiClient(scopedApiClient);
@@ -137,7 +137,6 @@ function mapCandidate(c: {
   nocturneUserId?: string;
   label?: string;
   displayName?: string;
-  isDefault?: boolean;
 }): DirectoryCandidate {
   return {
     id: c.id ?? "",
@@ -146,6 +145,5 @@ function mapCandidate(c: {
     nocturneUserId: c.nocturneUserId ?? "",
     label: c.label ?? "",
     displayName: c.displayName ?? "",
-    isDefault: c.isDefault ?? false,
   };
 }

@@ -126,8 +126,11 @@ public enum CompletionReason
 }
 
 /// <summary>
-/// Urgency level for tracker notification thresholds
+/// Urgency level for tracker notification thresholds and in-app notifications.
+/// Used by tracker definitions, <see cref="InAppNotificationDto"/>, and <see cref="NotificationTemplate"/>.
 /// </summary>
+/// <seealso cref="NotificationCategory"/>
+/// <seealso cref="InAppNotificationDto"/>
 [JsonConverter(typeof(JsonStringEnumConverter<NotificationUrgency>))]
 public enum NotificationUrgency
 {
@@ -229,58 +232,6 @@ public enum CalculationType
 }
 
 /// <summary>
-/// Type of in-app notification for the unified notification system
-/// </summary>
-[JsonConverter(typeof(JsonStringEnumConverter<InAppNotificationType>))]
-public enum InAppNotificationType
-{
-    /// <summary>
-    /// Notification that a tracker has not been configured/started
-    /// </summary>
-    UnconfiguredTracker,
-
-    /// <summary>
-    /// Alert triggered by a tracker reaching a notification threshold
-    /// </summary>
-    TrackerAlert,
-
-    /// <summary>
-    /// Daily or periodic statistics summary notification
-    /// </summary>
-    StatisticsSummary,
-
-    /// <summary>
-    /// Response to a user help or feedback request
-    /// </summary>
-    HelpResponse,
-
-    /// <summary>
-    /// Admin notification for pending anonymous login request
-    /// </summary>
-    AnonymousLoginRequest,
-
-    /// <summary>
-    /// Prediction of upcoming low glucose event
-    /// </summary>
-    PredictedLow,
-
-    /// <summary>
-    /// Suggested meal match from connector food entries
-    /// </summary>
-    SuggestedMealMatch,
-
-    /// <summary>
-    /// Suggested tracker reset based on detected events (Site Change treatment or sensor warmup)
-    /// </summary>
-    SuggestedTrackerMatch,
-
-    /// <summary>
-    /// Pending compression low suggestions for user review
-    /// </summary>
-    CompressionLowReview
-}
-
-/// <summary>
 /// Reason why a notification was archived
 /// </summary>
 [JsonConverter(typeof(JsonStringEnumConverter<NotificationArchiveReason>))]
@@ -305,4 +256,36 @@ public enum NotificationArchiveReason
     /// Notification expired based on its configured expiration time
     /// </summary>
     Expired
+}
+
+/// <summary>
+/// Broad rendering category for notifications. Determines visual treatment (icon shape,
+/// color palette, default sound) without coupling to a specific notification type.
+/// </summary>
+/// <seealso cref="NotificationUrgency"/>
+/// <seealso cref="InAppNotificationDto"/>
+/// <seealso cref="NotificationTemplate"/>
+[JsonConverter(typeof(JsonStringEnumConverter<NotificationCategory>))]
+public enum NotificationCategory
+{
+    /// <summary>
+    /// Passive informational notifications (e.g., statistics summary, help response).
+    /// Default value — safest fallback for uninitialized notifications.
+    /// </summary>
+    Informational,
+
+    /// <summary>
+    /// Time-sensitive alerts requiring immediate attention (e.g., predicted low, urgent high)
+    /// </summary>
+    Alert,
+
+    /// <summary>
+    /// Notifications that require user action to resolve (e.g., unconfigured tracker, login request)
+    /// </summary>
+    ActionRequired,
+
+    /// <summary>
+    /// Gentle reminders for optional actions (e.g., suggested meal match, tracker reset)
+    /// </summary>
+    Reminder
 }

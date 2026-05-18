@@ -2,21 +2,28 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Extensions;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Platform;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V4.Profiles;
 
 /// <summary>
-/// Controller for clock face configuration management
+/// Controller for clock face configuration management.
 /// </summary>
+/// <seealso cref="IClockFaceService"/>
 [ApiController]
+[Tags("Profiles")]
 [Route("api/v4/clockfaces")]
 public class ClockFacesController : ControllerBase
 {
     private readonly IClockFaceService _clockFaceService;
     private readonly ILogger<ClockFacesController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ClockFacesController"/>.
+    /// </summary>
+    /// <param name="clockFaceService">Service for clock face storage and retrieval.</param>
+    /// <param name="logger">Logger instance.</param>
     public ClockFacesController(
         IClockFaceService clockFaceService,
         ILogger<ClockFacesController> logger)

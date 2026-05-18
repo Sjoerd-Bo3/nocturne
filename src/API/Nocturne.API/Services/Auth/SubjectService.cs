@@ -2,7 +2,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -10,8 +9,14 @@ using Nocturne.Infrastructure.Data.Entities;
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Service for managing authentication subjects
+/// Service for managing authentication <see cref="Subject"/> entities — creation,
+/// lookup by ID or token hash, password management, role assignment, and TOTP enrollment.
+/// All audit-significant operations are forwarded to <see cref="IAuthAuditService"/>.
 /// </summary>
+/// <seealso cref="ISubjectService"/>
+/// <seealso cref="IAuthAuditService"/>
+/// <seealso cref="OAuthTokenService"/>
+/// <seealso cref="RoleService"/>
 public class SubjectService : ISubjectService
 {
     private readonly NocturneDbContext _dbContext;
@@ -19,8 +24,11 @@ public class SubjectService : ISubjectService
     private readonly ILogger<SubjectService> _logger;
 
     /// <summary>
-    /// Creates a new instance of SubjectService
+    /// Initializes a new instance of <see cref="SubjectService"/>.
     /// </summary>
+    /// <param name="dbContext">The EF Core database context for subject and role entity access.</param>
+    /// <param name="auditService">Service for recording audit events on authentication actions.</param>
+    /// <param name="logger">The logger instance.</param>
     public SubjectService(NocturneDbContext dbContext, IAuthAuditService auditService, ILogger<SubjectService> logger)
     {
         _dbContext = dbContext;
@@ -810,6 +818,7 @@ public class SubjectService : ISubjectService
             LastLoginAt = entity.LastLoginAt,
             Notes = entity.Notes,
             PreferredLanguage = entity.PreferredLanguage,
+            AvatarUrl = entity.AvatarUrl,
             Roles = new List<Role>(),
             Permissions = new List<string>(),
         };

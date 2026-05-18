@@ -3,8 +3,11 @@ using Nocturne.Core.Models;
 namespace Nocturne.Core.Contracts.Repositories;
 
 /// <summary>
-/// Repository port for food breakdown operations linked to carb intake records.
+/// Repository port for <see cref="TreatmentFood"/> breakdown operations linked to carb intake records.
 /// </summary>
+/// <seealso cref="TreatmentFood"/>
+/// <seealso cref="Food"/>
+/// <seealso cref="IFoodRepository"/>
 public interface ITreatmentFoodRepository
 {
     /// <summary>

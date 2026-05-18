@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models.V4;
 using Nocturne.Infrastructure.Data.Mappers.V4;
+using Nocturne.Infrastructure.Data.Services;
 
 namespace Nocturne.Infrastructure.Data.Repositories.V4;
 
@@ -11,17 +12,17 @@ namespace Nocturne.Infrastructure.Data.Repositories.V4;
 /// </summary>
 public class CalibrationRepository : ICalibrationRepository
 {
-    private readonly NocturneDbContext _context;
+    private readonly ITenantDbContextFactory _contextFactory;
     private readonly ILogger<CalibrationRepository> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CalibrationRepository"/> class.
     /// </summary>
-    /// <param name="context">The database context.</param>
+    /// <param name="contextFactory">The tenant database context factory.</param>
     /// <param name="logger">The logger instance.</param>
-    public CalibrationRepository(NocturneDbContext context, ILogger<CalibrationRepository> logger)
+    public CalibrationRepository(ITenantDbContextFactory contextFactory, ILogger<CalibrationRepository> logger)
     {
-        _context = context;
+        _contextFactory = contextFactory;
         _logger = logger;
     }
 
@@ -42,7 +43,8 @@ public class CalibrationRepository : ICalibrationRepository
         int limit = 100, int offset = 0, bool descending = true,
         CancellationToken ct = default)
     {
-        var query = _context.Calibrations.AsNoTracking().AsQueryable();
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var query = ctx.Calibrations.AsNoTracking().AsQueryable();
         if (from.HasValue) query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue) query = query.Where(e => e.Timestamp <= to.Value);
         if (device != null) query = query.Where(e => e.Device == device);
@@ -60,7 +62,8 @@ public class CalibrationRepository : ICalibrationRepository
     /// <returns>The calibration record, or null if not found.</returns>
     public async Task<Calibration?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var entity = await _context.Calibrations.FindAsync([id], ct);
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entity = await ctx.Calibrations.FindAsync([id], ct);
         return entity is null ? null : CalibrationMapper.ToDomainModel(entity);
     }
 
@@ -72,7 +75,8 @@ public class CalibrationRepository : ICalibrationRepository
     /// <returns>The calibration record, or null if not found.</returns>
     public async Task<Calibration?> GetByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
-        var entity = await _context.Calibrations.FirstOrDefaultAsync(e => e.LegacyId == legacyId, ct);
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entity = await ctx.Calibrations.FirstOrDefaultAsync(e => e.LegacyId == legacyId, ct);
         return entity is null ? null : CalibrationMapper.ToDomainModel(entity);
     }
 
@@ -84,9 +88,10 @@ public class CalibrationRepository : ICalibrationRepository
     /// <returns>The created calibration record.</returns>
     public async Task<Calibration> CreateAsync(Calibration model, CancellationToken ct = default)
     {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
         var entity = CalibrationMapper.ToEntity(model);
-        _context.Calibrations.Add(entity);
-        await _context.SaveChangesAsync(ct);
+        ctx.Calibrations.Add(entity);
+        await ctx.SaveChangesAsync(ct);
         return CalibrationMapper.ToDomainModel(entity);
     }
 
@@ -99,10 +104,11 @@ public class CalibrationRepository : ICalibrationRepository
     /// <returns>The updated calibration record.</returns>
     public async Task<Calibration> UpdateAsync(Guid id, Calibration model, CancellationToken ct = default)
     {
-        var entity = await _context.Calibrations.FindAsync([id], ct)
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entity = await ctx.Calibrations.FindAsync([id], ct)
             ?? throw new KeyNotFoundException($"Calibration {id} not found");
         CalibrationMapper.UpdateEntity(entity, model);
-        await _context.SaveChangesAsync(ct);
+        await ctx.SaveChangesAsync(ct);
         return CalibrationMapper.ToDomainModel(entity);
     }
 
@@ -113,10 +119,60 @@ public class CalibrationRepository : ICalibrationRepository
     /// <param name="ct">The cancellation token.</param>
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var entity = await _context.Calibrations.FindAsync([id], ct)
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entity = await ctx.Calibrations.FindAsync([id], ct)
             ?? throw new KeyNotFoundException($"Calibration {id} not found");
-        _context.Calibrations.Remove(entity);
-        await _context.SaveChangesAsync(ct);
+        entity.DeletedAt = DateTime.UtcNow;
+        await ctx.SaveChangesAsync(ct);
+    }
+
+    /// <inheritdoc />
+    public async Task<Calibration> RestoreAsync(Guid id, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entity = await ctx.Calibrations.IgnoreQueryFilters()
+            .Where(e => e.TenantId == ctx.TenantId && e.Id == id && e.DeletedAt != null)
+            .FirstOrDefaultAsync(ct)
+            ?? throw new KeyNotFoundException($"Soft-deleted Calibration {id} not found");
+        entity.DeletedAt = null;
+        await ctx.SaveChangesAsync(ct);
+        return CalibrationMapper.ToDomainModel(entity);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<Calibration>> BulkRestoreAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var idSet = ids.ToHashSet();
+        var entities = await ctx.Calibrations.IgnoreQueryFilters()
+            .Where(e => e.TenantId == ctx.TenantId && idSet.Contains(e.Id) && e.DeletedAt != null)
+            .ToListAsync(ct);
+        foreach (var entity in entities)
+            entity.DeletedAt = null;
+        await ctx.SaveChangesAsync(ct);
+        return entities.Select(CalibrationMapper.ToDomainModel);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<Calibration>> GetDeletedAsync(int limit, int offset, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entities = await ctx.Calibrations.IgnoreQueryFilters()
+            .Where(e => e.TenantId == ctx.TenantId && e.DeletedAt != null)
+            .OrderByDescending(e => e.DeletedAt)
+            .Skip(offset).Take(limit)
+            .AsNoTracking()
+            .ToListAsync(ct);
+        return entities.Select(CalibrationMapper.ToDomainModel);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> CountDeletedAsync(CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        return await ctx.Calibrations.IgnoreQueryFilters()
+            .Where(e => e.TenantId == ctx.TenantId && e.DeletedAt != null)
+            .CountAsync(ct);
     }
 
     /// <summary>
@@ -128,7 +184,8 @@ public class CalibrationRepository : ICalibrationRepository
     /// <returns>The count of matching records.</returns>
     public async Task<int> CountAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
-        var query = _context.Calibrations.AsNoTracking().AsQueryable();
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var query = ctx.Calibrations.AsNoTracking().AsQueryable();
         if (from.HasValue) query = query.Where(e => e.Timestamp >= from.Value);
         if (to.HasValue) query = query.Where(e => e.Timestamp <= to.Value);
         return await query.CountAsync(ct);
@@ -142,7 +199,8 @@ public class CalibrationRepository : ICalibrationRepository
     /// <returns>A collection of calibrations.</returns>
     public async Task<IEnumerable<Calibration>> GetByCorrelationIdAsync(Guid correlationId, CancellationToken ct = default)
     {
-        var entities = await _context.Calibrations
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var entities = await ctx.Calibrations
             .AsNoTracking()
             .Where(e => e.CorrelationId == correlationId)
             .ToListAsync(ct);
@@ -157,8 +215,140 @@ public class CalibrationRepository : ICalibrationRepository
     /// <returns>The number of deleted records.</returns>
     public async Task<int> DeleteByLegacyIdAsync(string legacyId, CancellationToken ct = default)
     {
-        return await _context.Calibrations
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        return await ctx.Calibrations
             .Where(e => e.LegacyId == legacyId)
-            .ExecuteDeleteAsync(ct);
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.DeletedAt, DateTime.UtcNow), ct);
+    }
+
+    /// <summary>
+    /// Gets the timestamp of the latest calibration record.
+    /// </summary>
+    /// <param name="source">Optional data source filter.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The latest timestamp, or null if no records found.</returns>
+    public async Task<DateTime?> GetLatestTimestampAsync(string? source = null, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var query = ctx.Calibrations.AsNoTracking().AsQueryable();
+        if (source != null)
+            query = query.Where(e => e.DataSource == source);
+        return await query.MaxAsync(e => (DateTime?)e.Timestamp, ct);
+    }
+
+    /// <summary>
+    /// Gets the timestamp of the oldest calibration record.
+    /// </summary>
+    /// <param name="source">Optional data source filter.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The oldest timestamp, or null if no records found.</returns>
+    public async Task<DateTime?> GetOldestTimestampAsync(string? source = null, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var query = ctx.Calibrations.AsNoTracking().AsQueryable();
+        if (source != null)
+            query = query.Where(e => e.DataSource == source);
+        return await query.MinAsync(e => (DateTime?)e.Timestamp, ct);
+    }
+
+    /// <summary>
+    /// Deletes all calibration records for the given data source.
+    /// </summary>
+    /// <param name="source">Data source identifier.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>Number of records deleted.</returns>
+    public async Task<int> DeleteBySourceAsync(string source, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        return await ctx.Calibrations
+            .Where(e => e.DataSource == source)
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.DeletedAt, DateTime.UtcNow), ct);
+    }
+
+    /// <summary>
+    /// Deletes all calibration records within the given time range.
+    /// </summary>
+    /// <param name="from">Inclusive start, or null for no lower bound.</param>
+    /// <param name="to">Exclusive end, or null for no upper bound.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>Number of records deleted.</returns>
+    public async Task<int> DeleteByTimeRangeAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
+    {
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var query = ctx.Calibrations.AsQueryable();
+
+        if (from.HasValue)
+            query = query.Where(e => e.Timestamp >= from.Value);
+        if (to.HasValue)
+            query = query.Where(e => e.Timestamp < to.Value);
+
+        return await query.ExecuteUpdateAsync(s => s.SetProperty(e => e.DeletedAt, DateTime.UtcNow), ct);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<Calibration>> BulkCreateAsync(
+        IEnumerable<Calibration> records,
+        CancellationToken ct = default)
+    {
+        var entities = records.Select(CalibrationMapper.ToEntity).ToList();
+        if (entities.Count == 0)
+            return [];
+
+        // Batch-level dedup: keep first occurrence per LegacyId
+        entities = entities
+            .GroupBy(e => e.LegacyId ?? e.Id.ToString())
+            .Select(g => g.First())
+            .ToList();
+
+        // DB-level dedup: filter out records whose LegacyId already exists
+        var legacyIds = entities
+            .Where(e => !string.IsNullOrEmpty(e.LegacyId))
+            .Select(e => e.LegacyId!)
+            .ToHashSet();
+
+        await using var ctx = await _contextFactory.CreateAsync(ct);
+        var strategy = ctx.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await ctx.Database.BeginTransactionAsync(ct);
+
+            if (legacyIds.Count > 0)
+            {
+                var existingRecords = await ctx.Calibrations.IgnoreQueryFilters().AsNoTracking()
+                    .Where(e => e.TenantId == ctx.TenantId)
+                    .Where(e => legacyIds.Contains(e.LegacyId!))
+                    .Select(e => new { e.LegacyId, IsSoftDeleted = e.DeletedAt != null })
+                    .ToListAsync(ct);
+
+                var existingSet = existingRecords.Select(r => r.LegacyId).ToHashSet();
+                var softDeletedCount = existingRecords.Count(r => r.IsSoftDeleted);
+
+                if (softDeletedCount > 0)
+                    _logger.LogInformation(
+                        "Skipped {Count} previously-deleted {Type} records during import",
+                        softDeletedCount, "Calibration");
+
+                entities = entities
+                    .Where(e => string.IsNullOrEmpty(e.LegacyId) || !existingSet.Contains(e.LegacyId))
+                    .ToList();
+            }
+
+            if (entities.Count == 0)
+            {
+                await tx.CommitAsync(ct);
+                return [];
+            }
+
+            const int batchSize = 500;
+            foreach (var batch in entities.Chunk(batchSize))
+            {
+                ctx.Calibrations.AddRange(batch);
+                await ctx.SaveChangesAsync(ct);
+                ctx.ChangeTracker.Clear();
+            }
+
+            await tx.CommitAsync(ct);
+            return entities.Select(CalibrationMapper.ToDomainModel);
+        });
     }
 }

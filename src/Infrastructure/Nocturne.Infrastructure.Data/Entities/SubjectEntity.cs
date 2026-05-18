@@ -125,6 +125,13 @@ public class SubjectEntity
     [Column("is_platform_admin")]
     public bool IsPlatformAdmin { get; set; } = false;
 
+    /// <summary>
+    /// URL to the subject's avatar image, if set
+    /// </summary>
+    [MaxLength(2048)]
+    [Column("avatar_url")]
+    public string? AvatarUrl { get; set; }
+
     // Navigation properties
 
     /// <summary>

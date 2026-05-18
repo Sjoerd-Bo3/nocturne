@@ -3,7 +3,7 @@
   import * as Alert from "$lib/components/ui/alert";
   import { Clock, RefreshCw, X } from "lucide-svelte";
   import { formatSessionExpiry } from "$lib/stores/auth-store.svelte";
-  import { refreshSession } from "../../../routes/(fullscreen)/auth/auth.remote";
+  import { refreshSession } from "../../../routes/(unauthenticated)/auth/auth.remote";
 
   interface Props {
     /** Time until session expires in seconds */

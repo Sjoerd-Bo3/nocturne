@@ -9,21 +9,23 @@
     GlucoseType,
     GlucoseUnit,
     DeviceEventType,
+    PatientInsulin,
+    InsulinFormulation,
+    InsulinCategory,
+    BasalInjection,
+    CreateBasalInjectionRequest,
   } from "$lib/api";
+  import { InsulinCategory as InsulinCategoryEnum } from "$lib/api";
   import type { EntryRecord } from "$lib/constants/entry-categories";
   import {
     ENTRY_CATEGORIES,
     getEntryStyle,
   } from "$lib/constants/entry-categories";
   import * as Dialog from "$lib/components/ui/dialog";
-  import * as Select from "$lib/components/ui/select";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { Textarea } from "$lib/components/ui/textarea";
   import { Badge } from "$lib/components/ui/badge";
-  import { Checkbox } from "$lib/components/ui/checkbox";
-  import { Separator } from "$lib/components/ui/separator";
   import {
     Syringe,
     Apple,
@@ -33,14 +35,19 @@
     Clock,
     Database,
     Trash2,
-    Link,
   } from "lucide-svelte";
-  import {
-    formatDateForInput,
-    formatDateTimeCompact,
-    formatInsulinDisplay,
-    formatCarbDisplay,
-  } from "$lib/utils/formatting";
+  import { formatDateForInput, formatDateTimeCompact } from "$lib/utils/formatting";
+  import * as patientRemote from "$api/generated/patientRecords.generated.remote";
+  import { getCatalog } from "$api/generated/insulinCatalogs.generated.remote";
+  import BolusFormFields from "./edit-dialog/BolusFormFields.svelte";
+  import CarbsFormFields from "./edit-dialog/CarbsFormFields.svelte";
+  import BGCheckFormFields from "./edit-dialog/BGCheckFormFields.svelte";
+  import NoteFormFields from "./edit-dialog/NoteFormFields.svelte";
+  import DeviceEventFormFields from "./edit-dialog/DeviceEventFormFields.svelte";
+  import BasalInjectionFormFields from "./edit-dialog/BasalInjectionFormFields.svelte";
+  import LinkedRecordsPanel from "./edit-dialog/LinkedRecordsPanel.svelte";
+  import InsulinFormFields from "$lib/components/patient/InsulinFormFields.svelte";
+  import { insulinCategoryLabels } from "$lib/components/patient/labels";
 
   interface Props {
     open: boolean;
@@ -83,6 +90,7 @@
     duration: undefined as number | undefined,
     automatic: false,
     insulinType: "",
+    patientInsulinId: undefined as string | undefined,
     isBasalInsulin: false,
   });
 
@@ -109,6 +117,73 @@
     notes: "",
   });
 
+  let basalInjectionForm = $state<Partial<CreateBasalInjectionRequest>>({
+    patientInsulinId: undefined,
+    units: undefined,
+    notes: "",
+  });
+
+  // Load patient insulins for the dropdown
+  const insulinsResource = patientRemote.getInsulins();
+  let patientInsulins = $derived((insulinsResource.current ?? []) as PatientInsulin[]);
+
+  // Load insulin catalog for "add new" form
+  const catalogResource = getCatalog(undefined);
+  let catalog = $derived((catalogResource.current ?? []) as InsulinFormulation[]);
+
+  // Inline "add new insulin" state
+  let showAddInsulin = $state(false);
+  let addCategory = $state("");
+  let addFormulationId = $state("");
+  let addName = $state("");
+  let addRole = $state("");
+  let addDia = $state<number | null>(4.0);
+  let addPeak = $state<number | null>(75);
+  let addCurve = $state("rapid-acting");
+  let addConcentration = $state<number | null>(100);
+
+  let addFormulations = $derived(
+    addCategory ? catalog.filter((f) => f.category === addCategory) : []
+  );
+
+  function onAddCategoryChange() {
+    addFormulationId = "";
+    addName = "";
+    const isLongActing = addCategory === InsulinCategoryEnum.LongActing
+      || addCategory === InsulinCategoryEnum.UltraLongActing;
+    addRole = isLongActing ? "Basal" : "Bolus";
+    addDia = isLongActing ? 24.0 : 4.0;
+    addPeak = isLongActing ? 0 : 75;
+    addCurve = isLongActing ? "bilinear" : "rapid-acting";
+    addConcentration = 100;
+  }
+
+  function onAddFormulationChange() {
+    const formulation = catalog.find((f) => f.id === addFormulationId);
+    if (formulation) {
+      addName = formulation.name ?? "";
+      addDia = formulation.defaultDia ?? 4.0;
+      addPeak = formulation.defaultPeak ?? 75;
+      addCurve = formulation.curve ?? "rapid-acting";
+      addConcentration = formulation.concentration ?? 100;
+    }
+  }
+
+  function resetAddForm() {
+    showAddInsulin = false;
+    addCategory = "";
+    addFormulationId = "";
+    addName = "";
+    addRole = "";
+    addDia = 4.0;
+    addPeak = 75;
+    addCurve = "rapid-acting";
+    addConcentration = 100;
+  }
+
+  const addInsulinForm = patientRemote.createInsulin;
+  let addSaving = $derived(!!addInsulinForm.pending);
+
   // Common timestamp field (mills)
   let editMills = $state<number>(Date.now());
 
@@ -128,6 +203,7 @@
           duration: d.duration ?? undefined,
           automatic: d.automatic ?? false,
           insulinType: d.insulinType ?? "",
+          patientInsulinId: d.insulinContext?.patientInsulinId ?? undefined,
           isBasalInsulin: (d.additionalProperties?.["isBasalInsulin"] as boolean) ?? false,
         };
         break;
@@ -167,7 +243,28 @@
         };
         break;
       }
+      case "basalInjection": {
+        const d = activeRecord.data;
+        basalInjectionForm = {
+          patientInsulinId: d.insulinContext?.patientInsulinId ?? undefined,
+          units: d.units ?? undefined,
+          notes: d.notes ?? "",
+        };
+        break;
+      }
     }
+  });
+
+  // Filter patientInsulins to those eligible for a basal injection at the
+  // currently-edited timestamp: role in (Basal, Both) and active at that mills.
+  let basalEligibleInsulins = $derived.by(() => {
+    const ts = editMills;
+    return patientInsulins.filter((i) => {
+      if (i.role !== "Basal" && i.role !== "Both") return false;
+      const start = i.startDate ? new Date(i.startDate).getTime() : -Infinity;
+      const end = i.endDate ? new Date(i.endDate).getTime() : Infinity;
+      return ts >= start && ts <= end;
+    });
   });
 
   // Correlation group: all records sharing the same correlationId
@@ -191,6 +288,7 @@
     bgCheck: Droplet,
     note: FileText,
     deviceEvent: Smartphone,
+    basalInjection: Syringe,
   };
 
   let activeCategory = $derived(
@@ -259,6 +357,32 @@
           } as DeviceEvent,
         };
         break;
+      case "basalInjection": {
+        const existingContext = activeRecord.data.insulinContext;
+        const selectedInsulin = patientInsulins.find(
+          (i) => i.id === basalInjectionForm.patientInsulinId
+        );
+        const nextContext = selectedInsulin
+          ? {
+              patientInsulinId: selectedInsulin.id,
+              insulinName: selectedInsulin.name,
+              dia: selectedInsulin.dia,
+              peak: selectedInsulin.peak,
+              curve: selectedInsulin.curve,
+              concentration: selectedInsulin.concentration,
+            }
+          : existingContext;
+        updated = {
+          kind: "basalInjection",
+          data: {
+            ...baseData,
+            units: basalInjectionForm.units ?? activeRecord.data.units,
+            notes: basalInjectionForm.notes ?? "",
+            insulinContext: nextContext,
+          } as BasalInjection,
+        };
+        break;
+      }
     }
 
     onSave(updated);
@@ -266,25 +390,6 @@
 
   function switchToRecord(r: EntryRecord) {
     overrideRecord = r;
-  }
-
-  function getPrimaryValue(r: EntryRecord): string {
-    switch (r.kind) {
-      case "bolus":
-        return r.data.insulin != null
-          ? `${formatInsulinDisplay(r.data.insulin)}U`
-          : "\u2014";
-      case "carbs":
-        return r.data.carbs != null
-          ? `${formatCarbDisplay(r.data.carbs)}g`
-          : "\u2014";
-      case "bgCheck":
-        return r.data.mgdl != null ? `${r.data.mgdl} mg/dL` : "\u2014";
-      case "note":
-        return r.data.text || "\u2014";
-      case "deviceEvent":
-        return r.data.eventType ?? "\u2014";
-    }
   }
 
   function formatMills(mills: number | undefined): string {
@@ -295,41 +400,6 @@
   function millsToInputValue(mills: number): string {
     return formatDateForInput(new Date(mills).toISOString());
   }
-
-  const bolusTypeOptions: BolusType[] = [
-    "Normal",
-    "Square",
-    "Dual",
-  ] as BolusType[];
-  const glucoseTypeOptions: GlucoseType[] = [
-    "Finger",
-    "Sensor",
-  ] as GlucoseType[];
-  const deviceEventTypeOptions: DeviceEventType[] = [
-    "SensorStart",
-    "SensorChange",
-    "SensorStop",
-    "SiteChange",
-    "InsulinChange",
-    "PumpBatteryChange",
-    "PodChange",
-    "ReservoirChange",
-    "CannulaChange",
-    "TransmitterSensorInsert",
-    "PodActivated",
-    "PodDeactivated",
-    "PumpSuspend",
-    "PumpResume",
-    "Priming",
-    "TubePriming",
-    "NeedlePriming",
-    "Rewind",
-    "DateChanged",
-    "TimeChanged",
-    "BolusMaxChanged",
-    "BasalMaxChanged",
-    "ProfileSwitch",
-  ] as DeviceEventType[];
 </script>
 
 <Dialog.Root bind:open onOpenChange={(o) => !o && onClose()}>
@@ -394,325 +464,34 @@
           />
         </div>
 
-        <!-- Bolus form -->
+        <!-- Kind-specific form fields -->
         {#if activeRecord.kind === "bolus"}
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <Label for="insulin" class="flex items-center gap-1.5">
-                <Syringe class="h-3.5 w-3.5 text-blue-500" />
-                Insulin (U)
-              </Label>
-              <Input
-                id="insulin"
-                type="number"
-                step="0.05"
-                min="0"
-                bind:value={bolusForm.insulin}
-              />
-            </div>
-            <div class="space-y-2">
-              <Label>Bolus Type</Label>
-              <Select.Root
-                type="single"
-                value={bolusForm.bolusType ?? ""}
-                onValueChange={(v) => {
-                  bolusForm.bolusType = (v as BolusType) || undefined;
-                }}
-              >
-                <Select.Trigger>
-                  {bolusForm.bolusType || "Select..."}
-                </Select.Trigger>
-                <Select.Content>
-                  {#each bolusTypeOptions as opt}
-                    <Select.Item value={opt}>{opt}</Select.Item>
-                  {/each}
-                </Select.Content>
-              </Select.Root>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4">
-            <div class="space-y-2">
-              <Label for="programmed">Programmed</Label>
-              <Input
-                id="programmed"
-                type="number"
-                step="0.05"
-                min="0"
-                bind:value={bolusForm.programmed}
-                placeholder={"\u2014"}
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="delivered">Delivered</Label>
-              <Input
-                id="delivered"
-                type="number"
-                step="0.05"
-                min="0"
-                bind:value={bolusForm.delivered}
-                placeholder={"\u2014"}
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="duration">Duration (min)</Label>
-              <Input
-                id="duration"
-                type="number"
-                step="1"
-                min="0"
-                bind:value={bolusForm.duration}
-                placeholder={"\u2014"}
-              />
-            </div>
-          </div>
-
-          <div class="space-y-2">
-            <Label for="insulinType">Insulin Type</Label>
-            <Input
-              id="insulinType"
-              bind:value={bolusForm.insulinType}
-              placeholder="e.g. Rapid, Long-acting"
-            />
-          </div>
-
-          <div class="flex gap-6">
-            <div class="flex items-center gap-2">
-              <Checkbox id="automatic" bind:checked={bolusForm.automatic} />
-              <Label for="automatic" class="text-sm font-normal cursor-pointer">
-                Automatic
-              </Label>
-            </div>
-            <div class="flex items-center gap-2">
-              <Checkbox
-                id="isBasalInsulin"
-                bind:checked={bolusForm.isBasalInsulin}
-              />
-              <Label
-                for="isBasalInsulin"
-                class="text-sm font-normal cursor-pointer"
-              >
-                Basal Insulin
-              </Label>
-            </div>
-          </div>
-
-          <!-- Carbs form -->
+          <BolusFormFields
+            bind:form={bolusForm}
+            {patientInsulins}
+            onAddInsulin={() => showAddInsulin = !showAddInsulin}
+          />
         {:else if activeRecord.kind === "carbs"}
-          <div class="grid grid-cols-3 gap-4">
-            <div class="space-y-2">
-              <Label for="carbs" class="flex items-center gap-1.5">
-                <Apple class="h-3.5 w-3.5 text-green-500" />
-                Carbs (g)
-              </Label>
-              <Input
-                id="carbs"
-                type="number"
-                step="1"
-                min="0"
-                bind:value={carbsForm.carbs}
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <Label for="absorptionTime">Absorption Time (min)</Label>
-              <Input
-                id="absorptionTime"
-                type="number"
-                step="1"
-                min="0"
-                bind:value={carbsForm.absorptionTime}
-                placeholder={"\u2014"}
-              />
-            </div>
-            <div class="space-y-2">
-              <Label for="carbTime">Carb Time (min)</Label>
-              <Input
-                id="carbTime"
-                type="number"
-                step="1"
-                bind:value={carbsForm.carbTime}
-                placeholder={"\u2014"}
-              />
-            </div>
-          </div>
-
-          <!-- BG Check form -->
+          <CarbsFormFields bind:form={carbsForm} />
         {:else if activeRecord.kind === "bgCheck"}
-          <div class="space-y-2">
-            <Label for="glucose" class="flex items-center gap-1.5">
-              <Droplet class="h-3.5 w-3.5 text-red-500" />
-              Glucose
-            </Label>
-            <Input
-              id="glucose"
-              type="number"
-              step="1"
-              min="0"
-              bind:value={bgCheckForm.glucose}
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <Label>Glucose Type</Label>
-              <Select.Root
-                type="single"
-                value={bgCheckForm.glucoseType ?? ""}
-                onValueChange={(v) => {
-                  bgCheckForm.glucoseType = (v as GlucoseType) || undefined;
-                }}
-              >
-                <Select.Trigger>
-                  {bgCheckForm.glucoseType || "Select..."}
-                </Select.Trigger>
-                <Select.Content>
-                  {#each glucoseTypeOptions as opt}
-                    <Select.Item value={opt}>{opt}</Select.Item>
-                  {/each}
-                </Select.Content>
-              </Select.Root>
-            </div>
-            <div class="space-y-2">
-              <Label>Units</Label>
-              <Select.Root
-                type="single"
-                value={bgCheckForm.units ?? ""}
-                onValueChange={(v) => {
-                  bgCheckForm.units = (v as GlucoseUnit) || undefined;
-                }}
-              >
-                <Select.Trigger>
-                  {bgCheckForm.units === "MgDl"
-                    ? "mg/dL"
-                    : bgCheckForm.units === "Mmol"
-                      ? "mmol/L"
-                      : "Select..."}
-                </Select.Trigger>
-                <Select.Content>
-                  <Select.Item value="MgDl">mg/dL</Select.Item>
-                  <Select.Item value="Mmol">mmol/L</Select.Item>
-                </Select.Content>
-              </Select.Root>
-            </div>
-          </div>
-
-          <!-- Note form -->
+          <BGCheckFormFields bind:form={bgCheckForm} />
         {:else if activeRecord.kind === "note"}
-          <div class="space-y-2">
-            <Label for="text" class="flex items-center gap-1.5">
-              <FileText class="h-3.5 w-3.5" />
-              Text
-            </Label>
-            <Textarea
-              id="text"
-              bind:value={noteForm.text}
-              placeholder="Note text..."
-              rows={3}
-            />
-          </div>
-
-          <div class="space-y-2">
-            <Label for="eventType">Event Type</Label>
-            <Input
-              id="eventType"
-              bind:value={noteForm.eventType}
-              placeholder="e.g. Announcement, Note"
-            />
-          </div>
-
-          <div class="flex items-center gap-2">
-            <Checkbox
-              id="isAnnouncement"
-              bind:checked={noteForm.isAnnouncement}
-            />
-            <Label
-              for="isAnnouncement"
-              class="text-sm font-normal cursor-pointer"
-            >
-              Announcement
-            </Label>
-          </div>
-
-          <!-- Device Event form -->
+          <NoteFormFields bind:form={noteForm} />
         {:else if activeRecord.kind === "deviceEvent"}
-          <div class="space-y-2">
-            <Label class="flex items-center gap-1.5">
-              <Smartphone class="h-3.5 w-3.5 text-orange-500" />
-              Event Type
-            </Label>
-            <Select.Root
-              type="single"
-              value={deviceEventForm.eventType ?? ""}
-              onValueChange={(v) => {
-                deviceEventForm.eventType = (v as DeviceEventType) || undefined;
-              }}
-            >
-              <Select.Trigger>
-                {deviceEventForm.eventType || "Select..."}
-              </Select.Trigger>
-              <Select.Content>
-                {#each deviceEventTypeOptions as opt}
-                  <Select.Item value={opt}>{opt}</Select.Item>
-                {/each}
-              </Select.Content>
-            </Select.Root>
-          </div>
-
-          <div class="space-y-2">
-            <Label for="deviceNotes">Notes</Label>
-            <Textarea
-              id="deviceNotes"
-              bind:value={deviceEventForm.notes}
-              placeholder="Additional notes..."
-              rows={3}
-            />
-          </div>
+          <DeviceEventFormFields bind:form={deviceEventForm} />
+        {:else if activeRecord.kind === "basalInjection"}
+          <BasalInjectionFormFields
+            bind:value={basalInjectionForm}
+            basalInsulins={basalEligibleInsulins}
+          />
         {/if}
 
-        <!-- Linked Records -->
-        {#if correlationGroup.length > 1}
-          <Separator />
-          <div class="space-y-3">
-            <h4
-              class="text-xs font-medium uppercase text-muted-foreground tracking-wide flex items-center gap-2"
-            >
-              <Link class="h-3.5 w-3.5" />
-              Linked Records
-              <Badge variant="secondary" class="text-xs h-5 px-1.5">
-                {correlationGroup.length}
-              </Badge>
-            </h4>
-            {#each correlationGroup as linked}
-              {@const linkedStyle = getEntryStyle(linked.kind)}
-              {@const linkedCategory = ENTRY_CATEGORIES[linked.kind]}
-              {@const isActive = linked.data.id === activeRecord?.data.id}
-              <button
-                type="button"
-                class="w-full text-left rounded-lg border p-3 transition-colors {isActive
-                  ? 'border-primary bg-primary/5'
-                  : 'hover:bg-muted/50'}"
-                disabled={isActive}
-                onclick={() => switchToRecord(linked)}
-              >
-                <div class="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    class="{linkedStyle.colorClass} {linkedStyle.bgClass} {linkedStyle.borderClass} text-xs"
-                  >
-                    {linkedCategory.name}
-                  </Badge>
-                  <span class="text-sm">{getPrimaryValue(linked)}</span>
-                  <span class="ml-auto text-xs text-muted-foreground">
-                    {formatMills(linked.data.mills)}
-                  </span>
-                </div>
-              </button>
-            {/each}
-          </div>
-        {/if}
+        <!-- Linked Records Panel -->
+        <LinkedRecordsPanel
+          records={correlationGroup}
+          activeRecordId={activeRecord?.data.id ?? ""}
+          onSwitch={switchToRecord}
+        />
 
         <Dialog.Footer class="gap-2">
           {#if onDelete && activeRecord}
@@ -740,6 +519,65 @@
           </Button>
         </Dialog.Footer>
       </form>
+
+      {#if activeRecord?.kind === "bolus" && showAddInsulin}
+        <form
+          class="border rounded-lg p-4 space-y-4 bg-muted/30 mt-4"
+          {...addInsulinForm.enhance(async ({ submit }) => {
+            await submit();
+            if (addInsulinForm.result) {
+              const created = addInsulinForm.result as PatientInsulin;
+              if (created?.id) {
+                bolusForm.patientInsulinId = created.id;
+                bolusForm.insulinType = created.name ?? "";
+                if (created.role === "Basal" || created.role === "Both") {
+                  bolusForm.isBasalInsulin = true;
+                }
+              }
+              resetAddForm();
+            }
+          })}
+        >
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-medium">Add New Insulin</h4>
+          </div>
+          <div class="space-y-4">
+            <InsulinFormFields
+              bind:category={addCategory}
+              bind:formulationId={addFormulationId}
+              bind:name={addName}
+              bind:role={addRole}
+              formulations={addFormulations}
+              {catalog}
+              onCategoryChange={onAddCategoryChange}
+              onFormulationChange={onAddFormulationChange}
+            />
+
+            <!-- Hidden fields for form submission -->
+            <input type="hidden" name="b:isCurrent" value="on" />
+            <input type="hidden" name="n:dia" value={addDia} />
+            <input type="hidden" name="n:peak" value={addPeak} />
+            <input type="hidden" name="curve" value={addCurve} />
+            <input type="hidden" name="n:concentration" value={addConcentration} />
+            {#if addFormulationId}
+              <input type="hidden" name="formulationId" value={addFormulationId} />
+            {/if}
+          </div>
+
+          <div class="flex gap-2 justify-end mt-4">
+            <Button type="button" variant="ghost" size="sm" onclick={resetAddForm}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!addCategory || !addName.trim() || addSaving}
+            >
+              {addSaving ? "Adding..." : "Add Insulin"}
+            </Button>
+          </div>
+        </form>
+      {/if}
     {:else}
       <Dialog.Header>
         <Dialog.Title>No Record Selected</Dialog.Title>

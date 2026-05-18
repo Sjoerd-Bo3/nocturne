@@ -6,7 +6,16 @@ using Nocturne.Infrastructure.Data;
 
 namespace Nocturne.API.Controllers.V4.TenantAdmin;
 
+/// <summary>
+/// Platform-admin controller for managing subject (user) accounts across the instance.
+/// </summary>
+/// <remarks>
+/// Provides administrative operations on user accounts: listing, deactivation, and role changes.
+/// Restricted to users with the <c>platform_admin</c> role. Allowed during initial setup so that
+/// an administrator can manage accounts before normal login is possible.
+/// </remarks>
 [ApiController]
+[Tags("TenantAdmin")]
 [Route("api/v4/admin/subjects")]
 [Produces("application/json")]
 [Authorize(Roles = "platform_admin")]

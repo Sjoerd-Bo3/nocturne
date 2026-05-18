@@ -6,17 +6,28 @@ using Nocturne.Core.Models.Configuration;
 
 namespace Nocturne.API.Controllers.V4.Connectors;
 
+/// <summary>
+/// Controller for managing outbound webhook notification settings (URL, headers, test dispatch).
+/// </summary>
+/// <remarks>
+/// Webhook settings are persisted per-tenant and allow administrators to configure an external
+/// HTTP endpoint that receives alert notifications. The <c>POST /test</c> endpoint sends a test
+/// payload via <see cref="WebhookRequestSender"/> to verify connectivity before saving.
+/// </remarks>
+/// <seealso cref="WebhookRequestSender"/>
+/// <seealso cref="WebhookNotificationSettings"/>
 [ApiController]
+[Tags("Connectors")]
 [Route("api/v4/ui-settings/notifications/webhooks")]
 public class WebhookSettingsController(
     WebhookRequestSender requestSender,
     ILogger<WebhookSettingsController> logger)
     : ControllerBase
 {
+    /// <summary>Gets the webhook notification settings for the current tenant.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(WebhookNotificationSettings), 200)]
     [ProducesResponseType(500)]
-    /// <summary>Gets the webhook notification settings for the current tenant.</summary>
     public Task<ActionResult<WebhookNotificationSettings>> GetWebhookSettings(
         CancellationToken cancellationToken = default
     )
@@ -34,11 +45,11 @@ public class WebhookSettingsController(
         ));
     }
 
+    /// <summary>Saves webhook notification settings.</summary>
     [HttpPut]
     [ProducesResponseType(typeof(WebhookNotificationSettings), 200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(500)]
-    /// <summary>Saves webhook notification settings.</summary>
     public Task<ActionResult<WebhookNotificationSettings>> SaveWebhookSettings(
         [FromBody] WebhookNotificationSettings settings,
         CancellationToken cancellationToken = default
@@ -49,11 +60,11 @@ public class WebhookSettingsController(
         return Task.FromResult<ActionResult<WebhookNotificationSettings>>(Ok(settings));
     }
 
+    /// <summary>Tests webhook settings by sending test payloads to configured URLs.</summary>
     [HttpPost("test")]
     [ProducesResponseType(typeof(WebhookTestResult), 200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(500)]
-    /// <summary>Tests webhook settings by sending test payloads to configured URLs.</summary>
     public async Task<ActionResult<WebhookTestResult>> TestWebhookSettings(
         [FromBody] WebhookTestRequest request,
         CancellationToken cancellationToken = default

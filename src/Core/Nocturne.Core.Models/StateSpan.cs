@@ -3,8 +3,17 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Represents a time-ranged system state (pump mode, connectivity, override, profile)
+/// Represents a time-ranged system state (pump mode, connectivity, override, profile).
 /// </summary>
+/// <remarks>
+/// <para><see cref="StartMills"/> and <see cref="EndMills"/> are computed properties that convert
+/// from <see cref="StartTimestamp"/> and <see cref="EndTimestamp"/> to Unix milliseconds for v1/v3 API compatibility.</para>
+/// <para><see cref="IsActive"/> returns <c>true</c> when <see cref="EndTimestamp"/> is null,
+/// indicating the state is still in effect.</para>
+/// </remarks>
+/// <seealso cref="StateSpanCategory"/>
+/// <seealso cref="Entry"/>
+/// <seealso cref="Treatment"/>
 public class StateSpan
 {
     /// <summary>

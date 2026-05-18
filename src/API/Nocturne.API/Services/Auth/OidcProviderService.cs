@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Infrastructure.Data;
@@ -13,8 +12,10 @@ using Nocturne.Infrastructure.Data.Entities;
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Service for managing OIDC provider configurations
+/// Manages OIDC provider configurations stored in the database, including config-driven
+/// provider syncing, discovery document caching, and client-secret encryption.
 /// </summary>
+/// <seealso cref="IOidcProviderService"/>
 public class OidcProviderService : IOidcProviderService
 {
     private readonly NocturneDbContext _dbContext;
@@ -24,8 +25,15 @@ public class OidcProviderService : IOidcProviderService
     private readonly OidcOptions _oidcOptions;
 
     /// <summary>
-    /// Creates a new instance of OidcProviderService
+    /// Initialises a new <see cref="OidcProviderService"/>.
     /// </summary>
+    /// <param name="dbContext">Database context for OIDC provider records.</param>
+    /// <param name="httpClientFactory">Factory for the HTTP client used to fetch discovery documents.</param>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="dataProtectionProvider">
+    /// Used to create a scoped <see cref="IDataProtector"/> for encrypting client secrets at rest.
+    /// </param>
+    /// <param name="oidcOptions">Config-file OIDC provider definitions for config-managed mode.</param>
     public OidcProviderService(
         NocturneDbContext dbContext,
         IHttpClientFactory httpClientFactory,
@@ -47,10 +55,11 @@ public class OidcProviderService : IOidcProviderService
     public bool IsConfigManaged => _oidcOptions.Providers.Count > 0;
 
     /// <summary>
-    /// Syncs config-managed providers into the oidc_providers table so that
-    /// foreign keys from subject_oidc_identities are satisfied. Called at
-    /// startup when providers are defined in appsettings rather than the DB.
+    /// Syncs config-managed OIDC providers into the <c>oidc_providers</c> table so that
+    /// foreign keys from <c>subject_oidc_identities</c> are satisfied.
+    /// Called at startup when providers are defined in <c>appsettings.json</c> rather than the database.
     /// </summary>
+    /// <param name="services">Root service provider; a new scope is created internally.</param>
     public static async Task SyncConfigProvidersAsync(IServiceProvider services)
     {
         using var scope = services.CreateScope();

@@ -128,6 +128,35 @@ public class InAppNotificationRepository : IInAppNotificationRepository
     }
 
     /// <summary>
+    /// Get the count of active notifications for a user from a specific source
+    /// </summary>
+    /// <param name="userId">The user ID</param>
+    /// <param name="source">The notification source</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Count of active notifications from the source</returns>
+    public async Task<int> GetActiveCountBySourceAsync(
+        string userId, string source, CancellationToken cancellationToken = default)
+    {
+        return await _context.InAppNotifications
+            .Where(n => n.UserId == userId && n.Source == source && !n.IsArchived)
+            .CountAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Delete archived notifications older than a cutoff date
+    /// </summary>
+    /// <param name="cutoff">The cutoff date</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Number of deleted notifications</returns>
+    public async Task<int> DeleteArchivedBeforeAsync(
+        DateTime cutoff, CancellationToken cancellationToken = default)
+    {
+        return await _context.InAppNotifications
+            .Where(n => n.IsArchived && n.ArchivedAt < cutoff)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Find an active notification by source
     /// </summary>
     /// <param name="userId">The user ID</param>
@@ -137,7 +166,7 @@ public class InAppNotificationRepository : IInAppNotificationRepository
     /// <returns>The notification if found, null otherwise</returns>
     public virtual async Task<InAppNotificationEntity?> FindBySourceAsync(
         string userId,
-        InAppNotificationType type,
+        string type,
         string sourceId,
         CancellationToken cancellationToken = default
     )
@@ -201,6 +230,9 @@ public class InAppNotificationRepository : IInAppNotificationRepository
         {
             Id = entity.Id,
             Type = entity.Type,
+            Category = entity.Category,
+            Icon = entity.Icon,
+            Source = entity.Source,
             Urgency = entity.Urgency,
             Title = entity.Title,
             Subtitle = entity.Subtitle,

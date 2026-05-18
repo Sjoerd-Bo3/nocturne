@@ -16,8 +16,7 @@ namespace Nocturne.API.Tests.Middleware;
 /// metadata flow. Spins up a minimal TestServer with UseRouting and asserts
 /// that decorated endpoints surface the attribute through
 /// <see cref="EndpointMetadataCollection"/>. Serves as the canonical example
-/// of how <see cref="Nocturne.API.Middleware.TenantSetupMiddleware"/> and
-/// <see cref="Nocturne.API.Middleware.RecoveryModeMiddleware"/> read endpoint
+/// of how <see cref="Nocturne.API.Middleware.TenantSetupMiddleware"/> reads endpoint
 /// metadata.
 /// </summary>
 public class TenantSetupMiddlewareIntegrationTests

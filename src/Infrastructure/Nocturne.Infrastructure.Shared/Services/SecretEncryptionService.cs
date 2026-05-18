@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nocturne.Core.Constants;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Auth;
 
 namespace Nocturne.Infrastructure.Shared.Services;
 

@@ -5,7 +5,16 @@ using Nocturne.Core.Models.Authorization;
 
 namespace Nocturne.API.Controllers.V4.Identity;
 
+/// <summary>
+/// Controller for querying and managing tenant-scoped roles.
+/// </summary>
+/// <remarks>
+/// Roles determine what permissions a tenant member holds. Role data is maintained by
+/// <see cref="ITenantRoleService"/> and scoped to the resolved tenant via <see cref="ITenantAccessor"/>.
+/// </remarks>
+/// <seealso cref="ITenantRoleService"/>
 [ApiController]
+[Tags("Identity")]
 [Route("api/v4/roles")]
 [Produces("application/json")]
 public class RoleController : ControllerBase
@@ -22,11 +31,11 @@ public class RoleController : ControllerBase
     /// <summary>
     /// List roles for the current tenant.
     /// </summary>
+    /// <inheritdoc cref="ITenantRoleService.GetRolesAsync"/>
     [HttpGet]
     [RemoteQuery]
     [ProducesResponseType(typeof(List<TenantRoleDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    /// <inheritdoc cref="ITenantRoleService.GetRolesAsync"/>
     public async Task<IActionResult> GetRoles(CancellationToken ct)
     {
         if (!HasPermission(TenantPermissions.RolesManage))
@@ -39,11 +48,11 @@ public class RoleController : ControllerBase
     /// <summary>
     /// Create a custom role.
     /// </summary>
+    /// <inheritdoc cref="ITenantRoleService.CreateRoleAsync"/>
     [HttpPost]
     [RemoteCommand(Invalidates = ["GetRoles"])]
     [ProducesResponseType(typeof(TenantRoleDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    /// <inheritdoc cref="ITenantRoleService.CreateRoleAsync"/>
     public async Task<IActionResult> CreateRole([FromBody] CreateRoleRequest request, CancellationToken ct)
     {
         if (!HasPermission(TenantPermissions.RolesManage))
@@ -57,11 +66,11 @@ public class RoleController : ControllerBase
     /// <summary>
     /// Update a role.
     /// </summary>
+    /// <inheritdoc cref="ITenantRoleService.UpdateRoleAsync"/>
     [HttpPut("{id:guid}")]
     [RemoteCommand(Invalidates = ["GetRoles"])]
     [ProducesResponseType(typeof(TenantRoleDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    /// <inheritdoc cref="ITenantRoleService.UpdateRoleAsync"/>
     public async Task<IActionResult> UpdateRole(Guid id, [FromBody] UpdateRoleRequest request, CancellationToken ct)
     {
         if (!HasPermission(TenantPermissions.RolesManage))
@@ -81,12 +90,12 @@ public class RoleController : ControllerBase
     /// <summary>
     /// Delete a role.
     /// </summary>
+    /// <inheritdoc cref="ITenantRoleService.DeleteRoleAsync"/>
     [HttpDelete("{id:guid}")]
     [RemoteCommand(Invalidates = ["GetRoles"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    /// <inheritdoc cref="ITenantRoleService.DeleteRoleAsync"/>
     public async Task<IActionResult> DeleteRole(Guid id, CancellationToken ct)
     {
         if (!HasPermission(TenantPermissions.RolesManage))

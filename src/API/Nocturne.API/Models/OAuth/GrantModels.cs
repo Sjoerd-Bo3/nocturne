@@ -5,15 +5,54 @@ namespace Nocturne.API.Models.OAuth;
 /// </summary>
 public class OAuthGrantDto
 {
+    /// <summary>
+    /// Unique identifier of this grant.
+    /// </summary>
     public Guid Id { get; set; }
+
+    /// <summary>
+    /// OAuth grant type (e.g. "authorization_code", "direct").
+    /// </summary>
     public string GrantType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// OAuth client identifier associated with this grant, if any.
+    /// </summary>
     public string? ClientId { get; set; }
+
+    /// <summary>
+    /// Human-readable display name of the client application.
+    /// </summary>
     public string? ClientDisplayName { get; set; }
+
+    /// <summary>
+    /// Whether the associated client is a recognized/trusted application.
+    /// </summary>
     public bool IsKnownClient { get; set; }
+
+    /// <summary>
+    /// OAuth scopes authorized by this grant.
+    /// </summary>
     public List<string> Scopes { get; set; } = new();
+
+    /// <summary>
+    /// User-supplied label for identifying the grant (e.g. "My phone token").
+    /// </summary>
     public string? Label { get; set; }
+
+    /// <summary>
+    /// When the grant was created.
+    /// </summary>
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// When the grant's access token was last used.
+    /// </summary>
     public DateTime? LastUsedAt { get; set; }
+
+    /// <summary>
+    /// User-Agent header from the most recent request using this grant.
+    /// </summary>
     public string? LastUsedUserAgent { get; set; }
 }
 
@@ -22,6 +61,9 @@ public class OAuthGrantDto
 /// </summary>
 public class OAuthGrantListResponse
 {
+    /// <summary>
+    /// List of all active OAuth grants for the current tenant member.
+    /// </summary>
     public List<OAuthGrantDto> Grants { get; set; } = new();
 }
 
@@ -30,6 +72,13 @@ public class OAuthGrantListResponse
 /// </summary>
 public class UpdateGrantRequest
 {
+    /// <summary>
+    /// New user-facing label for the grant; null leaves the existing label unchanged.
+    /// </summary>
     public string? Label { get; set; }
+
+    /// <summary>
+    /// Updated set of authorized scopes; null leaves the existing scopes unchanged.
+    /// </summary>
     public List<string>? Scopes { get; set; }
 }

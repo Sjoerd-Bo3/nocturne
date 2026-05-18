@@ -3,6 +3,8 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI;
 using Nocturne.Desktop.Tray.Helpers;
+using Nocturne.Core.Models.Widget;
+using Nocturne.Desktop.Tray.Extensions;
 using Nocturne.Desktop.Tray.Models;
 using Windows.Storage.Streams;
 
@@ -25,7 +27,7 @@ public sealed class IconRenderer : IDisposable
         _device = CanvasDevice.GetSharedDevice();
     }
 
-    public async Task<byte[]> RenderIconAsync(GlucoseReading? reading, TraySettings settings)
+    public async Task<byte[]> RenderIconAsync(V4GlucoseReading? reading, TraySettings settings)
     {
         using var renderTarget = new CanvasRenderTarget(_device, IconSize, IconSize, Dpi);
 
@@ -33,7 +35,7 @@ public sealed class IconRenderer : IDisposable
         {
             session.Clear(Colors.Transparent);
 
-            if (reading is null || TimeAgoHelper.IsStale(reading.Timestamp, staleMinutes: 15))
+            if (reading is null || TimeAgoHelper.IsStale(reading.GetTimestamp(), staleMinutes: 15))
             {
                 DrawStaleIcon(session, reading);
             }
@@ -46,16 +48,16 @@ public sealed class IconRenderer : IDisposable
         return await ConvertToPngBytesAsync(renderTarget);
     }
 
-    private void DrawGlucoseIcon(CanvasDrawingSession session, GlucoseReading reading, TraySettings settings)
+    private void DrawGlucoseIcon(CanvasDrawingSession session, V4GlucoseReading reading, TraySettings settings)
     {
         var color = GlucoseRangeHelper.GetColor(
-            reading.Mgdl,
+            reading.Sgv,
             settings.UrgentLowThreshold,
             settings.LowThreshold,
             settings.HighThreshold,
             settings.UrgentHighThreshold);
 
-        var displayValue = GlucoseRangeHelper.FormatValue(reading.Mgdl, settings.Unit);
+        var displayValue = GlucoseRangeHelper.FormatValue(reading.Sgv, settings.Unit);
 
         var fontSize = displayValue.Length switch
         {
@@ -81,7 +83,7 @@ public sealed class IconRenderer : IDisposable
             textFormat);
     }
 
-    private static void DrawStaleIcon(CanvasDrawingSession session, GlucoseReading? reading)
+    private static void DrawStaleIcon(CanvasDrawingSession session, V4GlucoseReading? reading)
     {
         var color = GlucoseRangeHelper.StaleColor;
 

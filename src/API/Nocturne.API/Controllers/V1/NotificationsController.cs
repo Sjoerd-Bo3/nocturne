@@ -3,17 +3,19 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Authorization;
 using Nocturne.API.Extensions;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Notifications;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
-/// V1 Notifications controller providing basic notification system endpoints
-/// Implements the legacy /api/v1/notifications and /api/v1/adminnotifies endpoints with 1:1 backwards compatibility
-/// Based on the legacy notifications.js and adminnotifies.js implementations
+/// V1 Notifications controller providing basic notification system endpoints.
+/// Implements the legacy /api/v1/notifications and /api/v1/adminnotifies endpoints with 1:1 backwards compatibility.
+/// Based on the legacy notifications.js and adminnotifies.js implementations.
 /// </summary>
+/// <seealso cref="INotificationV1Service"/>
 [ApiController]
+[Tags("V1")]
 [Route("api/v1")]
 [Produces("application/json")]
 [Authorize(Policy = PolicyNames.HasPermissions)]
@@ -22,6 +24,11 @@ public class NotificationsController : ControllerBase
     private readonly INotificationV1Service _notificationService;
     private readonly ILogger<NotificationsController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="NotificationsController"/>.
+    /// </summary>
+    /// <param name="notificationService">Service handling legacy V1 notification operations.</param>
+    /// <param name="logger">Logger instance.</param>
     public NotificationsController(
         INotificationV1Service notificationService,
         ILogger<NotificationsController> logger

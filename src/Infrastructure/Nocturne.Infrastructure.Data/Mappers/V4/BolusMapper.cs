@@ -37,8 +37,12 @@ public static class BolusMapper
             Duration = model.Duration,
             SyncIdentifier = model.SyncIdentifier,
             InsulinType = model.InsulinType,
+            InsulinContextJson = model.InsulinContext is not null
+                ? JsonSerializer.Serialize(model.InsulinContext)
+                : null,
             Unabsorbed = model.Unabsorbed,
             DeviceId = model.DeviceId,
+            PatientDeviceId = model.PatientDeviceId,
             PumpRecordId = model.PumpRecordId,
             BolusCalculationId = model.BolusCalculationId,
             ApsSnapshotId = model.ApsSnapshotId,
@@ -76,8 +80,12 @@ public static class BolusMapper
             Duration = entity.Duration,
             SyncIdentifier = entity.SyncIdentifier,
             InsulinType = entity.InsulinType,
+            InsulinContext = !string.IsNullOrEmpty(entity.InsulinContextJson)
+                ? JsonSerializer.Deserialize<TreatmentInsulinContext>(entity.InsulinContextJson)
+                : null,
             Unabsorbed = entity.Unabsorbed,
             DeviceId = entity.DeviceId,
+            PatientDeviceId = entity.PatientDeviceId,
             PumpRecordId = entity.PumpRecordId,
             BolusCalculationId = entity.BolusCalculationId,
             ApsSnapshotId = entity.ApsSnapshotId,
@@ -111,8 +119,12 @@ public static class BolusMapper
         entity.Duration = model.Duration;
         entity.SyncIdentifier = model.SyncIdentifier;
         entity.InsulinType = model.InsulinType;
+        entity.InsulinContextJson = model.InsulinContext is not null
+            ? JsonSerializer.Serialize(model.InsulinContext)
+            : null;
         entity.Unabsorbed = model.Unabsorbed;
         entity.DeviceId = model.DeviceId;
+        entity.PatientDeviceId = model.PatientDeviceId;
         entity.PumpRecordId = model.PumpRecordId;
         entity.BolusCalculationId = model.BolusCalculationId;
         entity.ApsSnapshotId = model.ApsSnapshotId;

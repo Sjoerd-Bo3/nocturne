@@ -9,12 +9,13 @@ public class TidepoolV4TreatmentMapper(ILogger logger, string connectorSource)
     private readonly string _connectorSource = connectorSource ?? throw new ArgumentNullException(nameof(connectorSource));
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public (List<Bolus> Boluses, List<CarbIntake> CarbIntakes) MapTreatments(
+    public (List<Bolus> Boluses, List<CarbIntake> CarbIntakes, List<DecompositionBatch> Batches) MapTreatments(
         TidepoolBolus[]? boluses,
         TidepoolFood[]? foods)
     {
         var mappedBoluses = new Dictionary<DateTime, Bolus>();
         var mappedCarbs = new List<CarbIntake>();
+        var batches = new List<DecompositionBatch>();
 
         // Process boluses first
         if (boluses != null)
@@ -50,8 +51,15 @@ public class TidepoolV4TreatmentMapper(ILogger logger, string connectorSource)
                     if (mappedBoluses.TryGetValue(food.Time!.Value, out var existingBolus))
                     {
                         // Correlate bolus and carb at the same timestamp
-                        var correlationId = Guid.CreateVersion7();
-                        existingBolus.CorrelationId = correlationId;
+                        var batch = new DecompositionBatch
+                        {
+                            Id = Guid.CreateVersion7(),
+                            Source = "tidepool",
+                            SourceRecordId = food.Id,
+                            CreatedAt = now,
+                        };
+                        batches.Add(batch);
+                        existingBolus.CorrelationId = batch.Id;
 
                         mappedCarbs.Add(new CarbIntake
                         {
@@ -61,7 +69,7 @@ public class TidepoolV4TreatmentMapper(ILogger logger, string connectorSource)
                             Device = _connectorSource,
                             DataSource = _connectorSource,
                             Carbs = carbs.Value,
-                            CorrelationId = correlationId,
+                            CorrelationId = batch.Id,
                             CreatedAt = now,
                             ModifiedAt = now
                         });
@@ -89,7 +97,7 @@ public class TidepoolV4TreatmentMapper(ILogger logger, string connectorSource)
             }
         }
 
-        return (mappedBoluses.Values.ToList(), mappedCarbs);
+        return (mappedBoluses.Values.ToList(), mappedCarbs, batches);
     }
 
     private Bolus? MapBolus(TidepoolBolus bolus)

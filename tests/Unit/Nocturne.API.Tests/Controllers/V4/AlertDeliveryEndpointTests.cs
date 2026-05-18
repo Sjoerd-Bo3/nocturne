@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Controllers.V4.Monitoring;
 using Nocturne.API.Controllers.V4.Platform;
+using Nocturne.API.Services.Platform;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Infrastructure.Data;
@@ -100,7 +101,7 @@ public class AlertDeliveryEndpointTests
     public void Heartbeat_Returns200()
     {
         // Arrange
-        var controller = new SystemController();
+        var controller = new SystemController(new BotHealthService());
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()

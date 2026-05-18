@@ -25,12 +25,13 @@ public class MyFitnessPalConnectorService : BaseConnectorService<MyFitnessPalCon
 
     public MyFitnessPalConnectorService(
         HttpClient httpClient,
+        IConnectorServerResolver<MyFitnessPalConnectorConfiguration> serverResolver,
         ILogger<MyFitnessPalConnectorService> logger,
         MyFitnessPalConnectorConfiguration config,
         IRetryDelayStrategy retryDelayStrategy,
         IConnectorPublisher? publisher = null
     )
-        : base(httpClient, logger, publisher)
+        : base(httpClient, serverResolver, logger, publisher)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _retryDelayStrategy =
@@ -106,12 +107,12 @@ public class MyFitnessPalConnectorService : BaseConnectorService<MyFitnessPalCon
                 }
                 else
                 {
-                    var published = await _connectorPublisher.Metadata.PublishConnectorFoodEntriesAsync(
+                    var imported = await _connectorPublisher.Metadata.PublishConnectorFoodEntriesAsync(
                         foodEntryImports,
                         ConnectorSource,
                         cancellationToken
                     );
-                    if (!published)
+                    if (imported == null)
                     {
                         result.Success = false;
                         result.Errors.Add("Failed to publish food entries");

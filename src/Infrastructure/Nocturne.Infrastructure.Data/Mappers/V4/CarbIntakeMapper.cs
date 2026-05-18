@@ -32,7 +32,6 @@ public static class CarbIntakeMapper
             SyncIdentifier = model.SyncIdentifier,
             CarbTime = model.CarbTime,
             AbsorptionTime = model.AbsorptionTime,
-            BolusId = model.BolusId,
             AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
                 ? JsonSerializer.Serialize(model.AdditionalProperties)
                 : null,
@@ -62,7 +61,6 @@ public static class CarbIntakeMapper
             SyncIdentifier = entity.SyncIdentifier,
             CarbTime = entity.CarbTime,
             AbsorptionTime = entity.AbsorptionTime,
-            BolusId = entity.BolusId,
             AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
                 ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
                 : null,
@@ -88,7 +86,6 @@ public static class CarbIntakeMapper
         entity.SyncIdentifier = model.SyncIdentifier;
         entity.CarbTime = model.CarbTime;
         entity.AbsorptionTime = model.AbsorptionTime;
-        entity.BolusId = model.BolusId;
         entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
             ? JsonSerializer.Serialize(model.AdditionalProperties)
             : null;

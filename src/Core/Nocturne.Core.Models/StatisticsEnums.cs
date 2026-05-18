@@ -3,8 +3,11 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Interpretation of Glycemic Risk Index score
+/// Interpretation of the Glycemic Risk Index (GRI) composite score.
+/// Based on the 2023 International Consensus GRI grid (Battelino et al.).
 /// </summary>
+/// <seealso cref="GlycemicRiskIndex"/>
+/// <seealso cref="GRIZone"/>
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum GlycomicRiskInterpretation
 {
@@ -108,8 +111,11 @@ public enum DataSufficiencyStatus
 
 /// <summary>
 /// Unified insight key for all clinical insight types (strengths, priority areas, actionable).
-/// No JsonPropertyName — values serialize as PascalCase to match NSwag-generated TypeScript enums.
+/// No <c>JsonPropertyName</c> attributes — values serialize as PascalCase to match NSwag-generated TypeScript enums.
+/// Frontend code uses these keys to look up localized message strings.
 /// </summary>
+/// <seealso cref="LocalizedInsight"/>
+/// <seealso cref="ClinicalTargetAssessment"/>
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum InsightKey
 {

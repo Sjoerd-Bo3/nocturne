@@ -8,9 +8,10 @@
     BatteryWarning,
     Zap,
   } from "lucide-svelte";
-  import { formatTime, timeAgo } from "$lib/utils";
+  import { timeAgo } from "$lib/utils";
+  import { time } from "$lib/utils/formatting";
   import { getRealtimeStore } from "$lib/stores/realtime-store.svelte";
-  import { getBatteryCardData } from "$api/battery.remote";
+  import { getCurrentBatteryStatus } from "$api/generated/batteries.generated.remote";
 
   interface Props {
     /** Override lastUpdated from props instead of realtime store */
@@ -23,8 +24,8 @@
   const displayLastUpdated = $derived(lastUpdated ?? realtimeStore.lastUpdated);
 
   // Battery data
-  const batteryDataPromise = $derived(
-    getBatteryCardData({ recentMinutes: 30 })
+  const batteryStatusPromise = $derived(
+    getCurrentBatteryStatus({ recentMinutes: 30 })
   );
 
   // Get battery icon component based on level
@@ -46,17 +47,16 @@
   }
 </script>
 
-{#await batteryDataPromise}
+{#await batteryStatusPromise}
   <WidgetCard title="Last Updated">
     <div class="text-2xl font-bold">
       {timeAgo(displayLastUpdated)}
     </div>
     <p class="text-xs text-muted-foreground">
-      {formatTime(displayLastUpdated)}
+      {time(displayLastUpdated)}
     </p>
   </WidgetCard>
-{:then data}
-  {@const currentStatus = data?.currentStatus}
+{:then currentStatus}
   {@const hasDevices =
     currentStatus && Object.keys(currentStatus.devices ?? {}).length > 0}
   <WidgetCard title="Last Updated">
@@ -90,7 +90,7 @@
       </div>
     {:else}
       <p class="text-xs text-muted-foreground">
-        {formatTime(displayLastUpdated)}
+        {time(displayLastUpdated)}
       </p>
     {/if}
   </WidgetCard>
@@ -100,7 +100,7 @@
       {timeAgo(displayLastUpdated)}
     </div>
     <p class="text-xs text-muted-foreground">
-      {formatTime(displayLastUpdated)}
+      {time(displayLastUpdated)}
     </p>
   </WidgetCard>
 {/await}

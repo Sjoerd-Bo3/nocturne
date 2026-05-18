@@ -1,8 +1,12 @@
 namespace Nocturne.Core.Models.Authorization;
 
 /// <summary>
-/// Domain model representing an authentication subject (user, device, or service)
+/// Domain model representing an authentication subject (user, device, or service).
 /// </summary>
+/// <seealso cref="SubjectType"/>
+/// <seealso cref="Role"/>
+/// <seealso cref="SubjectOidcIdentity"/>
+/// <seealso cref="ApprovalStatus"/>
 public class Subject
 {
     /// <summary>

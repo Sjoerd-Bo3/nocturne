@@ -3,8 +3,13 @@ using System.ComponentModel.DataAnnotations;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Simple permission trie implementation for organizing and checking permissions
+/// Simple permission trie implementation for organizing and checking permissions.
+/// Supports hierarchical wildcard matching using colon-separated segments
+/// (e.g., <c>"api:*"</c> grants all permissions under <c>"api:"</c>).
 /// </summary>
+/// <seealso cref="PermissionTrieResponse"/>
+/// <seealso cref="PermissionTrieNode"/>
+/// <seealso cref="Permission"/>
 public class PermissionTrie
 {
     private readonly HashSet<string> _permissions = new();
@@ -207,8 +212,13 @@ public class PermissionTrieNode
 }
 
 /// <summary>
-/// Role definition
+/// Legacy Nightscout role definition used in the v1 authorization API.
 /// </summary>
+/// <remarks>
+/// This is separate from the v4 <see cref="Nocturne.Core.Models.Authorization.Role"/> type,
+/// which is tenant-scoped and stored via EF Core.
+/// </remarks>
+/// <seealso cref="Subject"/>
 public class Role
 {
     /// <summary>
@@ -254,8 +264,10 @@ public class Role
 }
 
 /// <summary>
-/// Subject (user/device) definition
+/// Legacy Nightscout subject (user/device) definition used in the v1 authorization API.
+/// Subjects hold access tokens and are assigned to roles.
 /// </summary>
+/// <seealso cref="Role"/>
 public class Subject
 {
     /// <summary>

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Authorization;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V4.TenantAdmin;
@@ -10,7 +9,9 @@ namespace Nocturne.API.Controllers.V4.TenantAdmin;
 /// Admin controller for managing data deduplication.
 /// Provides endpoints to run deduplication jobs and check their status.
 /// </summary>
+/// <seealso cref="IDeduplicationService"/>
 [ApiController]
+[Tags("TenantAdmin")]
 [Route("api/v4/admin/deduplication")]
 [Produces("application/json")]
 [AllowDuringSetup]
@@ -19,6 +20,11 @@ public class DeduplicationController : ControllerBase
     private readonly IDeduplicationService _deduplicationService;
     private readonly ILogger<DeduplicationController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="DeduplicationController"/>.
+    /// </summary>
+    /// <param name="deduplicationService">Service for running and querying deduplication jobs.</param>
+    /// <param name="logger">Logger instance.</param>
     public DeduplicationController(
         IDeduplicationService deduplicationService,
         ILogger<DeduplicationController> logger)
@@ -291,31 +297,40 @@ public class DeduplicationController : ControllerBase
 }
 
 /// <summary>
-/// Response for starting a deduplication job
+/// Response for starting a deduplication job.
 /// </summary>
 public class DeduplicationJobResponse
 {
+    /// <summary>Gets or sets the unique identifier assigned to the started job.</summary>
     public Guid JobId { get; set; }
+    /// <summary>Gets or sets a human-readable status message.</summary>
     public string Message { get; set; } = string.Empty;
+    /// <summary>Gets or sets the relative URL to poll for job status.</summary>
     public string StatusUrl { get; set; } = string.Empty;
 }
 
 /// <summary>
-/// Response for cancelling a job
+/// Response for cancelling a deduplication job.
 /// </summary>
 public class CancelJobResponse
 {
+    /// <summary>Gets or sets the identifier of the cancelled job.</summary>
     public Guid JobId { get; set; }
+    /// <summary>Gets or sets whether the cancellation was accepted.</summary>
     public bool Cancelled { get; set; }
+    /// <summary>Gets or sets a human-readable message describing the outcome.</summary>
     public string Message { get; set; } = string.Empty;
 }
 
 /// <summary>
-/// Response containing linked records for a canonical group
+/// Response containing linked records for a canonical deduplication group.
 /// </summary>
 public class LinkedRecordsResponse
 {
+    /// <summary>Gets or sets the canonical record identifier shared by all linked records.</summary>
     public Guid CanonicalId { get; set; }
+    /// <summary>Gets or sets the record type of the canonical group.</summary>
     public RecordType RecordType { get; set; }
+    /// <summary>Gets or sets the full list of records linked to the canonical group.</summary>
     public List<LinkedRecord> LinkedRecords { get; set; } = new();
 }

@@ -956,9 +956,11 @@ public class ClinicalTargets
     public double TargetHigh { get; set; }
 
     /// <summary>
-    /// Get clinical targets for a specific diabetes population
-    /// Based on International Consensus on Time in Range (2019) and subsequent updates
+    /// Returns the evidence-based clinical targets for the specified <see cref="DiabetesPopulation"/>.
+    /// Based on International Consensus on Time in Range (2019) and subsequent updates.
     /// </summary>
+    /// <param name="population">The diabetes population for which to retrieve targets</param>
+    /// <returns>A <see cref="ClinicalTargets"/> instance with population-appropriate thresholds</returns>
     public static ClinicalTargets ForPopulation(DiabetesPopulation population)
     {
         return population switch
@@ -1042,8 +1044,11 @@ public class GlucoseManagementIndicator
     public StatisticReliability? Reliability { get; set; }
 
     /// <summary>
-    /// GMI interpretation categories based on ADA Standards
+    /// Returns the <see cref="GlucoseManagementIndicatorLevel"/> category for a given GMI value
+    /// based on ADA Standards of Care.
     /// </summary>
+    /// <param name="gmi">GMI percentage value (e.g., 7.0 for 7.0%)</param>
+    /// <returns>The corresponding <see cref="GlucoseManagementIndicatorLevel"/></returns>
     public static GlucoseManagementIndicatorLevel GetInterpretation(double gmi)
     {
         return gmi switch
@@ -2171,9 +2176,13 @@ public class SiteChangeImpactAnalysis
 /// </summary>
 public class AidSystemMetrics
 {
-    /// <summary>Percentage of time CGM was in use</summary>
-    [JsonPropertyName("cgmUsePercent")]
-    public double? CgmUsePercent { get; set; }
+    /// <summary>Comma-separated current CGM device names from catalog</summary>
+    [JsonPropertyName("cgmDeviceNames")]
+    public string? CgmDeviceNames { get; set; }
+
+    /// <summary>Comma-separated current pump device names from catalog</summary>
+    [JsonPropertyName("pumpDeviceNames")]
+    public string? PumpDeviceNames { get; set; }
 
     /// <summary>Time-weighted pump use percentage across segments</summary>
     [JsonPropertyName("pumpUsePercent")]

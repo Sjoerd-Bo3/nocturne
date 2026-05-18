@@ -2,6 +2,16 @@ using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Contracts.V4.Repositories;
 
+/// <summary>
+/// Repository port for the patient's own record, which holds profile-level metadata
+/// such as name, date of birth, and preferred units.
+/// </summary>
+/// <remarks>
+/// There is exactly one <see cref="PatientRecord"/> per tenant. <see cref="GetOrCreateAsync"/>
+/// should be preferred over <see cref="GetAsync"/> when a caller requires a non-null result,
+/// as it materialises a default record on first access.
+/// </remarks>
+/// <seealso cref="PatientRecord"/>
 public interface IPatientRecordRepository
 {
     /// <summary>Returns the patient record for the current tenant, or null if none exists.</summary>

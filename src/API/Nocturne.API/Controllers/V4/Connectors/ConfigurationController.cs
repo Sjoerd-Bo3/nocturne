@@ -2,7 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Connectors;
 
 namespace Nocturne.API.Controllers.V4.Connectors;
 
@@ -11,7 +11,9 @@ namespace Nocturne.API.Controllers.V4.Connectors;
 /// This endpoint is intended for internal use by connectors via mTLS authentication.
 /// In the initial implementation, it uses standard API authentication.
 /// </summary>
+/// <seealso cref="IConnectorConfigurationService"/>
 [ApiController]
+[Tags("Connectors")]
 [Route("api/v4/connectors/config")]
 [Authorize]
 public class ConfigurationController : ControllerBase
@@ -19,6 +21,11 @@ public class ConfigurationController : ControllerBase
     private readonly IConnectorConfigurationService _configService;
     private readonly ILogger<ConfigurationController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ConfigurationController"/>.
+    /// </summary>
+    /// <param name="configService">Service for connector configuration storage and retrieval.</param>
+    /// <param name="logger">Logger instance.</param>
     public ConfigurationController(
         IConnectorConfigurationService configService,
         ILogger<ConfigurationController> logger)
@@ -252,7 +259,7 @@ public class ConfigurationController : ControllerBase
             if (propSchema.TryGetProperty("enum", out var enumProp) && configProp.Value.ValueKind == JsonValueKind.String)
             {
                 var actualValue = configProp.Value.GetString();
-                var validValues = enumProp.EnumerateArray().Select(v => v.GetString()).ToList();
+                var validValues = enumProp.EnumerateArray().Select(v => v.GetString()).ToHashSet();
                 if (!validValues.Contains(actualValue))
                 {
                     errors.Add($"Field '{configProp.Name}' value '{actualValue}' is not one of: {string.Join(", ", validValues)}");

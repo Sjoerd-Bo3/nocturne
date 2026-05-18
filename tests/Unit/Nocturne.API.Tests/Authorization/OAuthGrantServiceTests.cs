@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Services.Auth;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -42,6 +41,8 @@ public class OAuthGrantServiceTests : IDisposable
 
         using var dbContext = new NocturneDbContext(_contextOptions);
         dbContext.Database.EnsureCreated();
+        dbContext.Tenants.Add(new TenantEntity { Id = _testTenantId, Slug = "test" });
+        dbContext.SaveChanges();
 
         _mockClientService = new Mock<IOAuthClientService>();
         _mockLogger = new Mock<ILogger<OAuthGrantService>>();
@@ -119,7 +120,7 @@ public class OAuthGrantServiceTests : IDisposable
             ClientEntityId = clientEntityId ?? _testClientEntityId,
             SubjectId = subjectId ?? _ownerSubjectId,
             GrantType = grantType,
-            Scopes = scopes ?? new List<string> { "entries.read" },
+            Scopes = scopes ?? new List<string> { "glucose.read" },
             Label = label,
             RevokedAt = revokedAt,
             CreatedAt = DateTime.UtcNow,
@@ -187,6 +188,7 @@ public class OAuthGrantServiceTests : IDisposable
         db.OAuthRefreshTokens.Add(new OAuthRefreshTokenEntity
         {
             Id = Guid.CreateVersion7(),
+            TenantId = _testTenantId,
             GrantId = grantId,
             TokenHash = "test-hash-1",
             IssuedAt = DateTime.UtcNow,
@@ -195,6 +197,7 @@ public class OAuthGrantServiceTests : IDisposable
         db.OAuthRefreshTokens.Add(new OAuthRefreshTokenEntity
         {
             Id = Guid.CreateVersion7(),
+            TenantId = _testTenantId,
             GrantId = grantId,
             TokenHash = "test-hash-2",
             IssuedAt = DateTime.UtcNow,
@@ -235,14 +238,14 @@ public class OAuthGrantServiceTests : IDisposable
         await SeedClientAsync(db);
         await SeedSubjectAsync(db, _ownerSubjectId, "Owner");
         var grantId = await SeedGrantAsync(db,
-            scopes: new List<string> { "entries.read" });
+            scopes: new List<string> { "glucose.read" });
 
         var service = CreateService(db);
         var result = await service.UpdateGrantAsync(grantId, _ownerSubjectId,
-            scopes: new[] { "entries.read", "treatments.readwrite" });
+            scopes: new[] { "glucose.read", "treatments.readwrite" });
 
         Assert.NotNull(result);
-        Assert.Contains("entries.read", result.Scopes);
+        Assert.Contains("glucose.read", result.Scopes);
         Assert.Contains("treatments.readwrite", result.Scopes);
     }
 

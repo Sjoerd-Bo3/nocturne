@@ -8,9 +8,17 @@ namespace Nocturne.API.Controllers.V4;
 /// <summary>
 /// Controller for browsing the static insulin formulation catalog.
 /// </summary>
+/// <remarks>
+/// The insulin catalog is a read-only in-memory registry of known insulin formulations
+/// stored in <see cref="InsulinCatalog"/>. Entries can be filtered by <see cref="InsulinCategory"/>
+/// (e.g., <c>RapidActing</c>, <c>LongActing</c>, <c>Intermediate</c>).
+/// </remarks>
+/// <seealso cref="InsulinCatalog"/>
+/// <seealso cref="InsulinFormulation"/>
+/// <seealso cref="InsulinCategory"/>
 [ApiController]
 [Route("api/v4/insulins")]
-[Tags("V4 Insulins")]
+[Tags("Metadata")]
 [Authorize]
 public class InsulinCatalogController : ControllerBase
 {

@@ -6,14 +6,14 @@ using Microsoft.Extensions.Options;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Authorization;
 using Nocturne.API.Extensions;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Notifications;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.API.Services.Auth;
+using Nocturne.Core.Contracts.Auth;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
-using SameSiteMode = Nocturne.Core.Models.Configuration.SameSiteMode;
 
 namespace Nocturne.API.Controllers.Authentication;
 
@@ -21,6 +21,29 @@ namespace Nocturne.API.Controllers.Authentication;
 /// Controller for WebAuthn/FIDO2 passkey authentication ceremonies.
 /// Handles registration, login (both discoverable and non-discoverable), and recovery code verification.
 /// </summary>
+/// <remarks>
+/// Authentication flows:
+/// <list type="bullet">
+///   <item><description><b>Registration:</b> <c>POST /register/options</c> → <c>POST /register/complete</c></description></item>
+///   <item><description><b>Discoverable login</b> (no username): <c>POST /login/discoverable/options</c> → <c>POST /login/complete</c></description></item>
+///   <item><description><b>Non-discoverable login</b> (with username): <c>POST /login/options</c> → <c>POST /login/complete</c></description></item>
+///   <item><description><b>Recovery:</b> <c>POST /recovery/verify</c> issues a 10-minute restricted token allowing passkey management only.</description></item>
+///   <item><description><b>Initial setup:</b> <c>POST /setup/options</c> → <c>POST /setup/complete</c> (only available before any passkeys exist).</description></item>
+///   <item><description><b>Invite acceptance:</b> <c>POST /invite/options</c> → <c>POST /invite/complete</c> using a pre-issued invite token.</description></item>
+/// </list>
+///
+/// On successful login or setup, the controller uses
+/// <see cref="SessionCookieExtensions.SetSessionCookies"/> to set session cookies.
+///
+/// Passkey deletion is guarded by <see cref="ISubjectService.TryRemovePasskeyCredentialAsync"/> which
+/// enforces an atomic last-factor check inside a serializable transaction.
+/// </remarks>
+/// <seealso cref="IPasskeyService"/>
+/// <seealso cref="IJwtService"/>
+/// <seealso cref="ISessionService"/>
+/// <seealso cref="IRecoveryCodeService"/>
+/// <seealso cref="ISubjectService"/>
+/// <seealso cref="IAuthAuditService"/>
 [ApiController]
 [Route("api/auth/passkey")]
 [Tags("Authentication")]
@@ -32,7 +55,7 @@ public class PasskeyController : ControllerBase
     private readonly IPasskeyService _passkeyService;
     private readonly IRecoveryCodeService _recoveryCodeService;
     private readonly IJwtService _jwtService;
-    private readonly IRefreshTokenService _refreshTokenService;
+    private readonly ISessionService _sessionService;
     private readonly ISubjectService _subjectService;
     private readonly IAuthAuditService _auditService;
     private readonly ITenantAccessor _tenantAccessor;
@@ -48,7 +71,7 @@ public class PasskeyController : ControllerBase
         IPasskeyService passkeyService,
         IRecoveryCodeService recoveryCodeService,
         IJwtService jwtService,
-        IRefreshTokenService refreshTokenService,
+        ISessionService sessionService,
         ISubjectService subjectService,
         IAuthAuditService auditService,
         ITenantAccessor tenantAccessor,
@@ -60,7 +83,7 @@ public class PasskeyController : ControllerBase
         _passkeyService = passkeyService;
         _recoveryCodeService = recoveryCodeService;
         _jwtService = jwtService;
-        _refreshTokenService = refreshTokenService;
+        _sessionService = sessionService;
         _subjectService = subjectService;
         _auditService = auditService;
         _tenantAccessor = tenantAccessor;
@@ -80,6 +103,11 @@ public class PasskeyController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyOptionsResponse>> RegisterOptions([FromBody] PasskeyRegisterOptionsRequest request)
     {
+        if (string.IsNullOrEmpty(request.Username))
+        {
+            return Problem(detail: "Username is required", statusCode: 400, title: "Bad Request");
+        }
+
         var tenantId = _tenantAccessor.TenantId;
         var result = await _passkeyService.GenerateRegistrationOptionsAsync(
             request.SubjectId, request.Username, tenantId);
@@ -156,6 +184,11 @@ public class PasskeyController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyOptionsResponse>> LoginOptions([FromBody] PasskeyLoginOptionsRequest request)
     {
+        if (string.IsNullOrEmpty(request.Username))
+        {
+            return Problem(detail: "Username is required", statusCode: 400, title: "Bad Request");
+        }
+
         var tenantId = _tenantAccessor.TenantId;
         var result = await _passkeyService.GenerateAssertionOptionsAsync(request.Username, tenantId);
 
@@ -189,33 +222,14 @@ public class PasskeyController : ControllerBase
             var assertionResult = await _passkeyService.CompleteAssertionAsync(
                 request.AssertionResponseJson, request.ChallengeToken, tenantId);
 
-            // Get subject details for token generation
-            var subject = await _subjectService.GetSubjectByIdAsync(assertionResult.SubjectId);
-            if (subject == null)
-            {
-                return Problem(detail: "User account not found", statusCode: 400, title: "Bad Request");
-            }
-
-            var roles = await _subjectService.GetSubjectRolesAsync(assertionResult.SubjectId);
-            var permissions = await _subjectService.GetSubjectPermissionsAsync(assertionResult.SubjectId);
-
-            // Generate tokens
-            var subjectInfo = new SubjectInfo
-            {
-                Id = subject.Id,
-                Name = assertionResult.DisplayName ?? assertionResult.Username,
-                Email = subject.Email,
-            };
-
-            var accessToken = _jwtService.GenerateAccessToken(subjectInfo, permissions, roles);
-            var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
+            var session = await _sessionService.IssueSessionAsync(
                 assertionResult.SubjectId,
-                oidcSessionId: null,
-                deviceDescription: "Passkey",
-                ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
-                userAgent: Request.Headers.UserAgent.ToString());
+                new SessionContext(
+                    DeviceDescription: "Passkey",
+                    IpAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent: Request.Headers.UserAgent.ToString()));
 
-            SetSessionCookies(accessToken, refreshToken);
+            Response.SetSessionCookies(session, _oidcOptions);
 
             await _auditService.LogAsync(AuthAuditEventType.Login, assertionResult.SubjectId, success: true,
                 ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
@@ -225,8 +239,8 @@ public class PasskeyController : ControllerBase
             return Ok(new PasskeyLoginCompleteResponse
             {
                 Success = true,
-                AccessToken = accessToken,
-                ExpiresIn = (int)_jwtService.GetAccessTokenLifetime().TotalSeconds,
+                AccessToken = session.AccessToken,
+                ExpiresIn = session.ExpiresInSeconds,
             });
         }
         catch (Exception ex)
@@ -254,6 +268,11 @@ public class PasskeyController : ControllerBase
     public async Task<ActionResult<RecoveryVerifyResponse>> RecoveryVerify(
         [FromBody] RecoveryVerifyRequest request)
     {
+        if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Code))
+        {
+            return Problem(detail: "Username and recovery code are required", statusCode: 400, title: "Bad Request");
+        }
+
         var tenantId = _tenantAccessor.TenantId;
 
         // Look up subject by username within the current tenant
@@ -431,20 +450,27 @@ public class PasskeyController : ControllerBase
     }
 
     /// <summary>
-    /// Returns whether the current tenant is in recovery mode.
-    /// In multi-tenant mode, queries the database for orphaned subjects.
-    /// In single-tenant mode, reads from the global RecoveryModeState.
+    /// Returns tenant auth status: whether setup is required or recovery mode is active.
+    /// Queries the database for passkey credentials and orphaned subjects.
     /// </summary>
-    [HttpGet("recovery-mode-status")]
+    [HttpGet("status")]
     [AllowAnonymous]
     [RemoteQuery]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetRecoveryModeStatus([FromServices] RecoveryModeState state)
+    [ProducesResponseType(typeof(AuthStatusResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAuthStatus()
     {
+        var tenantId = _tenantAccessor.TenantId;
+
+        var hasCredentials = await _dbContext.TenantMembers
+            .Where(m => m.TenantId == tenantId)
+            .AnyAsync(m =>
+                _dbContext.PasskeyCredentials.Any(c => c.SubjectId == m.SubjectId) ||
+                _dbContext.SubjectOidcIdentities.Any(o => o.SubjectId == m.SubjectId));
+        var setupRequired = !hasCredentials;
+
         bool recoveryMode;
-        if (_tenantAccessor.IsResolved)
+        if (hasCredentials)
         {
-            var tenantId = _tenantAccessor.TenantId;
             recoveryMode = await _dbContext.TenantMembers
                 .Where(tm => tm.TenantId == tenantId)
                 .Join(
@@ -459,68 +485,41 @@ public class PasskeyController : ControllerBase
         }
         else
         {
-            recoveryMode = state.IsEnabled;
+            recoveryMode = false;
         }
 
-        return Ok(new { recoveryMode });
-    }
-
-    /// <summary>
-    /// Returns tenant auth status: whether setup is required or recovery mode is active.
-    /// In multi-tenant mode, queries the database. In single-tenant mode, reads global state.
-    /// </summary>
-    [HttpGet("status")]
-    [AllowAnonymous]
-    [RemoteQuery]
-    [ProducesResponseType(typeof(AuthStatusResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAuthStatus([FromServices] RecoveryModeState state)
-    {
-        bool setupRequired;
-        bool recoveryMode;
-
-        if (_tenantAccessor.IsResolved)
-        {
-            var tenantId = _tenantAccessor.TenantId;
-            var hasCredentials = await _dbContext.TenantMembers
-                .Where(m => m.TenantId == tenantId)
-                .AnyAsync(m => _dbContext.PasskeyCredentials.Any(c => c.SubjectId == m.SubjectId));
-            setupRequired = !hasCredentials;
-
-            if (hasCredentials)
-            {
-                recoveryMode = await _dbContext.TenantMembers
-                    .Where(tm => tm.TenantId == tenantId)
-                    .Join(
-                        _dbContext.Subjects.Where(s => s.IsActive && !s.IsSystemSubject),
-                        tm => tm.SubjectId,
-                        s => s.Id,
-                        (tm, s) => s)
-                    .Where(s =>
-                        !_dbContext.SubjectOidcIdentities.Any(i => i.SubjectId == s.Id) &&
-                        !_dbContext.PasskeyCredentials.Any(p => p.SubjectId == s.Id))
-                    .AnyAsync();
-            }
-            else
-            {
-                recoveryMode = false;
-            }
-        }
-        else
-        {
-            setupRequired = state.IsSetupRequired;
-            recoveryMode = state.IsEnabled;
-        }
-
-        var tenant = _tenantAccessor.IsResolved
-            ? await _dbContext.Tenants.FirstOrDefaultAsync(t => t.Id == _tenantAccessor.TenantId)
-            : await _dbContext.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.IsDefault);
+        var tenant = await _dbContext.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
 
         return Ok(new AuthStatusResponse
         {
             SetupRequired = setupRequired,
             RecoveryMode = recoveryMode,
             AllowAccessRequests = tenant?.AllowAccessRequests ?? false,
+            OnboardingCompleted = tenant?.OnboardingCompletedAt != null,
         });
+    }
+
+    /// <summary>
+    /// Mark the current tenant's onboarding as complete.
+    /// </summary>
+    [HttpPost("onboarding/complete")]
+    [Authorize]
+    [RemoteCommand(Invalidates = ["GetAuthStatus"])]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> CompleteOnboarding()
+    {
+        var tenantId = _tenantAccessor.TenantId;
+        var tenant = await _dbContext.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId);
+        if (tenant == null)
+            return NotFound();
+
+        if (tenant.OnboardingCompletedAt == null)
+        {
+            tenant.OnboardingCompletedAt = DateTime.UtcNow;
+            await _dbContext.SaveChangesAsync();
+        }
+
+        return NoContent();
     }
 
     /// <summary>
@@ -535,29 +534,15 @@ public class PasskeyController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PasskeyOptionsResponse>> SetupOptions(
-        [FromBody] SetupOptionsRequest request,
-        [FromServices] RecoveryModeState state)
+        [FromBody] SetupOptionsRequest request)
     {
-        // Use the resolved tenant (multi-tenant) or fall back to the default tenant (single-tenant)
-        var tenantId = _tenantAccessor.IsResolved
-            ? _tenantAccessor.TenantId
-            : (await _dbContext.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.IsDefault))?.Id
-                ?? Guid.Empty;
+        var tenantId = _tenantAccessor.TenantId;
 
-        if (tenantId == Guid.Empty)
-        {
-            return Problem(detail: "Tenant not found — restart the application", statusCode: 500, title: "Server Error");
-        }
-
-        // Single-tenant: RecoveryModeState.IsSetupRequired is set at startup
-        // Multi-tenant: no tenant members have passkey credentials yet
-        var tenantHasPasskeys = _tenantAccessor.IsResolved &&
-            await _dbContext.TenantMembers
-                .Where(m => m.TenantId == tenantId)
-                .AnyAsync(m => _dbContext.PasskeyCredentials.Any(c => c.SubjectId == m.SubjectId));
-        var tenantNeedsSetup = state.IsSetupRequired ||
-            (_tenantAccessor.IsResolved && !tenantHasPasskeys);
-        if (!tenantNeedsSetup)
+        // Check whether any tenant member already has a passkey credential
+        var tenantHasPasskeys = await _dbContext.TenantMembers
+            .Where(m => m.TenantId == tenantId)
+            .AnyAsync(m => _dbContext.PasskeyCredentials.Any(c => c.SubjectId == m.SubjectId));
+        if (tenantHasPasskeys)
         {
             return Problem(detail: "Setup mode is not active", statusCode: 403, title: "Forbidden");
         }
@@ -580,6 +565,22 @@ public class PasskeyController : ControllerBase
             existingSubject.Name = request.DisplayName.Trim();
             existingSubject.Username = request.Username.Trim().ToLowerInvariant();
             await _dbContext.SaveChangesAsync();
+
+            // Ensure the subject is a member of the current tenant.
+            // When a tenant is deleted and recreated, the subject persists but
+            // the TenantMember is cascade-deleted with the old tenant.
+            var isMember = await _dbContext.TenantMembers
+                .AnyAsync(tm => tm.TenantId == tenantId && tm.SubjectId == subjectId);
+            if (!isMember)
+            {
+                var ownerRole = await _dbContext.TenantRoles
+                    .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.Slug == "owner");
+                if (ownerRole != null)
+                {
+                    await _tenantService.AddMemberAsync(tenantId, subjectId, [ownerRole.Id]);
+                }
+                await _subjectService.AssignRoleAsync(subjectId, "admin");
+            }
         }
         else
         {
@@ -635,26 +636,15 @@ public class PasskeyController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<SetupCompleteResponse>> SetupComplete(
-        [FromBody] SetupCompleteRequest request,
-        [FromServices] RecoveryModeState state)
+        [FromBody] SetupCompleteRequest request)
     {
-        var tenantId = _tenantAccessor.IsResolved
-            ? _tenantAccessor.TenantId
-            : (await _dbContext.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.IsDefault))?.Id
-                ?? Guid.Empty;
+        var tenantId = _tenantAccessor.TenantId;
 
-        if (tenantId == Guid.Empty)
-        {
-            return Problem(detail: "Tenant not found", statusCode: 500, title: "Server Error");
-        }
-
-        var tenantHasPasskeys = _tenantAccessor.IsResolved &&
-            await _dbContext.TenantMembers
-                .Where(m => m.TenantId == tenantId)
-                .AnyAsync(m => _dbContext.PasskeyCredentials.Any(c => c.SubjectId == m.SubjectId));
-        var tenantNeedsSetup = state.IsSetupRequired ||
-            (_tenantAccessor.IsResolved && !tenantHasPasskeys);
-        if (!tenantNeedsSetup)
+        // Check whether any tenant member already has a passkey credential
+        var tenantHasPasskeys = await _dbContext.TenantMembers
+            .Where(m => m.TenantId == tenantId)
+            .AnyAsync(m => _dbContext.PasskeyCredentials.Any(c => c.SubjectId == m.SubjectId));
+        if (tenantHasPasskeys)
         {
             return Problem(detail: "Setup mode is not active", statusCode: 403, title: "Forbidden");
         }
@@ -672,36 +662,14 @@ public class PasskeyController : ControllerBase
             // Generate recovery codes
             var recoveryCodes = await _recoveryCodeService.GenerateCodesAsync(credResult.SubjectId);
 
-            // Get subject details for token generation
-            var subject = await _subjectService.GetSubjectByIdAsync(credResult.SubjectId);
-            if (subject == null)
-            {
-                return Problem(detail: "Created subject not found", statusCode: 500, title: "Server Error");
-            }
-
-            var roles = await _subjectService.GetSubjectRolesAsync(credResult.SubjectId);
-            var permissions = await _subjectService.GetSubjectPermissionsAsync(credResult.SubjectId);
-
-            // Issue session
-            var subjectInfo = new SubjectInfo
-            {
-                Id = subject.Id,
-                Name = subject.Name,
-                Email = subject.Email,
-            };
-
-            var accessToken = _jwtService.GenerateAccessToken(subjectInfo, permissions, roles);
-            var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
+            var session = await _sessionService.IssueSessionAsync(
                 credResult.SubjectId,
-                oidcSessionId: null,
-                deviceDescription: "Setup Passkey",
-                ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
-                userAgent: Request.Headers.UserAgent.ToString());
+                new SessionContext(
+                    DeviceDescription: "Setup Passkey",
+                    IpAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent: Request.Headers.UserAgent.ToString()));
 
-            SetSessionCookies(accessToken, refreshToken);
-
-            // Exit setup mode
-            state.IsSetupRequired = false;
+            Response.SetSessionCookies(session, _oidcOptions);
 
             _logger.LogInformation(
                 "Setup complete: first user {SubjectId} registered with passkey",
@@ -711,9 +679,9 @@ public class PasskeyController : ControllerBase
             {
                 Success = true,
                 RecoveryCodes = recoveryCodes,
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                ExpiresIn = (int)_jwtService.GetAccessTokenLifetime().TotalSeconds,
+                AccessToken = session.AccessToken,
+                RefreshToken = session.RefreshToken,
+                ExpiresIn = session.ExpiresInSeconds,
             });
         }
         catch (Exception ex)
@@ -723,6 +691,13 @@ public class PasskeyController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Begin passkey registration for an anonymous access request.
+    /// Creates a pending subject and returns WebAuthn registration options.
+    /// Only available when <c>AllowAccessRequests</c> is enabled on the default tenant.
+    /// </summary>
+    /// <param name="request">The requestor's display name and optional message.</param>
+    /// <returns>A <see cref="PasskeyOptionsResponse"/> with the WebAuthn options and challenge token, or <c>404</c> if access requests are disabled.</returns>
     [HttpPost("access-request/options")]
     [AllowAnonymous]
     [RemoteCommand]
@@ -733,9 +708,9 @@ public class PasskeyController : ControllerBase
     public async Task<ActionResult<PasskeyOptionsResponse>> AccessRequestOptions(
         [FromBody] AccessRequestOptionsRequest request)
     {
+        var tenantId = _tenantAccessor.TenantId;
         var tenant = await _dbContext.Tenants
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.IsDefault);
+            .FirstOrDefaultAsync(t => t.Id == tenantId);
 
         if (tenant == null || !tenant.AllowAccessRequests)
             return NotFound();
@@ -782,6 +757,14 @@ public class PasskeyController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Complete passkey registration for an anonymous access request.
+    /// Verifies the attestation, stores the credential, and notifies tenant owners via
+    /// <see cref="IInAppNotificationService"/>. The subject remains inactive until an owner approves.
+    /// </summary>
+    /// <param name="request">The attestation response and challenge token from the WebAuthn ceremony.</param>
+    /// <param name="notificationService">Injected notification service for alerting owners.</param>
+    /// <returns><c>200 OK</c> on success, or <c>400</c> / <c>404</c> on error.</returns>
     [HttpPost("access-request/complete")]
     [AllowAnonymous]
     [RemoteCommand]
@@ -792,9 +775,9 @@ public class PasskeyController : ControllerBase
         [FromBody] AccessRequestCompleteRequest request,
         [FromServices] IInAppNotificationService notificationService)
     {
+        var tenantId = _tenantAccessor.TenantId;
         var tenant = await _dbContext.Tenants
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.IsDefault);
+            .FirstOrDefaultAsync(t => t.Id == tenantId);
 
         if (tenant == null || !tenant.AllowAccessRequests)
             return NotFound();
@@ -820,8 +803,7 @@ public class PasskeyController : ControllerBase
             {
                 await notificationService.CreateNotificationAsync(
                     ownerId.ToString(),
-                    InAppNotificationType.AnonymousLoginRequest,
-                    NotificationUrgency.Info,
+                    "passkey.anonymous_login_request",
                     $"{displayName} has requested access",
                     subtitle: message != null && message.Length > 100 ? message[..100] : message,
                     sourceId: credResult.SubjectId.ToString(),
@@ -875,12 +857,7 @@ public class PasskeyController : ControllerBase
         if (invite == null || !invite.IsValid)
             return NotFound();
 
-        var tenant = await _dbContext.Tenants
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.IsDefault);
-
-        if (tenant == null)
-            return Problem(detail: "Default tenant not found", statusCode: 500, title: "Server Error");
+        var tenantId = _tenantAccessor.TenantId;
 
         // Create the subject
         var subjectId = Guid.CreateVersion7();
@@ -903,7 +880,7 @@ public class PasskeyController : ControllerBase
 
         // Generate passkey registration options
         var result = await _passkeyService.GenerateRegistrationOptionsAsync(
-            subjectId, username, tenant.Id);
+            subjectId, username, tenantId);
 
         return Ok(new PasskeyOptionsResponse
         {
@@ -931,17 +908,12 @@ public class PasskeyController : ControllerBase
             return Problem(detail: "Challenge token and invite token are required", statusCode: 400, title: "Bad Request");
         }
 
-        var tenant = await _dbContext.Tenants
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.IsDefault);
-
-        if (tenant == null)
-            return Problem(detail: "Default tenant not found", statusCode: 500, title: "Server Error");
+        var tenantId = _tenantAccessor.TenantId;
 
         try
         {
             var credResult = await _passkeyService.CompleteRegistrationAsync(
-                request.AttestationResponseJson, request.ChallengeToken, tenant.Id);
+                request.AttestationResponseJson, request.ChallengeToken, tenantId);
 
             // Accept the invite
             var acceptResult = await memberInviteService.AcceptInviteAsync(request.Token, credResult.SubjectId);
@@ -953,31 +925,14 @@ public class PasskeyController : ControllerBase
             // Generate recovery codes
             var recoveryCodes = await _recoveryCodeService.GenerateCodesAsync(credResult.SubjectId);
 
-            // Get subject details for token generation
-            var subject = await _subjectService.GetSubjectByIdAsync(credResult.SubjectId);
-            if (subject == null)
-                return Problem(detail: "Created subject not found", statusCode: 500, title: "Server Error");
-
-            var roles = await _subjectService.GetSubjectRolesAsync(credResult.SubjectId);
-            var permissions = await _subjectService.GetSubjectPermissionsAsync(credResult.SubjectId);
-
-            // Issue session
-            var subjectInfo = new SubjectInfo
-            {
-                Id = subject.Id,
-                Name = subject.Name,
-                Email = subject.Email,
-            };
-
-            var accessToken = _jwtService.GenerateAccessToken(subjectInfo, permissions, roles);
-            var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
+            var session = await _sessionService.IssueSessionAsync(
                 credResult.SubjectId,
-                oidcSessionId: null,
-                deviceDescription: "Invite Passkey",
-                ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
-                userAgent: Request.Headers.UserAgent.ToString());
+                new SessionContext(
+                    DeviceDescription: "Invite Passkey",
+                    IpAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent: Request.Headers.UserAgent.ToString()));
 
-            SetSessionCookies(accessToken, refreshToken);
+            Response.SetSessionCookies(session, _oidcOptions);
 
             _logger.LogInformation(
                 "Invite complete: subject {SubjectId} registered with passkey via invite",
@@ -987,9 +942,9 @@ public class PasskeyController : ControllerBase
             {
                 Success = true,
                 RecoveryCodes = recoveryCodes,
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                ExpiresIn = (int)_jwtService.GetAccessTokenLifetime().TotalSeconds,
+                AccessToken = session.AccessToken,
+                RefreshToken = session.RefreshToken,
+                ExpiresIn = session.ExpiresInSeconds,
             });
         }
         catch (Exception ex)
@@ -999,51 +954,6 @@ public class PasskeyController : ControllerBase
         }
     }
 
-    #region Private Helpers
-
-    private void SetSessionCookies(string accessToken, string refreshToken)
-    {
-        var cookieSameSite = _oidcOptions.Cookie.SameSite switch
-        {
-            SameSiteMode.Strict => Microsoft.AspNetCore.Http.SameSiteMode.Strict,
-            SameSiteMode.Lax => Microsoft.AspNetCore.Http.SameSiteMode.Lax,
-            SameSiteMode.None => Microsoft.AspNetCore.Http.SameSiteMode.None,
-            _ => Microsoft.AspNetCore.Http.SameSiteMode.Lax,
-        };
-
-        Response.Cookies.Append(_oidcOptions.Cookie.AccessTokenName, accessToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = _oidcOptions.Cookie.Secure,
-            SameSite = cookieSameSite,
-            Path = "/",
-            IsEssential = true,
-            MaxAge = _jwtService.GetAccessTokenLifetime(),
-        });
-
-        Response.Cookies.Append(_oidcOptions.Cookie.RefreshTokenName, refreshToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = _oidcOptions.Cookie.Secure,
-            SameSite = cookieSameSite,
-            Path = "/",
-            IsEssential = true,
-            MaxAge = TimeSpan.FromDays(7),
-        });
-
-        // IsAuthenticated is intentionally not HttpOnly — the frontend reads it to detect auth state.
-        // The actual tokens (access + refresh) are HttpOnly above. This cookie contains no secrets.
-        Response.Cookies.Append("IsAuthenticated", "true", new CookieOptions // lgtm[cs/web/cookie-httponly-not-set]
-        {
-            HttpOnly = false,
-            Secure = _oidcOptions.Cookie.Secure,
-            SameSite = cookieSameSite,
-            Path = "/",
-            MaxAge = TimeSpan.FromDays(7),
-        });
-    }
-
-    #endregion
 }
 
 #region Request/Response DTOs
@@ -1176,6 +1086,7 @@ public class AuthStatusResponse
     public bool SetupRequired { get; set; }
     public bool RecoveryMode { get; set; }
     public bool AllowAccessRequests { get; set; }
+    public bool OnboardingCompleted { get; set; }
 }
 
 /// <summary>

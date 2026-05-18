@@ -4,9 +4,13 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models.JsonConverters;
 
 /// <summary>
-/// JSON converter that can handle both Unix timestamps (numbers) and DateTime strings
-/// This is needed because some APIs return dates as Unix timestamps while others use ISO strings
+/// JSON converter that can handle both Unix timestamps (numbers) and DateTime strings.
+/// This is needed because some APIs return dates as Unix timestamps while others use ISO strings.
 /// </summary>
+/// <remarks>
+/// On read, accepts either a JSON number (Unix milliseconds) or a JSON string (ISO 8601).
+/// On write, always outputs a JSON number (Unix milliseconds).
+/// </remarks>
 public class UnixTimestampOrDateTimeConverter : JsonConverter<DateTime?>
 {
     public override DateTime? Read(

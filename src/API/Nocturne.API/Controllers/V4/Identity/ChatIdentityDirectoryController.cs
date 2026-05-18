@@ -11,7 +11,10 @@ namespace Nocturne.API.Controllers.V4.Identity;
 /// Called server-to-server by the Discord bot from the apex host (no subdomain).
 /// Instance-key authenticated only.
 /// </summary>
+/// <seealso cref="ChatIdentityDirectoryService"/>
+/// <seealso cref="ChatIdentityPendingLinkService"/>
 [ApiController]
+[Tags("Identity")]
 [Route("api/v4/chat-identity/directory")]
 [RequireInstanceKeyAuth]
 public class ChatIdentityDirectoryController : ControllerBase
@@ -20,6 +23,12 @@ public class ChatIdentityDirectoryController : ControllerBase
     private readonly ChatIdentityPendingLinkService _pending;
     private readonly IDbContextFactory<NocturneDbContext> _contextFactory;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ChatIdentityDirectoryController"/>.
+    /// </summary>
+    /// <param name="directory">Service for cross-tenant directory candidate lookups.</param>
+    /// <param name="pending">Service for pending link token generation and resolution.</param>
+    /// <param name="contextFactory">Factory for creating database context instances.</param>
     public ChatIdentityDirectoryController(
         ChatIdentityDirectoryService directory,
         ChatIdentityPendingLinkService pending,
@@ -35,6 +44,13 @@ public class ChatIdentityDirectoryController : ControllerBase
     /// Caller is responsible for label disambiguation.
     /// Each candidate includes the tenantSlug (joined from tenants table).
     /// </summary>
+    /// <param name="platform">Chat platform identifier (e.g., "discord", "telegram").</param>
+    /// <param name="platformUserId">Unique user identifier on the specified platform.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// <see cref="DirectoryCandidatesResponse"/> with all matching tenant candidates,
+    /// or 404 if no candidates are found.
+    /// </returns>
     [HttpGet("resolve")]
     public async Task<ActionResult<DirectoryCandidatesResponse>> Resolve(
         [FromQuery] string platform,

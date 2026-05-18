@@ -5,6 +5,8 @@ namespace Nocturne.Core.Models.Authorization;
 /// with releases. Provides identity metadata for consent screens and for
 /// seeding pre-verified OAuth client rows per tenant via DCR.
 /// </summary>
+/// <seealso cref="KnownClientEntry"/>
+/// <seealso cref="OAuthScopes"/>
 public static class KnownOAuthClients
 {
     /// <summary>
@@ -17,13 +19,14 @@ public static class KnownOAuthClients
             SoftwareId = "org.trio.diabetes",
             DisplayName = "Trio",
             Homepage = "https://github.com/nightscout/Trio",
+            LogoUri = "/logos/trio.svg",
             RedirectUris = ["trio://oauth/callback"],
             TypicalScopes =
             [
-                OAuthScopes.EntriesReadWrite,
+                OAuthScopes.GlucoseReadWrite,
                 OAuthScopes.TreatmentsReadWrite,
-                OAuthScopes.DeviceStatusReadWrite,
-                OAuthScopes.ProfileRead,
+                OAuthScopes.DevicesReadWrite,
+                OAuthScopes.TherapyRead,
             ],
         },
         new()
@@ -31,12 +34,15 @@ public static class KnownOAuthClients
             SoftwareId = "org.nightscoutfoundation.xdrip",
             DisplayName = "xDrip+",
             Homepage = "https://github.com/NightscoutFoundation/xDrip",
+            LogoUri = "/logos/xdrip.svg",
             RedirectUris = ["org.nightscoutfoundation.xdrip://oauth/callback"],
             TypicalScopes =
             [
-                OAuthScopes.EntriesReadWrite,
+                OAuthScopes.GlucoseReadWrite,
                 OAuthScopes.TreatmentsReadWrite,
-                OAuthScopes.DeviceStatusReadWrite,
+                OAuthScopes.DevicesReadWrite,
+                OAuthScopes.HeartRateReadWrite,
+                OAuthScopes.StepCountReadWrite,
             ],
         },
         new()
@@ -44,12 +50,13 @@ public static class KnownOAuthClients
             SoftwareId = "org.loopkit.loop",
             DisplayName = "Loop",
             Homepage = "https://loopkit.github.io/loopdocs/",
+            LogoUri = "/logos/loop.svg",
             RedirectUris = ["org.loopkit.loop://oauth/callback"],
             TypicalScopes =
             [
-                OAuthScopes.EntriesReadWrite,
+                OAuthScopes.GlucoseReadWrite,
                 OAuthScopes.TreatmentsReadWrite,
-                OAuthScopes.DeviceStatusReadWrite,
+                OAuthScopes.DevicesReadWrite,
             ],
         },
         new()
@@ -57,13 +64,14 @@ public static class KnownOAuthClients
             SoftwareId = "org.androidaps.aaps",
             DisplayName = "AAPS",
             Homepage = "https://androidaps.readthedocs.io",
+            LogoUri = "/logos/aaps.svg",
             RedirectUris = ["org.androidaps.aaps://oauth/callback"],
             TypicalScopes =
             [
-                OAuthScopes.EntriesReadWrite,
+                OAuthScopes.GlucoseReadWrite,
                 OAuthScopes.TreatmentsReadWrite,
-                OAuthScopes.ProfileRead,
-                OAuthScopes.DeviceStatusReadWrite,
+                OAuthScopes.TherapyRead,
+                OAuthScopes.DevicesReadWrite,
             ],
         },
         new()
@@ -71,13 +79,14 @@ public static class KnownOAuthClients
             SoftwareId = "github.nightscout.nightscout",
             DisplayName = "Nightscout",
             Homepage = "https://nightscout.github.io/",
+            LogoUri = "/logos/nightscout.svg",
             RedirectUris = [],
             TypicalScopes =
             [
-                OAuthScopes.EntriesRead,
+                OAuthScopes.GlucoseRead,
                 OAuthScopes.TreatmentsRead,
-                OAuthScopes.DeviceStatusRead,
-                OAuthScopes.ProfileRead,
+                OAuthScopes.DevicesRead,
+                OAuthScopes.TherapyRead,
             ],
         },
         new()
@@ -85,28 +94,31 @@ public static class KnownOAuthClients
             SoftwareId = "io.sugarmate",
             DisplayName = "Sugarmate",
             Homepage = "https://sugarmate.io/",
+            LogoUri = "/logos/sugarmate.svg",
             RedirectUris = [],
-            TypicalScopes = [OAuthScopes.EntriesRead],
+            TypicalScopes = [OAuthScopes.GlucoseRead],
         },
         new()
         {
             SoftwareId = "com.nickenilsson.nightwatch",
             DisplayName = "Nightwatch",
             Homepage = "https://github.com/nickenilsson/nightwatch",
+            LogoUri = "/logos/nightwatch.svg",
             RedirectUris = [],
-            TypicalScopes = [OAuthScopes.EntriesRead, OAuthScopes.TreatmentsRead],
+            TypicalScopes = [OAuthScopes.GlucoseRead, OAuthScopes.TreatmentsRead],
         },
         new()
         {
             SoftwareId = "com.nocturne.follower",
             DisplayName = "Nocturne Follower",
+            LogoUri = "/logos/nocturne.svg",
             RedirectUris = [],
             TypicalScopes =
             [
-                OAuthScopes.EntriesRead,
+                OAuthScopes.GlucoseRead,
                 OAuthScopes.TreatmentsRead,
-                OAuthScopes.DeviceStatusRead,
-                OAuthScopes.ProfileRead,
+                OAuthScopes.DevicesRead,
+                OAuthScopes.TherapyRead,
             ],
         },
         new()
@@ -114,13 +126,14 @@ public static class KnownOAuthClients
             SoftwareId = "com.nocturne.widget.windows",
             DisplayName = "Nocturne Windows Widget",
             Homepage = "https://github.com/nightscout/nocturne",
+            LogoUri = "/logos/nocturne.svg",
             RedirectUris = [],
             TypicalScopes =
             [
-                OAuthScopes.EntriesRead,
+                OAuthScopes.GlucoseRead,
                 OAuthScopes.TreatmentsRead,
-                OAuthScopes.DeviceStatusRead,
-                OAuthScopes.ProfileRead,
+                OAuthScopes.DevicesRead,
+                OAuthScopes.TherapyRead,
             ],
         },
         new()
@@ -128,13 +141,31 @@ public static class KnownOAuthClients
             SoftwareId = "com.nocturne.tray",
             DisplayName = "Nocturne Tray",
             Homepage = "https://github.com/nightscout/nocturne",
+            LogoUri = "/logos/nocturne.svg",
             RedirectUris = [],
             TypicalScopes =
             [
-                OAuthScopes.EntriesRead,
+                OAuthScopes.GlucoseRead,
                 OAuthScopes.TreatmentsRead,
-                OAuthScopes.DeviceStatusRead,
-                OAuthScopes.ProfileRead,
+                OAuthScopes.DevicesRead,
+                OAuthScopes.TherapyRead,
+            ],
+        },
+        new()
+        {
+            SoftwareId = "io.home-assistant.nocturne",
+            DisplayName = "Home Assistant",
+            Homepage = "https://www.home-assistant.io/",
+            LogoUri = "/logos/home-assistant.svg",
+            RedirectUris = [],
+            TypicalScopes =
+            [
+                OAuthScopes.GlucoseReadWrite,
+                OAuthScopes.TreatmentsReadWrite,
+                OAuthScopes.DevicesRead,
+                OAuthScopes.TherapyRead,
+                OAuthScopes.HeartRateReadWrite,
+                OAuthScopes.StepCountReadWrite,
             ],
         },
     };
@@ -152,6 +183,8 @@ public static class KnownOAuthClients
     /// <summary>
     /// Look up a known app entry by its RFC 7591 software_id (reverse-DNS).
     /// </summary>
+    /// <param name="softwareId">The reverse-DNS software_id to look up (e.g., <c>org.trio.diabetes</c>).</param>
+    /// <returns>The matching <see cref="KnownClientEntry"/>, or <c>null</c> if not found.</returns>
     public static KnownClientEntry? MatchBySoftwareId(string softwareId) =>
         Entries.FirstOrDefault(e => string.Equals(e.SoftwareId, softwareId, StringComparison.Ordinal));
 }
@@ -159,6 +192,8 @@ public static class KnownOAuthClients
 /// <summary>
 /// Entry in the known OAuth client directory.
 /// </summary>
+/// <seealso cref="KnownOAuthClients"/>
+/// <seealso cref="OAuthScopes"/>
 public class KnownClientEntry
 {
     /// <summary>

@@ -1,22 +1,11 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import {
-    Info,
-    Bell,
-    Timer,
-    Settings2,
-    Utensils,
-    TrendingDown,
-    HelpCircle,
-    User,
-    RefreshCw,
-  } from "lucide-svelte";
   import { cn } from "$lib/utils";
   import {
     type InAppNotificationDto,
-    InAppNotificationType,
     NotificationUrgency,
   } from "$lib/api/generated/nocturne-api-client";
+  import { resolveNotificationIcon } from "$lib/utils/notification-icons";
 
   interface Props {
     notification: InAppNotificationDto;
@@ -24,30 +13,6 @@
   }
 
   let { notification, onAction }: Props = $props();
-
-  // Get icon based on notification type
-  function getIcon(type: InAppNotificationType | undefined) {
-    switch (type) {
-      case InAppNotificationType.UnconfiguredTracker:
-        return Settings2;
-      case InAppNotificationType.TrackerAlert:
-        return Timer;
-      case InAppNotificationType.StatisticsSummary:
-        return Info;
-      case InAppNotificationType.HelpResponse:
-        return HelpCircle;
-      case InAppNotificationType.AnonymousLoginRequest:
-        return User;
-      case InAppNotificationType.PredictedLow:
-        return TrendingDown;
-      case InAppNotificationType.SuggestedMealMatch:
-        return Utensils;
-      case InAppNotificationType.SuggestedTrackerMatch:
-        return RefreshCw;
-      default:
-        return Bell;
-    }
-  }
 
   // Get color classes based on urgency
   function getUrgencyClasses(urgency: NotificationUrgency | undefined): string {
@@ -102,7 +67,7 @@
     }
   }
 
-  const Icon = $derived(getIcon(notification.type));
+  const Icon = $derived(resolveNotificationIcon(notification.icon, notification.category));
   const urgencyClasses = $derived(getUrgencyClasses(notification.urgency));
 </script>
 

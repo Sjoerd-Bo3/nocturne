@@ -1,14 +1,34 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Devices;
 using Nocturne.Core.Models.Battery;
 
 namespace Nocturne.API.Controllers.V4.Devices;
 
 /// <summary>
-/// Battery controller for tracking and analyzing device battery status
+/// Controller for tracking and analyzing device battery status across all connected devices.
 /// </summary>
+/// <remarks>
+/// Battery readings are derived from uploader device status records ingested by connectors.
+/// This controller surfaces five views:
+/// <list type="bullet">
+///   <item><description><c>GET /current</c> — latest reading per device within the <c>recentMinutes</c> window (default 30 min).</description></item>
+///   <item><description><c>GET /readings</c> — raw time-series readings for a device and date range.</description></item>
+///   <item><description><c>GET /statistics</c> — aggregated statistics (min/max/avg) for a device and period.</description></item>
+///   <item><description><c>GET /cycles</c> — detected charge cycle events for a device.</description></item>
+///   <item><description><c>GET /devices</c> — all device identifiers that have battery data.</description></item>
+/// </list>
+///
+/// All endpoints delegate to <see cref="IBatteryService"/>. Time range parameters are expressed as
+/// UTC <see cref="DateTime"/> values and converted internally to Unix milliseconds.
+/// </remarks>
+/// <seealso cref="IBatteryService"/>
+/// <seealso cref="CurrentBatteryStatus"/>
+/// <seealso cref="BatteryReading"/>
+/// <seealso cref="BatteryStatistics"/>
+/// <seealso cref="ChargeCycle"/>
 [ApiController]
+[Tags("Devices")]
 [Route("api/v4/[controller]")]
 public class BatteryController : ControllerBase
 {

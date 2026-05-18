@@ -1,0 +1,19 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "primaryColor": "#1a1a2e",
+    "primaryTextColor": "#c0c0c0",
+    "primaryBorderColor": "#c0c0c0",
+    "lineColor": "#c0c0c0",
+    "textColor": "#c0c0c0",
+    "mainBkg": "#1a1a2e",
+    "nodeBorder": "#c0c0c0",
+    "clusterBkg": "#1a1a2e",
+    "clusterBorder": "#808080",
+    "titleColor": "#c0c0c0",
+    "edgeLabelBackground": "#1a1a2e",
+    "attributeBackgroundColorEven": "#1a1a2e",
+    "attributeBackgroundColorOdd": "#1a1a2e"
+  },
+  "themeCSS": ":root { --diagram-bg: var(--scalar-color-background-1, #1a1a2e); --diagram-fg: var(--scalar-color-1, #c0c0c0); --diagram-border: var(--scalar-color-3, #808080); } .er.attributeBoxEven, .er.attributeBoxOdd, .entityBox, .relationshipLabelBox, .edgeLabel, .labelBkg { fill: var(--diagram-bg) !important; background-color: var(--diagram-bg) !important; } .row-rect-even rect, .row-rect-odd rect { fill: var(--diagram-bg) !important; } .relationshipLabelBox { opacity: 1 !important; } .relationshipLine { stroke: var(--diagram-fg) !important; } .entityBox { stroke: var(--diagram-border) !important; } .marker { fill: none !important; stroke: var(--diagram-fg) !important; } .er.entityLabel, .er.attributeBoxEven text, .er.attributeBoxOdd text, .edgeLabel .label text, .label { fill: var(--diagram-fg) !important; color: var(--diagram-fg) !important; }"
+}

@@ -6,31 +6,77 @@ namespace Nocturne.Core.Models;
 /// Typed enum for device event types from Nightscout treatments.
 /// Replaces magic string comparisons with a proper enum.
 /// </summary>
+/// <seealso cref="Treatment"/>
 [JsonConverter(typeof(JsonStringEnumConverter<DeviceEventType>))]
 public enum DeviceEventType
 {
+    /// <summary>CGM sensor started</summary>
     SensorStart,
+
+    /// <summary>CGM sensor changed or inserted</summary>
     SensorChange,
+
+    /// <summary>CGM sensor stopped</summary>
     SensorStop,
+
+    /// <summary>Pump infusion site changed</summary>
     SiteChange,
+
+    /// <summary>Insulin cartridge changed</summary>
     InsulinChange,
+
+    /// <summary>Pump battery changed</summary>
     PumpBatteryChange,
+
+    /// <summary>Omnipod pod changed</summary>
     PodChange,
+
+    /// <summary>Insulin reservoir changed</summary>
     ReservoirChange,
+
+    /// <summary>Pump cannula changed</summary>
     CannulaChange,
+
+    /// <summary>CGM transmitter sensor inserted</summary>
     TransmitterSensorInsert,
+
+    /// <summary>Omnipod pod activated</summary>
     PodActivated,
+
+    /// <summary>Omnipod pod deactivated</summary>
     PodDeactivated,
+
+    /// <summary>Pump insulin delivery suspended</summary>
     PumpSuspend,
+
+    /// <summary>Pump insulin delivery resumed</summary>
     PumpResume,
+
+    /// <summary>Pump priming event</summary>
     Priming,
+
+    /// <summary>Pump tubing primed</summary>
     TubePriming,
+
+    /// <summary>Pump needle/cannula primed</summary>
     NeedlePriming,
+
+    /// <summary>Pump reservoir rewind</summary>
     Rewind,
+
+    /// <summary>Pump date changed</summary>
     DateChanged,
+
+    /// <summary>Pump time changed</summary>
     TimeChanged,
+
+    /// <summary>Maximum bolus limit changed</summary>
     BolusMaxChanged,
+
+    /// <summary>Maximum basal rate limit changed</summary>
     BasalMaxChanged,
+
+    /// <summary>Active basal profile switched</summary>
     ProfileSwitch,
 }
 
@@ -38,15 +84,32 @@ public enum DeviceEventType
 /// Typed enum for bolus event types from Nightscout treatments.
 /// Replaces magic string comparisons with a proper enum.
 /// </summary>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="TreatmentEventType"/>
 [JsonConverter(typeof(JsonStringEnumConverter<BolusType>))]
 public enum BolusType
 {
+    /// <summary>Generic bolus with no specific meal context</summary>
     Bolus,
+
+    /// <summary>Bolus given with a meal</summary>
     MealBolus,
+
+    /// <summary>Correction bolus to bring glucose into range</summary>
     CorrectionBolus,
+
+    /// <summary>Bolus given with a snack</summary>
     SnackBolus,
+
+    /// <summary>Bolus delivered via the pump's built-in wizard</summary>
     BolusWizard,
+
+    /// <summary>Combined immediate and extended (square-wave) bolus</summary>
     ComboBolus,
+
+    /// <summary>Super Micro Bolus delivered automatically by an AID algorithm</summary>
     Smb,
+
+    /// <summary>Any other automated bolus not categorized as SMB</summary>
     AutomaticBolus,
 }

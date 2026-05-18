@@ -2,16 +2,18 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Authorization;
 using OpenApi.Remote.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Legacy;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V2;
 
 /// <summary>
-/// V2 DData controller providing direct data access endpoints
-/// Implements the legacy /api/v2/ddata endpoints with 1:1 backwards compatibility
+/// V2 DData controller providing direct data access endpoints.
+/// Implements the legacy /api/v2/ddata endpoints with 1:1 backwards compatibility.
 /// </summary>
+/// <seealso cref="IDDataService"/>
 [ApiController]
+[Tags("V2")]
 [Route("api/v2/ddata")]
 [Produces("application/json")]
 [ClientPropertyName("v2DData")]
@@ -21,6 +23,11 @@ public class DDataController : ControllerBase
     private readonly IDDataService _ddataService;
     private readonly ILogger<DDataController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="DDataController"/>.
+    /// </summary>
+    /// <param name="ddataService">Service for assembling the combined DData response.</param>
+    /// <param name="logger">Logger instance.</param>
     public DDataController(IDDataService ddataService, ILogger<DDataController> logger)
     {
         _ddataService = ddataService;

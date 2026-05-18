@@ -1,4 +1,4 @@
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Devices;
 using Nocturne.Core.Models;
 
 namespace Nocturne.Services.Demo.Services;

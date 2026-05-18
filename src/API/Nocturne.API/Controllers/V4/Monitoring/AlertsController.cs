@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenApi.Remote.Attributes;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.Multitenancy;
+using Nocturne.Core.Models.Alerts;
 using Nocturne.Infrastructure.Data;
 
 namespace Nocturne.API.Controllers.V4.Monitoring;
@@ -12,7 +13,10 @@ namespace Nocturne.API.Controllers.V4.Monitoring;
 /// <summary>
 /// Controller for active alert state, history, and acknowledgement.
 /// </summary>
+/// <seealso cref="IAlertAcknowledgementService"/>
+/// <seealso cref="IAlertDeliveryService"/>
 [ApiController]
+[Tags("Monitoring")]
 [Authorize]
 [Route("api/v4/alerts")]
 public class AlertsController : ControllerBase
@@ -23,6 +27,14 @@ public class AlertsController : ControllerBase
     private readonly ITenantAccessor _tenantAccessor;
     private readonly ILogger<AlertsController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="AlertsController"/>.
+    /// </summary>
+    /// <param name="contextFactory">Factory for creating <see cref="NocturneDbContext"/> instances.</param>
+    /// <param name="acknowledgementService">Service for acknowledging alert excursions.</param>
+    /// <param name="deliveryService">Service for marking alert delivery outcomes.</param>
+    /// <param name="tenantAccessor">Accessor for the current request tenant context.</param>
+    /// <param name="logger">Logger instance.</param>
     public AlertsController(
         IDbContextFactory<NocturneDbContext> contextFactory,
         IAlertAcknowledgementService acknowledgementService,
@@ -60,7 +72,7 @@ public class AlertsController : ControllerBase
             Id = e.Id,
             AlertRuleId = e.AlertRuleId,
             RuleName = e.AlertRule?.Name ?? string.Empty,
-            ConditionType = e.AlertRule?.ConditionType ?? string.Empty,
+            ConditionType = e.AlertRule?.ConditionType ?? AlertConditionType.Threshold,
             StartedAt = e.StartedAt,
             AcknowledgedAt = e.AcknowledgedAt,
             AcknowledgedBy = e.AcknowledgedBy,
@@ -70,11 +82,9 @@ public class AlertsController : ControllerBase
                 .Select(i => new ActiveInstanceResponse
                 {
                     Id = i.Id,
-                    ScheduleId = i.AlertScheduleId,
                     Status = i.Status,
-                    CurrentStepOrder = i.CurrentStepOrder,
                     TriggeredAt = i.TriggeredAt,
-                    NextEscalationAt = i.NextEscalationAt,
+                    SuppressionReason = i.SuppressionReason,
                 })
                 .ToList(),
         }).ToList();
@@ -83,7 +93,8 @@ public class AlertsController : ControllerBase
     }
 
     /// <summary>
-    /// Get paginated history of resolved excursions.
+    /// Get paginated history of resolved excursions. Test fires are excluded
+    /// by default; pass <paramref name="includeTest"/> = true to include them.
     /// </summary>
     [HttpGet("history")]
     [RemoteQuery]
@@ -91,6 +102,8 @@ public class AlertsController : ControllerBase
     public async Task<ActionResult<AlertHistoryResponse>> GetAlertHistory(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? alertRuleId = null,
+        [FromQuery] bool includeTest = false,
         CancellationToken ct = default)
     {
         if (page < 1) page = 1;
@@ -102,14 +115,35 @@ public class AlertsController : ControllerBase
         var query = db.AlertExcursions
             .AsNoTracking()
             .Include(e => e.AlertRule)
-            .Where(e => e.EndedAt != null)
-            .OrderByDescending(e => e.EndedAt);
+            .Where(e => e.EndedAt != null);
 
-        var totalCount = await query.CountAsync(ct);
+        if (alertRuleId.HasValue)
+            query = query.Where(e => e.AlertRuleId == alertRuleId.Value);
 
-        var items = await query
+        // A test-fire produces an excursion whose only instance is IsTest=true.
+        // Filter by absence of any non-test instance to drop them.
+        if (!includeTest)
+            query = query.Where(e => e.Instances.Any(i => !i.IsTest));
+
+        var ordered = query.OrderByDescending(e => e.EndedAt);
+
+        var totalCount = await ordered.CountAsync(ct);
+
+        var items = await ordered
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(e => new
+            {
+                e.Id,
+                e.AlertRuleId,
+                RuleName = e.AlertRule != null ? e.AlertRule.Name : string.Empty,
+                ConditionType = e.AlertRule != null ? e.AlertRule.ConditionType : AlertConditionType.Threshold,
+                e.StartedAt,
+                EndedAt = e.EndedAt!.Value,
+                e.AcknowledgedAt,
+                e.AcknowledgedBy,
+                IsTest = e.Instances.Any(i => i.IsTest) && !e.Instances.Any(i => !i.IsTest),
+            })
             .ToListAsync(ct);
 
         var result = new AlertHistoryResponse
@@ -122,12 +156,13 @@ public class AlertsController : ControllerBase
             {
                 Id = e.Id,
                 AlertRuleId = e.AlertRuleId,
-                RuleName = e.AlertRule?.Name ?? string.Empty,
-                ConditionType = e.AlertRule?.ConditionType ?? string.Empty,
+                RuleName = e.RuleName,
+                ConditionType = e.ConditionType,
                 StartedAt = e.StartedAt,
-                EndedAt = e.EndedAt!.Value,
+                EndedAt = e.EndedAt,
                 AcknowledgedAt = e.AcknowledgedAt,
                 AcknowledgedBy = e.AcknowledgedBy,
+                IsTest = e.IsTest,
             }).ToList(),
         };
 
@@ -147,64 +182,6 @@ public class AlertsController : ControllerBase
             tenantId,
             request.AcknowledgedBy ?? "unknown",
             ct);
-
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Get the current quiet hours configuration for the tenant.
-    /// </summary>
-    [HttpGet("quiet-hours")]
-    [RemoteQuery]
-    [ProducesResponseType(typeof(QuietHoursResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<QuietHoursResponse>> GetQuietHours(CancellationToken ct)
-    {
-        await using var db = await _contextFactory.CreateDbContextAsync(ct);
-        var tenantId = _tenantAccessor.TenantId;
-
-        var tenant = await db.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId, ct);
-        if (tenant is null)
-            return NotFound();
-
-        return Ok(new QuietHoursResponse
-        {
-            Enabled = tenant.QuietHoursStart is not null && tenant.QuietHoursEnd is not null,
-            StartTime = tenant.QuietHoursStart?.ToString("HH:mm"),
-            EndTime = tenant.QuietHoursEnd?.ToString("HH:mm"),
-            OverrideCritical = tenant.QuietHoursOverrideCritical,
-        });
-    }
-
-    /// <summary>
-    /// Update quiet hours configuration for the tenant.
-    /// </summary>
-    [HttpPut("quiet-hours")]
-    [RemoteCommand(Invalidates = ["GetQuietHours"])]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> UpdateQuietHours(
-        [FromBody] UpdateQuietHoursRequest request, CancellationToken ct)
-    {
-        await using var db = await _contextFactory.CreateDbContextAsync(ct);
-        var tenantId = _tenantAccessor.TenantId;
-
-        var tenant = await db.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId, ct);
-        if (tenant is null)
-            return NotFound();
-
-        if (request.Enabled)
-        {
-            tenant.QuietHoursStart = TimeOnly.Parse(request.StartTime!);
-            tenant.QuietHoursEnd = TimeOnly.Parse(request.EndTime!);
-        }
-        else
-        {
-            tenant.QuietHoursStart = null;
-            tenant.QuietHoursEnd = null;
-        }
-
-        tenant.QuietHoursOverrideCritical = request.OverrideCritical;
-        await db.SaveChangesAsync(ct);
 
         return NoContent();
     }
@@ -283,7 +260,7 @@ public class AlertsController : ControllerBase
     [RemoteQuery]
     [ProducesResponseType(typeof(List<PendingDeliveryResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<PendingDeliveryResponse>>> GetPendingDeliveries(
-        [FromQuery] string[] channelType, CancellationToken ct)
+        [FromQuery] ChannelType[] channelType, CancellationToken ct)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(ct);
 
@@ -319,7 +296,7 @@ public class ActiveExcursionResponse
     public Guid Id { get; set; }
     public Guid AlertRuleId { get; set; }
     public string RuleName { get; set; } = string.Empty;
-    public string ConditionType { get; set; } = string.Empty;
+    public AlertConditionType ConditionType { get; set; } = AlertConditionType.Threshold;
     public DateTime StartedAt { get; set; }
     public DateTime? AcknowledgedAt { get; set; }
     public string? AcknowledgedBy { get; set; }
@@ -330,11 +307,10 @@ public class ActiveExcursionResponse
 public class ActiveInstanceResponse
 {
     public Guid Id { get; set; }
-    public Guid ScheduleId { get; set; }
     public string Status { get; set; } = string.Empty;
-    public int CurrentStepOrder { get; set; }
     public DateTime TriggeredAt { get; set; }
-    public DateTime? NextEscalationAt { get; set; }
+    /// <summary>One of <c>"dnd"</c> when delivery was suppressed at fire time, otherwise null.</summary>
+    public string? SuppressionReason { get; set; }
 }
 
 public class AlertHistoryResponse
@@ -351,32 +327,19 @@ public class HistoryExcursionResponse
     public Guid Id { get; set; }
     public Guid AlertRuleId { get; set; }
     public string RuleName { get; set; } = string.Empty;
-    public string ConditionType { get; set; } = string.Empty;
+    public AlertConditionType ConditionType { get; set; } = AlertConditionType.Threshold;
     public DateTime StartedAt { get; set; }
     public DateTime EndedAt { get; set; }
     public DateTime? AcknowledgedAt { get; set; }
     public string? AcknowledgedBy { get; set; }
+
+    /// <summary>True when every instance of this excursion was a test fire.</summary>
+    public bool IsTest { get; set; }
 }
 
 public class AcknowledgeRequest
 {
     public string? AcknowledgedBy { get; set; }
-}
-
-public class QuietHoursResponse
-{
-    public bool Enabled { get; set; }
-    public string? StartTime { get; set; }
-    public string? EndTime { get; set; }
-    public bool OverrideCritical { get; set; }
-}
-
-public class UpdateQuietHoursRequest
-{
-    public bool Enabled { get; set; }
-    public string? StartTime { get; set; }
-    public string? EndTime { get; set; }
-    public bool OverrideCritical { get; set; } = true;
 }
 
 public class SnoozeRequest
@@ -399,7 +362,7 @@ public class PendingDeliveryResponse
 {
     public Guid Id { get; set; }
     public Guid AlertInstanceId { get; set; }
-    public string ChannelType { get; set; } = string.Empty;
+    public ChannelType ChannelType { get; set; }
     public string Destination { get; set; } = string.Empty;
     public string Payload { get; set; } = "{}";
     public DateTime CreatedAt { get; set; }

@@ -2,10 +2,33 @@ using System.Text;
 
 namespace Nocturne.API.Services.Alerts.Webhooks;
 
+/// <summary>
+/// Sends JSON webhook payloads via HTTP POST to one or more URLs, optionally signing
+/// each request with an HMAC-SHA256 signature via <see cref="WebhookSignature"/>.
+/// </summary>
+/// <remarks>
+/// Blank or null URLs are silently skipped. Failed URLs are collected and returned
+/// rather than raising an exception so that partial success is possible.
+/// </remarks>
 public class WebhookRequestSender(
     IHttpClientFactory httpClientFactory,
     ILogger<WebhookRequestSender> logger)
 {
+    /// <summary>
+    /// Posts <paramref name="payload"/> to each URL in <paramref name="urls"/>.
+    /// </summary>
+    /// <param name="urls">The destination webhook URLs to POST to.</param>
+    /// <param name="payload">The JSON payload to include in the request body.</param>
+    /// <param name="secret">
+    /// Optional HMAC signing secret. When non-null the request includes
+    /// <c>X-Nocturne-Timestamp</c>, <c>X-Nocturne-Signature</c>, and
+    /// <c>X-Nocturne-Signature-Version</c> headers computed by <see cref="WebhookSignature"/>.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// A read-only list of URLs that failed to receive the payload (non-2xx response or exception).
+    /// An empty list indicates full success.
+    /// </returns>
     public async Task<IReadOnlyList<string>> SendAsync(
         IEnumerable<string> urls,
         string payload,

@@ -1,249 +1,163 @@
 <script lang="ts">
-  import { getRealtimeStore } from "$lib/stores/realtime-store.svelte";
-  import {
-    glucoseUnits,
-    predictionMinutes,
-    predictionEnabled,
-  } from "$lib/stores/appearance-store.svelte";
+  import { tryGetRealtimeStore } from "$lib/stores/realtime-store.svelte";
+  import { STALE_THRESHOLD_MS } from "$lib/constants/staleness";
   import {
     formatGlucoseValue,
     formatGlucoseDelta,
-    convertToDisplayUnits,
   } from "$lib/utils/formatting";
-  import { GlucoseValueIndicator } from "$lib/components/shared";
-  import { Badge } from "$lib/components/ui/badge";
-  import { Chart, Svg, Spline, Rule } from "layerchart";
-
   import {
-    getPredictions,
-    type PredictionData,
-  } from "$api/predictions.remote";
-  import { getDirectionInfo } from "$lib/utils";
+    glucoseUnits,
+    sidebarWidget,
+    haloDialConfig,
+  } from "$lib/stores/appearance-store.svelte";
+  import { GlucoseValueIndicator } from "$lib/components/shared";
+  import HaloDial from "$lib/components/dashboard/halo-dial/HaloDial.svelte";
+  import { createChartDataEngine } from "$lib/components/dashboard/glucose-chart/engine/chart-data-engine.svelte";
+  import GlucoseChartShell from "$lib/components/dashboard/glucose-chart/GlucoseChartShell.svelte";
+  import GlucoseTrack from "$lib/components/dashboard/glucose-chart/tracks/GlucoseTrack.svelte";
+  import ThresholdRules from "$lib/components/dashboard/glucose-chart/tracks/ThresholdRules.svelte";
+  import { trendAngle } from "$lib/components/dashboard/halo-dial/geometry";
+  import { Tween } from "svelte/motion";
+  import { cubicOut } from "svelte/easing";
+  import { browser } from "$app/environment";
+  import ArrowRight from "lucide-svelte/icons/arrow-right";
 
-  const realtimeStore = getRealtimeStore();
+  const realtimeStore = tryGetRealtimeStore();
 
-  // Get current glucose values (raw mg/dL)
-  const rawCurrentBG = $derived(realtimeStore.currentBG);
-  const rawBgDelta = $derived(realtimeStore.bgDelta);
-  const direction = $derived(realtimeStore.direction);
-  const demoMode = $derived(realtimeStore.demoMode);
-  const lastUpdated = $derived(realtimeStore.lastUpdated);
+  // Engine for the sidebar chart — no predictions, no inspection
+  // svelte-ignore state_referenced_locally
+  const sidebarEngine = createChartDataEngine({
+    enablePredictions: false,
+    focusHours: 3,
+  });
 
-  // Connection status
-  const isConnected = $derived(realtimeStore.isConnected);
+  // Glucose-only layout — no space reserved for basal/IOB/swim lanes
+  const sidebarLegend = {
+    iob: false,
+    cob: false,
+    basal: false,
+    bolus: false,
+    carbs: false,
+    deviceEvents: false,
+    alarms: false,
+    scheduledTrackers: false,
+    overrideSpans: false,
+    profileSpans: false,
+    activitySpans: false,
+    pumpModes: false,
+    expandedPumpModes: false,
+    toggle() {},
+  };
 
-  // Stale threshold in milliseconds (10 minutes)
-  const STALE_THRESHOLD_MS = 10 * 60 * 1000;
-
-  // Prediction horizon in milliseconds
-  const predictionHorizonMs = $derived(predictionMinutes.current * 60 * 1000);
-
-  // Stale detection - data older than threshold (recalculates every second)
-  const now = $derived(realtimeStore.now);
+  // Collapsed state needs basic BG info
+  const rawCurrentBG = $derived(realtimeStore?.currentBG ?? 0);
+  const lastUpdated = $derived(realtimeStore?.lastUpdated ?? 0);
+  const now = $derived(realtimeStore?.now ?? Date.now());
+  const isConnected = $derived(realtimeStore?.isConnected ?? false);
   const isStale = $derived(now - lastUpdated > STALE_THRESHOLD_MS);
   const isDisconnected = $derived(!isConnected);
-
-  // Loading state - no data received yet
   const isLoading = $derived(
-    rawCurrentBG === 0 && realtimeStore.entries.length === 0
+    rawCurrentBG === 0 && (realtimeStore?.entries.length ?? 0) === 0
   );
-
-  // Format for display based on user's unit preference
   const units = $derived(glucoseUnits.current);
   const displayBG = $derived(formatGlucoseValue(rawCurrentBG, units));
-  const displayDelta = $derived(formatGlucoseDelta(rawBgDelta, units));
+  const widget = $derived(sidebarWidget.current);
 
-  // Oref prediction data from backend
-  let orefPredictions = $state<PredictionData | null>(null);
+  // Trend metadata
+  const bgDelta = $derived(realtimeStore?.bgDelta ?? 0);
+  const direction = $derived(realtimeStore?.direction ?? "Flat");
+  const timeSinceReading = $derived(realtimeStore?.timeSinceReading ?? "");
+  const displayDelta = $derived(formatGlucoseDelta(bgDelta, units));
+  const hasData = $derived(!isLoading && rawCurrentBG > 0);
 
-  // Fetch oref predictions (re-fetch when glucose data meaningfully changes)
-  $effect(() => {
-    // Depend on current BG - this changes when new data arrives
-    const currentBG = rawCurrentBG;
-    const stale = isStale;
-    const disconnected = isDisconnected;
+  // Respect reduced motion preference
+  const reducedMotion =
+    browser &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-    // Only fetch if we have valid glucose data
-    if (currentBG > 0 && !stale && !disconnected) {
-      let active = true;
+  // Smoothly animate the trend arrow rotation
+  const arrowAngle = Tween.of(() => trendAngle(bgDelta), {
+    duration: reducedMotion ? 0 : 600,
+    easing: cubicOut,
+  });
 
-      getPredictions({})
-        .then((data) => {
-          if (active) {
-            orefPredictions = data;
-          }
-        })
-        .catch((err) => {
-          if (active) {
-            console.error("Failed to fetch predictions for sidebar:", err);
-            orefPredictions = null;
-          }
-        });
-
-      return () => {
-        active = false;
-      };
+  // Delta color based on direction severity
+  function getDeltaColor(dir: string): string {
+    switch (dir) {
+      case "DoubleUp":
+      case "DoubleDown":
+        return "text-red-500";
+      case "SingleUp":
+      case "SingleDown":
+        return "text-orange-500";
+      case "FortyFiveUp":
+      case "FortyFiveDown":
+        return "text-yellow-500";
+      case "Flat":
+        return "text-green-500";
+      default:
+        return "text-muted-foreground";
     }
-  });
-
-  // Get last 3 hours of entries for mini chart (convert to display units)
-  const chartEntries = $derived.by(() => {
-    const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
-    return realtimeStore.entries
-      .filter((e) => (e.mills ?? 0) > threeHoursAgo)
-      .map((e) => ({
-        date: new Date(e.mills ?? 0),
-        value: convertToDisplayUnits(e.sgv ?? e.mgdl ?? 0, units),
-      }))
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
-  });
-
-  // Extract 30-minute prediction from oref data (using main curve)
-  const predictionData = $derived.by(() => {
-    if (
-      !orefPredictions?.curves?.main ||
-      orefPredictions.curves.main.length === 0
-    ) {
-      return [];
-    }
-
-    const baseTime = orefPredictions.timestamp.getTime();
-    const cutoffTime = baseTime + predictionHorizonMs;
-
-    // Filter to only include points within 30-minute horizon
-    return orefPredictions.curves.main
-      .filter((p) => p.timestamp <= cutoffTime)
-      .map((p) => ({
-        date: new Date(p.timestamp),
-        value: convertToDisplayUnits(p.value, units),
-      }));
-  });
-
-  // Y domain for chart (unit-aware, include prediction values)
-  const isMMOL = $derived(units === "mmol");
-  const yMax = $derived.by(() => {
-    const allValues = [
-      ...chartEntries.map((e) => e.value),
-      ...predictionData.map((p) => p.value),
-    ];
-    if (allValues.length === 0) return isMMOL ? 16.7 : 300;
-    const maxPadding = isMMOL ? 1.5 : 30;
-    return isMMOL
-      ? Math.min(22.2, Math.max(...allValues) + maxPadding)
-      : Math.min(400, Math.max(...allValues) + maxPadding);
-  });
-  const yMin = $derived(isMMOL ? 2.2 : 40);
-
-  // Round current time to nearest minute for efficient chart updates
-  // Only recalculates once per minute instead of every second
-  const currentMinute = $derived(Math.floor(now / 60000) * 60000);
-
-  // X domain for chart (always extend to current time to show data recency)
-  const xDomain = $derived.by(() => {
-    if (chartEntries.length === 0) return undefined;
-    const minTime = chartEntries[0].date;
-    // Always extend to "now" or prediction end (whichever is later)
-    // This ensures the chart accurately shows when the last reading was
-    const currentTime = new Date(currentMinute);
-    const maxTime =
-      predictionData.length > 0
-        ? predictionData[predictionData.length - 1].date
-        : currentTime;
-    return [minTime, maxTime] as [Date, Date];
-  });
-
-  const DirectionIcon = $derived(getDirectionInfo(direction).icon);
-
-  // Calculate time since last reading for display
-  const timeSince = $derived(realtimeStore.timeSinceReading);
-
-  // Syncing state
-  const isSyncing = $derived(realtimeStore.isSyncing);
-
-  // Status text - show connection error or time since reading
-  // Note: "Syncing..." state is handled in the GlucoseValueIndicator component
-  const statusText = $derived(isDisconnected ? "Connection Error" : timeSince);
+  }
 </script>
 
-<div class="space-y-3 group-data-[collapsible=icon]:hidden">
-  <!-- Current BG Display -->
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <GlucoseValueIndicator
-        displayValue={displayBG}
-        rawBgMgdl={rawCurrentBG}
-        {isLoading}
-        {isStale}
-        {isDisconnected}
-        {isSyncing}
-        {statusText}
-        statusTooltip="Click to sync data"
-        onSyncClick={() => realtimeStore.syncData()}
-        size="sm"
-      />
-      <div class="flex flex-col items-start">
-        <div class="flex items-center gap-1">
-          <DirectionIcon class="h-5 w-5" />
-          <span class="text-sm font-medium">
-            {displayDelta}
-          </span>
-        </div>
+<!-- Expanded state: widget based on preference -->
+<div class="group-data-[collapsible=icon]:hidden">
+  {#if widget === "halo-dial"}
+    <div class="flex justify-center">
+      <HaloDial configOverride={haloDialConfig.current} />
+    </div>
+  {:else}
+    <div class="flex flex-col justify-center gap-2">
+      <div class="flex items-center justify-center gap-2">
+        <GlucoseValueIndicator
+          displayValue={displayBG}
+          rawBgMgdl={rawCurrentBG}
+          {isLoading}
+          {isStale}
+          {isDisconnected}
+          size="lg"
+          class="text-lg"
+        />
+        {#if hasData && !isStale}
+          <div class="flex flex-col items-center gap-0.5">
+            <div class="flex items-center gap-0.5 {getDeltaColor(direction)}">
+              <ArrowRight
+                class="size-4"
+                style="transform: rotate({arrowAngle.current}deg)"
+              />
+              <span class="text-sm font-medium">{displayDelta}</span>
+            </div>
+            <span class="text-[10px] text-muted-foreground leading-tight">
+              {timeSinceReading}
+            </span>
+          </div>
+        {/if}
+      </div>
+      <div
+        class="px-2 border border-sidebar-border hover:border-sidebar-ring rounded"
+      >
+        <a href="/">
+          <GlucoseChartShell
+            engine={sidebarEngine}
+            legend={sidebarLegend}
+            heightClass="h-[120px]"
+            showTimeAxis={false}
+            padding={{ left: 0, right: 0, top: 8, bottom: 0 }}
+          >
+            {#snippet tracks(_ctx)}
+              <ThresholdRules />
+              <GlucoseTrack showAxis={false} />
+            {/snippet}
+          </GlucoseChartShell>
+        </a>
       </div>
     </div>
-    {#if demoMode}
-      <Badge variant="secondary" class="text-xs">Demo</Badge>
-    {/if}
-  </div>
-
-  <!-- Mini Chart (clickable link to dashboard) -->
-  <a
-    href="/"
-    class="block h-16 w-full rounded-md bg-card border border-border overflow-hidden hover:border-primary/50 transition-colors"
-  >
-    {#if chartEntries.length > 1}
-      <Chart
-        data={chartEntries}
-        x="date"
-        y="value"
-        {xDomain}
-        yDomain={[yMin, yMax]}
-        padding={{ top: 2, bottom: 2, left: 2, right: 2 }}
-      >
-        <Svg>
-          <!-- Target range lines (75 mg/dl = 4.2 mmol, 180 mg/dl = 10 mmol) -->
-          <Rule
-            y={convertToDisplayUnits(70, units)}
-            class="stroke-yellow-500/40"
-          />
-          <Rule
-            y={convertToDisplayUnits(180, units)}
-            class="stroke-orange-500/40"
-          />
-
-          <!-- Glucose line -->
-          <Spline class="stroke-primary stroke-2 fill-none" />
-
-          <!-- Prediction line (dashed) -->
-          {#if predictionData.length > 1 && predictionEnabled.current}
-            <Spline
-              data={predictionData}
-              class="stroke-primary/50 stroke-2 fill-none [stroke-dasharray:4]"
-            />
-          {/if}
-        </Svg>
-      </Chart>
-    {:else}
-      <div
-        class="h-full flex items-center justify-center text-xs text-muted-foreground"
-      >
-        Waiting for data...
-      </div>
-    {/if}
-  </a>
+  {/if}
 </div>
 
-<!-- Collapsed state: just show current BG with shared component styling -->
-<div class="hidden group-data-[collapsible=icon]:flex justify-center">
+<!-- Collapsed state: BG + small arrow + delta -->
+<div class="hidden group-data-[collapsible=icon]:flex flex-col items-center gap-0.5">
   <GlucoseValueIndicator
     displayValue={displayBG}
     rawBgMgdl={rawCurrentBG}
@@ -253,4 +167,13 @@
     size="xs"
     class="text-lg"
   />
+  {#if hasData && !isStale}
+    <div class="flex items-center gap-0.5 {getDeltaColor(direction)}">
+      <ArrowRight
+        class="size-3"
+        style="transform: rotate({arrowAngle.current}deg)"
+      />
+      <span class="text-[10px] font-medium">{displayDelta}</span>
+    </div>
+  {/if}
 </div>

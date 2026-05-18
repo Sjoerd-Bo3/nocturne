@@ -10,26 +10,43 @@ using Nocturne.Connectors.Nightscout.Services.WriteBack;
 namespace Nocturne.API.Services.Compatibility;
 
 /// <summary>
-/// Service for forwarding requests to Nightscout
+/// Forwards cloned requests to the upstream Nightscout instance as part of the compatibility proxy.
 /// </summary>
+/// <seealso cref="RequestForwardingService"/>
 public interface IRequestForwardingService
 {
     /// <summary>
-    /// Forward a cloned request to the Nightscout instance
+    /// Forwards a cloned request to the Nightscout instance.
+    /// Returns <see langword="null"/> when the circuit breaker is open, avoiding unnecessary
+    /// network calls while Nightscout is unavailable.
     /// </summary>
-    /// <param name="request">The cloned request to forward</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Response from Nightscout, or null if circuit breaker is open</returns>
     Task<TargetResponse?> ForwardToNightscoutAsync(
         ClonedRequest request,
         CancellationToken cancellationToken = default);
 }
 
 /// <summary>
-/// Forwards requests to the upstream Nightscout instance.
-/// Uses the shared NightscoutCircuitBreaker and NightscoutConnectorConfiguration
-/// for URL and authentication.
+/// <see cref="IRequestForwardingService"/> implementation that mirrors requests to the
+/// configured Nightscout URL for compatibility comparison.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Nightscout API authentication is added via the SHA-1 hash of the <c>api-secret</c>
+/// configuration value (matching the original Nightscout authentication scheme). The header
+/// is only injected when not already present in the incoming request so callers can override it.
+/// </para>
+/// <para>
+/// The <c>NightscoutCircuitBreaker</c> is consulted before each request; when open, the method
+/// returns <see langword="null"/> immediately. Successful responses call
+/// <c>RecordSuccess()</c> and exceptions call <c>RecordFailure()</c> to update breaker state.
+/// </para>
+/// <para>
+/// Error messages are filtered through <see cref="Configuration.CompatibilityProxyConfiguration"/>
+/// redaction rules before being stored or forwarded, preventing Nightscout credentials from
+/// leaking into logs or discrepancy reports.
+/// </para>
+/// </remarks>
+/// <seealso cref="IRequestForwardingService"/>
 public class RequestForwardingService : IRequestForwardingService
 {
     private readonly IHttpClientFactory _httpClientFactory;

@@ -3,8 +3,11 @@ using Nocturne.Core.Models;
 namespace Nocturne.Core.Contracts.Repositories;
 
 /// <summary>
-/// Repository port for user food favorites.
+/// Repository port for <see cref="UserFoodFavorite"/> records linking users to their preferred foods.
 /// </summary>
+/// <seealso cref="UserFoodFavorite"/>
+/// <seealso cref="Food"/>
+/// <seealso cref="IFoodRepository"/>
 public interface IUserFoodFavoriteRepository
 {
     /// <summary>

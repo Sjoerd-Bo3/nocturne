@@ -16,6 +16,8 @@ namespace Nocturne.Connectors.MyLife.Configurations;
     "MyLife",
     SupportsHistoricalSync = true,
     SupportsManualSync = true,
+    DefaultActiveThresholdMinutes = 180,
+    DefaultStaleThresholdMinutes = 360,
     SupportedDataTypes = [
         SyncDataType.Glucose,
         SyncDataType.ManualBG,
@@ -24,7 +26,8 @@ namespace Nocturne.Connectors.MyLife.Configurations;
         SyncDataType.BolusCalculations,
         SyncDataType.Notes,
         SyncDataType.DeviceEvents,
-        SyncDataType.StateSpans
+        SyncDataType.StateSpans,
+        SyncDataType.Profiles
     ]
 )]
 public class MyLifeConnectorConfiguration : BaseConnectorConfiguration

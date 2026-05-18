@@ -3,8 +3,26 @@ using Nocturne.API.Models.Requests.V4;
 
 namespace Nocturne.API.Validators.V4;
 
+/// <summary>
+/// Validates <see cref="UpsertBolusCalculationRequest"/> for the V4 bolus calculation upsert endpoint.
+/// </summary>
+/// <remarks>
+/// <list type="bullet">
+/// <item><description>Timestamp must be a valid non-default <see cref="DateTimeOffset"/>.</description></item>
+/// <item><description>Device, App, DataSource capped at 500 characters; BloodGlucoseInputSource at 200.</description></item>
+/// <item><description>CarbInput and InsulinRecommendation, when provided, must be non-negative.</description></item>
+/// <item><description>CarbRatio, when provided, must be strictly positive (division denominator).</description></item>
+/// <item><description>CalculationType, when provided, must be a valid enum value.</description></item>
+/// </list>
+/// </remarks>
+/// <seealso cref="UpsertBolusCalculationRequest"/>
+/// <seealso cref="Controllers.V4.Treatments.BolusCalculationController"/>
 public class UpsertBolusCalculationRequestValidator : AbstractValidator<UpsertBolusCalculationRequest>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UpsertBolusCalculationRequestValidator"/> class
+    /// and configures all validation rules for bolus calculation upserts.
+    /// </summary>
     public UpsertBolusCalculationRequestValidator()
     {
         RuleFor(x => x.Timestamp).NotEqual(default(DateTimeOffset)).WithMessage("Timestamp is required");

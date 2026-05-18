@@ -1,5 +1,11 @@
 namespace Nocturne.Core.Contracts.Multitenancy;
 
+/// <summary>
+/// Manages tenant membership invite links: creation, acceptance, listing, and revocation.
+/// Invites grant specified roles and optional direct permissions when accepted by a subject.
+/// </summary>
+/// <seealso cref="ITenantService"/>
+/// <seealso cref="ITenantRoleService"/>
 public interface IMemberInviteService
 {
     /// <summary>Creates a new invite link that grants the specified roles and permissions when accepted.</summary>
@@ -26,12 +32,22 @@ public interface IMemberInviteService
     Task<bool> RevokeInviteAsync(Guid inviteId, Guid tenantId);
 }
 
+/// <summary>
+/// Result returned when a new invite link is created via <see cref="IMemberInviteService.CreateInviteAsync"/>.
+/// </summary>
+/// <param name="Id">The unique identifier of the invite.</param>
+/// <param name="Token">The opaque token embedded in the invite URL.</param>
+/// <param name="InviteUrl">The full URL that the invitee should visit to accept.</param>
+/// <param name="ExpiresAt">The UTC timestamp after which the invite is no longer valid.</param>
 public record MemberInviteResult(
     Guid Id,
     string Token,
     string InviteUrl,
     DateTime ExpiresAt);
 
+/// <summary>
+/// Detailed view of an invite, including its current validity state and usage history.
+/// </summary>
 public record MemberInviteInfo(
     Guid Id,
     Guid TenantId,
@@ -50,11 +66,18 @@ public record MemberInviteInfo(
     DateTime CreatedAt,
     List<InviteUsageInfo> UsedBy);
 
+/// <summary>
+/// Records a single usage of an invite: which subject accepted it and when.
+/// </summary>
 public record InviteUsageInfo(
     Guid SubjectId,
     string? Name,
     DateTime JoinedAt);
 
+/// <summary>
+/// Result of accepting an invite via <see cref="IMemberInviteService.AcceptInviteAsync"/>.
+/// On failure, <see cref="ErrorCode"/> and <see cref="ErrorDescription"/> describe the reason.
+/// </summary>
 public record AcceptMemberInviteResult(
     bool Success,
     string? ErrorCode = null,

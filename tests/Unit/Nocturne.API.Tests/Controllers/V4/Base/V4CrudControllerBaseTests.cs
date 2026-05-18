@@ -106,7 +106,8 @@ public class V4CrudControllerBaseTests
     {
         var result = await _controller.GetAll(null, null, 100, 0, "invalid", null, null);
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
+        var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(400);
     }
 
     [Fact]
@@ -171,7 +172,8 @@ public class V4CrudControllerBaseTests
 
         var result = await _controller.Create(request);
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
+        var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(400);
     }
 
     [Fact]
@@ -217,7 +219,8 @@ public class V4CrudControllerBaseTests
 
         var result = await _controller.Update(id, request);
 
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
+        var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(400);
     }
 
     [Fact]

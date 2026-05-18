@@ -3,6 +3,10 @@ import { env } from "$env/dynamic/private";
 import { env as publicEnv } from "$env/dynamic/public";
 import { ApiClient } from "$lib/api/api-client.generated";
 import { AUTH_COOKIE_NAMES } from "$lib/config/auth-cookies";
+import {
+  propagateAuthCookies,
+  type CookieSetter,
+} from "./auth-cookie-propagation";
 
 /**
  * Helper to get the API base URL (server-side internal or public).
@@ -23,6 +27,13 @@ export function getHashedInstanceKey(): string | null {
 
 /**
  * Create an API client with custom fetch that includes auth headers.
+ *
+ * When `responseCookies` is provided, any auth-related Set-Cookie headers
+ * on the response are forwarded onto the outgoing SvelteKit response so
+ * that token rotation performed by the API middleware reaches the browser.
+ * Without this, SSR-initiated calls would silently rotate tokens that
+ * never make it back to the client, causing the next request to fail auth
+ * (since the old refresh token is now revoked).
  */
 export function createServerApiClient(
   baseUrl: string,
@@ -30,8 +41,11 @@ export function createServerApiClient(
   options?: {
     accessToken?: string;
     refreshToken?: string;
+    guestSessionToken?: string;
     hashedInstanceKey?: string | null;
     extraHeaders?: Record<string, string>;
+    responseCookies?: CookieSetter;
+    signal?: AbortSignal;
   }
 ): ApiClient {
   const httpClient = {
@@ -55,14 +69,34 @@ export function createServerApiClient(
       if (options?.refreshToken) {
         cookies.push(`${AUTH_COOKIE_NAMES.refreshToken}=${options.refreshToken}`);
       }
+      if (options?.guestSessionToken) {
+        cookies.push(`nocturne-guest-session=${options.guestSessionToken}`);
+      }
       if (cookies.length > 0) {
         headers.set("Cookie", cookies.join("; "));
       }
 
-      return fetchFn(url, {
+      const boundSignal = options?.signal;
+      const callSignal = init?.signal;
+      const mergedSignal =
+        boundSignal && callSignal
+          ? AbortSignal.any([boundSignal, callSignal])
+          : boundSignal ?? callSignal;
+
+      const response = await fetchFn(url, {
         ...init,
         headers,
+        signal: mergedSignal,
       });
+
+      if (options?.responseCookies) {
+        propagateAuthCookies(
+          response.headers.getSetCookie(),
+          options.responseCookies
+        );
+      }
+
+      return response;
     },
   };
 

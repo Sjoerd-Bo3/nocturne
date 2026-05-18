@@ -4,10 +4,15 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models.Serializers;
 
 /// <summary>
-/// JSON converter that handles flexible boolean serialization for Nightscout compatibility
+/// JSON converter that handles flexible boolean serialization for Nightscout compatibility.
 /// Converts various string representations to boolean values (like "true", "false", "1", "0")
-/// and handles null values gracefully
+/// and handles null values gracefully.
 /// </summary>
+/// <remarks>
+/// Nightscout clients may send booleans as strings ("true"/"false"), numbers (1/0),
+/// or alternative forms ("yes"/"no", "on"/"off"). This converter normalizes all forms.
+/// </remarks>
+/// <seealso cref="FlexibleNonNullableBooleanJsonConverter"/>
 public class FlexibleBooleanJsonConverter : JsonConverter<bool?>
 {
     public override bool? Read(
@@ -68,10 +73,11 @@ public class FlexibleBooleanJsonConverter : JsonConverter<bool?>
 }
 
 /// <summary>
-/// JSON converter that handles flexible non-nullable boolean serialization for Nightscout compatibility
-/// Converts various string representations to boolean values (like "true", "false", "1", "0")
-/// Defaults to false for unrecognized or null values
+/// JSON converter that handles flexible non-nullable boolean serialization for Nightscout compatibility.
+/// Converts various string representations to boolean values (like "true", "false", "1", "0").
+/// Defaults to <c>false</c> for unrecognized or null values.
 /// </summary>
+/// <seealso cref="FlexibleBooleanJsonConverter"/>
 public class FlexibleNonNullableBooleanJsonConverter : JsonConverter<bool>
 {
     public override bool Read(

@@ -8,10 +8,9 @@ using OpenApi.Remote.Attributes;
 using Nocturne.API.Authorization;
 using Nocturne.API.Extensions;
 using Nocturne.API.Services.Auth;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Auth;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Infrastructure.Data.Entities;
-using SameSiteMode = Nocturne.Core.Models.Configuration.SameSiteMode;
 
 namespace Nocturne.API.Controllers.Authentication;
 
@@ -19,6 +18,15 @@ namespace Nocturne.API.Controllers.Authentication;
 /// Controller for TOTP (Time-based One-Time Password) authenticator management and login.
 /// Handles setup, verification, credential listing/removal, and TOTP-based authentication.
 /// </summary>
+/// <remarks>
+/// TOTP is treated as a second factor. Setup requires at least one primary auth factor
+/// (passkey or OIDC link) to be configured first. This prevents a user from having TOTP
+/// as their only authentication method.
+/// </remarks>
+/// <seealso cref="ITotpService"/>
+/// <seealso cref="ISessionService"/>
+/// <seealso cref="ISubjectService"/>
+/// <seealso cref="IAuthAuditService"/>
 [ApiController]
 [Route("api/auth/totp")]
 [Tags("Authentication")]
@@ -26,8 +34,7 @@ namespace Nocturne.API.Controllers.Authentication;
 public class TotpController : ControllerBase
 {
     private readonly ITotpService _totpService;
-    private readonly IJwtService _jwtService;
-    private readonly IRefreshTokenService _refreshTokenService;
+    private readonly ISessionService _sessionService;
     private readonly ISubjectService _subjectService;
     private readonly IAuthAuditService _auditService;
     private readonly OidcOptions _oidcOptions;
@@ -38,16 +45,14 @@ public class TotpController : ControllerBase
     /// </summary>
     public TotpController(
         ITotpService totpService,
-        IJwtService jwtService,
-        IRefreshTokenService refreshTokenService,
+        ISessionService sessionService,
         ISubjectService subjectService,
         IAuthAuditService auditService,
         IOptions<OidcOptions> oidcOptions,
         ILogger<TotpController> logger)
     {
         _totpService = totpService;
-        _jwtService = jwtService;
-        _refreshTokenService = refreshTokenService;
+        _sessionService = sessionService;
         _subjectService = subjectService;
         _auditService = auditService;
         _oidcOptions = oidcOptions.Value;
@@ -55,8 +60,17 @@ public class TotpController : ControllerBase
     }
 
     /// <summary>
-    /// Generate TOTP setup data including provisioning URI and secret
+    /// Generate TOTP setup data including provisioning URI and secret.
     /// </summary>
+    /// <returns>A <see cref="TotpSetupResponse"/> containing the provisioning URI, base32 secret, and challenge token.</returns>
+    /// <remarks>
+    /// Requires at least one primary auth factor (passkey or OIDC link) to be configured.
+    /// The returned <see cref="TotpSetupResponse.ChallengeToken"/> must be passed to
+    /// <see cref="VerifySetup"/> along with a valid 6-digit code to complete setup.
+    /// </remarks>
+    /// <response code="200">TOTP setup data generated.</response>
+    /// <response code="400">No primary factor configured, or user account not found.</response>
+    /// <response code="401">Not authenticated.</response>
     [HttpPost("setup")]
     [RemoteCommand]
     [ProducesResponseType(typeof(TotpSetupResponse), StatusCodes.Status200OK)]
@@ -94,8 +108,14 @@ public class TotpController : ControllerBase
     }
 
     /// <summary>
-    /// Verify a TOTP code to complete authenticator setup
+    /// Verify a TOTP code to complete authenticator setup.
     /// </summary>
+    /// <param name="request">A <see cref="TotpVerifySetupRequest"/> containing the 6-digit code, label, and challenge token.</param>
+    /// <returns>A <see cref="TotpVerifySetupResponse"/> with the new credential ID on success.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the challenge token is invalid or the code does not match.</exception>
+    /// <response code="200">TOTP setup verified and credential created.</response>
+    /// <response code="400">Invalid code or challenge token.</response>
+    /// <response code="401">Not authenticated.</response>
     [HttpPost("verify-setup")]
     [RemoteCommand(Invalidates = ["ListCredentials"])]
     [ProducesResponseType(typeof(TotpVerifySetupResponse), StatusCodes.Status200OK)]
@@ -124,8 +144,11 @@ public class TotpController : ControllerBase
     }
 
     /// <summary>
-    /// List all TOTP credentials for the authenticated user
+    /// List all TOTP credentials for the authenticated user.
     /// </summary>
+    /// <returns>A list of <see cref="TotpCredentialDto"/> for the current subject.</returns>
+    /// <response code="200">List of TOTP credentials.</response>
+    /// <response code="401">Not authenticated.</response>
     [HttpGet]
     [RemoteQuery]
     [ProducesResponseType(typeof(List<TotpCredentialDto>), StatusCodes.Status200OK)]
@@ -148,8 +171,16 @@ public class TotpController : ControllerBase
     }
 
     /// <summary>
-    /// Remove a TOTP credential by ID
+    /// Remove a TOTP credential by ID.
     /// </summary>
+    /// <param name="id">The unique identifier of the TOTP credential to remove.</param>
+    /// <returns>204 on success.</returns>
+    /// <remarks>
+    /// No factor-count guard: TOTP is a second factor, so removing it can never
+    /// lock a user out of their primary sign-in method.
+    /// </remarks>
+    /// <response code="204">Credential removed.</response>
+    /// <response code="401">Not authenticated.</response>
     [HttpDelete("{id:guid}")]
     [RemoteCommand(Invalidates = ["ListCredentials"])]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -169,8 +200,17 @@ public class TotpController : ControllerBase
     }
 
     /// <summary>
-    /// Authenticate using a TOTP code and username
+    /// Authenticate using a TOTP code and username.
     /// </summary>
+    /// <param name="request">A <see cref="TotpLoginRequest"/> containing the username and 6-digit code.</param>
+    /// <returns>A <see cref="TotpLoginResponse"/> with access token on success.</returns>
+    /// <remarks>
+    /// Rate-limited via the "totp-login" policy.
+    /// On success: issues session cookies, updates last login time, and logs
+    /// <see cref="AuthAuditEventType.Login"/>. On failure: logs <see cref="AuthAuditEventType.FailedAuth"/>.
+    /// </remarks>
+    /// <response code="200">Login successful with access token.</response>
+    /// <response code="400">Invalid username or code.</response>
     [HttpPost("login")]
     [AllowAnonymous]
     [EnableRateLimiting("totp-login")]
@@ -191,31 +231,14 @@ public class TotpController : ControllerBase
             return Problem(detail: "Invalid username or code", statusCode: 400, title: "Bad Request");
         }
 
-        var subject = await _subjectService.GetSubjectByIdAsync(result.SubjectId);
-        if (subject == null)
-        {
-            return Problem(detail: "User account not found", statusCode: 400, title: "Bad Request");
-        }
-
-        var roles = await _subjectService.GetSubjectRolesAsync(result.SubjectId);
-        var permissions = await _subjectService.GetSubjectPermissionsAsync(result.SubjectId);
-
-        var subjectInfo = new SubjectInfo
-        {
-            Id = subject.Id,
-            Name = result.DisplayName ?? result.Username,
-            Email = subject.Email,
-        };
-
-        var accessToken = _jwtService.GenerateAccessToken(subjectInfo, permissions, roles);
-        var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
+        var session = await _sessionService.IssueSessionAsync(
             result.SubjectId,
-            oidcSessionId: null,
-            deviceDescription: "TOTP",
-            ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
-            userAgent: Request.Headers.UserAgent.ToString());
+            new SessionContext(
+                DeviceDescription: "TOTP",
+                IpAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                UserAgent: Request.Headers.UserAgent.ToString()));
 
-        SetSessionCookies(accessToken, refreshToken);
+        Response.SetSessionCookies(session, _oidcOptions);
 
         await _subjectService.UpdateLastLoginAsync(result.SubjectId);
 
@@ -226,56 +249,11 @@ public class TotpController : ControllerBase
         return Ok(new TotpLoginResponse
         {
             Success = true,
-            AccessToken = accessToken,
-            ExpiresIn = (int)_jwtService.GetAccessTokenLifetime().TotalSeconds,
+            AccessToken = session.AccessToken,
+            ExpiresIn = session.ExpiresInSeconds,
         });
     }
 
-    #region Private Helpers
-
-    private void SetSessionCookies(string accessToken, string refreshToken)
-    {
-        var cookieSameSite = _oidcOptions.Cookie.SameSite switch
-        {
-            SameSiteMode.Strict => Microsoft.AspNetCore.Http.SameSiteMode.Strict,
-            SameSiteMode.Lax => Microsoft.AspNetCore.Http.SameSiteMode.Lax,
-            SameSiteMode.None => Microsoft.AspNetCore.Http.SameSiteMode.None,
-            _ => Microsoft.AspNetCore.Http.SameSiteMode.Lax,
-        };
-
-        Response.Cookies.Append(_oidcOptions.Cookie.AccessTokenName, accessToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = _oidcOptions.Cookie.Secure,
-            SameSite = cookieSameSite,
-            Path = "/",
-            IsEssential = true,
-            MaxAge = _jwtService.GetAccessTokenLifetime(),
-        });
-
-        Response.Cookies.Append(_oidcOptions.Cookie.RefreshTokenName, refreshToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = _oidcOptions.Cookie.Secure,
-            SameSite = cookieSameSite,
-            Path = "/",
-            IsEssential = true,
-            MaxAge = TimeSpan.FromDays(7),
-        });
-
-        // IsAuthenticated is intentionally not HttpOnly — the frontend reads it to detect auth state.
-        // The actual tokens (access + refresh) are HttpOnly above. This cookie contains no secrets.
-        Response.Cookies.Append("IsAuthenticated", "true", new CookieOptions // lgtm[cs/web/cookie-httponly-not-set]
-        {
-            HttpOnly = false,
-            Secure = _oidcOptions.Cookie.Secure,
-            SameSite = cookieSameSite,
-            Path = "/",
-            MaxAge = TimeSpan.FromDays(7),
-        });
-    }
-
-    #endregion
 }
 
 #region DTOs

@@ -35,6 +35,11 @@ public interface ITreatmentPublisher
         string source,
         CancellationToken cancellationToken = default);
 
+    Task<bool> PublishDecompositionBatchesAsync(
+        IEnumerable<DecompositionBatch> batches,
+        string source,
+        CancellationToken cancellationToken = default);
+
     Task<DateTime?> GetLatestTreatmentTimestampAsync(
         string source,
         CancellationToken cancellationToken = default);

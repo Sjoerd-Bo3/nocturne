@@ -114,18 +114,22 @@
 <h2>7. Open Source License</h2>
 
 <p>
-  Nocturne is released under the MIT License. This means you're free to:
+  Nocturne is released under the <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener noreferrer">GNU Affero General Public License v3.0 (AGPL-3.0)</a>. This means you're free to:
 </p>
 
 <ul>
   <li>Use the software for any purpose</li>
-  <li>Modify the source code</li>
-  <li>Distribute copies</li>
-  <li>Sublicense or sell copies</li>
+  <li>Study and modify the source code</li>
+  <li>Distribute copies, provided derivative works are also licensed under AGPL-3.0</li>
+  <li>Run the software as a network service, provided users can access the source code</li>
 </ul>
 
 <p>
-  The MIT License provides the software "as is" without warranty. See the LICENSE file in the project repository for full details.
+  Commercial licensing is available for organizations that need to use Nocturne without AGPL obligations. Contact the maintainers for details.
+</p>
+
+<p>
+  The AGPL-3.0 provides the software "as is" without warranty. See the LICENSE file in the project repository for full terms.
 </p>
 
 <h2>8. Contact</h2>

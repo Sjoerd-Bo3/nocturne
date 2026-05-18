@@ -3,8 +3,12 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Device age preferences with 1:1 legacy JavaScript compatibility
+/// Device age preferences with 1:1 legacy JavaScript compatibility.
+/// Configures alert thresholds in hours for when a device change is overdue.
 /// </summary>
+/// <seealso cref="DeviceAgeInfo"/>
+/// <seealso cref="SensorAgeInfo"/>
+/// <seealso cref="DeviceAgeNotification"/>
 public class DeviceAgePreferences
 {
     /// <summary>

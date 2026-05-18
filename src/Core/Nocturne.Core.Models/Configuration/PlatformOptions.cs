@@ -3,6 +3,7 @@ namespace Nocturne.Core.Models.Configuration;
 /// <summary>
 /// Platform-level configuration for managed/SaaS deployments.
 /// </summary>
+/// <seealso cref="Nocturne.Core.Models.Authorization.Subject"/>
 public class PlatformOptions
 {
     public const string SectionName = "Platform";

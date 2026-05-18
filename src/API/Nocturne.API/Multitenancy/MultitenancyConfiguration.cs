@@ -1,35 +1,17 @@
 namespace Nocturne.API.Multitenancy;
 
 /// <summary>
-/// Configuration for the multitenancy system.
-/// Bound from appsettings.json section "Multitenancy".
+/// Platform-wide base domain configuration.
+/// Used for subdomain tenant resolution, WebAuthn RP ID derivation, and URL construction.
+/// Bound from the flat "BaseDomain" configuration key (env var: BaseDomain).
 /// </summary>
-public class MultitenancyConfiguration
+public class BaseDomainOptions
 {
-    public const string SectionName = "Multitenancy";
+    public const string ConfigKey = "BASE_DOMAIN";
 
     /// <summary>
-    /// Base domain for subdomain tenant resolution.
-    /// e.g. "nocturnecgm.com" - requests to rhys.nocturnecgm.com resolve tenant "rhys".
-    /// When null or empty, all requests resolve to the default tenant (self-hosted mode).
+    /// Base domain for the platform, e.g. "nocturnecgm.com" or "localhost:1612".
+    /// Requests to rhys.nocturnecgm.com resolve tenant "rhys".
     /// </summary>
-    public string? BaseDomain { get; set; }
-
-    /// <summary>
-    /// Slug used for the auto-created default tenant.
-    /// </summary>
-    public string DefaultTenantSlug { get; set; } = "default";
-
-    /// <summary>
-    /// Whether authenticated users can create their own tenants.
-    /// SaaS operators set this to false to gate tenant creation behind billing.
-    /// </summary>
-    public bool AllowSelfServiceCreation { get; set; } = true;
-
-    /// <summary>
-    /// Optional webhook URL for custom slug validation.
-    /// When configured, Nocturne POSTs { "slug": "xxx" } and expects { "isValid": bool, "message"?: string }.
-    /// Used by SaaS operators to enforce custom naming rules or billing checks.
-    /// </summary>
-    public string? SlugValidationWebhookUrl { get; set; }
+    public string BaseDomain { get; set; } = "";
 }

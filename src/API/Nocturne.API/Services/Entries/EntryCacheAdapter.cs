@@ -1,4 +1,3 @@
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Contracts.Entries;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
@@ -6,13 +5,20 @@ using Nocturne.Core.Models.Entries;
 using Nocturne.Infrastructure.Cache.Abstractions;
 using Nocturne.Infrastructure.Cache.Constants;
 using Nocturne.Infrastructure.Cache.Keys;
+using Nocturne.API.Services.Glucose;
+using Nocturne.API.Services.Platform;
 
 namespace Nocturne.API.Services.Entries;
 
 /// <summary>
-/// Entry cache adapter that owns cache key construction, TTL policy,
-/// and demo-mode isolation for entry queries.
+/// <see cref="IEntryCache"/> implementation that owns cache key construction, TTL policy,
+/// and demo-mode isolation for <see cref="Entry"/> queries.
+/// Only caches skip=0 queries with common counts to keep cache cardinality bounded.
+/// Demo mode queries use a separate key suffix to prevent real data from leaking into demo views.
 /// </summary>
+/// <seealso cref="IEntryCache"/>
+/// <seealso cref="EntryService"/>
+/// <seealso cref="IDemoModeService"/>
 public class EntryCacheAdapter : IEntryCache
 {
     private readonly ICacheService _cache;
@@ -20,6 +26,13 @@ public class EntryCacheAdapter : IEntryCache
     private readonly ITenantAccessor _tenant;
     private readonly ILogger<EntryCacheAdapter> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="EntryCacheAdapter"/>.
+    /// </summary>
+    /// <param name="cache">The distributed cache service for get/set/remove operations.</param>
+    /// <param name="demoMode">Demo mode service used to isolate demo and real data cache keys.</param>
+    /// <param name="tenant">Provides the current tenant context for scoping all cache keys.</param>
+    /// <param name="logger">The logger instance.</param>
     public EntryCacheAdapter(
         ICacheService cache,
         IDemoModeService demoMode,

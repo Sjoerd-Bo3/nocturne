@@ -3,15 +3,24 @@ using Microsoft.EntityFrameworkCore;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.Alerts;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
+using Nocturne.API.Services.Realtime;
 
 namespace Nocturne.API.Services.Alerts;
 
 /// <summary>
-/// Creates delivery records for an alert instance step and dispatches them
-/// to the appropriate channel providers (web_push, webhook, etc.).
+/// Creates one delivery row per channel attached to a fired alert rule and dispatches each
+/// to the matching channel provider (<c>web_push</c>, <c>in_app</c>, <c>webhook</c>,
+/// chat-bot variants). Delivery rows are persisted before the provider call so the audit
+/// trail is complete on provider failure.
 /// </summary>
+/// <remarks>
+/// DND suppression is the orchestrator's responsibility — by the time DispatchAsync is called
+/// we already know the alert should reach the user. Real-time <see cref="ISignalRBroadcastService"/>
+/// notifications are sent alongside channel deliveries.
+/// </remarks>
 internal sealed class AlertDeliveryService(
     IDbContextFactory<NocturneDbContext> contextFactory,
     ITenantAccessor tenantAccessor,
@@ -20,66 +29,17 @@ internal sealed class AlertDeliveryService(
     ILogger<AlertDeliveryService> logger)
     : IAlertDeliveryService
 {
-    public async Task DispatchAsync(Guid alertInstanceId, int stepOrder, AlertPayload payload, CancellationToken ct)
+    public async Task DispatchAsync(
+        Guid alertInstanceId,
+        IReadOnlyList<AlertRuleChannelSnapshot> channels,
+        AlertPayload payload,
+        CancellationToken ct)
     {
         var tenantId = tenantAccessor.TenantId;
-        await using var db = await contextFactory.CreateDbContextAsync(ct);
 
-        // Find the escalation step for this instance
-        var instance = await db.AlertInstances
-            .AsNoTracking()
-            .FirstOrDefaultAsync(i => i.Id == alertInstanceId, ct);
-
-        if (instance is null)
-        {
-            logger.LogWarning("Alert instance {InstanceId} not found for dispatch", alertInstanceId);
-            return;
-        }
-
-        // --- Quiet hours check ---
-        if (await IsQuietHoursActiveAsync(db, tenantId, instance.AlertExcursionId, ct))
-        {
-            logger.LogInformation("Alert dispatch suppressed by quiet hours for tenant {TenantId}", tenantId);
-            return;
-        }
-
-        var step = await db.AlertEscalationSteps
-            .AsNoTracking()
-            .Include(s => s.Channels)
-            .Where(s => s.AlertScheduleId == instance.AlertScheduleId && s.StepOrder == stepOrder)
-            .FirstOrDefaultAsync(ct);
-
-        if (step is null)
-        {
-            logger.LogWarning("No escalation step found for instance {InstanceId}, step {StepOrder}",
-                alertInstanceId, stepOrder);
-            return;
-        }
-
-        var payloadJson = JsonSerializer.Serialize(payload);
-
-        // Create delivery records for each channel
-        foreach (var channel in step.Channels)
-        {
-            var delivery = new AlertDeliveryEntity
-            {
-                Id = Guid.CreateVersion7(),
-                TenantId = tenantId,
-                AlertInstanceId = alertInstanceId,
-                EscalationStepId = step.Id,
-                ChannelType = channel.ChannelType,
-                Destination = channel.Destination,
-                Payload = payloadJson,
-                Status = "pending",
-                CreatedAt = DateTime.UtcNow,
-            };
-
-            db.AlertDeliveries.Add(delivery);
-        }
-
-        await db.SaveChangesAsync(ct);
-
-        // Broadcast alert_dispatch for the fast path (web clients)
+        // Always emit the alert_dispatch broadcast so SignalR-connected web clients render
+        // the toast even when there are zero configured channels (the user explicitly opted
+        // out of every push/sound/in-app delivery surface).
         try
         {
             await broadcastService.BroadcastAlertEventAsync("alert_dispatch", payload);
@@ -89,16 +49,64 @@ internal sealed class AlertDeliveryService(
             logger.LogWarning(ex, "Failed to broadcast alert_dispatch for instance {InstanceId}", alertInstanceId);
         }
 
-        // Dispatch to channel providers
-        var deliveries = await db.AlertDeliveries
-            .Where(d => d.AlertInstanceId == alertInstanceId && d.EscalationStepId == step.Id && d.Status == "pending")
-            .ToListAsync(ct);
+        var payloadJson = JsonSerializer.Serialize(payload);
 
-        foreach (var delivery in deliveries)
+        await using var db = await contextFactory.CreateDbContextAsync(ct);
+        db.TenantId = tenantId;
+
+        // Zero-channel rules still leave an audit anchor: an InApp delivery row marked
+        // delivered immediately. Without this row the History/Replay page cannot tell the
+        // difference between "alert fired but every provider is broken" and "user explicitly
+        // chose no channels", and the SignalR alert_dispatch broadcast (which fires
+        // unconditionally above) would be the only attribution surface.
+        if (channels.Count == 0)
         {
+            db.AlertDeliveries.Add(new AlertDeliveryEntity
+            {
+                Id = Guid.CreateVersion7(),
+                TenantId = tenantId,
+                AlertInstanceId = alertInstanceId,
+                AlertRuleChannelId = null,
+                ChannelType = ChannelType.InApp,
+                Destination = string.Empty,
+                Payload = payloadJson,
+                Status = "delivered",
+                DeliveredAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync(ct);
+            return;
+        }
+
+        var deliveryRows = new List<AlertDeliveryEntity>(channels.Count);
+        foreach (var channel in channels)
+        {
+            var delivery = new AlertDeliveryEntity
+            {
+                Id = Guid.CreateVersion7(),
+                TenantId = tenantId,
+                AlertInstanceId = alertInstanceId,
+                AlertRuleChannelId = channel.Id,
+                ChannelType = channel.ChannelType,
+                Destination = channel.Destination,
+                Payload = payloadJson,
+                Status = "pending",
+                CreatedAt = DateTime.UtcNow,
+            };
+            db.AlertDeliveries.Add(delivery);
+            deliveryRows.Add(delivery);
+        }
+        await db.SaveChangesAsync(ct);
+
+        // Hand each persisted row to its provider. Provider failures are caught and recorded
+        // on the delivery row; one bad webhook does not abort the rest of the batch.
+        for (var i = 0; i < deliveryRows.Count; i++)
+        {
+            var delivery = deliveryRows[i];
+            var channelMetadata = channels[i].Metadata;
             try
             {
-                await DispatchToProviderAsync(delivery, payload, ct);
+                await DispatchToProviderAsync(delivery, payload, channelMetadata, ct);
             }
             catch (Exception ex)
             {
@@ -109,9 +117,156 @@ internal sealed class AlertDeliveryService(
         }
     }
 
+    public async Task TestFireAsync(
+        Guid alertRuleId,
+        IReadOnlyList<AlertRuleChannelSnapshot> channels,
+        AlertPayload payload,
+        CancellationToken ct)
+    {
+        var tenantId = tenantAccessor.TenantId;
+        await using var db = await contextFactory.CreateDbContextAsync(ct);
+        db.TenantId = tenantId;
+
+        // Synthesise a parent excursion so the delivery rows have somewhere to hang. The
+        // excursion is opened and immediately resolved — it never participates in tracker
+        // state because we don't go through IExcursionTracker (which would mutate the live
+        // ActiveExcursionId on AlertTrackerStateEntity and confuse the orchestrator).
+        var now = DateTime.UtcNow;
+        var excursion = new AlertExcursionEntity
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = tenantId,
+            AlertRuleId = alertRuleId,
+            StartedAt = now,
+            EndedAt = now,
+        };
+        db.AlertExcursions.Add(excursion);
+
+        var instance = new AlertInstanceEntity
+        {
+            Id = Guid.CreateVersion7(),
+            TenantId = tenantId,
+            AlertExcursionId = excursion.Id,
+            Status = "test",
+            TriggeredAt = now,
+            ResolvedAt = now,
+            ResolutionReason = "test",
+            IsTest = true,
+        };
+        db.AlertInstances.Add(instance);
+        await db.SaveChangesAsync(ct);
+
+        // Broadcast so the firing toast renders for SignalR-connected web clients —
+        // mirrors the real-fire UX so users learn what a real fire feels like.
+        try
+        {
+            await broadcastService.BroadcastAlertEventAsync("alert_test_fire", payload);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to broadcast alert_test_fire for rule {RuleId}", alertRuleId);
+        }
+
+        if (channels.Count == 0)
+        {
+            // Same audit-anchor pattern as the zero-channel real-fire path.
+            db.AlertDeliveries.Add(new AlertDeliveryEntity
+            {
+                Id = Guid.CreateVersion7(),
+                TenantId = tenantId,
+                AlertInstanceId = instance.Id,
+                AlertRuleChannelId = null,
+                ChannelType = ChannelType.InApp,
+                Destination = string.Empty,
+                Payload = JsonSerializer.Serialize(payload),
+                Status = "delivered",
+                DeliveredAt = now,
+                CreatedAt = now,
+                IsTest = true,
+            });
+            await db.SaveChangesAsync(ct);
+            return;
+        }
+
+        var payloadJson = JsonSerializer.Serialize(payload);
+        var deliveryRows = new List<AlertDeliveryEntity>(channels.Count);
+        foreach (var channel in channels)
+        {
+            var delivery = new AlertDeliveryEntity
+            {
+                Id = Guid.CreateVersion7(),
+                TenantId = tenantId,
+                AlertInstanceId = instance.Id,
+                AlertRuleChannelId = channel.Id,
+                ChannelType = channel.ChannelType,
+                Destination = channel.Destination,
+                Payload = payloadJson,
+                Status = "pending",
+                CreatedAt = now,
+                IsTest = true,
+            };
+            db.AlertDeliveries.Add(delivery);
+            deliveryRows.Add(delivery);
+        }
+        await db.SaveChangesAsync(ct);
+
+        for (var i = 0; i < deliveryRows.Count; i++)
+        {
+            var delivery = deliveryRows[i];
+            var channelMetadata = channels[i].Metadata;
+            try
+            {
+                await DispatchToProviderAsync(delivery, payload, channelMetadata, ct);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Test-fire delivery {DeliveryId} via {ChannelType} failed",
+                    delivery.Id, delivery.ChannelType);
+                await MarkFailedAsync(delivery.Id, ex.Message, ct);
+            }
+        }
+    }
+
+    public async Task TestFireDryRunAsync(
+        IReadOnlyList<AlertRuleChannelSnapshot> channels,
+        AlertPayload payload,
+        CancellationToken ct)
+    {
+        try
+        {
+            await broadcastService.BroadcastAlertEventAsync("alert_test_fire", payload);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to broadcast alert_test_fire (dry-run)");
+        }
+
+        // Push directly to providers without persisting delivery rows. Failures are logged
+        // but not retryable — there's no row to mark failed. Dry-run callers know this is
+        // an editor preview, not an audit-tracked send.
+        foreach (var channel in channels)
+        {
+            try
+            {
+                var fauxDelivery = new AlertDeliveryEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    ChannelType = channel.ChannelType,
+                    Destination = channel.Destination,
+                };
+                await DispatchToProviderAsync(fauxDelivery, payload, channel.Metadata, ct);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Test-fire dry-run dispatch via {ChannelType} failed", channel.ChannelType);
+            }
+        }
+    }
+
     public async Task MarkDeliveredAsync(Guid deliveryId, string? platformMessageId, string? platformThreadId, CancellationToken ct)
     {
         await using var db = await contextFactory.CreateDbContextAsync(ct);
+        db.TenantId = tenantAccessor.TenantId;
         var delivery = await db.AlertDeliveries.FirstOrDefaultAsync(d => d.Id == deliveryId, ct);
         if (delivery is null) return;
 
@@ -125,6 +280,7 @@ internal sealed class AlertDeliveryService(
     public async Task MarkFailedAsync(Guid deliveryId, string error, CancellationToken ct)
     {
         await using var db = await contextFactory.CreateDbContextAsync(ct);
+        db.TenantId = tenantAccessor.TenantId;
         var delivery = await db.AlertDeliveries.FirstOrDefaultAsync(d => d.Id == deliveryId, ct);
         if (delivery is null) return;
 
@@ -134,11 +290,11 @@ internal sealed class AlertDeliveryService(
         await db.SaveChangesAsync(ct);
     }
 
-    private async Task DispatchToProviderAsync(AlertDeliveryEntity delivery, AlertPayload payload, CancellationToken ct)
+    private async Task DispatchToProviderAsync(AlertDeliveryEntity delivery, AlertPayload payload, string? channelMetadata, CancellationToken ct)
     {
         switch (delivery.ChannelType)
         {
-            case "web_push":
+            case ChannelType.WebPush:
                 var webPushProvider = serviceProvider.GetService<Providers.WebPushProvider>();
                 if (webPushProvider is not null)
                 {
@@ -147,7 +303,16 @@ internal sealed class AlertDeliveryService(
                 }
                 break;
 
-            case "webhook":
+            case ChannelType.InApp:
+                var inAppProvider = serviceProvider.GetService<Providers.InAppProvider>();
+                if (inAppProvider is not null)
+                {
+                    await inAppProvider.SendAsync(delivery.Destination, payload, ct);
+                    await MarkDeliveredAsync(delivery.Id, null, null, ct);
+                }
+                break;
+
+            case ChannelType.Webhook:
                 var webhookProvider = serviceProvider.GetService<Providers.WebhookProvider>();
                 if (webhookProvider is not null)
                 {
@@ -161,7 +326,38 @@ internal sealed class AlertDeliveryService(
                 if (chatBotProvider is not null)
                 {
                     await chatBotProvider.SendAsync(delivery.Id, delivery.ChannelType, delivery.Destination, payload, ct);
-                    // Do not mark as delivered here — the bot reports back via MarkDeliveredAsync
+                }
+                break;
+
+            case ChannelType.HomeAssistant:
+                var haProvider = serviceProvider.GetService<Providers.HomeAssistantProvider>();
+                if (haProvider is not null)
+                {
+                    object? channelMeta = null;
+                    if (!string.IsNullOrEmpty(channelMetadata))
+                    {
+                        try
+                        {
+                            using var doc = System.Text.Json.JsonDocument.Parse(channelMetadata);
+                            var allowAck = doc.RootElement.TryGetProperty("allow_ack", out var prop)
+                                           && prop.ValueKind == System.Text.Json.JsonValueKind.True;
+                            channelMeta = new { allowAck };
+                        }
+                        catch (System.Text.Json.JsonException)
+                        {
+                            channelMeta = new { allowAck = false };
+                        }
+                    }
+                    else
+                    {
+                        channelMeta = new { allowAck = false };
+                    }
+
+                    var delivered = await haProvider.SendAsync(delivery.TenantId, delivery.Destination, payload, channelMeta, ct);
+                    if (delivered)
+                        await MarkDeliveredAsync(delivery.Id, null, null, ct);
+                    else
+                        await MarkFailedAsync(delivery.Id, "No Home Assistant instance connected", ct);
                 }
                 break;
 
@@ -170,68 +366,5 @@ internal sealed class AlertDeliveryService(
                     delivery.ChannelType, delivery.Id);
                 break;
         }
-    }
-
-    /// <summary>
-    /// Checks whether quiet hours are currently active for the tenant and whether
-    /// the alert severity allows bypassing them.
-    /// </summary>
-    private async Task<bool> IsQuietHoursActiveAsync(NocturneDbContext db, Guid tenantId, Guid excursionId, CancellationToken ct)
-    {
-        var tenant = await db.Tenants
-            .AsNoTracking()
-            .Where(t => t.Id == tenantId)
-            .Select(t => new { t.QuietHoursStart, t.QuietHoursEnd, t.QuietHoursOverrideCritical, t.Timezone })
-            .FirstOrDefaultAsync(ct);
-
-        if (tenant is null) return false;
-
-        // Quiet hours disabled if either bound is null
-        if (tenant.QuietHoursStart is null || tenant.QuietHoursEnd is null) return false;
-
-        // Determine current time in tenant's timezone
-        TimeZoneInfo tz;
-        try
-        {
-            tz = TimeZoneInfo.FindSystemTimeZoneById(tenant.Timezone);
-        }
-        catch
-        {
-            tz = TimeZoneInfo.Utc;
-        }
-
-        var tenantNow = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz));
-        var start = tenant.QuietHoursStart.Value;
-        var end = tenant.QuietHoursEnd.Value;
-
-        bool inQuietWindow;
-        if (start <= end)
-        {
-            // Same-day window, e.g. 13:00-15:00
-            inQuietWindow = tenantNow >= start && tenantNow < end;
-        }
-        else
-        {
-            // Cross-midnight window, e.g. 22:00-07:00
-            inQuietWindow = tenantNow >= start || tenantNow < end;
-        }
-
-        if (!inQuietWindow) return false;
-
-        // Check if critical severity bypasses quiet hours
-        if (tenant.QuietHoursOverrideCritical)
-        {
-            // Navigate instance → excursion → rule to get severity
-            var severity = await db.AlertExcursions
-                .AsNoTracking()
-                .Where(e => e.Id == excursionId)
-                .Join(db.AlertRules, e => e.AlertRuleId, r => r.Id, (_, r) => r.Severity)
-                .FirstOrDefaultAsync(ct);
-
-            if (string.Equals(severity, "critical", StringComparison.OrdinalIgnoreCase))
-                return false; // Critical bypasses quiet hours
-        }
-
-        return true;
     }
 }

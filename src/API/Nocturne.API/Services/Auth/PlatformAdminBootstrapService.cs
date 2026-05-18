@@ -7,22 +7,34 @@ namespace Nocturne.API.Services.Auth;
 
 /// <summary>
 /// Ensures at least one platform admin exists on startup.
-///
-/// Priority:
-/// 1. If Platform:AdminSubjectIds is configured, those subjects are granted platform admin.
-/// 2. Otherwise, if no platform admin exists, the owner of the oldest tenant is granted it.
 /// </summary>
+/// <remarks>
+/// Priority order:
+/// <list type="number">
+///   <item>If <c>Platform:AdminSubjectIds</c> is configured, those subjects are granted platform admin status.</item>
+///   <item>Otherwise, if no platform admin exists, the owner of the oldest tenant is granted it.</item>
+/// </list>
+/// </remarks>
 public class PlatformAdminBootstrapService
 {
     private readonly NocturneDbContext _db;
     private readonly PlatformOptions _options;
 
+    /// <summary>
+    /// Initialises a new <see cref="PlatformAdminBootstrapService"/>.
+    /// </summary>
+    /// <param name="db">Database context for subject and tenant member queries.</param>
+    /// <param name="options">Platform configuration options, including <c>AdminSubjectIds</c>.</param>
     public PlatformAdminBootstrapService(NocturneDbContext db, IOptions<PlatformOptions> options)
     {
         _db = db;
         _options = options.Value;
     }
 
+    /// <summary>
+    /// Grants platform admin status according to the configured priority rules.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
     public async Task BootstrapAsync(CancellationToken cancellationToken)
     {
         // Option 1: explicit config takes precedence
@@ -40,8 +52,8 @@ public class PlatformAdminBootstrapService
 
         // Option 2: grant to owner of oldest tenant
         var firstOwnerSubjectId = await _db.TenantMembers
-            .Where(tm => tm.MemberRoles.Any(mr => mr.TenantRole.Slug == "owner"))
-            .OrderBy(tm => tm.Tenant.SysCreatedAt)
+            .Where(tm => tm.MemberRoles.Any(mr => mr.TenantRole!.Slug == "owner"))
+            .OrderBy(tm => tm.Tenant!.SysCreatedAt)
             .Select(tm => tm.SubjectId)
             .FirstOrDefaultAsync(cancellationToken);
 

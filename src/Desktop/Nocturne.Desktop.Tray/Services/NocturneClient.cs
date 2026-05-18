@@ -1,13 +1,16 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
-using Nocturne.Desktop.Tray.Models;
+using Nocturne.Core.Models;
+using Nocturne.Core.Models.Widget;
+using Nocturne.Desktop.Tray.Extensions;
 
 namespace Nocturne.Desktop.Tray.Services;
 
 /// <summary>
-/// HTTP + SignalR client for the Nocturne API.
+/// SDK + SignalR client for the Nocturne API.
 /// Authenticates via Bearer tokens managed by OidcAuthService.
 /// Real-time data flows through the SignalR DataHub with HTTP polling as fallback.
 /// </summary>
@@ -16,12 +19,11 @@ public sealed class NocturneClient : IAsyncDisposable
     private readonly SettingsService _settingsService;
     private readonly OidcAuthService _authService;
     private readonly ILogger _logger;
-    private readonly HttpClient _httpClient;
     private HubConnection? _hubConnection;
     private CancellationTokenSource? _pollCts;
     private bool _isConnected;
 
-    public event Action<GlucoseReading>? OnGlucoseReading;
+    public event Action<V4GlucoseReading>? OnGlucoseReading;
     public event Action<AlarmEventArgs>? OnAlarm;
     public event Action<bool>? OnConnectionChanged;
     public event Action? OnReconnected;
@@ -33,7 +35,6 @@ public sealed class NocturneClient : IAsyncDisposable
         _settingsService = settingsService;
         _authService = authService;
         _logger = logger;
-        _httpClient = new HttpClient();
 
         _authService.AuthStateChanged += OnAuthStateChanged;
     }
@@ -44,7 +45,6 @@ public sealed class NocturneClient : IAsyncDisposable
         if (string.IsNullOrEmpty(serverUrl)) return;
         if (!_authService.IsAuthenticated) return;
 
-        await EnsureBearerTokenAsync();
         await ConnectSignalRAsync(serverUrl, cancellationToken);
         StartPolling(cancellationToken);
     }
@@ -64,73 +64,11 @@ public sealed class NocturneClient : IAsyncDisposable
         SetConnected(false);
     }
 
-    public async Task<GlucoseReading?> FetchCurrentReadingAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var serverUrl = GetServerUrl();
-            if (serverUrl is null) return null;
-
-            await EnsureBearerTokenAsync();
-            var response = await _httpClient.GetAsync($"{serverUrl}/api/v1/entries/current", cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            var entries = await response.Content.ReadFromJsonAsync<JsonElement[]>(cancellationToken: cancellationToken);
-            if (entries is null || entries.Length == 0) return null;
-
-            return ParseEntry(entries[0]);
-        }
-        catch (OperationCanceledException)
-        {
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to fetch current glucose reading");
-            return null;
-        }
-    }
-
-    public async Task<IReadOnlyList<GlucoseReading>> FetchRecentReadingsAsync(int hours = 3, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var serverUrl = GetServerUrl();
-            if (serverUrl is null) return [];
-
-            await EnsureBearerTokenAsync();
-            var since = DateTimeOffset.UtcNow.AddHours(-hours).ToUnixTimeMilliseconds();
-            var url = $"{serverUrl}/api/v1/entries.json?find[mills][$gte]={since}&count=1000&sort$desc=mills";
-
-            var response = await _httpClient.GetAsync(url, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            var entries = await response.Content.ReadFromJsonAsync<JsonElement[]>(cancellationToken: cancellationToken);
-            if (entries is null) return [];
-
-            return entries
-                .Select(ParseEntry)
-                .Where(r => r is not null)
-                .Cast<GlucoseReading>()
-                .OrderBy(r => r.Mills)
-                .ToList();
-        }
-        catch (OperationCanceledException)
-        {
-            return [];
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to fetch recent glucose readings");
-            return [];
-        }
-    }
-
     /// <summary>
     /// Fetches the V4 summary including current reading and glucose history in a single call.
     /// Returns the current reading and an ordered list of historical readings for the chart.
     /// </summary>
-    public async Task<(GlucoseReading? Current, IReadOnlyList<GlucoseReading> History)> FetchSummaryAsync(
+    public async Task<(V4GlucoseReading? Current, IReadOnlyList<V4GlucoseReading> History)> FetchSummaryAsync(
         int hours = 3,
         CancellationToken cancellationToken = default)
     {
@@ -139,32 +77,25 @@ public sealed class NocturneClient : IAsyncDisposable
             var serverUrl = GetServerUrl();
             if (serverUrl is null) return (null, []);
 
-            await EnsureBearerTokenAsync();
-            var url = $"{serverUrl}/api/v4/summary?hours={hours}";
+            var token = await _authService.GetAccessTokenAsync();
+            if (string.IsNullOrEmpty(token)) return (null, []);
 
-            var response = await _httpClient.GetAsync(url, cancellationToken);
-            response.EnsureSuccessStatusCode();
+            using var http = new HttpClient { BaseAddress = new Uri(serverUrl) };
+            http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+            var summary = await http.GetFromJsonAsync<V4SummaryResponse>(
+                $"/api/v4/summary?hours={hours}&includePredictions=false",
+                cancellationToken);
 
-            GlucoseReading? current = null;
-            if (json.TryGetProperty("current", out var currentJson) && currentJson.ValueKind == JsonValueKind.Object)
+            if (summary is null) return (null, []);
+
+            var current = summary.Current;
+            var history = summary.History?.ToList() ?? [];
+
+            if (current is not null && !history.Any(h => h.Mills == current.Mills))
             {
-                current = ParseV4Reading(currentJson);
+                history.Add(current);
             }
-
-            var history = new List<GlucoseReading>();
-            if (json.TryGetProperty("history", out var historyJson) && historyJson.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var item in historyJson.EnumerateArray())
-                {
-                    var reading = ParseV4Reading(item);
-                    if (reading is not null) history.Add(reading);
-                }
-            }
-
-            // Add current to history list so SetHistory gets the complete picture
-            if (current is not null) history.Add(current);
             history.Sort((a, b) => a.Mills.CompareTo(b.Mills));
 
             return (current, history);
@@ -180,38 +111,10 @@ public sealed class NocturneClient : IAsyncDisposable
         }
     }
 
-    private static GlucoseReading? ParseV4Reading(JsonElement entry)
-    {
-        if (!entry.TryGetProperty("sgv", out var sgvProp)) return null;
-
-        var sgv = sgvProp.GetDouble();
-
-        return new GlucoseReading
-        {
-            Sgv = sgv,
-            Mgdl = sgv,
-            Direction = entry.TryGetProperty("direction", out var dir) ? dir.GetString() : null,
-            TrendRate = entry.TryGetProperty("trendRate", out var rate) ? rate.GetDouble() : null,
-            Delta = entry.TryGetProperty("delta", out var delta) ? delta.GetDouble() : null,
-            Mills = entry.TryGetProperty("mills", out var mills) ? mills.GetInt64() : 0,
-        };
-    }
-
     private string? GetServerUrl()
     {
         var serverUrl = _settingsService.Settings.ServerUrl?.TrimEnd('/');
         return string.IsNullOrEmpty(serverUrl) ? null : serverUrl;
-    }
-
-    private async Task EnsureBearerTokenAsync()
-    {
-        _httpClient.DefaultRequestHeaders.Authorization = null;
-        var token = await _authService.GetAccessTokenAsync();
-        if (!string.IsNullOrEmpty(token))
-        {
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        }
     }
 
     private async Task ConnectSignalRAsync(string serverUrl, CancellationToken cancellationToken)
@@ -285,8 +188,6 @@ public sealed class NocturneClient : IAsyncDisposable
     {
         try
         {
-            await EnsureBearerTokenAsync();
-
             if (_hubConnection?.State == HubConnectionState.Connected)
             {
                 await AuthorizeHubAsync();
@@ -304,7 +205,7 @@ public sealed class NocturneClient : IAsyncDisposable
         {
             foreach (var entry in sgvs.EnumerateArray())
             {
-                var reading = ParseEntry(entry);
+                var reading = ParseSignalRReading(entry);
                 if (reading is not null) OnGlucoseReading?.Invoke(reading);
             }
         }
@@ -313,7 +214,7 @@ public sealed class NocturneClient : IAsyncDisposable
         {
             foreach (var entry in data.EnumerateArray())
             {
-                var reading = ParseEntry(entry);
+                var reading = ParseSignalRReading(entry);
                 if (reading is not null) OnGlucoseReading?.Invoke(reading);
             }
         }
@@ -321,8 +222,30 @@ public sealed class NocturneClient : IAsyncDisposable
 
     private void HandleStorageCreate(JsonElement data)
     {
-        var reading = ParseEntry(data);
+        var reading = ParseSignalRReading(data);
         if (reading is not null) OnGlucoseReading?.Invoke(reading);
+    }
+
+    private static V4GlucoseReading? ParseSignalRReading(JsonElement entry)
+    {
+        if (!entry.TryGetProperty("sgv", out var sgvProp)) return null;
+
+        var direction = Direction.NONE;
+        if (entry.TryGetProperty("direction", out var dirProp) && dirProp.ValueKind == JsonValueKind.String)
+        {
+            if (Enum.TryParse<Direction>(dirProp.GetString(), true, out var parsed))
+                direction = parsed;
+        }
+
+        return new V4GlucoseReading
+        {
+            Sgv = sgvProp.GetDouble(),
+            Direction = direction,
+            TrendRate = entry.TryGetProperty("trendRate", out var rate) ? rate.GetDouble() : null,
+            Delta = entry.TryGetProperty("delta", out var delta) ? delta.GetDouble() : null,
+            Mills = entry.TryGetProperty("mills", out var mills) ? mills.GetInt64()
+                  : entry.TryGetProperty("date", out var date) ? date.GetInt64() : 0,
+        };
     }
 
     private void StartPolling(CancellationToken cancellationToken)
@@ -340,7 +263,7 @@ public sealed class NocturneClient : IAsyncDisposable
                         TimeSpan.FromSeconds(_settingsService.Settings.PollingIntervalSeconds),
                         token);
 
-                    var reading = await FetchCurrentReadingAsync(token);
+                    var (reading, _) = await FetchSummaryAsync(hours: 0, token);
                     if (reading is not null) OnGlucoseReading?.Invoke(reading);
                 }
                 catch (OperationCanceledException) { break; }
@@ -361,33 +284,10 @@ public sealed class NocturneClient : IAsyncDisposable
         }
     }
 
-    private static GlucoseReading? ParseEntry(JsonElement entry)
-    {
-        if (!entry.TryGetProperty("sgv", out var sgvProp)) return null;
-
-        var sgv = sgvProp.GetDouble();
-
-        return new GlucoseReading
-        {
-            Sgv = sgv,
-            Mgdl = entry.TryGetProperty("mgdl", out var mgdl) ? mgdl.GetDouble() : sgv,
-            Mmol = entry.TryGetProperty("mmol", out var mmol) ? mmol.GetDouble() : null,
-            Direction = entry.TryGetProperty("direction", out var dir) ? dir.GetString() : null,
-            Trend = entry.TryGetProperty("trend", out var trend) ? trend.GetInt32() : null,
-            TrendRate = entry.TryGetProperty("trendRate", out var rate) ? rate.GetDouble() : null,
-            Delta = entry.TryGetProperty("delta", out var delta) ? delta.GetDouble() : null,
-            Mills = entry.TryGetProperty("mills", out var mills) ? mills.GetInt64()
-                  : entry.TryGetProperty("date", out var date) ? date.GetInt64() : 0,
-            DateString = entry.TryGetProperty("dateString", out var ds) ? ds.GetString() : null,
-            Device = entry.TryGetProperty("device", out var dev) ? dev.GetString() : null,
-        };
-    }
-
     public async ValueTask DisposeAsync()
     {
         _authService.AuthStateChanged -= OnAuthStateChanged;
         await DisconnectAsync();
-        _httpClient.Dispose();
     }
 
     private sealed class RetryPolicy : IRetryPolicy

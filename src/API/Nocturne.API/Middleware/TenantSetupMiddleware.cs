@@ -11,14 +11,36 @@ namespace Nocturne.API.Middleware;
 /// passkey and no OIDC binding). Allows passkey setup, admin, and metadata
 /// endpoints through so setup/recovery flows can complete.
 ///
-/// Only active in multi-tenant mode (runs after TenantResolutionMiddleware).
-/// Single-tenant setup/recovery is handled by RecoveryModeMiddleware.
+/// Runs after TenantResolutionMiddleware. When no tenant is resolved
+/// (e.g. tenantless cross-tenant paths, or zero-tenant setup), the
+/// middleware passes through.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Pipeline order (position 4 of 7 custom middleware):
+/// <see cref="JsonExtensionMiddleware"/>,
+/// <see cref="OidcCallbackRedirectMiddleware"/>, <see cref="Multitenancy.TenantResolutionMiddleware"/>,
+/// <b>TenantSetupMiddleware</b>, <see cref="AuthenticationMiddleware"/>,
+/// <see cref="MemberScopeMiddleware"/>, <see cref="SiteSecurityMiddleware"/>.
+/// </para>
+/// <para>
+/// Endpoints decorated with <see cref="AllowDuringSetupAttribute"/> bypass both the
+/// setup check and the recovery check. Depends on <see cref="ITenantAccessor"/> to
+/// determine whether a tenant has been resolved.
+/// </para>
+/// </remarks>
+/// <seealso cref="AllowDuringSetupAttribute"/>
+/// <seealso cref="Multitenancy.TenantResolutionMiddleware"/>
 public class TenantSetupMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<TenantSetupMiddleware> _logger;
 
+    /// <summary>
+    /// Creates a new instance of <see cref="TenantSetupMiddleware"/>.
+    /// </summary>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="logger">Logger for setup/recovery diagnostics.</param>
     public TenantSetupMiddleware(
         RequestDelegate next,
         ILogger<TenantSetupMiddleware> logger)
@@ -27,6 +49,14 @@ public class TenantSetupMiddleware
         _logger = logger;
     }
 
+    /// <summary>
+    /// Checks whether the resolved tenant requires initial setup or is in recovery mode,
+    /// returning 503 if API traffic should be blocked.
+    /// </summary>
+    /// <param name="context">The current HTTP context.</param>
+    /// <param name="tenantAccessor">Accessor for the resolved tenant identity.</param>
+    /// <param name="db">Database context for querying passkey credentials and orphaned subjects.</param>
+    /// <returns>A task that completes when the middleware has finished processing.</returns>
     public async Task InvokeAsync(
         HttpContext context,
         ITenantAccessor tenantAccessor,
@@ -34,6 +64,13 @@ public class TenantSetupMiddleware
     {
         // Only check when a tenant has been resolved
         if (!tenantAccessor.IsResolved)
+        {
+            await _next(context);
+            return;
+        }
+
+        // Demo tenants bypass setup requirements — they have no owner credentials by design
+        if (tenantAccessor.Context?.IsDemo == true)
         {
             await _next(context);
             return;
@@ -57,17 +94,37 @@ public class TenantSetupMiddleware
             return;
         }
 
-        // Check 1: Does this tenant have any members with passkey credentials?
-        // PasskeyCredentialEntity is subject-scoped (not tenant-scoped), so we join through TenantMembers.
+        // Check 1: Does this tenant have any members with auth credentials (passkey or OIDC)?
+        // These entities are subject-scoped (not tenant-scoped), so we join through TenantMembers.
         var tenantId = tenantAccessor.TenantId;
-        var hasCredentials = await db.TenantMembers
+        var memberCount = await db.TenantMembers
             .Where(m => m.TenantId == tenantId)
-            .AnyAsync(m => db.PasskeyCredentials.Any(c => c.SubjectId == m.SubjectId));
+            .CountAsync();
+        var hasCredentials = memberCount > 0 && await db.TenantMembers
+            .Where(m => m.TenantId == tenantId)
+            .AnyAsync(m =>
+                db.PasskeyCredentials.Any(c => c.SubjectId == m.SubjectId) ||
+                db.SubjectOidcIdentities.Any(i => i.SubjectId == m.SubjectId));
         if (!hasCredentials)
         {
-            _logger.LogDebug(
-                "Tenant {TenantId} has no passkey credentials — returning setup required",
-                tenantAccessor.TenantId);
+            var passkeyCount = memberCount > 0
+                ? await db.TenantMembers
+                    .Where(m => m.TenantId == tenantId)
+                    .SelectMany(m => db.PasskeyCredentials.Where(c => c.SubjectId == m.SubjectId))
+                    .CountAsync()
+                : 0;
+            var oidcCount = memberCount > 0
+                ? await db.TenantMembers
+                    .Where(m => m.TenantId == tenantId)
+                    .SelectMany(m => db.SubjectOidcIdentities.Where(i => i.SubjectId == m.SubjectId))
+                    .CountAsync()
+                : 0;
+
+            _logger.LogWarning(
+                "Tenant {TenantId} setup check failed — returning 503 setup_required. " +
+                "Path={Path}, MemberCount={MemberCount}, PasskeyCount={PasskeyCount}, OidcCount={OidcCount}, " +
+                "DbContextTenantId={DbContextTenantId}",
+                tenantId, path, memberCount, passkeyCount, oidcCount, db.TenantId);
 
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             await context.Response.WriteAsJsonAsync(new
@@ -96,9 +153,23 @@ public class TenantSetupMiddleware
 
         if (hasOrphaned)
         {
-            _logger.LogDebug(
-                "Tenant {TenantId} has orphaned subjects — returning recovery mode",
-                tenantAccessor.TenantId);
+            var orphanedSubjects = await db.TenantMembers
+                .Where(tm => tm.TenantId == tenantId)
+                .Join(
+                    db.Subjects.Where(s => s.IsActive && !s.IsSystemSubject),
+                    tm => tm.SubjectId,
+                    s => s.Id,
+                    (tm, s) => s)
+                .Where(s =>
+                    !db.SubjectOidcIdentities.Any(i => i.SubjectId == s.Id) &&
+                    !db.PasskeyCredentials.Any(p => p.SubjectId == s.Id))
+                .Select(s => new { s.Id, s.Name, s.Username })
+                .ToListAsync();
+
+            _logger.LogWarning(
+                "Tenant {TenantId} has orphaned subjects — returning 503 recovery_mode. " +
+                "Path={Path}, OrphanedSubjects={@OrphanedSubjects}",
+                tenantId, path, orphanedSubjects);
 
             context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             await context.Response.WriteAsJsonAsync(new

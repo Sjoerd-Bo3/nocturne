@@ -1,8 +1,11 @@
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Nocturne.Desktop.Tray.Helpers;
+using Nocturne.Core.Models.Widget;
+using Nocturne.Desktop.Tray.Extensions;
 using Nocturne.Desktop.Tray.Models;
 using Nocturne.Widget.Contracts;
+using GlucoseUnit = Nocturne.Widget.Contracts.GlucoseUnit;
 using Windows.UI;
 
 namespace Nocturne.Desktop.Tray.Views;
@@ -14,7 +17,7 @@ public sealed partial class GlucoseCard : UserControl
         this.InitializeComponent();
     }
 
-    public void Update(GlucoseReading? reading, TraySettings settings)
+    public void Update(V4GlucoseReading? reading, TraySettings settings)
     {
         if (reading is null)
         {
@@ -29,7 +32,7 @@ public sealed partial class GlucoseCard : UserControl
         }
 
         var color = GlucoseRangeHelper.GetColor(
-            reading.Mgdl,
+            reading.Sgv,
             settings.UrgentLowThreshold,
             settings.LowThreshold,
             settings.HighThreshold,
@@ -37,20 +40,20 @@ public sealed partial class GlucoseCard : UserControl
 
         var brush = new SolidColorBrush(color);
 
-        BgValueText.Text = GlucoseRangeHelper.FormatValue(reading.Mgdl, settings.Unit);
+        BgValueText.Text = GlucoseRangeHelper.FormatValue(reading.Sgv, settings.Unit);
         BgValueText.Foreground = brush;
 
         TrendArrowText.Text = "\uE74A";
         TrendArrowText.Foreground = brush;
-        TrendArrowRotation.Angle = TrendHelper.GetArrowRotation(reading.Direction);
+        TrendArrowRotation.Angle = TrendHelper.GetArrowRotation(reading.Direction.ToString());
 
         var delta = GlucoseRangeHelper.FormatDelta(reading.Delta, settings.Unit);
         DeltaText.Text = delta;
         UnitText.Text = settings.Unit == GlucoseUnit.MmolL ? "mmol/L" : "mg/dL";
 
-        TimeAgoText.Text = TimeAgoHelper.Format(reading.Timestamp);
+        TimeAgoText.Text = TimeAgoHelper.Format(reading.GetTimestamp());
 
-        var isStale = TimeAgoHelper.IsStale(reading.Timestamp);
+        var isStale = TimeAgoHelper.IsStale(reading.GetTimestamp());
         if (isStale)
         {
             BgValueText.Opacity = 0.5;
@@ -62,7 +65,7 @@ public sealed partial class GlucoseCard : UserControl
         }
 
         RangeLabelText.Text = GlucoseRangeHelper.GetRangeLabel(
-            reading.Mgdl,
+            reading.Sgv,
             settings.UrgentLowThreshold,
             settings.LowThreshold,
             settings.HighThreshold,

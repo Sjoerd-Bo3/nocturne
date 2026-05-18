@@ -2,18 +2,26 @@ using Microsoft.Extensions.Logging;
 using Nocturne.Core.Contracts.V4;
 using Nocturne.Core.Contracts.V4.Repositories;
 using Nocturne.Core.Models;
+using Nocturne.Infrastructure.Data;
+using Nocturne.Infrastructure.Data.Entities.V4;
 
 using V4Models = Nocturne.Core.Models.V4;
 
 namespace Nocturne.API.Services.V4;
 
 /// <summary>
-/// Decomposes legacy Profile records into V4 granular models.
-/// Iterates through the Profile.Store dictionary, producing one set of 5 V4 records per named profile.
-/// Supports idempotent create-or-update via composite LegacyId matching ("{profileId}:{storeName}").
+/// Decomposes legacy <see cref="Profile"/> records into five v4 granular models per named store entry:
+/// <see cref="V4Models.TherapySettings"/>, <see cref="V4Models.BasalSchedule"/>,
+/// <see cref="V4Models.CarbRatioSchedule"/>, <see cref="V4Models.SensitivitySchedule"/>, and
+/// <see cref="V4Models.TargetRangeSchedule"/>.
+/// Iterates through the <see cref="Profile.Store"/> dictionary and uses a composite
+/// <c>LegacyId</c> of the form <c>"{profileId}:{storeName}"</c> for idempotent upserts.
 /// </summary>
+/// <seealso cref="IProfileDecomposer"/>
+/// <seealso cref="IDecomposer{T}"/>
 public class ProfileDecomposer : IProfileDecomposer, IDecomposer<Profile>
 {
+    private readonly NocturneDbContext _dbContext;
     private readonly ITherapySettingsRepository _therapySettingsRepo;
     private readonly IBasalScheduleRepository _basalScheduleRepo;
     private readonly ICarbRatioScheduleRepository _carbRatioScheduleRepo;
@@ -21,7 +29,15 @@ public class ProfileDecomposer : IProfileDecomposer, IDecomposer<Profile>
     private readonly ITargetRangeScheduleRepository _targetRangeScheduleRepo;
     private readonly ILogger<ProfileDecomposer> _logger;
 
+    /// <param name="dbContext">EF Core context used to persist <see cref="DecompositionBatchEntity"/> records.</param>
+    /// <param name="therapySettingsRepo">Repository for <see cref="V4Models.TherapySettings"/> records.</param>
+    /// <param name="basalScheduleRepo">Repository for <see cref="V4Models.BasalSchedule"/> records.</param>
+    /// <param name="carbRatioScheduleRepo">Repository for <see cref="V4Models.CarbRatioSchedule"/> records.</param>
+    /// <param name="sensitivityScheduleRepo">Repository for <see cref="V4Models.SensitivitySchedule"/> records.</param>
+    /// <param name="targetRangeScheduleRepo">Repository for <see cref="V4Models.TargetRangeSchedule"/> records.</param>
+    /// <param name="logger">Logger instance for this decomposer.</param>
     public ProfileDecomposer(
+        NocturneDbContext dbContext,
         ITherapySettingsRepository therapySettingsRepo,
         IBasalScheduleRepository basalScheduleRepo,
         ICarbRatioScheduleRepository carbRatioScheduleRepo,
@@ -29,6 +45,7 @@ public class ProfileDecomposer : IProfileDecomposer, IDecomposer<Profile>
         ITargetRangeScheduleRepository targetRangeScheduleRepo,
         ILogger<ProfileDecomposer> logger)
     {
+        _dbContext = dbContext;
         _therapySettingsRepo = therapySettingsRepo;
         _basalScheduleRepo = basalScheduleRepo;
         _carbRatioScheduleRepo = carbRatioScheduleRepo;
@@ -40,9 +57,19 @@ public class ProfileDecomposer : IProfileDecomposer, IDecomposer<Profile>
     /// <inheritdoc />
     public async Task<V4Models.DecompositionResult> DecomposeAsync(Profile profile, CancellationToken ct = default)
     {
+        var batch = new DecompositionBatchEntity
+        {
+            TenantId = _dbContext.TenantId,
+            Source = "profile_decomposer",
+            SourceRecordId = profile.Id,
+            CreatedAt = DateTime.UtcNow,
+        };
+        _dbContext.DecompositionBatches.Add(batch);
+        await _dbContext.SaveChangesAsync(ct);
+
         var result = new V4Models.DecompositionResult
         {
-            CorrelationId = Guid.CreateVersion7()
+            CorrelationId = batch.Id
         };
 
         if (profile.Store.Count == 0)
@@ -62,6 +89,89 @@ public class ProfileDecomposer : IProfileDecomposer, IDecomposer<Profile>
             await DecomposeSensitivityScheduleAsync(profile, profileData, storeName, legacyId, result, ct);
             await DecomposeTargetRangeScheduleAsync(profile, profileData, storeName, legacyId, result, ct);
         }
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async Task<V4Models.DecompositionResult> DecomposeBatchAsync(
+        IReadOnlyList<Profile> profiles, CancellationToken ct = default)
+    {
+        if (profiles.Count == 0)
+            return new V4Models.DecompositionResult();
+
+        var batch = new DecompositionBatchEntity
+        {
+            TenantId = _dbContext.TenantId,
+            Source = "profile_decomposer_batch",
+            SourceRecordId = null,
+            CreatedAt = DateTime.UtcNow,
+        };
+        _dbContext.DecompositionBatches.Add(batch);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var result = new V4Models.DecompositionResult { CorrelationId = batch.Id };
+
+        var therapySettingsList = new List<V4Models.TherapySettings>();
+        var basalScheduleList = new List<V4Models.BasalSchedule>();
+        var carbRatioScheduleList = new List<V4Models.CarbRatioSchedule>();
+        var sensitivityScheduleList = new List<V4Models.SensitivitySchedule>();
+        var targetRangeScheduleList = new List<V4Models.TargetRangeSchedule>();
+
+        foreach (var profile in profiles)
+        {
+            if (profile.Store.Count == 0)
+            {
+                _logger.LogWarning("Profile {Id} has no store entries, skipping", profile.Id);
+                continue;
+            }
+
+            foreach (var (storeName, profileData) in profile.Store)
+            {
+                var legacyId = $"{profile.Id}:{storeName}";
+                var isDefault = string.Equals(storeName, profile.DefaultProfile, StringComparison.OrdinalIgnoreCase);
+
+                therapySettingsList.Add(MapToTherapySettings(profile, profileData, storeName, legacyId, isDefault, batch.Id));
+                basalScheduleList.Add(MapToBasalSchedule(profile, profileData, storeName, legacyId, batch.Id));
+                carbRatioScheduleList.Add(MapToCarbRatioSchedule(profile, profileData, storeName, legacyId, batch.Id));
+                sensitivityScheduleList.Add(MapToSensitivitySchedule(profile, profileData, storeName, legacyId, batch.Id));
+                targetRangeScheduleList.Add(MapToTargetRangeSchedule(profile, profileData, storeName, legacyId, batch.Id));
+            }
+        }
+
+        if (therapySettingsList.Count > 0)
+        {
+            var created = await _therapySettingsRepo.BulkCreateAsync(therapySettingsList, ct);
+            result.CreatedRecords.AddRange(created);
+        }
+
+        if (basalScheduleList.Count > 0)
+        {
+            var created = await _basalScheduleRepo.BulkCreateAsync(basalScheduleList, ct);
+            result.CreatedRecords.AddRange(created);
+        }
+
+        if (carbRatioScheduleList.Count > 0)
+        {
+            var created = await _carbRatioScheduleRepo.BulkCreateAsync(carbRatioScheduleList, ct);
+            result.CreatedRecords.AddRange(created);
+        }
+
+        if (sensitivityScheduleList.Count > 0)
+        {
+            var created = await _sensitivityScheduleRepo.BulkCreateAsync(sensitivityScheduleList, ct);
+            result.CreatedRecords.AddRange(created);
+        }
+
+        if (targetRangeScheduleList.Count > 0)
+        {
+            var created = await _targetRangeScheduleRepo.BulkCreateAsync(targetRangeScheduleList, ct);
+            result.CreatedRecords.AddRange(created);
+        }
+
+        _logger.LogDebug(
+            "Batch-decomposed {ProfileCount} profiles into {RecordCount} V4 records",
+            profiles.Count, result.CreatedRecords.Count);
 
         return result;
     }
@@ -314,6 +424,12 @@ public class ProfileDecomposer : IProfileDecomposer, IDecomposer<Profile>
 
     #region Conversion Helpers
 
+    /// <summary>
+    /// Converts a list of legacy <see cref="TimeValue"/> entries into v4 <see cref="V4Models.ScheduleEntry"/> records,
+    /// normalising each value's time representation via <see cref="TimeValue.EnsureTimeAsSeconds"/>.
+    /// </summary>
+    /// <param name="timeValues">The legacy time-value list (e.g. basal, carb-ratio, or sensitivity entries).</param>
+    /// <returns>A list of <see cref="V4Models.ScheduleEntry"/> with <c>Time</c>, <c>Value</c>, and <c>TimeAsSeconds</c> populated.</returns>
     internal static List<V4Models.ScheduleEntry> ConvertTimeValues(List<TimeValue> timeValues)
     {
         return timeValues.Select(tv =>
@@ -328,6 +444,14 @@ public class ProfileDecomposer : IProfileDecomposer, IDecomposer<Profile>
         }).ToList();
     }
 
+    /// <summary>
+    /// Merges separate low- and high-target <see cref="TimeValue"/> lists into a single list of
+    /// <see cref="V4Models.TargetRangeEntry"/> records. When a matching high entry is not found for a
+    /// given time slot, the low value is used as the high value as a safe fallback.
+    /// </summary>
+    /// <param name="lows">The low-target time-value entries from the profile store.</param>
+    /// <param name="highs">The high-target time-value entries from the profile store.</param>
+    /// <returns>A merged list of <see cref="V4Models.TargetRangeEntry"/> with <c>Low</c> and <c>High</c> fields set.</returns>
     internal static List<V4Models.TargetRangeEntry> MergeTargets(List<TimeValue> lows, List<TimeValue> highs)
     {
         var highLookup = highs.ToDictionary(h => h.Time, h => h.Value);

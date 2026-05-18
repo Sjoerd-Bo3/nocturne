@@ -5,6 +5,9 @@ namespace Nocturne.Core.Models.Authorization;
 /// Three tiers: read, readwrite, and full access (*).
 /// Delete is intentionally restricted to * only.
 /// </summary>
+/// <seealso cref="OAuthScope"/>
+/// <seealso cref="ScopeTranslator"/>
+/// <seealso cref="TenantPermissions"/>
 public static class OAuthScopes
 {
     // Grant types
@@ -14,50 +17,96 @@ public static class OAuthScopes
     public const string GrantTypeFollower = "follower";
     /// <summary>Direct grant: programmatic API token without an OAuth client.</summary>
     public const string GrantTypeDirect = "direct";
+    /// <summary>Guest grant: temporary read-only access via short-lived code, no account required.</summary>
+    public const string GrantTypeGuest = "guest";
 
     // Core health data scopes
-    public const string EntriesRead = "entries.read";
-    public const string EntriesReadWrite = "entries.readwrite";
+
+    /// <summary>Read-only access to glucose entries.</summary>
+    public const string GlucoseRead = "glucose.read";
+    /// <summary>Read and write access to glucose entries.</summary>
+    public const string GlucoseReadWrite = "glucose.readwrite";
+    /// <summary>Read-only access to treatments (boluses, carbs, temp basals, etc.).</summary>
     public const string TreatmentsRead = "treatments.read";
+    /// <summary>Read and write access to treatments.</summary>
     public const string TreatmentsReadWrite = "treatments.readwrite";
-    public const string DeviceStatusRead = "devicestatus.read";
-    public const string DeviceStatusReadWrite = "devicestatus.readwrite";
-    public const string ProfileRead = "profile.read";
-    public const string ProfileReadWrite = "profile.readwrite";
+    /// <summary>Read-only access to device status records.</summary>
+    public const string DevicesRead = "devices.read";
+    /// <summary>Read and write access to device status records.</summary>
+    public const string DevicesReadWrite = "devices.readwrite";
+    /// <summary>Read-only access to user profiles (therapy settings).</summary>
+    public const string TherapyRead = "therapy.read";
+    /// <summary>Read and write access to user profiles.</summary>
+    public const string TherapyReadWrite = "therapy.readwrite";
+    /// <summary>Read-only access to heart rate data.</summary>
+    public const string HeartRateRead = "heartrate.read";
+    /// <summary>Read and write access to heart rate data.</summary>
+    public const string HeartRateReadWrite = "heartrate.readwrite";
+    /// <summary>Read-only access to step count data.</summary>
+    public const string StepCountRead = "stepcount.read";
+    /// <summary>Read and write access to step count data.</summary>
+    public const string StepCountReadWrite = "stepcount.readwrite";
+    /// <summary>Read-only access to food records.</summary>
+    public const string FoodRead = "food.read";
+    /// <summary>Read and write access to food records.</summary>
+    public const string FoodReadWrite = "food.readwrite";
 
     // Platform feature scopes
-    public const string NotificationsRead = "notifications.read";
-    public const string NotificationsReadWrite = "notifications.readwrite";
+
+    /// <summary>Read-only access to alert settings and history.</summary>
+    public const string AlertsRead = "alerts.read";
+    /// <summary>Read and write access to alert settings.</summary>
+    public const string AlertsReadWrite = "alerts.readwrite";
+    /// <summary>Read-only access to generated reports.</summary>
     public const string ReportsRead = "reports.read";
 
     // Account-level scopes
+
+    /// <summary>Read-only access to the user's identity information.</summary>
     public const string IdentityRead = "identity.read";
+    /// <summary>Read and write access to sharing/follower configuration.</summary>
     public const string SharingReadWrite = "sharing.readwrite";
 
+    /// <summary>Read-only access to computed statistics (time-in-range, A1c estimates, etc.).</summary>
+    public const string StatisticsRead = "statistics.read";
+
     // Full access (includes delete)
+
+    /// <summary>Superuser scope granting all permissions including delete.</summary>
     public const string FullAccess = "*";
 
-    // Convenience alias
+    // Convenience aliases
+
+    /// <summary>Convenience alias that expands to read scopes for all core health data types.</summary>
     public const string HealthRead = "health.read";
+    /// <summary>Convenience alias that expands to read-write scopes for all core health data types.</summary>
+    public const string HealthReadWrite = "health.readwrite";
 
     /// <summary>
     /// All individual scopes that can be requested (excluding aliases and full access).
     /// </summary>
     public static readonly IReadOnlyList<string> AllScopes = new[]
     {
-        EntriesRead,
-        EntriesReadWrite,
+        GlucoseRead,
+        GlucoseReadWrite,
         TreatmentsRead,
         TreatmentsReadWrite,
-        DeviceStatusRead,
-        DeviceStatusReadWrite,
-        ProfileRead,
-        ProfileReadWrite,
-        NotificationsRead,
-        NotificationsReadWrite,
+        DevicesRead,
+        DevicesReadWrite,
+        TherapyRead,
+        TherapyReadWrite,
+        AlertsRead,
+        AlertsReadWrite,
         ReportsRead,
         IdentityRead,
+        HeartRateRead,
+        HeartRateReadWrite,
+        StepCountRead,
+        StepCountReadWrite,
+        FoodRead,
+        FoodReadWrite,
         SharingReadWrite,
+        StatisticsRead,
     };
 
     /// <summary>
@@ -67,6 +116,7 @@ public static class OAuthScopes
     {
         FullAccess,
         HealthRead,
+        HealthReadWrite,
     };
 
     /// <summary>
@@ -74,10 +124,27 @@ public static class OAuthScopes
     /// </summary>
     public static readonly IReadOnlyList<string> HealthReadExpansion = new[]
     {
-        EntriesRead,
+        GlucoseRead,
         TreatmentsRead,
-        DeviceStatusRead,
-        ProfileRead,
+        DevicesRead,
+        TherapyRead,
+        HeartRateRead,
+        StepCountRead,
+        FoodRead,
+    };
+
+    /// <summary>
+    /// Expansion of the health.readwrite convenience alias.
+    /// </summary>
+    public static readonly IReadOnlyList<string> HealthReadWriteExpansion = new[]
+    {
+        GlucoseReadWrite,
+        TreatmentsReadWrite,
+        DevicesReadWrite,
+        TherapyReadWrite,
+        HeartRateReadWrite,
+        StepCountReadWrite,
+        FoodReadWrite,
     };
 
     /// <summary>
@@ -86,11 +153,14 @@ public static class OAuthScopes
     /// </summary>
     private static readonly Dictionary<string, string> ReadWriteImpliesRead = new()
     {
-        [EntriesReadWrite] = EntriesRead,
+        [GlucoseReadWrite] = GlucoseRead,
         [TreatmentsReadWrite] = TreatmentsRead,
-        [DeviceStatusReadWrite] = DeviceStatusRead,
-        [ProfileReadWrite] = ProfileRead,
-        [NotificationsReadWrite] = NotificationsRead,
+        [DevicesReadWrite] = DevicesRead,
+        [TherapyReadWrite] = TherapyRead,
+        [AlertsReadWrite] = AlertsRead,
+        [HeartRateReadWrite] = HeartRateRead,
+        [StepCountReadWrite] = StepCountRead,
+        [FoodReadWrite] = FoodRead,
     };
 
     /// <summary>
@@ -124,6 +194,12 @@ public static class OAuthScopes
             if (scope == HealthRead)
             {
                 result.UnionWith(HealthReadExpansion);
+                continue;
+            }
+
+            if (scope == HealthReadWrite)
+            {
+                result.UnionWith(HealthReadWriteExpansion);
                 continue;
             }
 

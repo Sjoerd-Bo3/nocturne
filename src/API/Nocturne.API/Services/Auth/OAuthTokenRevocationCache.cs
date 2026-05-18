@@ -1,12 +1,13 @@
-using Nocturne.Core.Contracts;
 using Nocturne.Infrastructure.Cache.Abstractions;
 
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// In-memory cache for tracking revoked OAuth access tokens.
-/// Cache entries automatically expire when the token would have expired naturally.
+/// Cache-backed store for tracking revoked OAuth access tokens by their JWT identifier (<c>jti</c>).
+/// Cache entries automatically expire when the token's natural lifetime would have elapsed,
+/// preventing unbounded growth.
 /// </summary>
+/// <seealso cref="IOAuthTokenRevocationCache"/>
 public class OAuthTokenRevocationCache : IOAuthTokenRevocationCache
 {
     private readonly ICacheService _cache;
@@ -14,6 +15,11 @@ public class OAuthTokenRevocationCache : IOAuthTokenRevocationCache
 
     private const string KeyPrefix = "oauth:revoked:";
 
+    /// <summary>
+    /// Initialises a new <see cref="OAuthTokenRevocationCache"/>.
+    /// </summary>
+    /// <param name="cache">Distributed or in-process cache used for revocation markers.</param>
+    /// <param name="logger">Logger instance.</param>
     public OAuthTokenRevocationCache(ICacheService cache, ILogger<OAuthTokenRevocationCache> logger)
     {
         _cache = cache;

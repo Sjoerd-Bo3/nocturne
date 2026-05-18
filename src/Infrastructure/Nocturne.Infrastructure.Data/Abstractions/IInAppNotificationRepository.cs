@@ -44,11 +44,26 @@ public interface IInAppNotificationRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets the count of active (non-archived) notifications for a user from a specific source
+    /// </summary>
+    Task<int> GetActiveCountBySourceAsync(
+        string userId,
+        string source,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes archived notifications older than the specified cutoff date
+    /// </summary>
+    Task<int> DeleteArchivedBeforeAsync(
+        DateTime cutoff,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Finds a notification by its source identifier and type for a user
     /// </summary>
     Task<InAppNotificationEntity?> FindBySourceAsync(
         string userId,
-        InAppNotificationType type,
+        string type,
         string sourceId,
         CancellationToken cancellationToken = default);
 }

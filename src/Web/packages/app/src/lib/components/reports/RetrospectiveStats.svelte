@@ -15,7 +15,7 @@
   } from "lucide-svelte";
   import { glucoseUnits } from "$lib/stores/appearance-store.svelte";
   import { formatGlucoseValue, getUnitLabel } from "$lib/utils/formatting";
-  import { getRetrospectiveData } from "$api";
+  import { getRetrospectiveData } from "$api/generated/retrospectives.generated.remote";
 
   interface Props {
     /** Unix timestamp in milliseconds to fetch data for */
@@ -57,7 +57,7 @@
   }
 </script>
 
-{#await retrospectiveQuery}
+{#if !retrospectiveQuery.current && !retrospectiveQuery.error}
   <Card.Root class="border-2 border-primary/20 bg-primary/5">
     <Card.Header class="pb-2">
       <Card.Title class="flex items-center gap-2 text-base">
@@ -91,7 +91,35 @@
       </div>
     </Card.Content>
   </Card.Root>
-{:then data}
+{:else if retrospectiveQuery.error}
+  {@const error = retrospectiveQuery.error}
+  <Card.Root class="border-2 border-destructive/20 bg-destructive/5">
+    <Card.Header class="pb-2">
+      <Card.Title class="flex items-center gap-2 text-base text-destructive">
+        <AlertTriangle class="h-4 w-4" />
+        Error Loading Status
+      </Card.Title>
+    </Card.Header>
+    <Card.Content>
+      <div class="text-center space-y-3">
+        <p class="text-sm text-muted-foreground">
+          {error instanceof Error
+            ? error.message
+            : "Failed to load retrospective data"}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onclick={() => retrospectiveQuery.refresh()}
+        >
+          <RefreshCw class="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    </Card.Content>
+  </Card.Root>
+{:else}
+  {@const data = retrospectiveQuery.current}
   <Card.Root class="border-2 border-primary/20 bg-primary/5">
     <Card.Header class="pb-2">
       <Card.Title class="flex items-center gap-2 text-base">
@@ -221,30 +249,4 @@
       </div>
     </Card.Content>
   </Card.Root>
-{:catch error}
-  <Card.Root class="border-2 border-destructive/20 bg-destructive/5">
-    <Card.Header class="pb-2">
-      <Card.Title class="flex items-center gap-2 text-base text-destructive">
-        <AlertTriangle class="h-4 w-4" />
-        Error Loading Status
-      </Card.Title>
-    </Card.Header>
-    <Card.Content>
-      <div class="text-center space-y-3">
-        <p class="text-sm text-muted-foreground">
-          {error instanceof Error
-            ? error.message
-            : "Failed to load retrospective data"}
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          onclick={() => getRetrospectiveData({ time }).refresh()}
-        >
-          <RefreshCw class="h-4 w-4 mr-2" />
-          Try Again
-        </Button>
-      </div>
-    </Card.Content>
-  </Card.Root>
-{/await}
+{/if}

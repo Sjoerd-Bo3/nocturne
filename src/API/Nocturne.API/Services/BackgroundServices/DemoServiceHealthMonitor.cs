@@ -1,4 +1,4 @@
-using Nocturne.Core.Contracts.Repositories;
+using Nocturne.Core.Contracts.Connectors;
 
 namespace Nocturne.API.Services.BackgroundServices;
 
@@ -31,10 +31,15 @@ public class DemoServiceConfiguration
 }
 
 /// <summary>
-/// Background service that monitors the demo service health.
-/// When the demo service becomes unhealthy or stops, this service
-/// automatically cleans up all demo data from the database.
+/// Background service that periodically polls the demo service health endpoint.
+/// When the service becomes unhealthy and the consecutive failure count reaches
+/// <see cref="DemoServiceConfiguration.FailureThreshold"/>, all demo data is automatically
+/// removed from the database via <see cref="IDataSourceService"/>.
 /// </summary>
+/// <remarks>
+/// Cleanup is performed only once per failure run; it resets when the service recovers.
+/// The monitor exits immediately if demo service integration is disabled or no URL is configured.
+/// </remarks>
 public class DemoServiceHealthMonitor : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
@@ -45,6 +50,13 @@ public class DemoServiceHealthMonitor : BackgroundService
     private bool _wasHealthy = false;
     private bool _cleanupPerformed = false;
 
+    /// <summary>
+    /// Initialises a new <see cref="DemoServiceHealthMonitor"/>.
+    /// </summary>
+    /// <param name="serviceProvider">Root DI service provider for creating scoped cleanup services.</param>
+    /// <param name="configuration">Application configuration from which the <c>DemoService</c> section is read.</param>
+    /// <param name="httpClientFactory">Factory for the named <c>DemoServiceHealth</c> HTTP client.</param>
+    /// <param name="logger">Logger instance.</param>
     public DemoServiceHealthMonitor(
         IServiceProvider serviceProvider,
         IConfiguration configuration,
@@ -173,24 +185,15 @@ public class DemoServiceHealthMonitor : BackgroundService
         try
         {
             using var scope = _serviceProvider.CreateScope();
-            var entryRepository = scope.ServiceProvider.GetRequiredService<IEntryRepository>();
-            var treatmentRepository = scope.ServiceProvider.GetRequiredService<ITreatmentRepository>();
+            var dataSourceService = scope.ServiceProvider.GetRequiredService<IDataSourceService>();
 
             _logger.LogInformation("Cleaning up demo data...");
 
-            var entriesDeleted = await entryRepository.DeleteEntriesByDataSourceAsync(
-                Core.Constants.DataSources.DemoService,
-                cancellationToken
-            );
-            var treatmentsDeleted = await treatmentRepository.DeleteTreatmentsByDataSourceAsync(
-                Core.Constants.DataSources.DemoService,
-                cancellationToken
-            );
+            var result = await dataSourceService.DeleteDemoDataAsync(cancellationToken);
 
             _logger.LogInformation(
-                "Demo data cleanup complete: {Entries} entries and {Treatments} treatments deleted",
-                entriesDeleted,
-                treatmentsDeleted
+                "Demo data cleanup complete: {DeletedCounts}",
+                string.Join(", ", result.DeletedCounts.Select(kv => $"{kv.Value} {kv.Key}"))
             );
         }
         catch (Exception ex)

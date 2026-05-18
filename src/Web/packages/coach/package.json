@@ -1,0 +1,29 @@
+{
+  "name": "@nocturne/coach",
+  "version": "1.0.0",
+  "type": "module",
+  "svelte": "./src/lib/index.ts",
+  "types": "./src/lib/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/lib/index.ts",
+      "svelte": "./src/lib/index.ts",
+      "default": "./src/lib/index.ts"
+    },
+    "./theme.css": "./src/lib/theme.css"
+  },
+  "peerDependencies": {
+    "svelte": ">=5.0.0"
+  },
+  "dependencies": {
+    "@floating-ui/dom": "^1.6.0",
+    "@sveltejs/vite-plugin-svelte": "^5.1.1"
+  },
+  "devDependencies": {
+    "svelte-check-native": "^0.2.0",
+    "typescript": "^5.8.3"
+  },
+  "scripts": {
+    "check": "svelte-check-native --tsconfig ./tsconfig.json"
+  }
+}

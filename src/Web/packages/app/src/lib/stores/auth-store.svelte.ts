@@ -17,7 +17,7 @@ import {
   getProvidersInfo,
   refreshSession as refreshSessionRemote,
   logoutSession as logoutSessionRemote,
-} from "../../routes/(fullscreen)/auth/auth.remote";
+} from "../../routes/(unauthenticated)/auth/auth.remote";
 
 const AUTH_STORE_KEY = Symbol("auth-store");
 
@@ -31,6 +31,7 @@ export interface AuthUser {
   roles: string[];
   permissions: string[];
   expiresAt?: Date;
+  avatarUrl?: string;
 }
 
 /**
@@ -54,6 +55,7 @@ export interface SessionInfo {
   roles?: string[];
   permissions?: string[];
   expiresAt?: string;
+  avatarUrl?: string;
 }
 
 export type AuthState = "idle" | "loading" | "authenticated" | "unauthenticated" | "error";
@@ -128,9 +130,12 @@ export class AuthStore {
     const authCookie = cookies.find((c) => c.trim().startsWith("IsAuthenticated="));
 
     if (authCookie) {
-      // We have an auth cookie, try to load the full session
+      // We have an auth cookie, try to load the full session.
+      // Defer out of render context — the store is constructed inside the
+      // root layout's render, but `getSessionInfo().run()` rejects calls
+      // made during render.
       this._state = "loading";
-      this.loadSession();
+      queueMicrotask(() => this.loadSession());
     } else {
       this._state = "unauthenticated";
     }
@@ -176,7 +181,7 @@ export class AuthStore {
     this._error = null;
 
     try {
-      const session = await getSessionInfo();
+      const session = await getSessionInfo().run();
 
       if (session.isAuthenticated && session.subjectId) {
         this._user = {
@@ -186,6 +191,7 @@ export class AuthStore {
           roles: session.roles ?? [],
           permissions: session.permissions ?? [],
           expiresAt: session.expiresAt ? new Date(session.expiresAt) : undefined,
+          avatarUrl: session.avatarUrl,
         };
         this._expiresAt = session.expiresAt ? new Date(session.expiresAt) : null;
         this._state = "authenticated";
@@ -211,7 +217,7 @@ export class AuthStore {
     if (!browser) return [];
 
     try {
-      const result = await getProvidersInfo();
+      const result = await getProvidersInfo().run();
       this._providers = result.providers.map((p) => ({
         id: p.id ?? "",
         name: p.name ?? "",
@@ -423,6 +429,15 @@ export class AuthStore {
     if (this._loginResolver) {
       this._loginResolver(false);
       this._loginResolver = null;
+    }
+  }
+
+  /**
+   * Update the avatar URL after upload or deletion
+   */
+  updateAvatarUrl(url: string | undefined): void {
+    if (this._user) {
+      this._user = { ...this._user, avatarUrl: url };
     }
   }
 

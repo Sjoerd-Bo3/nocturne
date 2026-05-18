@@ -1,16 +1,24 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenApi.Remote.Attributes;
+using Nocturne.Core.Contracts.Profiles;
 using Nocturne.Core.Contracts.V4.Repositories;
+using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 
 namespace Nocturne.API.Controllers.V4.Profiles;
 
 /// <summary>
 /// Controller for managing V4 profile data: therapy settings, basal schedules,
-/// carb ratio schedules, sensitivity schedules, and target range schedules
+/// carb ratio schedules, sensitivity schedules, and target range schedules.
 /// </summary>
+/// <seealso cref="ITherapySettingsRepository"/>
+/// <seealso cref="IBasalScheduleRepository"/>
+/// <seealso cref="ICarbRatioScheduleRepository"/>
+/// <seealso cref="ISensitivityScheduleRepository"/>
+/// <seealso cref="ITargetRangeScheduleRepository"/>
 [ApiController]
+[Tags("Profiles")]
 [Route("api/v4/profile")]
 [Authorize]
 [Produces("application/json")]
@@ -21,13 +29,24 @@ public class ProfileController : ControllerBase
     private readonly ICarbRatioScheduleRepository _carbRatioRepo;
     private readonly ISensitivityScheduleRepository _sensitivityRepo;
     private readonly ITargetRangeScheduleRepository _targetRangeRepo;
+    private readonly IProfileProjectionService _projectionService;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ProfileController"/>.
+    /// </summary>
+    /// <param name="therapyRepo">Repository for therapy settings records.</param>
+    /// <param name="basalRepo">Repository for basal schedule records.</param>
+    /// <param name="carbRatioRepo">Repository for carb ratio schedule records.</param>
+    /// <param name="sensitivityRepo">Repository for insulin sensitivity schedule records.</param>
+    /// <param name="targetRangeRepo">Repository for target glucose range schedule records.</param>
+    /// <param name="projectionService">Service for reading legacy profile projections from V4 data.</param>
     public ProfileController(
         ITherapySettingsRepository therapyRepo,
         IBasalScheduleRepository basalRepo,
         ICarbRatioScheduleRepository carbRatioRepo,
         ISensitivityScheduleRepository sensitivityRepo,
-        ITargetRangeScheduleRepository targetRangeRepo
+        ITargetRangeScheduleRepository targetRangeRepo,
+        IProfileProjectionService projectionService
     )
     {
         _therapyRepo = therapyRepo;
@@ -35,6 +54,7 @@ public class ProfileController : ControllerBase
         _carbRatioRepo = carbRatioRepo;
         _sensitivityRepo = sensitivityRepo;
         _targetRangeRepo = targetRangeRepo;
+        _projectionService = projectionService;
     }
 
     #region Summary
@@ -121,6 +141,70 @@ public class ProfileController : ControllerBase
         }
 
         return Ok(summary);
+    }
+
+    /// <summary>
+    /// Set a profile as the active (default) profile. Clears IsDefault on all other profiles.
+    /// </summary>
+    [HttpPost("set-default/{profileName}")]
+    [RemoteCommand(Invalidates = ["GetProfileSummary", "GetTherapySettings"])]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> SetDefaultProfile(string profileName, CancellationToken ct = default)
+    {
+        var all = await _therapyRepo.GetAsync(null, null, null, null, 1000, 0, true, ct);
+
+        var target = all.FirstOrDefault(ts =>
+            string.Equals(ts.ProfileName, profileName, StringComparison.OrdinalIgnoreCase));
+
+        if (target is null)
+            return NotFound();
+
+        foreach (var ts in all.Where(ts => ts.IsDefault && ts.Id != target.Id))
+        {
+            ts.IsDefault = false;
+            await _therapyRepo.UpdateAsync(ts.Id, ts, ct);
+        }
+
+        if (!target.IsDefault)
+        {
+            target.IsDefault = true;
+            await _therapyRepo.UpdateAsync(target.Id, target, ct);
+        }
+
+        return NoContent();
+    }
+
+    #endregion
+
+    #region Legacy Profile Records
+
+    /// <summary>
+    /// Get legacy Nightscout-shaped profile records projected from V4 schedule data.
+    /// Intended for connector consumption where the caller needs the monolithic
+    /// <see cref="Profile"/> shape (store with basal/carbratio/sens/target arrays).
+    /// </summary>
+    [HttpGet("records")]
+    [ProducesResponseType(typeof(PaginatedResponse<Profile>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedResponse<Profile>>> GetProfileRecords(
+        [FromQuery] int limit = 100,
+        [FromQuery] int offset = 0,
+        CancellationToken ct = default
+    )
+    {
+        limit = Math.Clamp(limit, 1, 1000);
+        offset = Math.Max(0, offset);
+
+        var data = await _projectionService.GetProfilesAsync(count: limit, skip: offset, ct: ct);
+        var total = (int)await _projectionService.CountProfilesAsync(ct: ct);
+
+        return Ok(
+            new PaginatedResponse<Profile>
+            {
+                Data = data,
+                Pagination = new(limit, offset, total),
+            }
+        );
     }
 
     #endregion
@@ -704,6 +788,14 @@ public class ProfileController : ControllerBase
 
     #endregion
 
+    /// <summary>
+    /// Computes schedule change information for a given date range.
+    /// </summary>
+    /// <typeparam name="T">Schedule record type implementing <see cref="IV4Record"/>.</typeparam>
+    /// <param name="schedules">All schedule records to evaluate.</param>
+    /// <param name="from">Start of the date range (inclusive).</param>
+    /// <param name="to">End of the date range (inclusive).</param>
+    /// <returns>A <see cref="ScheduleChangeInfo"/> describing change activity within the range.</returns>
     private static ScheduleChangeInfo ComputeChangeInfo<T>(
         IEnumerable<T> schedules,
         DateTime from,

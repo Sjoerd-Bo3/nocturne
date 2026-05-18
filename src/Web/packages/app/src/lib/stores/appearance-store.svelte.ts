@@ -16,13 +16,14 @@ import { PersistedState } from "runed";
 import { setMode, mode, userPrefersMode } from "mode-watcher";
 import supportedLocales from "../../../../../supportedLocales.json";
 import { WidgetId } from "../api/generated/nocturne-api-client";
+import { type HaloDialConfig, defaultHaloDialConfig } from "../components/dashboard/halo-dial/config";
 
 // ==========================================
 // Type Definitions
 // ==========================================
 
-/** Color theme - visual styling (Nocturne custom vs Trio iOS app) */
-export type ColorTheme = "nocturne" | "trio";
+/** Color theme - visual styling */
+export type ColorTheme = "nocturne" | "trio" | "aaps" | "classic";
 
 /** Color scheme - light/dark mode preference */
 export type ColorScheme = "system" | "light" | "dark";
@@ -32,6 +33,9 @@ export type GlucoseUnits = "mg/dl" | "mmol";
 
 /** Time format preference */
 export type TimeFormat = "12" | "24";
+
+/** Sidebar widget preference */
+export type SidebarWidget = "graph" | "halo-dial";
 
 /** Supported locale type - derived from supportedLocales.json */
 export type SupportedLocale = (typeof supportedLocales)[number];
@@ -85,9 +89,30 @@ export const dashboardTopWidgets = new PersistedState<WidgetId[]>(
   [WidgetId.BgDelta, WidgetId.TirChart, WidgetId.Tdd]
 );
 
+/**
+ * Sidebar widget preference — graph or halo dial
+ * Default: graph (compact glucose chart)
+ */
+export const sidebarWidget = new PersistedState<SidebarWidget>(
+  "nocturne-sidebar-widget",
+  "graph"
+);
+
+/**
+ * Halo dial configuration
+ * Full config for the halo dial sidebar widget
+ */
+export const haloDialConfig = new PersistedState<HaloDialConfig>(
+  "nocturne-halo-dial-config",
+  defaultHaloDialConfig()
+);
+
 // ==========================================
 // Color Theme Management (Nocturne/Trio)
 // ==========================================
+
+/** All theme CSS classes that can be applied to the document root */
+const THEME_CLASSES = ["trio-theme", "aaps-theme", "classic-theme"] as const;
 
 /**
  * Apply color theme class to document
@@ -96,10 +121,17 @@ function applyColorTheme(theme: ColorTheme): void {
   if (!browser) return;
 
   const root = document.documentElement;
-  if (theme === "trio") {
-    root.classList.add("trio-theme");
+  root.classList.remove(...THEME_CLASSES);
+
+  if (theme === "trio") root.classList.add("trio-theme");
+  else if (theme === "aaps") root.classList.add("aaps-theme");
+  else if (theme === "classic") root.classList.add("classic-theme");
+
+  // Classic theme uses minimal border radius (2015 utilitarian aesthetic)
+  if (theme === "classic") {
+    root.style.setProperty("--radius", "0.25rem");
   } else {
-    root.classList.remove("trio-theme");
+    root.style.removeProperty("--radius");
   }
 }
 
@@ -117,13 +149,6 @@ export function setColorTheme(theme: ColorTheme): void {
  */
 export function getColorTheme(): ColorTheme {
   return colorTheme.current;
-}
-
-/**
- * Toggle between Nocturne and Trio themes
- */
-export function toggleColorTheme(): void {
-  setColorTheme(colorTheme.current === "nocturne" ? "trio" : "nocturne");
 }
 
 /**
@@ -254,6 +279,9 @@ export type PredictionDisplayMode =
   | "uam"
   | "cob";
 
+export type LineColorMode = "single" | "threshold" | "continuous";
+export type AreaMode = "off" | "baseline" | "deviation";
+
 /**
  * Prediction display mode preference
  */
@@ -283,6 +311,45 @@ export const glucoseChartLookback = new PersistedState<number>(
  * Always fetches this much data regardless of display range
  */
 export const GLUCOSE_CHART_FETCH_HOURS = 48;
+
+// ==========================================
+// Glucose Chart Visual Style
+// ==========================================
+
+export const chartLineColorMode = new PersistedState<LineColorMode>(
+  "nocturne-chart-line-color-mode",
+  "threshold"
+);
+
+export const chartLineColor = new PersistedState<string>(
+  "nocturne-chart-line-color",
+  "#22c55e"
+);
+
+export const chartPointColorMode = new PersistedState<LineColorMode>(
+  "nocturne-chart-point-color-mode",
+  "threshold"
+);
+
+export const chartPointColor = new PersistedState<string>(
+  "nocturne-chart-point-color",
+  "#22c55e"
+);
+
+export const chartShowPoints = new PersistedState<boolean>(
+  "nocturne-chart-show-points",
+  true
+);
+
+export const chartAreaMode = new PersistedState<AreaMode>(
+  "nocturne-chart-area-mode",
+  "off"
+);
+
+export const chartAreaOpacity = new PersistedState<number>(
+  "nocturne-chart-area-opacity",
+  0.5
+);
 
 // ==========================================
 // Language Preference
@@ -371,15 +438,7 @@ export async function setLanguage(
   preferredLanguage.current = locale;
   syncLanguageCookie(locale);
 
-  // Dynamically load the locale for wuchale
-  if (browser) {
-    try {
-      const { loadLocale } = await import("wuchale/load-utils");
-      await loadLocale(locale);
-    } catch (error) {
-      console.error("Failed to load locale:", error);
-    }
-  }
+  // WUCHALE-DISABLED: wuchale temporarily disabled — dynamic catalog load skipped.
 
   // Update backend preference if callback provided
   if (updateBackend) {

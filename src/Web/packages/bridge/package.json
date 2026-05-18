@@ -5,6 +5,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -19,16 +25,18 @@
     "bridge"
   ],
   "author": "Nocturne Project",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "dependencies": {
     "@microsoft/signalr": "^8.0.0",
     "socket.io": "^4.7.5",
+    "tough-cookie": "^6.0.1",
     "winston": "^3.11.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
-    "typescript": "^5.3.3",
-    "rimraf": "^5.0.5"
+    "@types/tough-cookie": "^4.0.5",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=24"

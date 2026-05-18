@@ -8,9 +8,11 @@ using Nocturne.Infrastructure.Data;
 namespace Nocturne.API.Controllers.V4.Profiles;
 
 /// <summary>
-/// Controller for managing user preferences
+/// Controller for managing user preferences.
 /// </summary>
+/// <seealso cref="NocturneDbContext"/>
 [ApiController]
+[Tags("Profiles")]
 [Route("api/v4/user/preferences")]
 public class UserPreferencesController : ControllerBase
 {
@@ -23,6 +25,11 @@ public class UserPreferencesController : ControllerBase
         "en", "es", "fr", "de", "it", "pt", "nl", "ru", "zh", "ja", "ko"
     };
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="UserPreferencesController"/>.
+    /// </summary>
+    /// <param name="dbContext">Database context for subject entity access.</param>
+    /// <param name="logger">Logger instance.</param>
     public UserPreferencesController(
         NocturneDbContext dbContext,
         ILogger<UserPreferencesController> logger)

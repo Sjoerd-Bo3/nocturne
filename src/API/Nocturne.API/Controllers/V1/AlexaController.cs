@@ -1,15 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Platform;
+using Nocturne.Core.Contracts.Identity;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
-/// Alexa controller that provides voice assistant integration
-/// Maintains 1:1 compatibility with legacy Nightscout Alexa API
+/// Alexa controller that provides voice assistant integration.
+/// Maintains 1:1 compatibility with legacy Nightscout Alexa API.
 /// </summary>
+/// <seealso cref="IAlexaService"/>
+/// <seealso cref="IAuthorizationService"/>
 [ApiController]
+[Tags("V1")]
 [Route("api/[controller]")]
 public class AlexaController : ControllerBase
 {

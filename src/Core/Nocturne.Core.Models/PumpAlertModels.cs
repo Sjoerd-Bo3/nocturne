@@ -1,10 +1,15 @@
 using System.Text.Json.Serialization;
+using Nocturne.Core.Models.V4;
 
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Pump monitoring preferences matching legacy Nightscout pump.getPrefs()
+/// Pump monitoring preferences matching legacy Nightscout pump.getPrefs().
+/// Drives alert thresholds for reservoir level, battery, and clock staleness.
 /// </summary>
+/// <seealso cref="PumpStatusResult"/>
+/// <seealso cref="PumpFieldStatus"/>
+/// <seealso cref="PumpAlertLevel"/>
 public class PumpPreferences
 {
     /// <summary>
@@ -86,8 +91,12 @@ public class PumpPreferences
 }
 
 /// <summary>
-/// Result of pump status analysis with alert levels
+/// Result of pump status analysis with alert levels for each monitored field.
 /// </summary>
+/// <seealso cref="PumpPreferences"/>
+/// <seealso cref="PumpFieldStatus"/>
+/// <seealso cref="PumpAlertLevel"/>
+/// <seealso cref="PumpSnapshot"/>
 public class PumpStatusResult
 {
     /// <summary>
@@ -143,13 +152,13 @@ public class PumpStatusResult
     /// <summary>
     /// Extended pump data (arbitrary key-value pairs)
     /// </summary>
-    public Dictionary<string, object>? Extended { get; set; }
+    public Dictionary<string, object?>? Extended { get; set; }
 
     /// <summary>
-    /// The source device status entry used for this result
+    /// The source pump snapshot used for this result
     /// </summary>
     [JsonIgnore]
-    public DeviceStatus? SourceDeviceStatus { get; set; }
+    public PumpSnapshot? SourcePumpSnapshot { get; set; }
 }
 
 /// <summary>

@@ -2,7 +2,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Configuration;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -10,8 +9,11 @@ using Nocturne.Infrastructure.Data.Entities;
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Service for generating and verifying single-use recovery codes for break-glass account access
+/// Generates and verifies single-use recovery codes for break-glass account access.
+/// Each code consists of two 5-character segments from a reduced unambiguous alphabet,
+/// separated by a hyphen. Codes are stored as HMAC-SHA256 hashes keyed on the JWT secret.
 /// </summary>
+/// <seealso cref="IRecoveryCodeService"/>
 public class RecoveryCodeService : IRecoveryCodeService
 {
     private const int CodeCount = 8;
@@ -22,8 +24,10 @@ public class RecoveryCodeService : IRecoveryCodeService
     private readonly byte[] _hmacKey;
 
     /// <summary>
-    /// Creates a new instance of RecoveryCodeService
+    /// Initialises a new <see cref="RecoveryCodeService"/>.
     /// </summary>
+    /// <param name="dbContext">Database context for reading and writing recovery code records.</param>
+    /// <param name="jwtOptions">JWT options whose <c>SecretKey</c> is used as the HMAC key for hashing codes.</param>
     public RecoveryCodeService(NocturneDbContext dbContext, IOptions<JwtOptions> jwtOptions)
     {
         _dbContext = dbContext;
@@ -101,6 +105,10 @@ public class RecoveryCodeService : IRecoveryCodeService
             .AnyAsync(r => r.SubjectId == subjectId);
     }
 
+    /// <summary>
+    /// Generates a single recovery code in <c>XXXXX-XXXXX</c> format using <see cref="Alphabet"/>.
+    /// </summary>
+    /// <returns>A formatted recovery code string.</returns>
     private static string GenerateCode()
     {
         var segment1 = GenerateSegment();
@@ -108,6 +116,11 @@ public class RecoveryCodeService : IRecoveryCodeService
         return $"{segment1}-{segment2}";
     }
 
+    /// <summary>
+    /// Generates a single segment of <see cref="SegmentLength"/> characters from <see cref="Alphabet"/>
+    /// using a cryptographically secure RNG.
+    /// </summary>
+    /// <returns>A random character segment string.</returns>
     private static string GenerateSegment()
     {
         var chars = new char[SegmentLength];
@@ -118,11 +131,22 @@ public class RecoveryCodeService : IRecoveryCodeService
         return new string(chars);
     }
 
+    /// <summary>
+    /// Normalises a code by converting to uppercase and stripping hyphens,
+    /// ensuring consistent database lookup regardless of user input formatting.
+    /// </summary>
+    /// <param name="code">The raw recovery code string entered by the user.</param>
+    /// <returns>The normalised form suitable for hashing and database comparison.</returns>
     private static string NormalizeCode(string code)
     {
         return code.ToUpperInvariant().Replace("-", "");
     }
 
+    /// <summary>
+    /// Computes an HMAC-SHA256 hash of the normalised code using the configured JWT secret key.
+    /// </summary>
+    /// <param name="normalizedCode">The normalised (uppercase, hyphen-free) code to hash.</param>
+    /// <returns>A lowercase hexadecimal hash string suitable for database storage.</returns>
     private string ComputeHmac(string normalizedCode)
     {
         using var hmac = new HMACSHA256(_hmacKey);

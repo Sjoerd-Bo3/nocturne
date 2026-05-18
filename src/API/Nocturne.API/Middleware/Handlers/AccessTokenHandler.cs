@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 
 namespace Nocturne.API.Middleware.Handlers;
@@ -147,13 +146,6 @@ public class AccessTokenHandler : IAuthHandler
         if (!string.IsNullOrEmpty(queryToken))
         {
             return queryToken;
-        }
-
-        // Also check for 'secret' query parameter (legacy compatibility)
-        var querySecret = context.Request.Query["secret"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(querySecret))
-        {
-            return querySecret;
         }
 
         // 3. Check request body for JSON (only for POST/PUT/PATCH)

@@ -7,6 +7,8 @@ namespace Nocturne.Core.Models.Serializers;
 /// JSON converter that handles flexible int (Int32) serialization for Nightscout compatibility.
 /// Nightscout may send numeric values as either numbers or strings depending on the context.
 /// </summary>
+/// <seealso cref="FlexibleNullableIntConverter"/>
+/// <seealso cref="FlexibleDoubleConverter"/>
 public class FlexibleIntConverter : JsonConverter<int>
 {
     public override int Read(
@@ -51,6 +53,7 @@ public class FlexibleIntConverter : JsonConverter<int>
 /// <summary>
 /// JSON converter that handles flexible nullable int (Int32?) serialization for Nightscout compatibility.
 /// </summary>
+/// <seealso cref="FlexibleIntConverter"/>
 public class FlexibleNullableIntConverter : JsonConverter<int?>
 {
     public override int? Read(
@@ -103,6 +106,8 @@ public class FlexibleNullableIntConverter : JsonConverter<int?>
 /// JSON converter that handles flexible double serialization for Nightscout compatibility.
 /// Nightscout may send numeric values as either numbers or strings depending on the context.
 /// </summary>
+/// <seealso cref="FlexibleNullableDoubleConverter"/>
+/// <seealso cref="FlexibleIntConverter"/>
 public class FlexibleDoubleConverter : JsonConverter<double>
 {
     public override double Read(
@@ -143,6 +148,7 @@ public class FlexibleDoubleConverter : JsonConverter<double>
 /// <summary>
 /// JSON converter that handles flexible nullable double serialization for Nightscout compatibility.
 /// </summary>
+/// <seealso cref="FlexibleDoubleConverter"/>
 public class FlexibleNullableDoubleConverter : JsonConverter<double?>
 {
     public override double? Read(

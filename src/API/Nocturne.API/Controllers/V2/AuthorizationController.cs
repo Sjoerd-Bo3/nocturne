@@ -2,16 +2,18 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using OpenApi.Remote.Attributes;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Identity;
 using Nocturne.Core.Models;
-using IAuthorizationService = Nocturne.Core.Contracts.IAuthorizationService;
+using IAuthorizationService = Nocturne.Core.Contracts.Identity.IAuthorizationService;
 
 namespace Nocturne.API.Controllers.V2;
 
 /// <summary>
-/// Authorization controller that provides 1:1 compatibility with Nightscout authorization endpoints
+/// Authorization controller that provides 1:1 compatibility with Nightscout authorization endpoints.
 /// </summary>
+/// <seealso cref="IAuthorizationService"/>
 [ApiController]
+[Tags("V2")]
 [Route("api/v2/authorization")]
 [Authorize]
 public class AuthorizationController : ControllerBase
@@ -19,6 +21,11 @@ public class AuthorizationController : ControllerBase
     private readonly IAuthorizationService _authorizationService;
     private readonly ILogger<AuthorizationController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="AuthorizationController"/>.
+    /// </summary>
+    /// <param name="authorizationService">Service handling JWT token generation and subject permissions.</param>
+    /// <param name="logger">Logger instance.</param>
     public AuthorizationController(
         IAuthorizationService authorizationService,
         ILogger<AuthorizationController> logger

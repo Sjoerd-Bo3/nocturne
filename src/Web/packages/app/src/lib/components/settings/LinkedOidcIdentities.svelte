@@ -16,7 +16,7 @@
     getLinkedIdentities,
     unlinkIdentity,
   } from "$lib/api/generated/oidcs.generated.remote";
-  import { getProvidersInfo } from "$routes/(fullscreen)/auth/auth.remote";
+  import { getProvidersInfo } from "$routes/(unauthenticated)/auth/auth.remote";
 
   interface Props {
     primaryAuthFactorCount: number;
@@ -106,7 +106,7 @@
     if (!providerId) return;
     showPickerDialog = false;
     const returnUrl = encodeURIComponent("/settings/account");
-    window.location.href = `/api/v4/oidc/link?provider=${encodeURIComponent(providerId)}&returnUrl=${returnUrl}`;
+    window.location.href = `/api/auth/oidc/link?provider=${encodeURIComponent(providerId)}&returnUrl=${returnUrl}`;
   }
 </script>
 

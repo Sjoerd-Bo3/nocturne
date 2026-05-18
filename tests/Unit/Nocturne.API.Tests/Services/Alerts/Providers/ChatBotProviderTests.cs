@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nocturne.API.Services.Alerts.Providers;
 using Nocturne.Core.Models;
+using Nocturne.Core.Models.Alerts;
 using Xunit;
 
 namespace Nocturne.API.Tests.Services.Alerts.Providers;
@@ -16,7 +17,7 @@ public class ChatBotProviderTests
 {
     private static AlertPayload CreateTestPayload() => new()
     {
-        AlertType = "threshold",
+        AlertType = AlertConditionType.Threshold,
         RuleName = "Low glucose",
         GlucoseValue = 55m,
         Trend = "Flat",
@@ -27,6 +28,7 @@ public class ChatBotProviderTests
         TenantId = Guid.NewGuid(),
         SubjectName = "Test",
         ActiveExcursionCount = 1,
+        Severity = AlertRuleSeverity.Critical,
     };
 
     private static ChatBotProvider CreateProvider(
@@ -56,7 +58,7 @@ public class ChatBotProviderTests
         var provider = CreateProvider(handler, "https://web.example.com");
 
         // Act
-        await provider.SendAsync(Guid.NewGuid(), "discord_dm", "user-1", CreateTestPayload(), CancellationToken.None);
+        await provider.SendAsync(Guid.NewGuid(), ChannelType.DiscordDm, "user-1", CreateTestPayload(), CancellationToken.None);
 
         // Assert
         handler.CapturedRequest.Should().NotBeNull();
@@ -74,7 +76,7 @@ public class ChatBotProviderTests
         var deliveryId = Guid.NewGuid();
 
         // Act
-        await provider.SendAsync(deliveryId, "slack_dm", "dest-1", CreateTestPayload(), CancellationToken.None);
+        await provider.SendAsync(deliveryId, ChannelType.SlackDm, "dest-1", CreateTestPayload(), CancellationToken.None);
 
         // Assert
         handler.CapturedContent.Should().NotBeNullOrEmpty();
@@ -96,7 +98,7 @@ public class ChatBotProviderTests
         var provider = CreateProvider(handler, webUrl: "");
 
         // Act -- should return early without throwing
-        await provider.SendAsync(Guid.NewGuid(), "discord_dm", "u1", CreateTestPayload(), CancellationToken.None);
+        await provider.SendAsync(Guid.NewGuid(), ChannelType.DiscordDm, "u1", CreateTestPayload(), CancellationToken.None);
 
         // Assert -- no HTTP request was made
         handler.CapturedRequest.Should().BeNull();
@@ -111,7 +113,7 @@ public class ChatBotProviderTests
 
         // Act
         var act = () => provider.SendAsync(
-            Guid.NewGuid(), "telegram_dm", "u1", CreateTestPayload(), CancellationToken.None);
+            Guid.NewGuid(), ChannelType.TelegramDm, "u1", CreateTestPayload(), CancellationToken.None);
 
         // Assert
         await act.Should().ThrowAsync<HttpRequestException>();

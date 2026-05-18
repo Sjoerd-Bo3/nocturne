@@ -1,4 +1,4 @@
-import type { Handle } from "@sveltejs/kit";
+import { type Handle } from "@sveltejs/kit";
 import { randomUUID } from "$lib/utils";
 import type { HandleServerError } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
@@ -12,17 +12,69 @@ import {
 import { sequence } from "@sveltejs/kit/hooks";
 import type { AuthUser } from "./app.d";
 import { AUTH_COOKIE_NAMES } from "$lib/config/auth-cookies";
-import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
-import * as main from '../../../locales/main.loader.server.svelte.js'
-import * as js from '../../../locales/js.loader.server.js'
-import { locales } from '../../../locales/data.js'
+// WUCHALE-DISABLED: wuchale temporarily disabled
+// import { runWithLocale, loadLocales } from 'wuchale/load-utils/server';
+// import * as main from '../../../locales/main.loader.server.svelte.js'
+// import * as js from '../../../locales/js.loader.server.js'
+// import { locales } from '../../../locales/data.js'
 import supportedLocales from '../../../supportedLocales.json';
 import { LANGUAGE_COOKIE_NAME } from "$lib/stores/appearance-store.svelte";
-import { isPublicRoute, STATIC_ASSET_PREFIXES } from "$lib/config/public-routes";
 
-// load at server startup
-loadLocales(main.key, main.loadIDs, main.loadCatalog, locales)
-loadLocales(js.key, js.loadIDs, js.loadCatalog, locales)
+/** Static asset paths that bypass all middleware. */
+const STATIC_ASSET_PREFIXES = ["/_app", "/assets", "/favicon.ico"] as const;
+
+/**
+ * Get the original client-facing host from the request.
+ * YARP suppresses the original Host header when transforms are configured,
+ * replacing it with the internal destination host. The original host is
+ * preserved in X-Forwarded-Host, which we must read first.
+ */
+function getOriginalHost(request: Request): string | null {
+  return request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+}
+
+/**
+ * Get the original client-facing protocol from the request.
+ * When behind a TLS-terminating reverse proxy (YARP), the internal request
+ * is plain HTTP but X-Forwarded-Proto carries the original scheme. We must
+ * forward this to internal API calls so the API's HTTPS enforcement
+ * middleware treats them as secure.
+ */
+function getOriginalProto(request: Request): string {
+  return request.headers.get("x-forwarded-proto") ?? (request.url.startsWith("https") ? "https" : "http");
+}
+
+/**
+ * Cookie set during setup to carry the tenant slug while the user is still
+ * on the apex domain. httpOnly, 1-hour TTL, cleaned up by markSetupComplete.
+ * Read by hooks that create API clients so they can prepend the slug to
+ * X-Forwarded-Host for correct tenant resolution.
+ */
+const SETUP_TENANT_COOKIE = "nocturne-setup-tenant";
+
+/**
+ * Returns the effective host for API calls, prepending the setup tenant slug
+ * when available so the apex domain resolves to the correct tenant.
+ */
+function getEffectiveHost(request: Request, cookies: { get(name: string): string | undefined }): string | null {
+  const host = getOriginalHost(request);
+  const slug = cookies.get(SETUP_TENANT_COOKIE);
+  if (slug && host && !host.startsWith(`${slug}.`)) return `${slug}.${host}`;
+  return host;
+}
+
+/** Route prefixes that bypass requireAuthentication enforcement. */
+const PUBLIC_PREFIXES = ["/auth", "/api", "/setup", "/clock", "/invite", "/terms", "/privacy", "/guest"] as const;
+
+function isPublicRoute(pathname: string): boolean {
+  return (
+    pathname === "/" ||
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p)) ||
+    STATIC_ASSET_PREFIXES.some((p) => pathname.startsWith(p))
+  );
+}
+
+// WUCHALE-DISABLED: wuchale temporarily disabled — locale catalogs not loaded at startup
 
 // Turn off SSL validation during development for self-signed certs
 if (dev) {
@@ -49,19 +101,58 @@ const authHandle: Handle = async ({ event, resolve }) => {
   const accessToken = event.cookies.get(AUTH_COOKIE_NAMES.accessToken);
 
   if (!authCookie && !accessToken) {
-    // No auth cookies, user is not authenticated
+    // Check for guest session cookie before giving up
+    const guestSessionCookie = event.cookies.get("nocturne-guest-session");
+    if (guestSessionCookie) {
+      try {
+        const forwardedHost = getEffectiveHost(event.request, event.cookies);
+        const headers: Record<string, string> = {
+          Cookie: `nocturne-guest-session=${guestSessionCookie}`,
+        };
+        if (forwardedHost) headers["X-Forwarded-Host"] = forwardedHost;
+        headers["X-Forwarded-Proto"] = getOriginalProto(event.request);
+
+        const hashedKey = getHashedInstanceKey();
+        if (hashedKey) headers["X-Instance-Key"] = hashedKey;
+
+        const sessionRes = await fetch(`${apiBaseUrl}/api/auth/oidc/session`, { headers });
+        const session = await sessionRes.json();
+
+        if (session?.isAuthenticated) {
+          event.locals.user = {
+            subjectId: session.subjectId ?? "guest",
+            name: "Guest",
+            email: undefined,
+            roles: [],
+            permissions: session.permissions ?? [],
+            expiresAt: session.expiresAt,
+          };
+          event.locals.isAuthenticated = true;
+          event.locals.isGuestSession = true;
+          event.locals.guestExpiresAt = session.expiresAt;
+        }
+      } catch (error) {
+        console.error("Failed to validate guest session:", error);
+      }
+    }
     return resolve(event);
   }
 
   try {
-    // Create a temporary API client with auth tokens for session validation
+    // Create a temporary API client with auth tokens for session validation.
+    // `responseCookies` lets the client forward any auth-cookie rotations
+    // performed by the API (via SessionCookieHandler auto-refresh) back to
+    // the browser, so rotated refresh tokens don't silently disappear.
     const refreshToken = event.cookies.get(AUTH_COOKIE_NAMES.refreshToken);
-    const hostHeader = event.request.headers.get("host");
+    const forwardedHost = getEffectiveHost(event.request, event.cookies);
+    const authExtraHeaders: Record<string, string> = { "X-Forwarded-Proto": getOriginalProto(event.request) };
+    if (forwardedHost) authExtraHeaders["X-Forwarded-Host"] = forwardedHost;
     const apiClient = createServerApiClient(apiBaseUrl, fetch, {
       accessToken,
       refreshToken,
       hashedInstanceKey: getHashedInstanceKey(),
-      extraHeaders: hostHeader ? { "X-Forwarded-Host": hostHeader } : undefined,
+      extraHeaders: authExtraHeaders,
+      responseCookies: event.cookies,
     });
 
     // Validate session with the API using the typed client
@@ -76,6 +167,7 @@ const authHandle: Handle = async ({ event, resolve }) => {
         permissions: session.permissions ?? [],
         expiresAt: session.expiresAt,
         preferredLanguage: session.preferredLanguage ?? undefined,
+        avatarUrl: session.avatarUrl ?? undefined,
       };
 
       event.locals.user = user;
@@ -120,7 +212,8 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
     pathname.startsWith("/setup") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api/v4/webhooks") ||
-    pathname.startsWith("/api/v4/bot");
+    pathname.startsWith("/api/v4/bot") ||
+    pathname.startsWith("/api/otel");
 
   if (skipProbe) {
     return resolve(event);
@@ -129,10 +222,12 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
   // Probe the API for setup/recovery mode and site-level requireAuthentication.
   try {
     if (!event.locals.siteSecurityChecked) {
-      const hostHeader = event.request.headers.get("host");
+      const probeHost = getEffectiveHost(event.request, event.cookies);
+      const probeHeaders: Record<string, string> = { "X-Forwarded-Proto": getOriginalProto(event.request) };
+      if (probeHost) probeHeaders["X-Forwarded-Host"] = probeHost;
       const apiClient = createServerApiClient(apiBaseUrl, fetch, {
         hashedInstanceKey: getHashedInstanceKey(),
-        extraHeaders: hostHeader ? { "X-Forwarded-Host": hostHeader } : undefined,
+        extraHeaders: probeHeaders,
       });
 
       const status = await apiClient.status.getStatus();
@@ -156,8 +251,33 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
     if (error && typeof error === "object" && "status" in error) {
       const status = (error as any).status;
 
-      // Tenant not found — redirect to marketing site if configured
+      if (status === 503) {
+        let body: any = {};
+        try {
+          body = JSON.parse((error as any).response ?? "{}");
+        } catch {
+          // Couldn't parse — treat as setup required (API isn't ready)
+        }
+
+        if (body.recoveryMode) {
+          return new Response(null, {
+            status: 303,
+            headers: { Location: "/auth/recovery" },
+          });
+        }
+
+        // Any 503 from the API (setup_required, no tenants, or unparseable)
+        // means the instance isn't ready — redirect to setup
+        return new Response(null, {
+          status: 303,
+          headers: { Location: "/setup" },
+        });
+      }
+
+      // Tenant not found (404) — either no tenant for this subdomain,
+      // or apex domain with no tenants set up yet.
       if (status === 404) {
+        // If a marketing site is configured, redirect there (SaaS apex landing)
         const marketingUrl = env.MARKETING_URL;
         if (marketingUrl) {
           return new Response(null, {
@@ -165,26 +285,14 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
             headers: { Location: marketingUrl },
           });
         }
-      }
 
-      if (status === 503) {
-        try {
-          const body = JSON.parse((error as any).response ?? "{}");
-          if (body.setupRequired) {
-            return new Response(null, {
-              status: 303,
-              headers: { Location: "/setup/passkey" },
-            });
-          }
-          if (body.recoveryMode) {
-            return new Response(null, {
-              status: 303,
-              headers: { Location: "/auth/recovery" },
-            });
-          }
-        } catch {
-          // Couldn't parse, fall through
-        }
+        // No marketing site — this is likely a self-hosted install.
+        // Check if this is an apex domain request (no tenant subdomain).
+        // If so, redirect to setup so the user can create their first tenant.
+        return new Response(null, {
+          status: 303,
+          headers: { Location: "/setup" },
+        });
       }
     }
     console.error("Failed to check site security settings:", error);
@@ -197,7 +305,7 @@ const siteSecurityHandle: Handle = async ({ event, resolve }) => {
 const proxyHandle: Handle = async ({ event, resolve }) => {
   // Check if the request is for /api (but not SvelteKit-handled routes like webhooks and bot dispatch)
   const path = event.url.pathname;
-  if (path.startsWith("/api") && !path.startsWith("/api/v4/webhooks") && !path.startsWith("/api/v4/bot")) {
+  if (path.startsWith("/api") && !path.startsWith("/api/v4/webhooks") && !path.startsWith("/api/v4/bot") && !path.startsWith("/api/otel")) {
     const apiBaseUrl = getApiBaseUrl();
     if (!apiBaseUrl) {
       throw new Error(
@@ -213,23 +321,28 @@ const proxyHandle: Handle = async ({ event, resolve }) => {
     // Forward the request to the backend API
     const headers = new Headers(event.request.headers);
     // Forward original Host for tenant resolution behind reverse proxies
-    const originalHost = event.request.headers.get("host");
-    if (originalHost) {
-      headers.set("X-Forwarded-Host", originalHost);
+    const effectiveHost = getEffectiveHost(event.request, event.cookies);
+    if (effectiveHost) {
+      headers.set("X-Forwarded-Host", effectiveHost);
     }
+    headers.set("X-Forwarded-Proto", getOriginalProto(event.request));
     if (hashedInstanceKey) {
       headers.set("X-Instance-Key", hashedInstanceKey);
     }
 
-    // Forward both access and refresh tokens for authentication and token refresh
+    // Forward auth and guest session cookies for authentication
     const accessToken = event.cookies.get(AUTH_COOKIE_NAMES.accessToken);
     const refreshToken = event.cookies.get(AUTH_COOKIE_NAMES.refreshToken);
+    const guestSession = event.cookies.get("nocturne-guest-session");
     const cookies: string[] = [];
     if (accessToken) {
       cookies.push(`${AUTH_COOKIE_NAMES.accessToken}=${accessToken}`);
     }
     if (refreshToken) {
       cookies.push(`${AUTH_COOKIE_NAMES.refreshToken}=${refreshToken}`);
+    }
+    if (guestSession) {
+      cookies.push(`nocturne-guest-session=${guestSession}`);
     }
     if (cookies.length > 0) {
       headers.set("Cookie", cookies.join("; "));
@@ -241,6 +354,7 @@ const proxyHandle: Handle = async ({ event, resolve }) => {
       body: event.request.method !== "GET" && event.request.method !== "HEAD"
         ? await event.request.arrayBuffer()
         : undefined,
+      redirect: "manual",
     });
 
 
@@ -266,26 +380,30 @@ const apiClientHandle: Handle = async ({ event, resolve }) => {
   // Get auth tokens from cookies to forward to the backend
   const accessToken = event.cookies.get(AUTH_COOKIE_NAMES.accessToken);
   const refreshToken = event.cookies.get(AUTH_COOKIE_NAMES.refreshToken);
+  const guestSessionToken = event.cookies.get("nocturne-guest-session");
 
-  // Forward X-Acting-As header if present (follower context)
-  const extraHeaders: Record<string, string> = {};
-  const actingAs = event.request.headers.get("x-acting-as");
-  if (actingAs) {
-    extraHeaders["X-Acting-As"] = actingAs;
+  const extraHeaders: Record<string, string> = {
+    "X-Forwarded-Proto": getOriginalProto(event.request),
+  };
+
+  // Forward the original Host for tenant resolution behind reverse proxies.
+  const effectiveHost = getEffectiveHost(event.request, event.cookies);
+  if (effectiveHost) {
+    extraHeaders["X-Forwarded-Host"] = effectiveHost;
   }
 
-  // Forward the original Host for tenant resolution behind reverse proxies
-  const originalHost = event.request.headers.get("host");
-  if (originalHost) {
-    extraHeaders["X-Forwarded-Host"] = originalHost;
-  }
-
-  // Create API client with SvelteKit's fetch, auth headers, and both tokens
+  // Create API client with SvelteKit's fetch, auth headers, and both tokens.
+  // `responseCookies` lets any token rotation performed by the backend's
+  // session middleware (during remote function / load function calls) flow
+  // back to the browser as Set-Cookie on the outgoing SvelteKit response.
   event.locals.apiClient = createServerApiClient(apiBaseUrl, event.fetch, {
     accessToken,
     refreshToken,
+    guestSessionToken,
     hashedInstanceKey: getHashedInstanceKey(),
     extraHeaders,
+    responseCookies: event.cookies,
+    signal: event.request.signal,
   });
 
   return resolve(event);
@@ -401,10 +519,21 @@ function resolveLocale(event: Parameters<Handle>[0]["event"]): string {
   return "en";
 }
 
+// WUCHALE-DISABLED: wuchale temporarily disabled — resolveLocale still runs (so cookie-driven
+// locale selection logic stays exercised and helpers stay referenced) but
+// no runWithLocale wrapping happens. Re-enabling wuchale only requires
+// restoring the runWithLocale call below.
 export const locale: Handle = async ({ event, resolve }) => {
-  const locale = resolveLocale(event);
-  return await runWithLocale(locale, () => resolve(event));
+  resolveLocale(event);
+  return resolve(event);
 }
 
+// Reset bits-ui's global ID counter at the start of each SSR request so that
+// server-generated IDs match the client (which always starts at 0).
+const resetBitsId: Handle = async ({ event, resolve }) => {
+  (globalThis as any).bitsIdCounter = { current: 0 };
+  return resolve(event);
+};
+
 // Chain the auth handler, site security handler, proxy handler, and API client handler
-export const handle: Handle = sequence(authHandle, siteSecurityHandle, proxyHandle, apiClientHandle, locale);
+export const handle: Handle = sequence(resetBitsId, authHandle, siteSecurityHandle, proxyHandle, apiClientHandle, locale);

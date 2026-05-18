@@ -19,7 +19,7 @@ import type {
 	AlertLevel,
 	StatusPillsConfig
 } from '$lib/types/status-pills';
-import type { Bolus, CarbIntake, DeviceEvent } from '$lib/api';
+import type { Bolus, CarbIntake, DeviceEvent, ApsSnapshot, ProfileSummary } from '$lib/api';
 import { DeviceEventType } from '$lib/api';
 
 /**
@@ -51,24 +51,6 @@ export interface DeviceStatus {
 	connect?: any;
 }
 
-/**
- * Profile represents therapy settings/profile data
- * Mirrors Nightscout profile structure
- */
-export interface Profile {
-	_id?: string;
-	defaultProfile?: string;
-	startDate?: string;
-	mills?: number;
-	created_at?: string;
-	units?: string;
-	store?: Record<string, any>;
-	enteredBy?: string;
-	loopSettings?: any;
-	isExternallyManaged?: boolean;
-	icon?: string;
-	timezone?: string;
-}
 
 // Re-export the default config
 export { DEFAULT_PILLS_CONFIG } from '$lib/types/status-pills';
@@ -148,28 +130,210 @@ export interface ProcessedPillsData {
 }
 
 /**
- * Process device status and v4 records into pill data
+ * Process device status and v4 records into pill data.
+ * APS snapshots (V4) are preferred over legacy device status records when available.
  */
 export function processPillsData(
 	deviceStatuses: DeviceStatus[],
+	apsSnapshots: ApsSnapshot[],
 	boluses: Bolus[],
 	carbIntakes: CarbIntake[],
 	deviceEvents: DeviceEvent[],
-	profile: Profile | null,
+	profile: ProfileSummary | null,
 	config: Partial<PillsProcessorConfig> = {}
 ): ProcessedPillsData {
 	const now = config.now ?? Date.now();
 	const units = config.units ?? 'mmol/L';
 
 	return {
-		iob: processIOB(deviceStatuses, boluses, now, config),
-		cob: processCOB(deviceStatuses, carbIntakes, now, config),
+		iob: processIOBFromSnapshot(apsSnapshots, boluses, now, config) ?? processIOB(deviceStatuses, boluses, now, config),
+		cob: processCOBFromSnapshot(apsSnapshots, carbIntakes, now, config) ?? processCOB(deviceStatuses, carbIntakes, now, config),
 		cage: processCAGE(deviceEvents, now, config),
 		sage: processSAGE(deviceEvents, now, config),
-		basal: processBasal(deviceStatuses, profile, now, units, config),
-		loop: processLoop(deviceStatuses, now, units, config)
+		basal: processBasalFromSnapshot(apsSnapshots, profile, now, config) ?? processBasal(deviceStatuses, profile, now, units, config),
+		loop: processLoopFromSnapshot(apsSnapshots, now, config) ?? processLoop(deviceStatuses, now, units, config)
 	};
 }
+
+// ── V4 APS Snapshot processors ────────────────────────────────────────────────
+// These are preferred over the legacy DeviceStatus-based processors below when
+// recent APS snapshots are available.
+
+function aidAlgorithmLabel(snapshot: ApsSnapshot): string {
+	switch (snapshot.aidAlgorithm) {
+		case 'Trio': return 'Trio';
+		case 'Loop': return 'Loop';
+		case 'AndroidAps': return 'AAPS';
+		case 'IAPS': return 'iAPS';
+		case 'OpenAps': return 'OpenAPS';
+		default: return 'APS';
+	}
+}
+
+function recentSnapshots(snapshots: ApsSnapshot[], now: number, windowMs: number): ApsSnapshot[] {
+	return snapshots
+		.filter((s) => {
+			const mills = s.mills ?? 0;
+			return mills > 0 && mills >= now - windowMs && mills <= now + MINUTES(5);
+		})
+		.sort((a, b) => (b.mills ?? 0) - (a.mills ?? 0));
+}
+
+function processIOBFromSnapshot(
+	snapshots: ApsSnapshot[],
+	boluses: Bolus[],
+	now: number,
+	config: Partial<PillsProcessorConfig>
+): IOBPillData | null {
+	const recencyMs = MINUTES(config.iob?.recencyThreshold ?? 30);
+	const latest = recentSnapshots(snapshots, now, recencyMs)[0];
+	if (!latest || latest.iob === undefined || latest.iob === null) return null;
+
+	const lastBolus = boluses
+		.filter((b) => b.insulin && b.insulin > 0 && (b.mills ?? 0) <= now && (b.mills ?? 0) > now - HOURS(24))
+		.sort((a, b) => (b.mills ?? 0) - (a.mills ?? 0))[0];
+
+	return {
+		iob: latest.iob,
+		basalIob: latest.basalIob ?? undefined,
+		source: aidAlgorithmLabel(latest),
+		device: latest.device ?? undefined,
+		display: `${latest.iob.toFixed(2)}U`,
+		label: 'IOB',
+		info: [],
+		level: 'none',
+		lastUpdated: latest.mills ?? now,
+		lastBolus: lastBolus ? { mills: lastBolus.mills ?? 0, insulin: lastBolus.insulin ?? 0 } : undefined
+	};
+}
+
+function processCOBFromSnapshot(
+	snapshots: ApsSnapshot[],
+	carbIntakes: CarbIntake[],
+	now: number,
+	config: Partial<PillsProcessorConfig>
+): COBPillData | null {
+	const recencyMs = MINUTES(config.cob?.recencyThreshold ?? 30);
+	const latest = recentSnapshots(snapshots, now, recencyMs).find(
+		(s) => s.cob !== undefined && s.cob !== null
+	);
+	if (!latest || latest.cob === undefined || latest.cob === null) return null;
+
+	const lastCarbs = carbIntakes
+		.filter((c) => c.carbs && c.carbs > 0 && (c.mills ?? 0) <= now && (c.mills ?? 0) > now - HOURS(24))
+		.sort((a, b) => (b.mills ?? 0) - (a.mills ?? 0))[0];
+
+	return {
+		cob: latest.cob,
+		source: aidAlgorithmLabel(latest),
+		display: `${Math.round(latest.cob * 10) / 10}g`,
+		label: 'COB',
+		info: [],
+		level: 'none',
+		lastUpdated: latest.mills ?? now,
+		lastCarbs: lastCarbs
+			? { mills: lastCarbs.mills ?? 0, carbs: lastCarbs.carbs ?? 0, food: undefined }
+			: undefined
+	};
+}
+
+function processBasalFromSnapshot(
+	snapshots: ApsSnapshot[],
+	profile: ProfileSummary | null,
+	now: number,
+	_config: Partial<PillsProcessorConfig>
+): BasalPillData | null {
+	// Only return a value if we have a temp basal that's still running.
+	// The ?? fallback handles the profile-scheduled case via the legacy processBasal.
+	const { rate: scheduledBasal, profileName } = getScheduledBasalRate(profile, now);
+	const recencyMs = MINUTES(30);
+	const enacted = recentSnapshots(snapshots, now, recencyMs).find((s) => {
+		if (!s.enacted || s.enactedRate === undefined || s.enactedRate === null) return false;
+		const duration = s.enactedDuration ?? 0;
+		if (duration <= 0) return false;
+		return (s.mills ?? 0) + duration * 60_000 > now;
+	});
+
+	if (!enacted) return null;
+
+	const startTime = enacted.mills ?? now;
+	const duration = enacted.enactedDuration ?? 0;
+	const remaining = duration - (now - startTime) / 60_000;
+
+	const enactedRate = enacted.enactedRate ?? 0;
+	return {
+		totalBasal: enactedRate,
+		scheduledBasal,
+		isTempBasal: true,
+		isComboActive: false,
+		tempBasal: { rate: enactedRate, duration, remaining: Math.max(0, remaining), startTime },
+		activeProfile: profileName ?? undefined,
+		display: `${enactedRate.toFixed(3)}U`,
+		label: 'BASAL',
+		info: [],
+		level: 'none',
+		lastUpdated: startTime
+	};
+}
+
+function processLoopFromSnapshot(
+	snapshots: ApsSnapshot[],
+	now: number,
+	config: Partial<PillsProcessorConfig>
+): LoopPillData | null {
+	const warnMs = MINUTES(config.loop?.warnThreshold ?? 30);
+	const urgentMs = MINUTES(config.loop?.urgentThreshold ?? 60);
+
+	const latest = recentSnapshots(snapshots, now, HOURS(6))[0];
+	if (!latest) return null;
+
+	const latestMills = latest.mills ?? now;
+	const age = now - latestMills;
+
+	let status: LoopPillData['status'] = 'looping';
+	let symbol = '↻';
+	let level: AlertLevel = 'none';
+
+	if (age >= urgentMs) {
+		status = 'warning'; symbol = '⚠'; level = 'urgent';
+	} else if (age >= warnMs) {
+		status = 'warning'; symbol = '⚠'; level = 'warn';
+	}
+
+	// Recent enacted action overrides the staleness state
+	if (latest.enacted && age < MINUTES(15)) {
+		status = 'enacted'; symbol = '⌁';
+	}
+
+	const minsAgo = Math.round(age / 60_000);
+	const display = minsAgo < 1 ? 'now' : `${minsAgo}m`;
+
+	return {
+		status,
+		symbol,
+		display,
+		label: 'Loop',
+		info: [],
+		level,
+		lastLoopTime: latestMills,
+		lastOkTime: latestMills,
+		loopName: aidAlgorithmLabel(latest),
+		iob: latest.iob ?? undefined,
+		cob: latest.cob ?? undefined,
+		eventualBG: latest.eventualBg ?? undefined,
+		lastEnacted: latest.enacted && latest.enactedRate !== undefined
+			? {
+				time: latestMills,
+				type: latest.enactedBolusVolume ? 'bolus' : (latest.enactedRate === 0 ? 'cancel' : 'temp_basal'),
+				rate: latest.enactedRate ?? undefined,
+				duration: latest.enactedDuration ?? undefined,
+				bolusVolume: latest.enactedBolusVolume ?? undefined
+			}
+			: undefined
+	};
+}
+
+// ── Legacy DeviceStatus processors ────────────────────────────────────────────
 
 /**
  * Process IOB data from device status and boluses
@@ -246,7 +410,7 @@ export function processIOB(
 		// Check pump IOB
 		const pumpIob = status.pump?.iob;
 		if (pumpIob) {
-			const iobValue = pumpIob.iob ?? pumpIob.bolusiob;
+			const iobValue = typeof pumpIob === 'number' ? pumpIob : (pumpIob.iob ?? pumpIob.bolusiob);
 			if (typeof iobValue === 'number') {
 				iobFromDevice = {
 					iob: iobValue,
@@ -553,71 +717,58 @@ export function processSAGE(
 }
 
 /**
- * Profile time-value entry structure
+ * Resolve the active profile name from a V4 ProfileSummary: prefer the therapy
+ * settings record marked IsDefault; fall back to the first record's name.
  */
-interface TimeValueEntry {
-	time?: string;
-	value?: number;
+function getActiveProfileName(profile: ProfileSummary | null): string | null {
+	const settings = profile?.therapySettings;
+	if (!settings || settings.length === 0) return null;
+	const explicit = settings.find((t) => t.isDefault);
+	return explicit?.profileName ?? settings[0]?.profileName ?? null;
 }
 
 /**
- * Get the scheduled basal rate from a profile for a given time
- * @param profile The profile containing basal schedule
- * @param now Current timestamp in milliseconds
- * @returns The scheduled basal rate in U/hr, or 0 if not found
+ * Get the scheduled basal rate from a V4 ProfileSummary for a given time.
+ * Picks the BasalSchedule whose ProfileName matches the active profile, then
+ * finds the latest entry whose time is at or before the current time of day
+ * (with last-entry wraparound across midnight).
  */
-function getScheduledBasalRate(profile: Profile | null, now: number): { rate: number; profileName: string | null } {
-	if (!profile) {
-		return { rate: 0, profileName: null };
+function getScheduledBasalRate(profile: ProfileSummary | null, now: number): { rate: number; profileName: string | null } {
+	const profileName = getActiveProfileName(profile);
+	if (!profileName) return { rate: 0, profileName: null };
+
+	const schedule = profile?.basalSchedules?.find((b) => b.profileName === profileName);
+	const entries = schedule?.entries;
+	if (!entries || entries.length === 0) {
+		return { rate: 0, profileName };
 	}
 
-	// Get the active profile name
-	const activeProfileName = profile.defaultProfile;
-	if (!activeProfileName || !profile.store) {
-		return { rate: 0, profileName: null };
-	}
-
-	// Get the profile data from the store
-	const profileData = profile.store[activeProfileName] as { basal?: TimeValueEntry[] } | undefined;
-	if (!profileData?.basal || profileData.basal.length === 0) {
-		return { rate: 0, profileName: activeProfileName };
-	}
-
-	// Get current time of day
 	const date = new Date(now);
 	const currentMinutes = date.getHours() * 60 + date.getMinutes();
 
-	// Convert time string (HH:MM) to minutes
 	function timeToMinutes(time: string): number {
 		const [hours, minutes] = time.split(':').map(Number);
 		return hours * 60 + (minutes || 0);
 	}
 
-	// Sort basal entries by time
-	const sortedBasal = [...profileData.basal]
-		.filter((entry): entry is { time: string; value: number } =>
-			entry.time !== undefined && entry.value !== undefined
+	const sorted = entries
+		.filter((e): e is { time: string; value: number; timeAsSeconds?: number } =>
+			typeof e.time === 'string' && typeof e.value === 'number'
 		)
 		.sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
 
-	if (sortedBasal.length === 0) {
-		return { rate: 0, profileName: activeProfileName };
-	}
+	if (sorted.length === 0) return { rate: 0, profileName };
 
-	// Find the basal entry that applies at the current time
-	// (the last entry with a start time <= current time)
-	let currentRate = sortedBasal[sortedBasal.length - 1].value; // Default to last entry (wraps around midnight)
-
-	for (const entry of sortedBasal) {
-		const entryMinutes = timeToMinutes(entry.time);
-		if (entryMinutes <= currentMinutes) {
+	let currentRate = sorted[sorted.length - 1].value; // wraps across midnight
+	for (const entry of sorted) {
+		if (timeToMinutes(entry.time) <= currentMinutes) {
 			currentRate = entry.value;
 		} else {
 			break;
 		}
 	}
 
-	return { rate: currentRate, profileName: activeProfileName };
+	return { rate: currentRate, profileName };
 }
 
 /**
@@ -625,7 +776,7 @@ function getScheduledBasalRate(profile: Profile | null, now: number): { rate: nu
  */
 export function processBasal(
 	deviceStatuses: DeviceStatus[],
-	profile: Profile | null,
+	profile: ProfileSummary | null,
 	now: number,
 	_units: string,
 	_config: Partial<PillsProcessorConfig> = {}

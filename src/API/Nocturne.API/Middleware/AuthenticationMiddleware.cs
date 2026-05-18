@@ -12,10 +12,31 @@ using ScopeTranslator = Nocturne.Core.Models.Authorization.ScopeTranslator;
 namespace Nocturne.API.Middleware;
 
 /// <summary>
-/// Middleware for handling authentication through a chain of handlers.
+/// Middleware for handling authentication through a chain of <see cref="IAuthHandler"/> implementations.
 /// Handlers are executed in priority order (lowest first).
 /// The first handler to return success or failure stops the chain.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Pipeline order (position 5 of 7 custom middleware):
+/// <see cref="JsonExtensionMiddleware"/>,
+/// <see cref="OidcCallbackRedirectMiddleware"/>, <see cref="Multitenancy.TenantResolutionMiddleware"/>,
+/// <see cref="TenantSetupMiddleware"/>, <b>AuthenticationMiddleware</b>,
+/// <see cref="MemberScopeMiddleware"/>, <see cref="SiteSecurityMiddleware"/>.
+/// </para>
+/// <para>
+/// Populates <c>HttpContext.Items["AuthContext"]</c> with an <see cref="AuthContext"/>,
+/// <c>HttpContext.Items["PermissionTrie"]</c> with a <see cref="PermissionTrie"/>,
+/// and <c>HttpContext.Items["GrantedScopes"]</c> with normalized OAuth scopes.
+/// Depends on <see cref="Multitenancy.TenantResolutionMiddleware"/> having resolved a
+/// <see cref="TenantContext"/> first. For unauthenticated requests with a resolved tenant,
+/// delegates to <see cref="PublicAccessCacheService"/> for public/read-only access.
+/// </para>
+/// </remarks>
+/// <seealso cref="IAuthHandler"/>
+/// <seealso cref="MemberScopeMiddleware"/>
+/// <seealso cref="SiteSecurityMiddleware"/>
+/// <seealso cref="Multitenancy.TenantResolutionMiddleware"/>
 public class AuthenticationMiddleware
 {
     private readonly RequestDelegate _next;
@@ -28,8 +49,15 @@ public class AuthenticationMiddleware
     private readonly IServiceScopeFactory _scopeFactory;
 
     /// <summary>
-    /// Creates a new instance of AuthenticationMiddleware
+    /// Creates a new instance of <see cref="AuthenticationMiddleware"/>.
     /// </summary>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="logger">Logger for authentication diagnostics.</param>
+    /// <param name="handlers">All registered <see cref="IAuthHandler"/> implementations, sorted by priority internally.</param>
+    /// <param name="environment">Host environment used to enable development-mode auto-authentication.</param>
+    /// <param name="publicAccessCacheService">Cache for resolving public (unauthenticated) access permissions per tenant.</param>
+    /// <param name="oidcOptions">OIDC configuration providing cookie names for session detection.</param>
+    /// <param name="scopeFactory">Factory for creating scoped services outside the request scope.</param>
     public AuthenticationMiddleware(
         RequestDelegate next,
         ILogger<AuthenticationMiddleware> logger,
@@ -53,8 +81,10 @@ public class AuthenticationMiddleware
     }
 
     /// <summary>
-    /// Process the HTTP request through the authentication pipeline
+    /// Process the HTTP request through the authentication pipeline.
     /// </summary>
+    /// <param name="context">The current HTTP context.</param>
+    /// <returns>A task that completes when the middleware has finished processing.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
         try
@@ -99,6 +129,20 @@ public class AuthenticationMiddleware
 
             // Also set the legacy AuthenticationContext for backward compatibility
             context.Items["AuthenticationContext"] = MapToLegacyContext(authContext);
+
+            // Load platform admin flag from subject before building claims,
+            // so [Authorize(Roles = "platform_admin")] works correctly.
+            if (authContext is { IsAuthenticated: true, SubjectId: not null })
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<Nocturne.Infrastructure.Data.NocturneDbContext>();
+                var isPlatformAdmin = await db.Subjects
+                    .Where(s => s.Id == authContext.SubjectId.Value)
+                    .OrderBy(s => s.Id)
+                    .Select(s => s.IsPlatformAdmin)
+                    .FirstOrDefaultAsync();
+                authContext.IsPlatformAdmin = isPlatformAdmin;
+            }
 
             // Set HttpContext.User for [Authorize] attribute to work
             if (authContext.IsAuthenticated)
@@ -145,7 +189,7 @@ public class AuthenticationMiddleware
         if (resolvedAuth is { IsAuthenticated: true, SubjectId: not null, TenantId: not null })
         {
             // Skip membership check for ApiSecret and InstanceKey auth (grants admin on the resolved tenant)
-            if (resolvedAuth.AuthType is not (AuthType.ApiSecret or AuthType.InstanceKey))
+            if (resolvedAuth.AuthType is not (AuthType.ApiKey or AuthType.InstanceKey))
             {
                 var tenantMemberService = context.RequestServices.GetRequiredService<ITenantMemberService>();
                 var isMember = await tenantMemberService.IsMemberAsync(
@@ -160,18 +204,6 @@ public class AuthenticationMiddleware
                     SetUnauthenticated(context);
                 }
             }
-        }
-
-        // Load platform admin flag from subject
-        if (resolvedAuth is { IsAuthenticated: true, SubjectId: not null })
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<Nocturne.Infrastructure.Data.NocturneDbContext>();
-            var isPlatformAdmin = await db.Subjects
-                .Where(s => s.Id == resolvedAuth.SubjectId.Value)
-                .Select(s => s.IsPlatformAdmin)
-                .FirstOrDefaultAsync();
-            resolvedAuth.IsPlatformAdmin = isPlatformAdmin;
         }
 
         // For unauthenticated requests with a resolved tenant, try to resolve
@@ -212,8 +244,10 @@ public class AuthenticationMiddleware
     }
 
     /// <summary>
-    /// Run through the handler chain to authenticate the request
+    /// Run through the <see cref="IAuthHandler"/> chain to authenticate the request.
     /// </summary>
+    /// <param name="context">The current HTTP context.</param>
+    /// <returns>An <see cref="AuthContext"/> representing the authentication result.</returns>
     private async Task<AuthContext> AuthenticateRequestAsync(HttpContext context)
     {
         foreach (var handler in _handlers)
@@ -265,7 +299,7 @@ public class AuthenticationMiddleware
                 return new AuthContext
                 {
                     IsAuthenticated = true,
-                    AuthType = AuthType.ApiSecret,
+                    AuthType = AuthType.ApiKey,
                     SubjectName = "dev-admin",
                     Permissions = ["*"],
                     Roles = ["admin", "platform_admin"],
@@ -278,8 +312,10 @@ public class AuthenticationMiddleware
     }
 
     /// <summary>
-    /// Set unauthenticated context on the HttpContext
+    /// Set unauthenticated <see cref="AuthContext"/> on the <see cref="HttpContext"/>,
+    /// clearing the <see cref="PermissionTrie"/> and granted scopes.
     /// </summary>
+    /// <param name="context">The current HTTP context.</param>
     private static void SetUnauthenticated(HttpContext context)
     {
         var authContext = AuthContext.Unauthenticated();
@@ -290,8 +326,10 @@ public class AuthenticationMiddleware
     }
 
     /// <summary>
-    /// Map new AuthContext to legacy AuthenticationContext for backward compatibility
+    /// Map new <see cref="AuthContext"/> to legacy <see cref="AuthenticationContext"/> for backward compatibility.
     /// </summary>
+    /// <param name="authContext">The modern authentication context to convert.</param>
+    /// <returns>A legacy <see cref="AuthenticationContext"/> for v1/v2/v3 API consumers.</returns>
     private static AuthenticationContext MapToLegacyContext(AuthContext authContext)
     {
         return new AuthenticationContext
@@ -305,14 +343,16 @@ public class AuthenticationMiddleware
     }
 
     /// <summary>
-    /// Map new AuthType to legacy AuthenticationType enum
+    /// Map new <see cref="AuthType"/> to legacy <see cref="AuthenticationType"/> enum.
     /// </summary>
+    /// <param name="authType">The modern auth type to convert.</param>
+    /// <returns>The corresponding legacy <see cref="AuthenticationType"/> value.</returns>
     private static AuthenticationType MapAuthType(AuthType authType)
     {
         return authType switch
         {
             AuthType.None => AuthenticationType.None,
-            AuthType.ApiSecret => AuthenticationType.ApiSecret,
+            AuthType.ApiKey => AuthenticationType.ApiSecret,
             AuthType.InstanceKey => AuthenticationType.ApiSecret,
             AuthType.LegacyJwt => AuthenticationType.JwtToken,
             AuthType.LegacyAccessToken => AuthenticationType.JwtToken,
@@ -325,8 +365,9 @@ public class AuthenticationMiddleware
 
 /// <summary>
 /// Legacy authentication context for backward compatibility.
-/// New code should use AuthContext from Core.Models.Authorization.
+/// New code should use <see cref="AuthContext"/> from <c>Core.Models.Authorization</c>.
 /// </summary>
+/// <seealso cref="AuthContext"/>
 public class AuthenticationContext
 {
     /// <summary>

@@ -3,9 +3,12 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Summary response model providing aggregated glucose, treatment, profile, and state data
-/// Provides 1:1 backwards compatibility with legacy /api/v2/summary endpoint
+/// Summary response model providing aggregated glucose, treatment, profile, and state data.
+/// Provides 1:1 backwards compatibility with the legacy <c>/api/v2/summary</c> endpoint.
 /// </summary>
+/// <seealso cref="SummaryTreatments"/>
+/// <seealso cref="SummaryState"/>
+/// <seealso cref="SummarySgv"/>
 public class SummaryResponse
 {
     /// <summary>

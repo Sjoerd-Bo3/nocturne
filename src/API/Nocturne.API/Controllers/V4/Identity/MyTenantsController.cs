@@ -3,12 +3,21 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Authorization;
-using Nocturne.API.Multitenancy;
+using Nocturne.API.Configuration;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models.Authorization;
 
 namespace Nocturne.API.Controllers.V4.Identity;
 
+/// <summary>
+/// Returns the list of tenants the authenticated user belongs to and allows switching the active tenant context.
+/// </summary>
+/// <remarks>
+/// All tenants for which the authenticated subject has an active membership are returned.
+/// Tenant switching writes a new <c>X-Tenant-Slug</c> cookie that is read by subsequent
+/// requests' tenant-resolution middleware.
+/// </remarks>
+/// <seealso cref="ITenantService"/>
 [ApiController]
 [Route("api/v4/me/tenants")]
 [Produces("application/json")]
@@ -16,20 +25,20 @@ namespace Nocturne.API.Controllers.V4.Identity;
 public class MyTenantsController : ControllerBase
 {
     private readonly ITenantService _tenantService;
-    private readonly MultitenancyConfiguration _config;
+    private readonly OperatorConfiguration _config;
 
     public MyTenantsController(
         ITenantService tenantService,
-        IOptions<MultitenancyConfiguration> config)
+        IOptions<OperatorConfiguration> config)
     {
         _tenantService = tenantService;
         _config = config.Value;
     }
 
+    /// <inheritdoc cref="ITenantService.GetTenantsForSubjectAsync"/>
     [HttpGet]
     [RemoteQuery]
     [ProducesResponseType(typeof(List<TenantDto>), StatusCodes.Status200OK)]
-    /// <inheritdoc cref="ITenantService.GetTenantsForSubjectAsync"/>
     public async Task<IActionResult> GetMyTenants(CancellationToken ct)
     {
         var authContext = HttpContext.Items["AuthContext"] as AuthContext;
@@ -40,11 +49,11 @@ public class MyTenantsController : ControllerBase
         return Ok(tenants);
     }
 
+    /// <inheritdoc cref="ITenantService.CreateAsync"/>
     [HttpPost]
     [RemoteCommand(Invalidates = ["GetMyTenants"])]
     [ProducesResponseType(typeof(TenantCreatedDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    /// <inheritdoc cref="ITenantService.CreateAsync"/>
     public async Task<IActionResult> CreateTenant(
         [FromBody] CreateMyTenantRequest request, CancellationToken ct)
     {
@@ -60,17 +69,17 @@ public class MyTenantsController : ControllerBase
             return Problem(detail: validation.Message, statusCode: 400, title: "Bad Request");
 
         var tenant = await _tenantService.CreateAsync(
-            request.Slug, request.DisplayName, authContext.SubjectId.Value, request.ApiSecret, ct);
+            request.Slug, request.DisplayName, authContext.SubjectId.Value, ct);
 
         return Created($"/api/v4/me/tenants", tenant);
     }
 
+    /// <inheritdoc cref="ITenantService.ValidateSlugAsync"/>
     [HttpGet("validate-slug")]
     [AllowAnonymous]
     [AllowDuringSetup]
     [RemoteQuery]
     [ProducesResponseType(typeof(SlugValidationResult), StatusCodes.Status200OK)]
-    /// <inheritdoc cref="ITenantService.ValidateSlugAsync"/>
     public async Task<IActionResult> ValidateSlug([FromQuery] string slug, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(slug))
@@ -81,4 +90,4 @@ public class MyTenantsController : ControllerBase
     }
 }
 
-public record CreateMyTenantRequest(string Slug, string DisplayName, string? ApiSecret = null);
+public record CreateMyTenantRequest(string Slug, string DisplayName);

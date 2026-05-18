@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Services.Auth;
-using Nocturne.Core.Contracts;
 using Nocturne.Core.Models.Authorization;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
@@ -56,6 +55,8 @@ public class OAuthTokenServiceTests : IDisposable
 
         using var dbContext = new NocturneDbContext(_contextOptions);
         dbContext.Database.EnsureCreated();
+        dbContext.Tenants.Add(new TenantEntity { Id = _testTenantId, Slug = "test" });
+        dbContext.SaveChanges();
 
         _mockJwtService = new Mock<IJwtService>();
         _mockSubjectService = new Mock<ISubjectService>();
@@ -187,7 +188,7 @@ public class OAuthTokenServiceTests : IDisposable
             ClientEntityId = clientEntityId ?? _testClientEntityId,
             SubjectId = subjectId ?? _testSubjectId,
             CodeHash = codeHash,
-            Scopes = new List<string> { "entries.read" },
+            Scopes = new List<string> { "glucose.read" },
             RedirectUri = redirectUri ?? TestRedirectUri,
             CodeChallenge = codeChallenge ?? TestCodeChallenge,
             ExpiresAt = expiresAt ?? DateTime.UtcNow.AddMinutes(10),
@@ -214,7 +215,7 @@ public class OAuthTokenServiceTests : IDisposable
             Id = grantId,
             ClientEntityId = clientEntityId ?? _testClientEntityId,
             SubjectId = subjectId ?? _testSubjectId,
-            Scopes = new List<string> { "entries.read" },
+            Scopes = new List<string> { "glucose.read" },
             GrantType = "app",
             CreatedAt = DateTime.UtcNow,
             RevokedAt = revokedAt,
@@ -238,6 +239,7 @@ public class OAuthTokenServiceTests : IDisposable
         var entity = new OAuthRefreshTokenEntity
         {
             Id = Guid.CreateVersion7(),
+            TenantId = _testTenantId,
             GrantId = grantId ?? _testGrantId,
             TokenHash = tokenHash,
             IssuedAt = DateTime.UtcNow,

@@ -1,17 +1,19 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Authorization;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Health;
 using Nocturne.Core.Models;
 
 namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
 /// Controller for managing Nightscout activity data.
-/// Delegates to IActivityService which routes sensor data (heart rate, step count)
+/// Delegates to <see cref="IActivityService"/> which routes sensor data (heart rate, step count)
 /// to dedicated tables and regular activities to StateSpans.
 /// </summary>
+/// <seealso cref="IActivityService"/>
 [ApiController]
+[Tags("V1")]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
 [Authorize(Policy = PolicyNames.HasPermissions)]
@@ -20,6 +22,11 @@ public class ActivityController : ControllerBase
     private readonly IActivityService _activityService;
     private readonly ILogger<ActivityController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ActivityController"/>.
+    /// </summary>
+    /// <param name="activityService">Service handling activity data operations.</param>
+    /// <param name="logger">Logger instance.</param>
     public ActivityController(
         IActivityService activityService,
         ILogger<ActivityController> logger

@@ -6,9 +6,11 @@ using Nocturne.Core.Models.Authorization;
 namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
-/// Authentication controller that provides authentication verification for legacy Nightscout compatibility
+/// Authentication controller that provides authentication verification for legacy Nightscout compatibility.
 /// </summary>
+/// <seealso cref="VerifyAuthResponse"/>
 [ApiController]
+[Tags("V1")]
 [Route("api/v1")]
 public class AuthenticationController : ControllerBase
 {
@@ -41,7 +43,7 @@ public class AuthenticationController : ControllerBase
                 var isAdmin = HttpContext.IsAdmin();
 
                 // For JWT/OIDC token authentication, use the detailed response format
-                if (authContext.AuthType != AuthType.ApiSecret)
+                if (authContext.AuthType != AuthType.ApiKey)
                 {
                     var response = new VerifyAuthResponse
                     {

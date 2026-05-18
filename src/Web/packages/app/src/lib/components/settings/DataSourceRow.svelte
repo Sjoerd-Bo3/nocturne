@@ -9,7 +9,10 @@
     Loader2,
     WifiOff,
   } from "lucide-svelte";
+  import AppLogo from "$lib/components/ui/AppLogo.svelte";
   import { getDataTypeLabel } from "$lib/utils/data-type-labels";
+  import { formatSyncMessage } from "$lib/utils/sync-messages";
+  import type { SyncMessageType } from "$lib/websocket/types";
 
   export type DataSourceStatus =
     | "active"
@@ -25,8 +28,7 @@
 
   interface Props {
     name: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    icon: any;
+    icon: string | undefined;
     status: DataSourceStatus;
     statusMessage?: string;
     totalEntries?: number;
@@ -42,6 +44,8 @@
       completedDataTypes: string[];
       totalDataTypes: number;
       itemsSyncedSoFar: Record<string, number>;
+      messageType: SyncMessageType | null;
+      messageParams: Record<string, string> | null;
     } | null;
     badges?: Snippet;
     actions?: Snippet;
@@ -50,7 +54,7 @@
 
   let {
     name,
-    icon: Icon,
+    icon,
     status,
     statusMessage,
     totalEntries,
@@ -170,7 +174,7 @@
       <div
         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg {iconColors.bg}"
       >
-        <Icon class="h-5 w-5 {iconColors.text}" />
+        <AppLogo {icon} invertMode />
       </div>
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2 flex-wrap">
@@ -264,6 +268,11 @@
         </div>
 
         <!-- Metrics line -->
+        {#if (syncProgress?.phase === "Syncing") && syncProgress.messageType}
+        <p class="text-sm text-blue-600 dark:text-blue-400">
+          {formatSyncMessage(syncProgress.messageType, syncProgress.messageParams)}
+        </p>
+        {:else}
         <p class="text-sm text-muted-foreground">
           {#if totalBreakdown && Object.keys(totalBreakdown).length > 0}
             <Tooltip.Root>
@@ -338,8 +347,9 @@
 
           <span class="mx-1">&middot;</span>
           <Clock class="inline h-3 w-3" />
-          {formatLastSeen(lastSeen)}
+          {formatLastSeen(lastSuccessfulSync ?? lastSeen)}
         </p>
+        {/if}
         {#if syncProgress?.phase === "Syncing" && Object.keys(syncProgress.itemsSyncedSoFar).length > 0}
           <p class="text-xs text-blue-600 dark:text-blue-400">
             {Object.entries(syncProgress.itemsSyncedSoFar)

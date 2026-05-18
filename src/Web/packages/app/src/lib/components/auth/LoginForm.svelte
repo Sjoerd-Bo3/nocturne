@@ -10,11 +10,12 @@
     KeyRound,
     AlertTriangle,
     Smartphone,
+    ShieldAlert,
   } from "lucide-svelte";
   import * as InputOTP from "$lib/components/ui/input-otp";
   import { login as totpLogin } from "$lib/api/generated/totps.generated.remote";
   import { startAuthentication } from "@simplewebauthn/browser";
-  import { getOidcProviders, setAuthCookies } from "$routes/(fullscreen)/auth/auth.remote";
+  import { getOidcProviders, setAuthCookies } from "$routes/(unauthenticated)/auth/auth.remote";
   import {
     discoverableLoginOptions,
     loginOptions,
@@ -39,6 +40,9 @@
   let errorMessage = $state<string | null>(null);
   let isRedirecting = $state(false);
   let selectedProvider = $state<string | null>(null);
+
+  // Browser support
+  let passkeysSupported = $state(typeof window !== "undefined" && window.PublicKeyCredential !== undefined);
 
   // Form fields
   let username = $state("");
@@ -175,7 +179,7 @@
       params.set("returnUrl", returnUrl);
     }
 
-    window.location.href = `/api/v4/oidc/login?${params.toString()}`;
+    window.location.href = `/api/auth/oidc/login?${params.toString()}`;
   }
 
   function getButtonStyle(buttonColor?: string): string {
@@ -189,6 +193,18 @@
   }
 </script>
 
+{#snippet providerIcon(name: string | undefined)}
+  {#if name && name.toLowerCase().includes("google")}
+    <img src="/logos/google.webp" alt="" class="mr-2 h-4 w-4 shrink-0 object-contain" aria-hidden="true" />
+  {:else if name && name.toLowerCase().includes("apple")}
+    <img src="/logos/apple.svg" alt="" class="mr-2 h-4 w-4 shrink-0 object-contain" aria-hidden="true" />
+  {:else if name && name.toLowerCase().includes("github")}
+    <img src="/logos/github.png" alt="" class="mr-2 h-4 w-4 shrink-0 object-contain" aria-hidden="true" />
+  {:else}
+    <ExternalLink class="mr-2 h-4 w-4" />
+  {/if}
+{/snippet}
+
 {#if oidcQuery.loading}
   <div class="flex items-center justify-center p-8">
     <Loader2 class="h-8 w-8 animate-spin text-primary" />
@@ -198,6 +214,15 @@
   {@const hasOidc = oidc?.enabled && oidc.providers.length > 0}
 
   <div class="space-y-4">
+    {#if !passkeysSupported}
+      <div class="flex items-start gap-3 rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3">
+        <ShieldAlert class="mt-0.5 h-4 w-4 shrink-0 text-yellow-600 dark:text-yellow-500" />
+        <p class="text-sm text-yellow-700 dark:text-yellow-400">
+          Your browser does not support passkeys. Use an authenticator app, a recovery code, or try a different browser.
+        </p>
+      </div>
+    {/if}
+
     {#if errorMessage}
       <div class="flex items-start gap-3 rounded-md border border-destructive/20 bg-destructive/5 p-3">
         <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
@@ -210,7 +235,7 @@
       <Button
         class="w-full h-12"
         size="lg"
-        disabled={isLoading || isRedirecting}
+        disabled={isLoading || isRedirecting || !passkeysSupported}
         onclick={handleDiscoverableLogin}
       >
         {#if isLoading}
@@ -226,7 +251,7 @@
       <Button
         variant="outline"
         class="w-full"
-        disabled={isLoading || isRedirecting}
+        disabled={isLoading || isRedirecting || !passkeysSupported}
         onclick={() => switchMode("username")}
       >
         <User class="mr-2 h-4 w-4" />
@@ -258,7 +283,7 @@
                 <Loader2 class="mr-2 h-4 w-4 animate-spin" />
                 Redirecting...
               {:else}
-                <ExternalLink class="mr-2 h-4 w-4" />
+                {@render providerIcon(provider.name)}
                 Sign in with {provider.name}
               {/if}
             </Button>
@@ -306,7 +331,7 @@
 
         <Button
           class="w-full"
-          disabled={isLoading || !username.trim()}
+          disabled={isLoading || !username.trim() || !passkeysSupported}
           onclick={handleUsernameLogin}
         >
           {#if isLoading}

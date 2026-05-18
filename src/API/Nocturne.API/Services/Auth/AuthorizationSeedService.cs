@@ -1,16 +1,22 @@
-using Nocturne.Core.Contracts;
 
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Background service that initializes default authorization entities on startup.
-/// This includes default roles and the Public system subject.
+/// Hosted service that initialises default authorisation entities on application startup.
+/// Creates default roles and the Public system subject if they do not already exist.
 /// </summary>
+/// <seealso cref="IRoleService"/>
+/// <seealso cref="ISubjectService"/>
 public class AuthorizationSeedService : IHostedService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AuthorizationSeedService> _logger;
 
+    /// <summary>
+    /// Initialises a new <see cref="AuthorizationSeedService"/>.
+    /// </summary>
+    /// <param name="serviceProvider">Root service provider; a new scope is created per invocation.</param>
+    /// <param name="logger">Logger instance.</param>
     public AuthorizationSeedService(
         IServiceProvider serviceProvider,
         ILogger<AuthorizationSeedService> logger
@@ -20,6 +26,11 @@ public class AuthorizationSeedService : IHostedService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Seeds default roles via <see cref="IRoleService"/> and the Public system subject via
+    /// <see cref="ISubjectService"/>. Errors are logged and do not prevent the application from starting.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
@@ -48,5 +59,6 @@ public class AuthorizationSeedService : IHostedService
         }
     }
 
+    /// <inheritdoc/>
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

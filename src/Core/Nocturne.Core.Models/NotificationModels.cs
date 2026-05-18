@@ -3,9 +3,11 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// V2 Notification response model for enhanced notifications system
-/// Maintains 1:1 compatibility with legacy Nightscout notifications v2 API
+/// V2 Notification response model for enhanced notifications system.
+/// Maintains 1:1 compatibility with legacy Nightscout notifications v2 API.
 /// </summary>
+/// <seealso cref="LoopNotificationRequest"/>
+/// <seealso cref="NotificationAckRequest"/>
 public class NotificationV2Response
 {
     /// <summary>

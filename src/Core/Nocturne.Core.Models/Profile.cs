@@ -5,9 +5,14 @@ using Nocturne.Core.Models.Attributes;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Represents a Nightscout profile record for the API
-/// Compatible with the legacy Nightscout profiles collection
+/// Represents a Nightscout profile record for the API.
+/// Compatible with the legacy Nightscout profiles collection.
+/// A profile record contains a named store of basal rates, carb ratios, insulin sensitivities,
+/// and target ranges. Multiple named profiles can be stored in a single record via <see cref="Store"/>.
 /// </summary>
+/// <seealso cref="ProfileData"/>
+/// <seealso cref="TimeValue"/>
+/// <seealso cref="LoopProfileSettings"/>
 public class Profile
 {
     /// <summary>
@@ -233,8 +238,13 @@ public class TimeValue
     public int? TimeAsSeconds { get; set; }
 
     /// <summary>
-    /// Calculates TimeAsSeconds from the Time property if not already set
+    /// Populates <see cref="TimeAsSeconds"/> from <see cref="Time"/> if it has not already been set.
     /// </summary>
+    /// <remarks>
+    /// Call before serialization to ensure the <c>timeAsSeconds</c> field is included in the
+    /// JSON output for Nightscout compatibility. This is a no-op if <see cref="TimeAsSeconds"/>
+    /// already has a value.
+    /// </remarks>
     public void EnsureTimeAsSeconds()
     {
         if (TimeAsSeconds.HasValue) return;

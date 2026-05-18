@@ -3,8 +3,11 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Configuration for an event type including which fields are applicable
+/// Configuration for an event type including which fields are applicable.
+/// Drives the Careportal form to show or hide input fields based on the selected event type.
 /// </summary>
+/// <seealso cref="TreatmentEventType"/>
+/// <seealso cref="EventTypeConfigurations"/>
 public class EventTypeConfiguration
 {
     /// <summary>
@@ -82,11 +85,14 @@ public class EventTypeConfiguration
 /// <summary>
 /// Static helper for event type configurations
 /// </summary>
+/// <seealso cref="EventTypeConfiguration"/>
+/// <seealso cref="TreatmentEventType"/>
 public static class EventTypeConfigurations
 {
     /// <summary>
-    /// Get all event type configurations with their field applicability
+    /// Returns all event type configurations with their field applicability flags.
     /// </summary>
+    /// <returns>Array of <see cref="EventTypeConfiguration"/> covering all known <see cref="TreatmentEventType"/> values</returns>
     public static EventTypeConfiguration[] GetAll() =>
     [
         new() { EventType = TreatmentEventType.None, Name = "<none>", Bg = true, Insulin = true, Carbs = true, Protein = false, Fat = false, Prebolus = false, Duration = false, Percent = false, Absolute = false, Profile = false, Split = false, Sensor = false },
@@ -121,8 +127,10 @@ public static class EventTypeConfigurations
     ];
 
     /// <summary>
-    /// Get configuration for a specific event type
+    /// Returns the configuration for a specific event type, or <see langword="null"/> if not found.
     /// </summary>
+    /// <param name="eventType">The <see cref="TreatmentEventType"/> to look up</param>
+    /// <returns>Matching <see cref="EventTypeConfiguration"/>, or <see langword="null"/> if the event type has no configuration</returns>
     public static EventTypeConfiguration? GetByType(TreatmentEventType eventType) =>
         GetAll().FirstOrDefault(c => c.EventType == eventType);
 }

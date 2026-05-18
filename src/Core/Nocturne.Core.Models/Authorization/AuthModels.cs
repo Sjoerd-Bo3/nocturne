@@ -1,8 +1,10 @@
 namespace Nocturne.Core.Models.Authorization;
 
 /// <summary>
-/// Authentication result from auth handlers
+/// Authentication result from auth handlers.
 /// </summary>
+/// <seealso cref="AuthContext"/>
+/// <seealso cref="AuthType"/>
 public class AuthResult
 {
     /// <summary>
@@ -26,20 +28,25 @@ public class AuthResult
     public bool ShouldSkip { get; set; }
 
     /// <summary>
-    /// Create a successful auth result
+    /// Create a successful auth result.
     /// </summary>
+    /// <param name="context">The authentication context for the authenticated request.</param>
+    /// <returns>An <see cref="AuthResult"/> with <see cref="Succeeded"/> set to <c>true</c>.</returns>
     public static AuthResult Success(AuthContext context) =>
         new() { Succeeded = true, AuthContext = context };
 
     /// <summary>
-    /// Create a failed auth result
+    /// Create a failed auth result.
     /// </summary>
+    /// <param name="error">Human-readable error message describing the failure.</param>
+    /// <returns>An <see cref="AuthResult"/> with <see cref="Succeeded"/> set to <c>false</c>.</returns>
     public static AuthResult Failure(string error) =>
         new() { Succeeded = false, Error = error };
 
     /// <summary>
-    /// Create a skip result (handler didn't find credentials it can handle)
+    /// Create a skip result (handler didn't find credentials it can handle).
     /// </summary>
+    /// <returns>An <see cref="AuthResult"/> with <see cref="ShouldSkip"/> set to <c>true</c>.</returns>
     public static AuthResult Skip() =>
         new() { Succeeded = false, ShouldSkip = true };
 }
@@ -167,14 +174,19 @@ public class AuthContext
     public bool IsActingAsFollower => ActingAsSubjectId.HasValue;
 
     /// <summary>
-    /// Create an unauthenticated context
+    /// Create an unauthenticated context.
     /// </summary>
+    /// <returns>An <see cref="AuthContext"/> with <see cref="IsAuthenticated"/> set to <c>false</c>.</returns>
     public static AuthContext Unauthenticated() =>
         new() { IsAuthenticated = false, AuthType = AuthType.None };
 
     /// <summary>
-    /// Check if this context has a specific permission
+    /// Check if this context has a specific Shiro-style permission.
+    /// Supports exact match, hierarchical wildcards (e.g., <c>api:entries:*</c>),
+    /// and the global wildcard (<c>*</c>).
     /// </summary>
+    /// <param name="permission">The Shiro-style permission string to check (e.g., <c>api:entries:read</c>).</param>
+    /// <returns><c>true</c> if the context satisfies the required permission.</returns>
     public bool HasPermission(string permission)
     {
         // Check for admin permission
@@ -206,8 +218,10 @@ public class AuthContext
     }
 
     /// <summary>
-    /// Check if this context has a specific role
+    /// Check if this context has a specific role (case-insensitive).
     /// </summary>
+    /// <param name="role">The role name to check (e.g., <c>admin</c>, <c>readable</c>).</param>
+    /// <returns><c>true</c> if the context includes the specified <see cref="Role"/>.</returns>
     public bool HasRole(string role) =>
         Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
 }
@@ -238,9 +252,9 @@ public enum AuthType
     LegacyAccessToken,
 
     /// <summary>
-    /// API secret (SHA1 hash)
+    /// API key (resolved via DirectGrant lookup by SHA-256 or legacy SHA-1 hash)
     /// </summary>
-    ApiSecret,
+    ApiKey,
 
     /// <summary>
     /// Session cookie
@@ -260,5 +274,10 @@ public enum AuthType
     /// <summary>
     /// Instance key (infrastructure service authentication)
     /// </summary>
-    InstanceKey
+    InstanceKey,
+
+    /// <summary>
+    /// Guest session (temporary read-only access via guest code)
+    /// </summary>
+    Guest
 }

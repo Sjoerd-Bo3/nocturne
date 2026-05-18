@@ -3,15 +3,28 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenApi.Remote.Attributes;
 using Nocturne.API.Authorization;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Notifications;
 using Nocturne.Core.Contracts.Multitenancy;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Authorization;
+using Nocturne.API.Multitenancy;
 using Nocturne.Infrastructure.Data;
 
 namespace Nocturne.API.Controllers.V4.PlatformAdmin;
 
+/// <summary>
+/// Platform-admin controller for reviewing and actioning user access requests.
+/// </summary>
+/// <remarks>
+/// Access requests are created when an unauthenticated user completes the
+/// <c>POST /api/auth/passkey/access-request/complete</c> ceremony. Admins with the
+/// <c>platform_admin</c> role can list pending requests, approve them (activating the subject
+/// and adding them as a tenant member), or reject them (deactivating the subject record).
+/// </remarks>
+/// <seealso cref="ISubjectService"/>
+/// <seealso cref="ITenantService"/>
 [ApiController]
+[Tags("PlatformAdmin")]
 [Route("api/v4/admin/access-requests")]
 [Authorize(Roles = "platform_admin")]
 [AllowDuringSetup]
@@ -19,6 +32,7 @@ public class AccessRequestController(
     NocturneDbContext dbContext,
     ISubjectService subjectService,
     ITenantService tenantService,
+    ITenantAccessor tenantAccessor,
     IInAppNotificationService notificationService,
     ILogger<AccessRequestController> logger) : ControllerBase
 {
@@ -66,29 +80,25 @@ public class AccessRequestController(
         subject.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(ct);
 
-        var tenant = await dbContext.Tenants
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.IsDefault, ct);
-
-        if (tenant != null)
+        var tenantContext = tenantAccessor.Context;
+        if (tenantContext != null)
         {
+            var tenantId = tenantContext.TenantId;
+
             // Validate roleIds belong to this tenant
             if (request.RoleIds.Count > 0)
             {
                 var validCount = await dbContext.TenantRoles
-                    .CountAsync(r => r.TenantId == tenant.Id && request.RoleIds.Contains(r.Id), ct);
+                    .CountAsync(r => r.TenantId == tenantId && request.RoleIds.Contains(r.Id), ct);
                 if (validCount != request.RoleIds.Count)
                     return Problem(detail: "One or more role IDs do not belong to this tenant", statusCode: 400, title: "Bad Request");
             }
 
-            await tenantService.AddMemberAsync(tenant.Id, subjectId, request.RoleIds, request.DirectPermissions, ct: ct);
-        }
+            await tenantService.AddMemberAsync(tenantId, subjectId, request.RoleIds, request.DirectPermissions, ct: ct);
 
-        if (tenant != null)
-        {
             // Find owners by looking at members with the owner role slug
             var ownerIds = await dbContext.TenantMembers
-                .Where(tm => tm.TenantId == tenant.Id
+                .Where(tm => tm.TenantId == tenantId
                     && tm.MemberRoles.Any(mr => mr.TenantRole.Slug == TenantPermissions.SeedRoles.Owner))
                 .Select(tm => tm.SubjectId)
                 .ToListAsync(ct);
@@ -97,7 +107,7 @@ public class AccessRequestController(
             {
                 await notificationService.ArchiveBySourceAsync(
                     ownerId.ToString(),
-                    InAppNotificationType.AnonymousLoginRequest,
+                    "passkey.anonymous_login_request",
                     subjectId.ToString(),
                     NotificationArchiveReason.Completed,
                     ct);
@@ -124,14 +134,11 @@ public class AccessRequestController(
         if (subject == null)
             return NotFound();
 
-        var tenant = await dbContext.Tenants
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.IsDefault, ct);
-
-        if (tenant != null)
+        var denyTenantContext = tenantAccessor.Context;
+        if (denyTenantContext != null)
         {
             var ownerIds = await dbContext.TenantMembers
-                .Where(tm => tm.TenantId == tenant.Id
+                .Where(tm => tm.TenantId == denyTenantContext.TenantId
                     && tm.MemberRoles.Any(mr => mr.TenantRole.Slug == TenantPermissions.SeedRoles.Owner))
                 .Select(tm => tm.SubjectId)
                 .ToListAsync(ct);
@@ -140,7 +147,7 @@ public class AccessRequestController(
             {
                 await notificationService.ArchiveBySourceAsync(
                     ownerId.ToString(),
-                    InAppNotificationType.AnonymousLoginRequest,
+                    "passkey.anonymous_login_request",
                     subjectId.ToString(),
                     NotificationArchiveReason.Dismissed,
                     ct);

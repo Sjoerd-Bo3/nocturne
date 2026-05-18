@@ -4,8 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nocturne.API.Controllers.V2;
-using Nocturne.API.Services;
-using Nocturne.Core.Contracts;
+using Nocturne.Core.Contracts.Notifications;
 using Xunit;
 
 namespace Nocturne.API.Tests.Controllers.V2;

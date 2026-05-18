@@ -1,14 +1,15 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Nocturne.Core.Models.Alerts;
 
 namespace Nocturne.Infrastructure.Data.Entities;
 
 /// <summary>
-/// A composable alert rule with condition tree, hysteresis, and confirmation settings.
+/// A composable alert rule with a condition tree and optional auto-resolve behaviour.
 /// Each rule owns schedules, which own escalation chains.
 /// </summary>
 [Table("alert_rules")]
-public class AlertRuleEntity : ITenantScoped
+public class AlertRuleEntity : ITenantScoped, IAuditable
 {
     /// <summary>
     /// Unique identifier for the alert rule
@@ -37,11 +38,11 @@ public class AlertRuleEntity : ITenantScoped
     public string? Description { get; set; }
 
     /// <summary>
-    /// Condition type: "threshold" | "rate_of_change" | "signal_loss" | "composite"
+    /// Condition type discriminator.
     /// </summary>
     [Column("condition_type")]
     [MaxLength(32)]
-    public string ConditionType { get; set; } = string.Empty;
+    public AlertConditionType ConditionType { get; set; } = AlertConditionType.Threshold;
 
     /// <summary>
     /// JSONB condition parameters (thresholds, rates, durations, composite children, etc.)
@@ -50,23 +51,23 @@ public class AlertRuleEntity : ITenantScoped
     public string ConditionParams { get; set; } = "{}";
 
     /// <summary>
-    /// Minutes the condition must remain cleared before transitioning back to idle.
+    /// When true, the rule clears itself once its condition no longer holds (subject to <see cref="AutoResolveParams"/>).
     /// </summary>
-    [Column("hysteresis_minutes")]
-    public int HysteresisMinutes { get; set; }
+    [Column("auto_resolve_enabled")]
+    public bool AutoResolveEnabled { get; set; }
 
     /// <summary>
-    /// Number of consecutive readings that must satisfy the condition before firing.
+    /// JSONB auto-resolve parameters (e.g. delay, mode). Null when unused.
     /// </summary>
-    [Column("confirmation_readings")]
-    public int ConfirmationReadings { get; set; } = 1;
+    [Column("auto_resolve_params", TypeName = "jsonb")]
+    public string? AutoResolveParams { get; set; }
 
     /// <summary>
-    /// Alert severity. "normal" or "critical". Critical alerts bypass quiet hours.
+    /// Alert severity. Critical alerts bypass quiet hours.
     /// </summary>
     [Column("severity")]
     [MaxLength(16)]
-    public string Severity { get; set; } = "normal";
+    public AlertRuleSeverity Severity { get; set; } = AlertRuleSeverity.Warning;
 
     /// <summary>
     /// Client-side presentation config (audio, visual, snooze). Stored as JSONB.
@@ -82,6 +83,14 @@ public class AlertRuleEntity : ITenantScoped
     public bool IsEnabled { get; set; } = true;
 
     /// <summary>
+    /// When true, this rule still fires while the tenant is in Do Not Disturb mode (manual
+    /// or scheduled). Critical-severity rules implicitly bypass DND regardless of this flag —
+    /// the flag is only meaningful for non-critical rules the user wants to keep active.
+    /// </summary>
+    [Column("allow_through_dnd")]
+    public bool AllowThroughDnd { get; set; }
+
+    /// <summary>
     /// Order in which the rule should be processed or displayed
     /// </summary>
     [Column("sort_order")]
@@ -90,21 +99,24 @@ public class AlertRuleEntity : ITenantScoped
     /// <summary>
     /// When the alert rule was created
     /// </summary>
+    [AuditIgnored]
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// When the alert rule was last updated
     /// </summary>
+    [AuditIgnored]
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation
 
     /// <summary>
-    /// Collection of schedules associated with this alert rule
+    /// Flat list of delivery channels for this rule. When the rule fires, every channel in
+    /// this collection receives a delivery in parallel.
     /// </summary>
-    public ICollection<AlertScheduleEntity> Schedules { get; set; } = [];
+    public ICollection<AlertRuleChannelEntity> Channels { get; set; } = [];
 
     /// <summary>
     /// Current state tracker for this alert rule

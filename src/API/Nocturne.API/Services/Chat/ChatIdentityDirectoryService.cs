@@ -5,10 +5,31 @@ using Nocturne.Infrastructure.Data.Entities;
 namespace Nocturne.API.Services.Chat;
 
 /// <summary>
-/// CRUD + routing helpers for the global chat identity directory. Handles
-/// multi-link scenarios for a single Discord user (one link per tenant),
+/// CRUD and routing service for the global chat identity directory. Handles
+/// multi-link scenarios for a single platform user (one link per tenant),
 /// label collision auto-suffixing, and transactional default-flag swaps.
 /// </summary>
+/// <remarks>
+/// <para>
+/// A single platform user (identified by platform + platformUserId) may be linked to multiple
+/// Nocturne tenants. Each link has a human-readable label that must be unique within the
+/// platform user's set of links. When the suggested label collides an integer suffix is
+/// appended (e.g. <c>home-2</c>); up to 999 suffixes are tried before an exception is thrown.
+/// </para>
+/// <para>
+/// The first link created for a platform user is automatically marked as default
+/// (<c>IsDefault = true</c>). Subsequent calls to <see cref="SetDefaultAsync"/> clear the
+/// previous default and set the new one atomically inside a user-initiated transaction wrapped
+/// by the Npgsql retry execution strategy, enabling safe replay on transient failures.
+/// </para>
+/// <para>
+/// Each method opens its own <see cref="Microsoft.EntityFrameworkCore.DbContext"/> from the
+/// factory to stay compatible with the transactional retry pattern and avoid concurrency issues
+/// with shared contexts.
+/// </para>
+/// </remarks>
+/// <seealso cref="ChatIdentityService"/>
+/// <seealso cref="ChatIdentityPendingLinkService"/>
 public sealed class ChatIdentityDirectoryService(
     IDbContextFactory<NocturneDbContext> contextFactory,
     ILogger<ChatIdentityDirectoryService> logger)

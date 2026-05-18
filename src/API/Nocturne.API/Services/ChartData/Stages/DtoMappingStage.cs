@@ -1,14 +1,33 @@
 using Nocturne.API.Helpers;
-using Nocturne.Core.Contracts;
+using Nocturne.API.Services.Analytics;
+using Nocturne.Core.Contracts.Treatments;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.V4;
 
 namespace Nocturne.API.Services.ChartData.Stages;
 
 /// <summary>
-/// Pipeline stage that converts raw fetched data into chart-ready DTOs.
-/// Builds glucose data, all markers, state spans, basal delivery spans, and tracker markers.
+/// Chart data pipeline stage that converts raw fetched domain objects into chart-ready DTOs.
+/// Builds glucose series, all marker types, state-span series, basal delivery spans, and tracker markers.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Carb markers receive a secondary enrichment pass: foods with a non-zero
+/// <c>TimeOffsetMinutes</c> are emitted as additional <see cref="CarbMarkerDto"/> entries
+/// offset from the parent <c>CarbIntake.Mills</c>, capped to 20 characters for label display.
+/// Base markers (offset == 0) have their label updated from the associated food names.
+/// </para>
+/// <para>
+/// Activity state spans from Sleep, Exercise, Illness, and Travel categories are merged into
+/// a single <see cref="ChartDataContext.ActivitySpans"/> list so they share one chart layer.
+/// </para>
+/// <para>
+/// Color assignment for state spans is performed by <see cref="Helpers.ChartColorMapper"/>
+/// on the backend so the rendering layer is a pure display layer.
+/// </para>
+/// </remarks>
+/// <seealso cref="IChartDataStage"/>
+/// <seealso cref="ChartDataContext"/>
 internal sealed class DtoMappingStage(ITreatmentFoodService treatmentFoodService) : IChartDataStage
 {
     public async Task<ChartDataContext> ExecuteAsync(ChartDataContext context, CancellationToken cancellationToken)
@@ -46,12 +65,33 @@ internal sealed class DtoMappingStage(ITreatmentFoodService treatmentFoodService
         var basalDeliverySpans = ChartDataService.MapBasalDeliverySpans(context.TempBasalList.ToList());
         var tempBasalSpans = ChartDataService.MapTempBasalSpans(context.TempBasalList.ToList());
         var systemEventMarkers = ChartDataService.MapSystemEvents(context.SystemEvents);
+        var basalInjectionMarkers = context.BasalInjectionList
+            .Select(bi => new BasalInjectionMarkerDto
+            {
+                Id = bi.Id.ToString(),
+                Time = bi.Mills,
+                Units = bi.Units,
+                InsulinName = bi.InsulinContext?.InsulinName,
+            })
+            .ToList();
+
         var trackerMarkers = ChartDataService.MapTrackerMarkers(
             context.TrackerDefinitions,
             context.TrackerInstances,
             context.StartTime,
             context.EndTime
         );
+
+        var heartRateSeries = context.HeartRateList
+            .Select(hr => new HeartRatePointDto { Time = hr.Mills, Bpm = hr.Bpm })
+            .OrderBy(p => p.Time)
+            .ToList();
+
+        var stepSeries = context.StepCountList
+            .Where(sc => sc.Metric > 0)
+            .Select(sc => new StepBubbleDto { Time = sc.Mills, Steps = sc.Metric })
+            .OrderBy(p => p.Time)
+            .ToList();
 
         return context with
         {
@@ -61,6 +101,7 @@ internal sealed class DtoMappingStage(ITreatmentFoodService treatmentFoodService
             CarbMarkers = carbMarkers,
             BgCheckMarkers = bgCheckMarkers,
             DeviceEventMarkers = deviceEventMarkers,
+            BasalInjectionMarkers = basalInjectionMarkers,
             PumpModeSpans = pumpModeSpans,
             ProfileSpans = profileSpans,
             OverrideSpans = overrideSpans,
@@ -69,6 +110,8 @@ internal sealed class DtoMappingStage(ITreatmentFoodService treatmentFoodService
             TempBasalSpans = tempBasalSpans,
             SystemEventMarkers = systemEventMarkers,
             TrackerMarkers = trackerMarkers,
+            HeartRateSeries = heartRateSeries,
+            StepSeries = stepSeries,
         };
     }
 

@@ -10,7 +10,7 @@ namespace Nocturne.Infrastructure.Data.Entities.V4;
 /// Maps to Nocturne.Core.Models.V4.SensorGlucose
 /// </summary>
 [Table("sensor_glucose")]
-public class SensorGlucoseEntity : ITenantScoped
+public class SensorGlucoseEntity : ITenantScoped, IAuditable, ISoftDeletable
 {
     /// <summary>
     /// The unique identifier of the tenant this record belongs to.
@@ -64,6 +64,12 @@ public class SensorGlucoseEntity : ITenantScoped
     public Guid? CorrelationId { get; set; }
 
     /// <summary>
+    /// FK to the patient's registered device record (resolved at ingest time)
+    /// </summary>
+    [Column("patient_device_id")]
+    public Guid? PatientDeviceId { get; set; }
+
+    /// <summary>
     /// Original v1/v3 record ID for migration traceability
     /// </summary>
     [Column("legacy_id")]
@@ -73,12 +79,14 @@ public class SensorGlucoseEntity : ITenantScoped
     /// <summary>
     /// System tracking: when record was inserted
     /// </summary>
+    [AuditIgnored]
     [Column("sys_created_at")]
     public DateTime SysCreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// System tracking: when record was last updated
     /// </summary>
+    [AuditIgnored]
     [Column("sys_updated_at")]
     public DateTime SysUpdatedAt { get; set; } = DateTime.UtcNow;
 
@@ -108,8 +116,53 @@ public class SensorGlucoseEntity : ITenantScoped
     public int? Noise { get; set; }
 
     /// <summary>
+    /// Raw filtered sensor value (scaled ADC)
+    /// </summary>
+    [Column("filtered")]
+    public double? Filtered { get; set; }
+
+    /// <summary>
+    /// Raw unfiltered sensor value (scaled ADC)
+    /// </summary>
+    [Column("unfiltered")]
+    public double? Unfiltered { get; set; }
+
+    /// <summary>
+    /// Glucose delta in mg/dL over the last 5 minutes
+    /// </summary>
+    [Column("delta")]
+    public double? Delta { get; set; }
+
+    /// <summary>
+    /// Whether this reading is smoothed or unsmoothed (enum stored as string). Null when unknown.
+    /// </summary>
+    [Column("glucose_processing")]
+    [MaxLength(16)]
+    public string? GlucoseProcessing { get; set; }
+
+    /// <summary>
+    /// Smoothed glucose value in mg/dL
+    /// </summary>
+    [Column("smoothed_mgdl")]
+    public double? SmoothedMgdl { get; set; }
+
+    /// <summary>
+    /// Unsmoothed (raw) glucose value in mg/dL
+    /// </summary>
+    [Column("unsmoothed_mgdl")]
+    public double? UnsmoothedMgdl { get; set; }
+
+    /// <summary>
     /// Catch-all JSONB column for fields not mapped to dedicated columns
     /// </summary>
     [Column("additional_properties", TypeName = "jsonb")]
     public string? AdditionalPropertiesJson { get; set; }
+
+    /// <summary>
+    /// Soft-delete timestamp. When non-null the record is treated as deleted
+    /// by the global query filter and is invisible above the repository layer.
+    /// </summary>
+    [AuditIgnored]
+    [Column("deleted_at")]
+    public DateTime? DeletedAt { get; set; }
 }

@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Nocturne.Core.Contracts.Audit;
 using Nocturne.Core.Models;
 using Nocturne.Infrastructure.Data.Entities;
 using Nocturne.Infrastructure.Data.Entities.V4;
@@ -29,19 +30,11 @@ public class NocturneDbContext : DbContext
     public Guid TenantId { get; set; }
 
     /// <summary>
-    /// Gets or sets the Entries table for glucose entries
+    /// Audit context for the current operation. Populated from HttpContext for HTTP
+    /// requests (via <see cref="Interceptors.MutationAuditInterceptor"/>), or set
+    /// directly by background services that have no HttpContext.
     /// </summary>
-    public DbSet<EntryEntity> Entries { get; set; }
-
-    /// <summary>
-    /// Gets or sets the Treatments table for diabetes treatments
-    /// </summary>
-    public DbSet<TreatmentEntity> Treatments { get; set; }
-
-    /// <summary>
-    /// Gets or sets the DeviceStatuses table for device status information
-    /// </summary>
-    public DbSet<DeviceStatusEntity> DeviceStatuses { get; set; }
+    public IAuditContext? AuditContext { get; set; }
 
     /// <summary>
     /// Gets or sets the Foods table for food database
@@ -67,16 +60,6 @@ public class NocturneDbContext : DbContext
     /// Gets or sets the Settings table for application settings
     /// </summary>
     public DbSet<SettingsEntity> Settings { get; set; }
-
-    /// <summary>
-    /// Gets or sets the Profiles table for user profiles
-    /// </summary>
-    public DbSet<ProfileEntity> Profiles { get; set; }
-
-    /// <summary>
-    /// Gets or sets the Activities table for user activities
-    /// </summary>
-    public DbSet<ActivityEntity> Activities { get; set; }
 
     /// <summary>
     /// Gets or sets the StepCounts table for xDrip step count / PebbleMovement records
@@ -117,6 +100,11 @@ public class NocturneDbContext : DbContext
     public DbSet<SubjectEntity> Subjects { get; set; }
 
     /// <summary>
+    /// Gets or sets the SubjectAvatars table for avatar image storage
+    /// </summary>
+    public DbSet<SubjectAvatarEntity> SubjectAvatars { get; set; }
+
+    /// <summary>
     /// Gets or sets the Roles table for authorization roles
     /// </summary>
     public DbSet<RoleEntity> Roles { get; set; }
@@ -135,6 +123,11 @@ public class NocturneDbContext : DbContext
     /// Gets or sets the AuthAuditLog table for security event auditing
     /// </summary>
     public DbSet<AuthAuditLogEntity> AuthAuditLog { get; set; }
+
+    /// <summary>
+    /// Gets or sets the MutationAuditLog table for clinical data mutation auditing
+    /// </summary>
+    public DbSet<MutationAuditLogEntity> MutationAuditLog { get; set; }
 
     /// <summary>
     /// Gets or sets the PasskeyCredentials table for WebAuthn/passkey credentials
@@ -214,6 +207,12 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<ConnectorConfigurationEntity> ConnectorConfigurations { get; set; }
 
+    /// <summary>
+    /// Gets or sets the PlatformSettings table for instance-wide platform configuration (not tenant-scoped).
+    /// Stores encrypted credentials for bot platforms (Discord, Slack, Telegram, WhatsApp) and future platform-level config.
+    /// </summary>
+    public DbSet<PlatformSettingsEntity> PlatformSettings { get; set; }
+
     // In-App Notification entities
 
     /// <summary>
@@ -259,6 +258,11 @@ public class NocturneDbContext : DbContext
     public DbSet<MemberInviteEntity> MemberInvites { get; set; } = null!;
 
     /// <summary>
+    /// Gets or sets the MembershipRequests table for tenant membership requests
+    /// </summary>
+    public DbSet<MembershipRequestEntity> MembershipRequests { get; set; } = null!;
+
+    /// <summary>
     /// Gets or sets the CompressionLowSuggestions table for compression low detection
     /// </summary>
     public DbSet<CompressionLowSuggestionEntity> CompressionLowSuggestions { get; set; }
@@ -285,6 +289,11 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<BolusEntity> Boluses { get; set; }
 
+    /// <summary>
+    /// Gets or sets the BasalInjections table for discrete long-acting basal insulin
+    /// injection records (MDI; v4 granular model).
+    /// </summary>
+    public DbSet<BasalInjectionEntity> BasalInjections { get; set; }
 
     /// <summary>
     /// Gets or sets the CarbIntakes table for carbohydrate intake records (v4 granular model)
@@ -327,6 +336,11 @@ public class NocturneDbContext : DbContext
     public DbSet<UploaderSnapshotEntity> UploaderSnapshots { get; set; }
 
     /// <summary>
+    /// Gets or sets the DeviceStatusExtras table for uncaptured devicestatus sub-objects (v4 diagnostic)
+    /// </summary>
+    public DbSet<DeviceStatusExtrasEntity> DeviceStatusExtras { get; set; }
+
+    /// <summary>
     /// Gets or sets the Devices table for physical device records (v4 granular model)
     /// </summary>
     public DbSet<DeviceEntity> Devices { get; set; }
@@ -335,6 +349,11 @@ public class NocturneDbContext : DbContext
     /// Gets or sets the TempBasals table for temporary basal rate change records (v4 granular model)
     /// </summary>
     public DbSet<TempBasalEntity> TempBasals { get; set; }
+
+    /// <summary>
+    /// Gets or sets the DecompositionBatches table for grouping V4 records decomposed from the same source
+    /// </summary>
+    public DbSet<DecompositionBatchEntity> DecompositionBatches { get; set; }
 
     // V4 Profile Decomposition Models
 
@@ -410,19 +429,9 @@ public class NocturneDbContext : DbContext
     public DbSet<AlertRuleEntity> AlertRules { get; set; }
 
     /// <summary>
-    /// Gets or sets the AlertSchedules table for time-of-day/day-of-week schedule windows
+    /// Gets or sets the AlertConditionTimers table for sustained-condition timer state.
     /// </summary>
-    public DbSet<AlertScheduleEntity> AlertSchedules { get; set; }
-
-    /// <summary>
-    /// Gets or sets the AlertEscalationSteps table for ordered escalation chain steps
-    /// </summary>
-    public DbSet<AlertEscalationStepEntity> AlertEscalationSteps { get; set; }
-
-    /// <summary>
-    /// Gets or sets the AlertStepChannels table for delivery channels per escalation step
-    /// </summary>
-    public DbSet<AlertStepChannelEntity> AlertStepChannels { get; set; }
+    public DbSet<AlertConditionTimerEntity> AlertConditionTimers { get; set; }
 
     /// <summary>
     /// Gets or sets the AlertTrackerState table for per-rule state machine tracking
@@ -455,6 +464,18 @@ public class NocturneDbContext : DbContext
     public DbSet<AlertCustomSoundEntity> AlertCustomSounds { get; set; }
 
     /// <summary>
+    /// Gets or sets the AlertRuleChannels table for the flat per-rule delivery channel list
+    /// (replaces the legacy schedule/escalation-step/step-channel chain).
+    /// </summary>
+    public DbSet<AlertRuleChannelEntity> AlertRuleChannels { get; set; }
+
+    /// <summary>
+    /// Gets or sets the TenantAlertSettings table — one row per tenant holding the
+    /// Do Not Disturb manual toggle, scheduled DND window, and timezone.
+    /// </summary>
+    public DbSet<TenantAlertSettingsEntity> TenantAlertSettings { get; set; }
+
+    /// <summary>
     /// Gets or sets the ChatIdentityDirectory table — global routing for chat platform identities to tenant+user.
     /// </summary>
     public DbSet<ChatIdentityDirectoryEntry> ChatIdentityDirectory { get; set; }
@@ -469,6 +490,27 @@ public class NocturneDbContext : DbContext
     /// </summary>
     public DbSet<SubjectOidcIdentityEntity> SubjectOidcIdentities { get; set; }
 
+    /// <summary>
+    /// Gets or sets the CoachMarkStates table for per-user coach mark progression
+    /// </summary>
+    public DbSet<CoachMarkStateEntity> CoachMarkStates { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ReadAccessLog table for HIPAA read-access audit logging
+    /// </summary>
+    public DbSet<ReadAccessLogEntity> ReadAccessLog { get; set; }
+
+    /// <summary>
+    /// Gets or sets the TenantAuditConfig table for per-tenant audit configuration
+    /// </summary>
+    public DbSet<TenantAuditConfigEntity> TenantAuditConfig { get; set; }
+
+    /// <summary>
+    /// Gets or sets the TenantDataRetentionConfig table for per-tenant soft-delete retention
+    /// </summary>
+    public DbSet<TenantDataRetentionConfigEntity> TenantDataRetentionConfig { get; set; }
+
+    public DbSet<TenantDemoConfigEntity> TenantDemoConfigs => Set<TenantDemoConfigEntity>();
 
     /// <summary>
     /// Configure the database model and relationships
@@ -486,6 +528,9 @@ public class NocturneDbContext : DbContext
 
         // Configure per-tenant global query filters
         ConfigureTenantFilters(modelBuilder);
+
+        // Configure cascade deletes from tenant to all tenant-scoped entities
+        ConfigureTenantCascadeDeletes(modelBuilder);
 
         // Normalize primary-key column naming. EF Core's default convention
         // emits the C# property name verbatim for the column, which produces
@@ -505,97 +550,6 @@ public class NocturneDbContext : DbContext
 
     private static void ConfigureIndexes(ModelBuilder modelBuilder)
     {
-        // Entries indexes - optimized for common queries
-        modelBuilder
-            .Entity<EntryEntity>()
-            .HasIndex(e => e.Mills)
-            .HasDatabaseName("ix_entries_mills")
-            .IsDescending(); // Most recent first
-
-        modelBuilder.Entity<EntryEntity>().HasIndex(e => e.Type).HasDatabaseName("ix_entries_type");
-
-        modelBuilder
-            .Entity<EntryEntity>()
-            .HasIndex(e => new { e.Type, e.Mills })
-            .HasDatabaseName("ix_entries_type_timestamp")
-            .IsDescending(false, true); // Type asc, Mills desc
-
-        // Composite index for duplicate detection
-        modelBuilder
-            .Entity<EntryEntity>()
-            .HasIndex(e => new
-            {
-                e.Device,
-                e.Type,
-                e.Sgv,
-                e.Mills,
-            })
-            .HasDatabaseName("ix_entries_duplicate_detection");
-
-        modelBuilder
-            .Entity<EntryEntity>()
-            .HasIndex(e => e.DeletedAt)
-            .HasDatabaseName("ix_entries_deleted_at")
-            .HasFilter("deleted_at IS NOT NULL");
-
-        // Treatments indexes - optimized for common queries
-        modelBuilder
-            .Entity<TreatmentEntity>()
-            .HasIndex(t => t.Mills)
-            .HasDatabaseName("ix_treatments_mills")
-            .IsDescending(); // Most recent first
-
-        modelBuilder
-            .Entity<TreatmentEntity>()
-            .HasIndex(t => t.EventType)
-            .HasDatabaseName("ix_treatments_event_type");
-
-        modelBuilder
-            .Entity<TreatmentEntity>()
-            .HasIndex(t => t.DeletedAt)
-            .HasDatabaseName("ix_treatments_deleted_at")
-            .HasFilter("deleted_at IS NOT NULL");
-
-        modelBuilder
-            .Entity<TreatmentEntity>()
-            .HasIndex(t => new { t.EventType, t.Mills })
-            .HasDatabaseName("ix_treatments_event_type_timestamp")
-            .IsDescending(false, true); // EventType asc, Mills desc
-
-        // DeviceStatus indexes
-        modelBuilder
-            .Entity<DeviceStatusEntity>()
-            .HasIndex(d => d.Mills)
-            .HasDatabaseName("ix_devicestatus_timestamp")
-            .IsDescending(); // Most recent first
-
-        modelBuilder
-            .Entity<DeviceStatusEntity>()
-            .HasIndex(d => d.Device)
-            .HasDatabaseName("ix_devicestatus_device");
-
-        modelBuilder
-            .Entity<DeviceStatusEntity>()
-            .HasIndex(d => new { d.Device, d.Mills })
-            .HasDatabaseName("ix_devicestatus_device_timestamp")
-            .IsDescending(false, true); // Device asc, Mills desc
-
-        // System tracking indexes for maintenance operations
-        modelBuilder
-            .Entity<EntryEntity>()
-            .HasIndex(e => e.SysCreatedAt)
-            .HasDatabaseName("ix_entries_sys_created_at");
-
-        modelBuilder
-            .Entity<TreatmentEntity>()
-            .HasIndex(t => t.SysCreatedAt)
-            .HasDatabaseName("ix_treatments_sys_created_at");
-
-        modelBuilder
-            .Entity<DeviceStatusEntity>()
-            .HasIndex(d => d.SysCreatedAt)
-            .HasDatabaseName("ix_devicestatus_sys_created_at");
-
         // Food indexes - optimized for common queries
         modelBuilder.Entity<FoodEntity>().HasIndex(f => f.Name).HasDatabaseName("ix_foods_name");
 
@@ -711,56 +665,11 @@ public class NocturneDbContext : DbContext
             .HasIndex(s => s.SysCreatedAt)
             .HasDatabaseName("ix_settings_sys_created_at");
 
-        // Profile indexes - optimized for common queries
-        modelBuilder
-            .Entity<ProfileEntity>()
-            .HasIndex(p => p.Mills)
-            .HasDatabaseName("ix_profiles_mills")
-            .IsDescending(); // Most recent first
-
-        modelBuilder
-            .Entity<ProfileEntity>()
-            .HasIndex(p => p.DefaultProfile)
-            .HasDatabaseName("ix_profiles_default_profile");
-
-        modelBuilder
-            .Entity<ProfileEntity>()
-            .HasIndex(p => p.Units)
-            .HasDatabaseName("ix_profiles_units");
-
-        modelBuilder
-            .Entity<ProfileEntity>()
-            .HasIndex(p => p.CreatedAtPg)
-            .HasDatabaseName("ix_profiles_sys_created_at");
-
-        // Activity indexes - optimized for common queries
-        modelBuilder
-            .Entity<ActivityEntity>()
-            .HasIndex(a => a.Mills)
-            .HasDatabaseName("ix_activities_mills")
-            .IsDescending(); // Most recent first
-
-        modelBuilder
-            .Entity<ActivityEntity>()
-            .HasIndex(a => a.Type)
-            .HasDatabaseName("ix_activities_type");
-
-        modelBuilder
-            .Entity<ActivityEntity>()
-            .HasIndex(a => new { a.Type, a.Mills })
-            .HasDatabaseName("ix_activities_type_timestamp")
-            .IsDescending(false, true); // Type asc, Mills desc
-
-        modelBuilder
-            .Entity<ActivityEntity>()
-            .HasIndex(a => a.SysCreatedAt)
-            .HasDatabaseName("ix_activities_sys_created_at");
-
         // StepCount indexes - optimized for time-range graph queries
         modelBuilder
             .Entity<StepCountEntity>()
-            .HasIndex(s => s.Mills)
-            .HasDatabaseName("ix_step_counts_mills")
+            .HasIndex(s => s.Timestamp)
+            .HasDatabaseName("ix_step_counts_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -771,8 +680,8 @@ public class NocturneDbContext : DbContext
         // HeartRate indexes - optimized for time-range graph queries
         modelBuilder
             .Entity<HeartRateEntity>()
-            .HasIndex(h => h.Mills)
-            .HasDatabaseName("ix_heart_rates_mills")
+            .HasIndex(h => h.Timestamp)
+            .HasDatabaseName("ix_heart_rates_timestamp")
             .IsDescending();
 
         modelBuilder
@@ -1180,11 +1089,24 @@ public class NocturneDbContext : DbContext
             .HasIndex(l => new { l.RecordType, l.SourceTimestamp })
             .HasDatabaseName("ix_linked_records_type_timestamp");
 
+        // Partial index for the NOT EXISTS anti-join in read queries —
+        // only non-primary rows enter the index, keeping it small.
+        modelBuilder
+            .Entity<LinkedRecordEntity>()
+            .HasIndex(l => new { l.RecordType, l.RecordId })
+            .HasDatabaseName("ix_linked_records_non_primary_record")
+            .HasFilter("NOT is_primary");
+
         // ConnectorConfiguration indexes - optimized for connector lookups
         modelBuilder
             .Entity<ConnectorConfigurationEntity>()
             .HasIndex(c => new { c.ConnectorName, c.TenantId })
             .HasDatabaseName("ix_connector_configurations_connector_name_tenant")
+            .IsUnique();
+
+        modelBuilder.Entity<PlatformSettingsEntity>()
+            .HasIndex(ps => ps.Category)
+            .HasDatabaseName("ix_platform_settings_category")
             .IsUnique();
 
         // InAppNotification indexes - optimized for user notification queries
@@ -1220,9 +1142,10 @@ public class NocturneDbContext : DbContext
             {
                 n.UserId,
                 n.Type,
+                n.SourceId,
                 n.IsArchived,
             })
-            .HasDatabaseName("ix_in_app_notifications_user_type_archived");
+            .HasDatabaseName("ix_in_app_notifications_user_type_source_archived");
 
         modelBuilder
             .Entity<InAppNotificationEntity>()
@@ -1374,12 +1297,31 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_sensor_glucose_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<SensorGlucoseEntity>()
             .HasIndex(e => e.CorrelationId)
             .HasDatabaseName("ix_sensor_glucose_correlation_id");
+
+        modelBuilder
+            .Entity<SensorGlucoseEntity>()
+            .HasOne<PatientDeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.PatientDeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<SensorGlucoseEntity>()
+            .HasIndex(e => e.PatientDeviceId)
+            .HasDatabaseName("ix_sensor_glucose_patient_device_id")
+            .HasFilter("patient_device_id IS NOT NULL");
+
+        modelBuilder
+            .Entity<SensorGlucoseEntity>()
+            .HasIndex(e => new { e.TenantId, e.Timestamp })
+            .HasDatabaseName("ix_sensor_glucose_tenant_timestamp")
+            .IsDescending(false, true);
 
         // MeterGlucose indexes
         modelBuilder
@@ -1427,12 +1369,53 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_boluses_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<BolusEntity>()
             .HasIndex(e => e.CorrelationId)
             .HasDatabaseName("ix_boluses_correlation_id");
+
+        modelBuilder
+            .Entity<BolusEntity>()
+            .HasIndex(e => new { e.TenantId, e.Timestamp })
+            .HasDatabaseName("ix_boluses_tenant_timestamp")
+            .IsDescending(false, true);
+
+        modelBuilder.Entity<BolusEntity>()
+            .HasIndex(e => new { e.TenantId, e.DataSource, e.SyncIdentifier })
+            .HasDatabaseName("ix_boluses_tenant_source_sync_id")
+            .IsUnique()
+            .HasFilter("sync_identifier IS NOT NULL AND deleted_at IS NULL");
+
+        // BasalInjections indexes
+        modelBuilder
+            .Entity<BasalInjectionEntity>()
+            .HasIndex(e => e.Timestamp)
+            .HasDatabaseName("ix_basal_injections_timestamp")
+            .IsDescending();
+
+        modelBuilder
+            .Entity<BasalInjectionEntity>()
+            .HasIndex(e => new { e.TenantId, e.LegacyId })
+            .HasDatabaseName("ix_basal_injections_tenant_legacy_id")
+            .IsUnique()
+            .HasFilter("legacy_id IS NOT NULL");
+
+        modelBuilder
+            .Entity<BasalInjectionEntity>()
+            .HasIndex(e => e.CorrelationId)
+            .HasDatabaseName("ix_basal_injections_correlation_id");
+
+        // BasalInjection is the first consumer of the dormant soft-delete
+        // infrastructure, so the sync_identifier uniqueness filter must also
+        // exclude soft-deleted rows. ConfigureTenantFilters automatically
+        // applies the deleted_at IS NULL clause to runtime SELECTs.
+        modelBuilder.Entity<BasalInjectionEntity>()
+            .HasIndex(e => new { e.TenantId, e.DataSource, e.SyncIdentifier })
+            .HasDatabaseName("ix_basal_injections_tenant_source_sync_id")
+            .IsUnique()
+            .HasFilter("sync_identifier IS NOT NULL AND deleted_at IS NULL");
 
         // CarbIntakes indexes
         modelBuilder
@@ -1446,12 +1429,24 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_carb_intakes_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<CarbIntakeEntity>()
             .HasIndex(e => e.CorrelationId)
             .HasDatabaseName("ix_carb_intakes_correlation_id");
+
+        modelBuilder
+            .Entity<CarbIntakeEntity>()
+            .HasIndex(e => new { e.TenantId, e.Timestamp })
+            .HasDatabaseName("ix_carb_intakes_tenant_timestamp")
+            .IsDescending(false, true);
+
+        modelBuilder.Entity<CarbIntakeEntity>()
+            .HasIndex(e => new { e.TenantId, e.DataSource, e.SyncIdentifier })
+            .HasDatabaseName("ix_carb_intakes_tenant_source_sync_id")
+            .IsUnique()
+            .HasFilter("sync_identifier IS NOT NULL AND deleted_at IS NULL");
 
         // BGChecks indexes
         modelBuilder
@@ -1465,7 +1460,7 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_bg_checks_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<BGCheckEntity>()
@@ -1484,7 +1479,7 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_notes_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<NoteEntity>()
@@ -1503,7 +1498,7 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_device_events_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<DeviceEventEntity>()
@@ -1522,7 +1517,7 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_bolus_calculations_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<BolusCalculationEntity>()
@@ -1566,6 +1561,12 @@ public class NocturneDbContext : DbContext
             .HasDatabaseName("ix_uploader_snapshots_legacy_id");
 
 
+        // DeviceStatusExtras indexes
+        modelBuilder
+            .Entity<DeviceStatusExtrasEntity>()
+            .HasIndex(e => e.CorrelationId)
+            .HasDatabaseName("ix_device_status_extras_correlation_id");
+
         // TempBasals indexes
         modelBuilder
             .Entity<TempBasalEntity>()
@@ -1583,14 +1584,26 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_temp_basals_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<TempBasalEntity>()
             .HasIndex(e => e.CorrelationId)
             .HasDatabaseName("ix_temp_basals_correlation_id");
 
-        // Devices unique index is handled by [Index] attribute on entity
+        modelBuilder
+            .Entity<TempBasalEntity>()
+            .HasIndex(e => new { e.TenantId, e.StartTimestamp })
+            .HasDatabaseName("ix_temp_basals_tenant_start_timestamp")
+            .IsDescending(false, true);
+
+        // Devices unique index (scoped to live records)
+        modelBuilder
+            .Entity<DeviceEntity>()
+            .HasIndex(e => new { e.Category, e.Type, e.Serial })
+            .HasDatabaseName("ix_devices_category_type_serial")
+            .IsUnique()
+            .HasFilter("deleted_at IS NULL");
 
         // V4 Profile Decomposition indexes
 
@@ -1606,7 +1619,7 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_therapy_settings_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<TherapySettingsEntity>()
@@ -1617,6 +1630,12 @@ public class NocturneDbContext : DbContext
             .Entity<TherapySettingsEntity>()
             .HasIndex(e => e.ProfileName)
             .HasDatabaseName("ix_therapy_settings_profile_name");
+
+        modelBuilder
+            .Entity<TherapySettingsEntity>()
+            .HasIndex(e => new { e.TenantId, e.Timestamp })
+            .HasDatabaseName("ix_therapy_settings_tenant_timestamp")
+            .IsDescending(false, true);
 
         // BasalSchedule indexes
         modelBuilder
@@ -1630,7 +1649,7 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_basal_schedules_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<BasalScheduleEntity>()
@@ -1641,6 +1660,12 @@ public class NocturneDbContext : DbContext
             .Entity<BasalScheduleEntity>()
             .HasIndex(e => e.ProfileName)
             .HasDatabaseName("ix_basal_schedules_profile_name");
+
+        modelBuilder
+            .Entity<BasalScheduleEntity>()
+            .HasIndex(e => new { e.TenantId, e.ProfileName, e.Timestamp })
+            .HasDatabaseName("ix_basal_schedules_tenant_profile_timestamp")
+            .IsDescending(false, false, true);
 
         // CarbRatioSchedule indexes
         modelBuilder
@@ -1654,7 +1679,7 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_carb_ratio_schedules_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<CarbRatioScheduleEntity>()
@@ -1665,6 +1690,12 @@ public class NocturneDbContext : DbContext
             .Entity<CarbRatioScheduleEntity>()
             .HasIndex(e => e.ProfileName)
             .HasDatabaseName("ix_carb_ratio_schedules_profile_name");
+
+        modelBuilder
+            .Entity<CarbRatioScheduleEntity>()
+            .HasIndex(e => new { e.TenantId, e.ProfileName, e.Timestamp })
+            .HasDatabaseName("ix_carb_ratio_schedules_tenant_profile_timestamp")
+            .IsDescending(false, false, true);
 
         // SensitivitySchedule indexes
         modelBuilder
@@ -1678,7 +1709,7 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_sensitivity_schedules_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<SensitivityScheduleEntity>()
@@ -1689,6 +1720,12 @@ public class NocturneDbContext : DbContext
             .Entity<SensitivityScheduleEntity>()
             .HasIndex(e => e.ProfileName)
             .HasDatabaseName("ix_sensitivity_schedules_profile_name");
+
+        modelBuilder
+            .Entity<SensitivityScheduleEntity>()
+            .HasIndex(e => new { e.TenantId, e.ProfileName, e.Timestamp })
+            .HasDatabaseName("ix_sensitivity_schedules_tenant_profile_timestamp")
+            .IsDescending(false, false, true);
 
         // TargetRangeSchedule indexes
         modelBuilder
@@ -1702,7 +1739,7 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => new { e.TenantId, e.LegacyId })
             .HasDatabaseName("ix_target_range_schedules_tenant_legacy_id")
             .IsUnique()
-            .HasFilter("legacy_id IS NOT NULL");
+            .HasFilter("legacy_id IS NOT NULL AND deleted_at IS NULL");
 
         modelBuilder
             .Entity<TargetRangeScheduleEntity>()
@@ -1714,6 +1751,12 @@ public class NocturneDbContext : DbContext
             .HasIndex(e => e.ProfileName)
             .HasDatabaseName("ix_target_range_schedules_profile_name");
 
+        modelBuilder
+            .Entity<TargetRangeScheduleEntity>()
+            .HasIndex(e => new { e.TenantId, e.ProfileName, e.Timestamp })
+            .HasDatabaseName("ix_target_range_schedules_tenant_profile_timestamp")
+            .IsDescending(false, false, true);
+
         // Tenant indexes
         modelBuilder.Entity<TenantEntity>()
             .HasIndex(t => t.Slug)
@@ -1724,11 +1767,12 @@ public class NocturneDbContext : DbContext
             .HasIndex(tm => tm.SubjectId)
             .HasDatabaseName("ix_tenant_members_subject_id");
 
-        // PatientRecord: unique constraint — one record per tenant
+        // PatientRecord: unique constraint — one record per tenant (scoped to live records)
         modelBuilder.Entity<PatientRecordEntity>()
             .HasIndex(e => e.TenantId)
             .HasDatabaseName("ix_patient_records_tenant_id")
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("deleted_at IS NULL");
 
         // PatientDevice: query by tenant + current status
         modelBuilder.Entity<PatientDeviceEntity>()
@@ -1741,11 +1785,6 @@ public class NocturneDbContext : DbContext
             .HasDatabaseName("ix_patient_insulins_tenant_is_current");
 
         // Alert Engine indexes
-
-        // Sweep query: find instances that need escalation
-        modelBuilder.Entity<AlertInstanceEntity>()
-            .HasIndex(e => new { e.Status, e.NextEscalationAt })
-            .HasDatabaseName("ix_alert_instances_status_next_escalation");
 
         // Active excursion lookup by tenant
         modelBuilder.Entity<AlertExcursionEntity>()
@@ -1830,22 +1869,7 @@ public class NocturneDbContext : DbContext
 
     private static void ConfigureEntities(ModelBuilder modelBuilder)
     {
-        // Configure TreatmentEntity owned types (column mappings for grouped fields)
-        TreatmentEntityConfiguration.ConfigureOwnedTypes(modelBuilder);
-
         // Configure UUID Version 7 value generators for all entity primary keys
-        modelBuilder
-            .Entity<EntryEntity>()
-            .Property(e => e.Id)
-            .HasValueGenerator<GuidV7ValueGenerator>();
-        modelBuilder
-            .Entity<TreatmentEntity>()
-            .Property(t => t.Id)
-            .HasValueGenerator<GuidV7ValueGenerator>();
-        modelBuilder
-            .Entity<DeviceStatusEntity>()
-            .Property(d => d.Id)
-            .HasValueGenerator<GuidV7ValueGenerator>();
         modelBuilder
             .Entity<FoodEntity>()
             .Property(f => f.Id)
@@ -1865,14 +1889,6 @@ public class NocturneDbContext : DbContext
         modelBuilder
             .Entity<SettingsEntity>()
             .Property(s => s.Id)
-            .HasValueGenerator<GuidV7ValueGenerator>();
-        modelBuilder
-            .Entity<ProfileEntity>()
-            .Property(p => p.Id)
-            .HasValueGenerator<GuidV7ValueGenerator>();
-        modelBuilder
-            .Entity<ActivityEntity>()
-            .Property(a => a.Id)
             .HasValueGenerator<GuidV7ValueGenerator>();
         modelBuilder
             .Entity<StepCountEntity>()
@@ -1909,6 +1925,22 @@ public class NocturneDbContext : DbContext
             .HasValueGenerator<GuidV7ValueGenerator>();
         modelBuilder
             .Entity<AuthAuditLogEntity>()
+            .Property(a => a.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<MutationAuditLogEntity>()
+            .Property(a => a.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<ReadAccessLogEntity>()
+            .Property(a => a.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<TenantAuditConfigEntity>()
+            .Property(a => a.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<TenantDataRetentionConfigEntity>()
             .Property(a => a.Id)
             .HasValueGenerator<GuidV7ValueGenerator>();
 
@@ -1951,6 +1983,11 @@ public class NocturneDbContext : DbContext
             .HasValueGenerator<GuidV7ValueGenerator>();
 
         modelBuilder
+            .Entity<PlatformSettingsEntity>()
+            .Property(ps => ps.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+
+        modelBuilder
             .Entity<CompressionLowSuggestionEntity>()
             .Property(c => c.Id)
             .HasValueGenerator<GuidV7ValueGenerator>();
@@ -1970,6 +2007,10 @@ public class NocturneDbContext : DbContext
             .HasValueGenerator<GuidV7ValueGenerator>();
         modelBuilder
             .Entity<BolusEntity>()
+            .Property(e => e.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<BasalInjectionEntity>()
             .Property(e => e.Id)
             .HasValueGenerator<GuidV7ValueGenerator>();
         modelBuilder
@@ -2002,6 +2043,10 @@ public class NocturneDbContext : DbContext
             .HasValueGenerator<GuidV7ValueGenerator>();
         modelBuilder
             .Entity<UploaderSnapshotEntity>()
+            .Property(e => e.Id)
+            .HasValueGenerator<GuidV7ValueGenerator>();
+        modelBuilder
+            .Entity<DecompositionBatchEntity>()
             .Property(e => e.Id)
             .HasValueGenerator<GuidV7ValueGenerator>();
 
@@ -2044,32 +2089,205 @@ public class NocturneDbContext : DbContext
             .HasForeignKey(e => e.FoodId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // V4 entity foreign key relationships
         modelBuilder
-            .Entity<ConnectorFoodEntryEntity>()
-            .HasOne(e => e.MatchedTreatment)
+            .Entity<BolusEntity>()
+            .HasOne<DeviceEntity>()
             .WithMany()
-            .HasForeignKey(e => e.MatchedTreatmentId)
+            .HasForeignKey(e => e.DeviceId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        modelBuilder
+            .Entity<BolusEntity>()
+            .HasOne<BolusCalculationEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.BolusCalculationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<BolusEntity>()
+            .HasOne<ApsSnapshotEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.ApsSnapshotId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<TempBasalEntity>()
+            .HasOne<DeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.DeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<TempBasalEntity>()
+            .HasOne<ApsSnapshotEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.ApsSnapshotId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<PumpSnapshotEntity>()
+            .HasOne<DeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.DeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<ApsSnapshotEntity>()
+            .HasOne<DeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.DeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<DeviceEventEntity>()
+            .HasOne<DeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.DeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // PatientDevice foreign keys
+        modelBuilder
+            .Entity<ApsSnapshotEntity>()
+            .HasOne<PatientDeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.PatientDeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<DeviceEventEntity>()
+            .HasOne<PatientDeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.PatientDeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<TempBasalEntity>()
+            .HasOne<PatientDeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.PatientDeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<PumpSnapshotEntity>()
+            .HasOne<PatientDeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.PatientDeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<BolusEntity>()
+            .HasOne<PatientDeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.PatientDeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<UploaderSnapshotEntity>()
+            .HasOne<DeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.DeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<PatientDeviceEntity>()
+            .HasOne<DeviceEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.DeviceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // DecompositionBatch → V4 entity cascade relationships (CorrelationId = batch PK)
+        modelBuilder.Entity<BolusEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CarbIntakeEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BGCheckEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<NoteEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DeviceEventEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BolusCalculationEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TempBasalEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SensorGlucoseEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MeterGlucoseEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CalibrationEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TherapySettingsEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BasalScheduleEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CarbRatioScheduleEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SensitivityScheduleEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<TargetRangeScheduleEntity>()
+            .HasOne<DecompositionBatchEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.CorrelationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Configure automatic timestamp updates
-        modelBuilder
-            .Entity<EntryEntity>()
-            .Property(e => e.SysUpdatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnAddOrUpdate();
-
-        modelBuilder
-            .Entity<TreatmentEntity>()
-            .Property(t => t.SysUpdatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnAddOrUpdate();
-
-        modelBuilder
-            .Entity<DeviceStatusEntity>()
-            .Property(d => d.SysUpdatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnAddOrUpdate();
-
         modelBuilder
             .Entity<FoodEntity>()
             .Property(f => f.SysUpdatedAt)
@@ -2110,12 +2328,6 @@ public class NocturneDbContext : DbContext
             .ValueGeneratedOnAddOrUpdate();
 
         modelBuilder
-            .Entity<ActivityEntity>()
-            .Property(a => a.SysUpdatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnAddOrUpdate();
-
-        modelBuilder
             .Entity<StepCountEntity>()
             .Property(s => s.SysUpdatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
@@ -2127,17 +2339,7 @@ public class NocturneDbContext : DbContext
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .ValueGeneratedOnAddOrUpdate();
 
-        // Configure JSON column defaults and constraints
-        modelBuilder.Entity<EntryEntity>().Property(e => e.ScaledJson).HasDefaultValue("null");
-
-        modelBuilder.Entity<EntryEntity>().Property(e => e.MetaJson).HasDefaultValue("{}");
-
-        // TreatmentEntity BolusCalcJson and ProfileJson defaults are now configured
-        // in TreatmentEntityConfiguration.ConfigureOwnedTypes()
-
         // Configure required fields and defaults
-        modelBuilder.Entity<EntryEntity>().Property(e => e.Type).HasDefaultValue("sgv");
-
         modelBuilder.Entity<FoodEntity>().Property(f => f.Type).HasDefaultValue("food");
 
         modelBuilder
@@ -2182,51 +2384,6 @@ public class NocturneDbContext : DbContext
         // Settings defaults
         modelBuilder.Entity<SettingsEntity>().Property(s => s.IsActive).HasDefaultValue(true);
 
-        // Profile defaults
-        modelBuilder
-            .Entity<ProfileEntity>()
-            .Property(p => p.DefaultProfile)
-            .HasDefaultValue("Default");
-        modelBuilder.Entity<ProfileEntity>().Property(p => p.Units).HasDefaultValue("mg/dl");
-        modelBuilder.Entity<ProfileEntity>().Property(p => p.StoreJson).HasDefaultValue("{}");
-
-        // Profile automatic timestamps
-        modelBuilder
-            .Entity<ProfileEntity>()
-            .Property(p => p.CreatedAtPg)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-        modelBuilder
-            .Entity<ProfileEntity>()
-            .Property(p => p.UpdatedAtPg)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .ValueGeneratedOnAddOrUpdate();
-
-        // Configure DeviceStatus JSON fields with default empty objects
-        foreach (
-            var jsonProperty in new[]
-            {
-                nameof(DeviceStatusEntity.UploaderJson),
-                nameof(DeviceStatusEntity.PumpJson),
-                nameof(DeviceStatusEntity.OpenApsJson),
-                nameof(DeviceStatusEntity.LoopJson),
-                nameof(DeviceStatusEntity.XDripJsJson),
-                nameof(DeviceStatusEntity.RadioAdapterJson),
-                nameof(DeviceStatusEntity.ConnectJson),
-                nameof(DeviceStatusEntity.OverrideJson),
-                nameof(DeviceStatusEntity.CgmJson),
-                nameof(DeviceStatusEntity.MeterJson),
-                nameof(DeviceStatusEntity.InsulinPenJson),
-            }
-        )
-        {
-            modelBuilder
-                .Entity<DeviceStatusEntity>()
-                .Property(jsonProperty)
-                .HasDefaultValue("null");
-        }
-
-
         // Configure RefreshToken entity relationships and defaults
         modelBuilder.Entity<RefreshTokenEntity>(entity =>
         {
@@ -2252,6 +2409,16 @@ public class NocturneDbContext : DbContext
                 .Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .ValueGeneratedOnAddOrUpdate();
+
+        });
+
+        modelBuilder.Entity<SubjectAvatarEntity>(entity =>
+        {
+            entity.ToTable("subject_avatars");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.HasIndex(e => e.SubjectId).IsUnique().HasDatabaseName("ix_subject_avatars_subject_id");
+            entity.HasOne(e => e.Subject).WithMany().HasForeignKey(e => e.SubjectId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configure Role entity defaults
@@ -2323,6 +2490,67 @@ public class NocturneDbContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
+        // Configure Mutation Audit Log entity defaults and indexes
+        modelBuilder.Entity<MutationAuditLogEntity>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasIndex(e => new { e.TenantId, e.EntityType, e.EntityId })
+                .HasDatabaseName("ix_mutation_audit_log_entity");
+
+            entity.HasIndex(e => new { e.TenantId, e.SubjectId, e.CreatedAt })
+                .HasDatabaseName("ix_mutation_audit_log_subject");
+
+            entity.HasIndex(e => e.CorrelationId)
+                .HasDatabaseName("ix_mutation_audit_log_correlation")
+                .HasFilter("correlation_id IS NOT NULL");
+
+            entity.HasIndex(e => new { e.TenantId, e.CreatedAt })
+                .HasDatabaseName("ix_mutation_audit_log_created");
+        });
+
+        // Configure Read Access Log entity defaults and indexes
+        modelBuilder.Entity<ReadAccessLogEntity>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasIndex(e => new { e.TenantId, e.SubjectId, e.CreatedAt })
+                .HasDatabaseName("ix_read_access_log_subject");
+
+            entity.HasIndex(e => new { e.TenantId, e.EntityType, e.CreatedAt })
+                .HasDatabaseName("ix_read_access_log_entity_type");
+
+            entity.HasIndex(e => new { e.TenantId, e.CreatedAt })
+                .HasDatabaseName("ix_read_access_log_created");
+
+            entity.HasIndex(e => e.CorrelationId)
+                .HasDatabaseName("ix_read_access_log_correlation")
+                .HasFilter("correlation_id IS NOT NULL");
+        });
+
+        // Configure Tenant Audit Config entity defaults and indexes
+        modelBuilder.Entity<TenantAuditConfigEntity>(entity =>
+        {
+            entity.Property(e => e.ReadAuditEnabled).HasDefaultValue(false);
+            entity.Property(e => e.SysCreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.SysUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasIndex(e => e.TenantId)
+                .IsUnique()
+                .HasDatabaseName("ix_tenant_audit_config_tenant_id");
+        });
+
+        // Configure Tenant Data Retention Config entity defaults and indexes
+        modelBuilder.Entity<TenantDataRetentionConfigEntity>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasIndex(e => e.TenantId)
+                .IsUnique()
+                .HasDatabaseName("ix_tenant_data_retention_config_tenant_id");
+        });
+
         // Configure LinkedRecordEntity defaults
         modelBuilder.Entity<LinkedRecordEntity>(entity =>
         {
@@ -2338,7 +2566,7 @@ public class NocturneDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             // Store enums as strings in the database
-            entity.Property(e => e.Type).HasConversion<string>();
+            entity.Property(e => e.Category).HasConversion<string>();
             entity.Property(e => e.Urgency).HasConversion<string>();
             entity.Property(e => e.ArchiveReason).HasConversion<string>();
         });
@@ -2376,6 +2604,13 @@ public class NocturneDbContext : DbContext
                 .HasForeignKey(e => e.SubjectId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            entity
+                .HasOne(e => e.CreatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedBySubjectId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
         });
 
         // Configure OAuth Refresh Token entity
@@ -2383,6 +2618,12 @@ public class NocturneDbContext : DbContext
         {
             entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
             entity.Property(e => e.IssuedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity
+                .HasOne<TenantEntity>()
+                .WithMany()
+                .HasForeignKey(e => e.TenantId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity
                 .HasOne(e => e.Grant)
@@ -2449,6 +2690,16 @@ public class NocturneDbContext : DbContext
             entity.HasIndex(e => e.TenantId);
         });
 
+        // Configure Membership Request entity
+        modelBuilder.Entity<MembershipRequestEntity>(entity =>
+        {
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+
+            entity.HasIndex(e => new { e.TenantId, e.SubjectId })
+                .HasFilter("status = 'pending'")
+                .IsUnique();
+        });
+
         // Configure ClockFace entity
         modelBuilder.Entity<ClockFaceEntity>(entity =>
         {
@@ -2491,6 +2742,12 @@ public class NocturneDbContext : DbContext
             .IsUnique()
             .HasFilter("revoked_at IS NULL");
 
+        modelBuilder.Entity<TenantMemberEntity>()
+            .HasIndex(e => new { e.TenantId, e.Username })
+            .HasDatabaseName("ix_tenant_members_tenant_username")
+            .IsUnique()
+            .HasFilter("username IS NOT NULL AND revoked_at IS NULL");
+
         // Configure TenantRole entity
         modelBuilder.Entity<TenantRoleEntity>(entity =>
         {
@@ -2515,53 +2772,26 @@ public class NocturneDbContext : DbContext
         {
             entity.ToTable("alert_rules");
             entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.ConditionType).HasConversion(
+                new Converters.EnumMemberValueConverter<Core.Models.Alerts.AlertConditionType>());
             entity.Property(e => e.ConditionParams).HasColumnType("jsonb").HasDefaultValue("{}");
-            entity.Property(e => e.ConfirmationReadings).HasDefaultValue(1);
-            entity.Property(e => e.Severity).HasDefaultValue("normal");
+            entity.Property(e => e.Severity).HasConversion(
+                new Converters.EnumMemberValueConverter<Core.Models.Alerts.AlertRuleSeverity>());
             entity.Property(e => e.ClientConfiguration).HasColumnType("jsonb").HasDefaultValue("{}");
             entity.Property(e => e.IsEnabled).HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
-        // AlertScheduleEntity
-        modelBuilder.Entity<AlertScheduleEntity>(entity =>
+        // AlertConditionTimerEntity
+        modelBuilder.Entity<AlertConditionTimerEntity>(entity =>
         {
-            entity.ToTable("alert_schedules");
-            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
-            entity.Property(e => e.DaysOfWeek).HasColumnType("jsonb");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.ToTable("alert_condition_timers");
+            entity.HasKey(e => new { e.AlertRuleId, e.ConditionPath });
 
             entity.HasOne(e => e.AlertRule)
-                .WithMany(r => r.Schedules)
+                .WithMany()
                 .HasForeignKey(e => e.AlertRuleId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // AlertEscalationStepEntity
-        modelBuilder.Entity<AlertEscalationStepEntity>(entity =>
-        {
-            entity.ToTable("alert_escalation_steps");
-            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.HasOne(e => e.AlertSchedule)
-                .WithMany(s => s.EscalationSteps)
-                .HasForeignKey(e => e.AlertScheduleId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // AlertStepChannelEntity
-        modelBuilder.Entity<AlertStepChannelEntity>(entity =>
-        {
-            entity.ToTable("alert_step_channels");
-            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.HasOne(e => e.EscalationStep)
-                .WithMany(s => s.Channels)
-                .HasForeignKey(e => e.EscalationStepId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -2608,11 +2838,6 @@ public class NocturneDbContext : DbContext
                 .WithMany(ex => ex.Instances)
                 .HasForeignKey(e => e.AlertExcursionId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.AlertSchedule)
-                .WithMany()
-                .HasForeignKey(e => e.AlertScheduleId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // AlertDeliveryEntity
@@ -2622,6 +2847,8 @@ public class NocturneDbContext : DbContext
             entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
             entity.Property(e => e.Payload).HasColumnType("jsonb").HasDefaultValue("{}");
             entity.Property(e => e.Status).HasDefaultValue("pending");
+            entity.Property(e => e.ChannelType).HasConversion(
+                new Converters.EnumMemberValueConverter<Core.Models.Alerts.ChannelType>());
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.RetryCount).HasDefaultValue(0);
 
@@ -2630,10 +2857,10 @@ public class NocturneDbContext : DbContext
                 .HasForeignKey(e => e.AlertInstanceId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(e => e.EscalationStep)
+            entity.HasOne(e => e.AlertRuleChannel)
                 .WithMany()
-                .HasForeignKey(e => e.EscalationStepId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(e => e.AlertRuleChannelId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // AlertInviteEntity
@@ -2644,9 +2871,9 @@ public class NocturneDbContext : DbContext
             entity.Property(e => e.PermissionScope).HasDefaultValue("view_acknowledge");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasOne(e => e.EscalationStep)
+            entity.HasOne(e => e.AlertRuleChannel)
                 .WithMany()
-                .HasForeignKey(e => e.EscalationStepId)
+                .HasForeignKey(e => e.AlertRuleChannelId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -2656,6 +2883,35 @@ public class NocturneDbContext : DbContext
             entity.ToTable("alert_custom_sounds");
             entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        // AlertRuleChannelEntity (flat per-rule delivery channels)
+        modelBuilder.Entity<AlertRuleChannelEntity>(entity =>
+        {
+            entity.ToTable("alert_rule_channels");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.ChannelType).HasConversion(
+                new Converters.EnumMemberValueConverter<Core.Models.Alerts.ChannelType>());
+
+            entity.HasOne(e => e.AlertRule)
+                .WithMany(r => r.Channels)
+                .HasForeignKey(e => e.AlertRuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TenantAlertSettingsEntity (1 row per tenant)
+        modelBuilder.Entity<TenantAlertSettingsEntity>(entity =>
+        {
+            entity.ToTable("tenant_alert_settings");
+            entity.Property(e => e.Id).HasValueGenerator<GuidV7ValueGenerator>();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            // Unique on TenantId enforces the one-row-per-tenant invariant. Named explicitly
+            // so it isn't merged with the FK-driven auto-index on tenant_id.
+            entity.HasIndex(e => e.TenantId)
+                .IsUnique()
+                .HasDatabaseName("IX_tenant_alert_settings_tenant_id_unique");
         });
 
         // PasskeyCredentialEntity
@@ -2671,6 +2927,12 @@ public class NocturneDbContext : DbContext
             entity.HasIndex(e => e.SubjectId);
             entity.HasOne(e => e.Subject).WithMany().HasForeignKey(e => e.SubjectId);
         });
+
+        // CoachMarkStateEntity
+        modelBuilder
+            .Entity<CoachMarkStateEntity>()
+            .HasIndex(e => new { e.SubjectId, e.MarkKey })
+            .IsUnique();
 
     }
 
@@ -2730,31 +2992,7 @@ public class NocturneDbContext : DbContext
                 }
             }
 
-            if (entry.Entity is EntryEntity entryEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    entryEntity.SysCreatedAt = utcNow;
-                }
-                entryEntity.SysUpdatedAt = utcNow;
-            }
-            else if (entry.Entity is TreatmentEntity treatmentEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    treatmentEntity.SysCreatedAt = utcNow;
-                }
-                treatmentEntity.SysUpdatedAt = utcNow;
-            }
-            else if (entry.Entity is DeviceStatusEntity deviceStatusEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    deviceStatusEntity.SysCreatedAt = utcNow;
-                }
-                deviceStatusEntity.SysUpdatedAt = utcNow;
-            }
-            else if (entry.Entity is FoodEntity foodEntity)
+            if (entry.Entity is FoodEntity foodEntity)
             {
                 if (entry.State == EntityState.Added)
                 {
@@ -2793,14 +3031,6 @@ public class NocturneDbContext : DbContext
                 }
                 settingsEntity.SysUpdatedAt = utcNow;
             }
-            else if (entry.Entity is ActivityEntity activityEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    activityEntity.SysCreatedAt = utcNow;
-                }
-                activityEntity.SysUpdatedAt = utcNow;
-            }
             else if (entry.Entity is StepCountEntity stepCountEntity)
             {
                 if (entry.State == EntityState.Added)
@@ -2816,14 +3046,6 @@ public class NocturneDbContext : DbContext
                     heartRateEntity.SysCreatedAt = utcNow;
                 }
                 heartRateEntity.SysUpdatedAt = utcNow;
-            }
-            else if (entry.Entity is ProfileEntity profileEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    profileEntity.CreatedAtPg = utcNow;
-                }
-                profileEntity.UpdatedAtPg = utcNow;
             }
 // Auth entities
             else if (entry.Entity is RefreshTokenEntity refreshTokenEntity)
@@ -2961,6 +3183,14 @@ public class NocturneDbContext : DbContext
                 }
                 bolusEntity.SysUpdatedAt = utcNow;
             }
+            else if (entry.Entity is BasalInjectionEntity basalInjectionEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    basalInjectionEntity.SysCreatedAt = utcNow;
+                }
+                basalInjectionEntity.SysUpdatedAt = utcNow;
+            }
             else if (entry.Entity is CarbIntakeEntity carbIntakeEntity)
             {
                 if (entry.State == EntityState.Added)
@@ -3082,6 +3312,14 @@ public class NocturneDbContext : DbContext
                 }
                 tenantMemberEntity.SysUpdatedAt = utcNow;
             }
+            else if (entry.Entity is PlatformSettingsEntity platformSettingsEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    platformSettingsEntity.SysCreatedAt = utcNow;
+                }
+                platformSettingsEntity.SysUpdatedAt = utcNow;
+            }
         }
     }
 
@@ -3111,6 +3349,26 @@ public class NocturneDbContext : DbContext
             }
 
             modelBuilder.Entity(entityType.ClrType).HasQueryFilter(Expression.Lambda(body, parameter));
+        }
+    }
+
+    /// <summary>
+    /// Adds FK constraints with ON DELETE CASCADE from every ITenantScoped entity's
+    /// TenantId column to the tenants table. This ensures tenant deletion cascades to
+    /// all tenant-scoped data instead of silently orphaning rows.
+    /// </summary>
+    private static void ConfigureTenantCascadeDeletes(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!typeof(ITenantScoped).IsAssignableFrom(entityType.ClrType))
+                continue;
+
+            modelBuilder.Entity(entityType.ClrType)
+                .HasOne(typeof(TenantEntity))
+                .WithMany()
+                .HasForeignKey(nameof(ITenantScoped.TenantId))
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

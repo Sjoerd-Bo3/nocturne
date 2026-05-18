@@ -12,6 +12,17 @@ internal sealed class WebhookProvider(
     WebhookRequestSender webhookSender,
     ILogger<WebhookProvider> logger)
 {
+    /// <summary>
+    /// Delivers an alert payload to one or more webhook URLs encoded in <paramref name="destination"/>.
+    /// </summary>
+    /// <param name="destination">
+    /// Comma-separated list of webhook URL(s) to POST the payload to.
+    /// </param>
+    /// <param name="payload">The <see cref="AlertPayload"/> serialised as JSON for the request body.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when one or more URLs fail to receive the payload.
+    /// </exception>
     public async Task SendAsync(string destination, AlertPayload payload, CancellationToken ct)
     {
         var payloadJson = JsonSerializer.Serialize(payload);

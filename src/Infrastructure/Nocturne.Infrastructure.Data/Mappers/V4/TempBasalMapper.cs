@@ -33,8 +33,12 @@ public static class TempBasalMapper
             ScheduledRate = model.ScheduledRate,
             Origin = model.Origin.ToString(),
             DeviceId = model.DeviceId,
+            PatientDeviceId = model.PatientDeviceId,
             PumpRecordId = model.PumpRecordId,
             ApsSnapshotId = model.ApsSnapshotId,
+            InsulinContextJson = model.InsulinContext is not null
+                ? JsonSerializer.Serialize(model.InsulinContext)
+                : null,
             AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
                 ? JsonSerializer.Serialize(model.AdditionalProperties)
                 : null,
@@ -67,8 +71,12 @@ public static class TempBasalMapper
                 ? origin
                 : TempBasalOrigin.Inferred,
             DeviceId = entity.DeviceId,
+            PatientDeviceId = entity.PatientDeviceId,
             PumpRecordId = entity.PumpRecordId,
             ApsSnapshotId = entity.ApsSnapshotId,
+            InsulinContext = !string.IsNullOrEmpty(entity.InsulinContextJson)
+                ? JsonSerializer.Deserialize<TreatmentInsulinContext>(entity.InsulinContextJson)
+                : null,
             AdditionalProperties = !string.IsNullOrEmpty(entity.AdditionalPropertiesJson)
                 ? JsonSerializer.Deserialize<Dictionary<string, object?>>(entity.AdditionalPropertiesJson)
                 : null,
@@ -95,8 +103,12 @@ public static class TempBasalMapper
         entity.ScheduledRate = model.ScheduledRate;
         entity.Origin = model.Origin.ToString();
         entity.DeviceId = model.DeviceId;
+        entity.PatientDeviceId = model.PatientDeviceId;
         entity.PumpRecordId = model.PumpRecordId;
         entity.ApsSnapshotId = model.ApsSnapshotId;
+        entity.InsulinContextJson = model.InsulinContext is not null
+            ? JsonSerializer.Serialize(model.InsulinContext)
+            : null;
         entity.AdditionalPropertiesJson = model.AdditionalProperties is { Count: > 0 }
             ? JsonSerializer.Serialize(model.AdditionalProperties)
             : null;

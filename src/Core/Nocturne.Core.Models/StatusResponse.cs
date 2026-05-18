@@ -3,8 +3,10 @@ using System.Text.Json.Serialization;
 namespace Nocturne.Core.Models;
 
 /// <summary>
-/// Status response model with 1:1 legacy JavaScript compatibility
+/// Status response model with 1:1 legacy JavaScript compatibility.
+/// Returned by the <c>/api/v1/status.json</c> endpoint.
 /// </summary>
+/// <seealso cref="V3StatusResponse"/>
 public class StatusResponse
 {
     /// <summary>
@@ -38,7 +40,8 @@ public class StatusResponse
     public DateTime ServerTime { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Server time epoch
+    /// Server time as Unix milliseconds since epoch.
+    /// Computed from <see cref="ServerTime"/>.
     /// </summary>
     [JsonPropertyName("serverTimeEpoch")]
     public long ServerTimeEpoch => ((DateTimeOffset)ServerTime).ToUnixTimeMilliseconds();
@@ -104,4 +107,18 @@ public class StatusResponse
     /// </summary>
     [JsonPropertyName("head")]
     public string? Head { get; set; }
+
+    /// <summary>
+    /// Whether this tenant is a demo instance.
+    /// </summary>
+    [JsonPropertyName("isDemo")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IsDemo { get; set; }
+
+    /// <summary>
+    /// When demo data will next be reset (null if disabled or not a demo).
+    /// </summary>
+    [JsonPropertyName("nextResetAt")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DateTime? NextResetAt { get; set; }
 }

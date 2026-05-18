@@ -13,8 +13,13 @@ public class RedirectUriValidator
     };
 
     /// <summary>
-    /// Validate a redirect URI for use in a DCR registration request.
+    /// Validates a redirect URI submitted in a Dynamic Client Registration (DCR) request.
     /// </summary>
+    /// <param name="uri">The candidate redirect URI to validate.</param>
+    /// <returns>
+    /// <see langword="true"/> if the URI is an absolute URI without a fragment and belongs to
+    /// a recognised URI class (custom scheme, loopback HTTP, or claimed HTTPS).
+    /// </returns>
     public bool IsValidForRegistration(string uri)
     {
         if (string.IsNullOrWhiteSpace(uri))
@@ -31,9 +36,14 @@ public class RedirectUriValidator
     }
 
     /// <summary>
-    /// Validate a presented redirect_uri against a registered one during /oauth/authorize.
-    /// Byte-exact match, except loopback URIs allow any port on the presented URI.
+    /// Validates a redirect URI presented during <c>/oauth/authorize</c> against a registered one.
+    /// Uses byte-exact matching except for loopback URIs, which allow any port per RFC 8252 Section 7.3.
     /// </summary>
+    /// <param name="registered">The redirect URI stored at registration time.</param>
+    /// <param name="presented">The redirect URI included in the current authorisation request.</param>
+    /// <returns>
+    /// <see langword="true"/> if the URIs match (byte-exact for non-loopback, or scheme/host/path match for loopback).
+    /// </returns>
     public bool IsValidForAuthorize(string registered, string presented)
     {
         if (string.Equals(registered, presented, StringComparison.Ordinal))

@@ -4,10 +4,13 @@ using Nocturne.Infrastructure.Data;
 namespace Nocturne.API.Services.Auth;
 
 /// <summary>
-/// Background service that periodically cleans up expired OAuth device codes
-/// and authorization codes to prevent database bloat.
-/// Runs every hour and removes codes that expired more than 1 hour ago.
+/// Background service that periodically removes expired OAuth device codes and authorisation codes
+/// to prevent database bloat. Runs every hour and removes codes that expired more than one hour ago.
 /// </summary>
+/// <remarks>
+/// The <see cref="RetentionBuffer"/> provides a grace window for in-flight exchanges to complete
+/// before their codes are permanently deleted.
+/// </remarks>
 public class OAuthCodeCleanupService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;

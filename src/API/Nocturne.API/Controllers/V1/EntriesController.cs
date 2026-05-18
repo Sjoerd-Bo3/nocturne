@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Nocturne.API.Attributes;
 using Nocturne.API.Authorization;
 using Nocturne.API.Extensions;
-using Nocturne.API.Services;
-using Nocturne.Core.Contracts;
+using Nocturne.API.Services.Legacy;
+using Nocturne.Core.Contracts.Glucose;
+using Nocturne.Core.Contracts.Legacy;
 using Nocturne.Core.Contracts.Alerts;
 using Nocturne.Core.Models;
 using Nocturne.Core.Models.Extensions;
@@ -13,10 +14,15 @@ using Nocturne.Core.Models.Extensions;
 namespace Nocturne.API.Controllers.V1;
 
 /// <summary>
-/// Entries controller that provides 1:1 compatibility with Nightscout entries endpoints
-/// Implements the /api/v1/entries/* endpoints from the legacy JavaScript implementation
+/// Entries controller that provides 1:1 compatibility with Nightscout entries endpoints.
+/// Implements the /api/v1/entries/* endpoints from the legacy JavaScript implementation.
 /// </summary>
+/// <seealso cref="IEntryService"/>
+/// <seealso cref="IDocumentProcessingService"/>
+/// <seealso cref="IProcessingStatusService"/>
+/// <seealso cref="IAlertOrchestrator"/>
 [ApiController]
+[Tags("V1")]
 [Route("api/v1/[controller]")]
 [Authorize(Policy = PolicyNames.HasPermissions)]
 public class EntriesController : ControllerBase
@@ -27,6 +33,14 @@ public class EntriesController : ControllerBase
     private readonly IAlertOrchestrator _alertOrchestrator;
     private readonly ILogger<EntriesController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="EntriesController"/>.
+    /// </summary>
+    /// <param name="entryService">Service handling glucose entry operations.</param>
+    /// <param name="documentProcessingService">Service for async document processing and ingestion.</param>
+    /// <param name="processingStatusService">Service for querying async processing status.</param>
+    /// <param name="alertOrchestrator">Orchestrator for evaluating and dispatching alerts.</param>
+    /// <param name="logger">Logger instance.</param>
     public EntriesController(
         IEntryService entryService,
         IDocumentProcessingService documentProcessingService,
@@ -793,6 +807,7 @@ public class EntriesController : ControllerBase
     /// <param name="cancellationToken">Cancellation token for async operations</param>
     /// <returns>Updated entry</returns>
     [HttpPut("{id}")]
+    [Authorize]
     [NightscoutEndpoint("/api/v1/entries/{id}")]
     [ProducesResponseType(typeof(Entry), 200)]
     [ProducesResponseType(typeof(object), 400)]
@@ -880,6 +895,7 @@ public class EntriesController : ControllerBase
     /// <param name="cancellationToken">Cancellation token for async operations</param>
     /// <returns>Confirmation of deletion</returns>
     [HttpDelete("{id}")]
+    [Authorize]
     [NightscoutEndpoint("/api/v1/entries/{id}")]
     [ProducesResponseType(typeof(object), 200)]
     [ProducesResponseType(typeof(object), 400)]

@@ -13,6 +13,9 @@ public enum ConnectorPropertyKey
     BatchSize,
     SyncIntervalMinutes,
 
+    // Glucose processing
+    GlucoseProcessing,
+
     // Sync toggles
     SyncGlucose,
     SyncManualBG,
@@ -26,6 +29,10 @@ public enum ConnectorPropertyKey
     SyncDeviceStatus,
     SyncActivity,
     SyncFood,
+
+    // Status thresholds
+    ActiveThresholdMinutes,
+    StaleThresholdMinutes,
 
     // Common credentials
     Username,
@@ -67,5 +74,13 @@ public enum ConnectorPropertyKey
     // Home Assistant-specific
     AccessToken,
     WebhookEnabled,
-    WebhookSecret
+    WebhookSecret,
+
+    // Eversense-specific
+    PatientUsername,
+
+    // CareLink-specific
+    RefreshToken,
+    CountryCode,
+    LanguageCode,
 }

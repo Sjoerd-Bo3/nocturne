@@ -1,8 +1,23 @@
 namespace Nocturne.Core.Models.V4;
 
 /// <summary>
-/// Carbohydrate intake record
+/// Carbohydrate intake record representing a single carb entry.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This is the V4 equivalent of the carbohydrate portion of a legacy <see cref="Treatment"/> record.
+/// When a legacy treatment containing both insulin and carbs is decomposed, it produces a
+/// <see cref="Bolus"/> and a <see cref="CarbIntake"/> linked by <see cref="IV4Record.CorrelationId"/>.
+/// </para>
+/// <para>
+/// <see cref="AbsorptionTime"/>, when present, overrides the profile default for COB calculations
+/// in APS systems such as Loop.
+/// </para>
+/// </remarks>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="IV4Record"/>
+/// <seealso cref="Bolus"/>
+/// <seealso cref="MealEvent"/>
 public class CarbIntake : IV4Record
 {
     /// <summary>
@@ -80,11 +95,6 @@ public class CarbIntake : IV4Record
     /// When present, overrides the profile default for COB calculations.
     /// </summary>
     public int? AbsorptionTime { get; set; }
-
-    /// <summary>
-    /// FK to the Bolus that covered this carb intake (null for carb corrections without bolus)
-    /// </summary>
-    public Guid? BolusId { get; set; }
 
     /// <summary>
     /// Catch-all for fields not mapped to dedicated columns

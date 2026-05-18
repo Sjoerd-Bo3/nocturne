@@ -1,8 +1,17 @@
 namespace Nocturne.Core.Models.V4;
 
 /// <summary>
-/// Bolus calculator/wizard record capturing the inputs and recommendations
+/// Bolus calculator/wizard record capturing the inputs and recommendations used to compute an insulin dose.
 /// </summary>
+/// <remarks>
+/// Corresponds to the "Bolus Wizard" or "Bolus Calculator" event in legacy <see cref="Treatment"/> records.
+/// When a <see cref="Bolus"/> is produced from a <see cref="BolusCalculation"/>, the bolus references
+/// this record via <see cref="Bolus.BolusCalculationId"/>.
+/// </remarks>
+/// <seealso cref="Treatment"/>
+/// <seealso cref="IV4Record"/>
+/// <seealso cref="Bolus"/>
+/// <seealso cref="CalculationType"/>
 public class BolusCalculation : IV4Record
 {
     /// <summary>

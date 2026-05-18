@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using dotAPNS;
-using Nocturne.API.Services;
+using Nocturne.API.Services.Notifications;
 
 namespace Nocturne.API.Tests.Integration.Infrastructure;
 

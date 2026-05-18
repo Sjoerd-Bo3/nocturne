@@ -1,0 +1,209 @@
+/* Coach Mark Theme — default dark theme with CSS custom properties */
+
+:root {
+  --coach-bg: hsl(220 15% 16%);
+  --coach-text: hsl(0 0% 95%);
+  --coach-text-muted: hsl(0 0% 65%);
+  --coach-primary: hsl(210 100% 60%);
+  --coach-primary-hover: hsl(210 100% 50%);
+  --coach-primary-text: white;
+  --coach-radius: 10px;
+  --coach-shadow: 0 8px 32px hsl(0 0% 0% / 0.4);
+  --coach-hotspot-size: 12px;
+  --coach-hotspot-color: hsl(210 100% 60%);
+  --coach-z-index: 9999;
+  --coach-backdrop: hsl(0 0% 0% / 0.6);
+}
+
+/* Backdrop */
+
+.coach-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--coach-z-index) - 1);
+  background: var(--coach-backdrop);
+  transition: clip-path 0.25s ease;
+}
+
+/* Popover */
+
+.coach-popover {
+  position: fixed;
+  z-index: var(--coach-z-index);
+  max-width: 320px;
+  width: max-content;
+  padding: 16px;
+  background: var(--coach-bg);
+  color: var(--coach-text);
+  border-radius: var(--coach-radius);
+  box-shadow: var(--coach-shadow);
+  outline: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.coach-popover__arrow {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--coach-bg);
+  transform: rotate(45deg);
+  top: -6px;
+}
+
+.coach-popover__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--coach-text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0;
+  line-height: 1;
+}
+
+.coach-popover__close:hover {
+  color: var(--coach-text);
+  background: hsl(0 0% 100% / 0.1);
+}
+
+.coach-popover__title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  padding-right: 20px;
+}
+
+.coach-popover__description {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--coach-text-muted);
+}
+
+/* Step Controls */
+
+.coach-step-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.coach-step-indicator {
+  font-size: 12px;
+  color: var(--coach-text-muted);
+}
+
+.coach-step-buttons {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* Buttons */
+
+.coach-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.5;
+  transition: background-color 0.15s ease;
+}
+
+.coach-btn--primary {
+  background: var(--coach-primary);
+  color: var(--coach-primary-text);
+}
+
+.coach-btn--primary:hover {
+  background: var(--coach-primary-hover);
+}
+
+.coach-btn--ghost {
+  background: transparent;
+  color: var(--coach-text-muted);
+}
+
+.coach-btn--ghost:hover {
+  color: var(--coach-text);
+  background: hsl(0 0% 100% / 0.08);
+}
+
+/* Hotspot */
+
+.coach-hotspot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: var(--coach-hotspot-size);
+  height: var(--coach-hotspot-size);
+  border-radius: 50%;
+  background: var(--coach-hotspot-color);
+  border: 2px solid var(--coach-bg);
+  cursor: pointer;
+  padding: 0;
+  z-index: calc(var(--coach-z-index) - 1);
+  box-shadow: 0 0 0 0 var(--coach-hotspot-color);
+}
+
+.coach-hotspot--pulse {
+  animation: coach-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes coach-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--coach-hotspot-color) 60%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--coach-hotspot-color) 0%, transparent);
+  }
+}
+
+/* Reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .coach-hotspot--pulse {
+    animation: none;
+  }
+
+  .coach-btn,
+  .coach-backdrop {
+    transition: none;
+  }
+}
+
+/* Mobile bottom sheet mode */
+
+@media (max-width: 640px) {
+  .coach-popover {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    max-width: none;
+    width: 100%;
+    border-radius: var(--coach-radius) var(--coach-radius) 0 0;
+    padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  }
+
+  .coach-popover__arrow {
+    display: none;
+  }
+}

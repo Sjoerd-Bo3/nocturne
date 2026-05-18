@@ -10,9 +10,20 @@ using Nocturne.Core.Constants;
 namespace Nocturne.API.Controllers;
 
 /// <summary>
-/// OIDC well-known endpoints for the built-in local identity provider
-/// Makes Nocturne act as its own OAuth2/OIDC issuer
+/// OIDC well-known endpoints for the built-in local identity provider.
+/// Makes Nocturne act as its own OAuth 2.0 / OIDC issuer.
 /// </summary>
+/// <remarks>
+/// Implements the OpenID Connect Discovery 1.0 specification:
+/// <list type="bullet">
+///   <item><description><c>GET /.well-known/openid-configuration</c> — provider metadata document.</description></item>
+///   <item><description><c>GET /.well-known/jwks.json</c> — JSON Web Key Set used to verify JWT signatures.</description></item>
+/// </list>
+///
+/// Both endpoints are <see cref="AllowAnonymousAttribute"/> and are consumed by OAuth clients during
+/// the dynamic discovery phase. The issuer URL and signing key are derived from <see cref="JwtOptions"/>.
+/// </remarks>
+/// <seealso cref="JwtOptions"/>
 [ApiController]
 [Route(".well-known")]
 [Tags("OIDC Discovery")]
@@ -48,8 +59,8 @@ public class WellKnownController : ControllerBase
             new OpenIdConfiguration
             {
                 Issuer = _jwtOptions.Issuer,
-                AuthorizationEndpoint = $"{baseUrl}/auth/local/login",
-                TokenEndpoint = $"{baseUrl}/auth/local/token",
+                AuthorizationEndpoint = $"{baseUrl}/api/oauth/authorize",
+                TokenEndpoint = $"{baseUrl}/api/oauth/token",
                 UserinfoEndpoint = $"{baseUrl}/auth/userinfo",
                 JwksUri = $"{baseUrl}/.well-known/jwks.json",
                 RegistrationEndpoint = null,
@@ -149,24 +160,7 @@ public class WellKnownController : ControllerBase
                     "urn:ietf:params:oauth:grant-type:device_code",
                 },
                 TokenEndpointAuthMethodsSupported = new[] { "none" },
-                ScopesSupported = new[]
-                {
-                    OAuthScope.EntriesRead,
-                    OAuthScope.EntriesReadWrite,
-                    OAuthScope.TreatmentsRead,
-                    OAuthScope.TreatmentsReadWrite,
-                    OAuthScope.DeviceStatusRead,
-                    OAuthScope.DeviceStatusReadWrite,
-                    OAuthScope.ProfileRead,
-                    OAuthScope.ProfileReadWrite,
-                    OAuthScope.NotificationsRead,
-                    OAuthScope.NotificationsReadWrite,
-                    OAuthScope.ReportsRead,
-                    OAuthScope.IdentityRead,
-                    OAuthScope.SharingReadWrite,
-                    OAuthScope.HealthRead,
-                    OAuthScope.FullAccess,
-                },
+                ScopesSupported = Enum.GetValues<OAuthScope>(),
                 CodeChallengeMethodsSupported = new[] { "S256" },
                 ServiceDocumentation = "https://github.com/nightscout/nocturne",
             }

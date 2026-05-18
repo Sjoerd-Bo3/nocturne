@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Nocturne.Core.Contracts;
 using Nocturne.Infrastructure.Data;
 using Nocturne.Infrastructure.Data.Entities;
 
@@ -9,8 +8,13 @@ namespace Nocturne.API.Services.Auth;
 
 /// <summary>
 /// Implements TOTP credential management: setup, verification, and credential CRUD.
-/// Challenge state is persisted in encrypted tokens using ASP.NET Data Protection API.
+/// Challenge state (the shared secret) is persisted in ASP.NET Data Protection-encrypted tokens
+/// for stateless setup flows. A constant-time dummy secret is used when a username is not found
+/// to prevent username enumeration via timing attacks.
 /// </summary>
+/// <seealso cref="ITotpService"/>
+/// <seealso cref="TotpHelper"/>
+/// <seealso cref="SubjectService"/>
 public class TotpService : ITotpService
 {
     private static readonly TimeSpan ChallengeExpiry = TimeSpan.FromMinutes(5);
@@ -25,6 +29,12 @@ public class TotpService : ITotpService
     private readonly IDataProtector _protector;
     private readonly ILogger<TotpService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="TotpService"/>.
+    /// </summary>
+    /// <param name="dbContext">The EF Core database context for TOTP credential entity persistence.</param>
+    /// <param name="dataProtectionProvider">ASP.NET Data Protection provider for encrypting setup challenge tokens.</param>
+    /// <param name="logger">The logger instance.</param>
     public TotpService(
         NocturneDbContext dbContext,
         IDataProtectionProvider dataProtectionProvider,

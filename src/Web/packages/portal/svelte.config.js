@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-node';
+import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { mdsvex } from 'mdsvex';
 import { remarkVars } from '@nocturne/cms/remark/vars';
@@ -9,11 +9,18 @@ const config = {
   extensions: ['.svelte', '.svx'],
   kit: {
     adapter: adapter({
-      out: 'build',
-      precompress: true,
+      pages: 'build',
+      assets: 'build',
+      fallback: '404.html',
     }),
-    experimental: {
-      remoteFunctions: true,
+    paths: {
+      base: process.env.BASE_PATH ?? '',
+    },
+    prerender: {
+      handleHttpError: ({ path, message }) => {
+        if (path === '/setup') return;
+        throw new Error(message);
+      },
     },
   },
   compilerOptions: {
