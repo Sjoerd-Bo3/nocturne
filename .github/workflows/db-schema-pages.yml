@@ -1,0 +1,80 @@
+name: DB Schema Pages
+
+# Publishes the DB schema explorer (docs/db-schema) to GitHub Pages.
+# On each run it regenerates the chart from the upstream EF model snapshot
+# (nightscout/nocturne@main); if that best-effort step fails, the committed
+# copy in docs/db-schema is deployed instead, so the site is never broken.
+#
+# NOTE: `schedule:` triggers only fire from a repository's DEFAULT branch, so
+# the weekly refresh below only takes effect once this workflow lives on the
+# default branch. From this feature branch, use push or "Run workflow".
+
+on:
+  push:
+    branches: ["claude/upstream-dev-db-schema-fd0uh7"]
+    paths:
+      - "docs/db-schema/**"
+      - ".github/workflows/db-schema-pages.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays 06:17 UTC (default-branch only; see note)
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Provide Chromium for mermaid-cli
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Regenerate from upstream (best-effort)
+        id: regen
+        continue-on-error: true
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          OUTDIR: ${{ runner.temp }}/site
+        run: |
+          bash docs/db-schema/tools/build.sh
+
+      - name: Stage freshly built files (fall back to committed copy)
+        run: |
+          SRC="${{ runner.temp }}/site"
+          if [ -f "$SRC/schema.html" ] && [ -f "$SRC/schema-static.html" ]; then
+            echo "Using freshly regenerated schema."
+            cp "$SRC/README.md" "$SRC/schema.full.mmd" "$SRC/schema.html" "$SRC/schema-static.html" docs/db-schema/
+          else
+            echo "Regeneration unavailable; deploying committed copy."
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/db-schema
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
