@@ -159,20 +159,34 @@ const pan = document.getElementById('pan'), stage = document.getElementById('sta
 const vtitle = document.getElementById('vtitle'), zlbl = document.getElementById('zlbl');
 
 function applyT(){ pan.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; zlbl.textContent = Math.round(scale*100)+'%'; }
+function vbOf(svg){
+  const a=(svg.getAttribute('viewBox')||'').split(/[\s,]+/).map(Number);
+  if(a.length===4 && a[2]>0 && a[3]>0) return {w:a[2], h:a[3]};
+  return null;
+}
+function sizeSvg(svg){
+  const vb=vbOf(svg); if(!vb) return null;
+  svg.removeAttribute('width'); svg.removeAttribute('height');
+  svg.style.width=vb.w+'px'; svg.style.height=vb.h+'px'; svg.style.maxWidth='none';
+  return vb;
+}
 function show(key, title){
   cur = key; pan.innerHTML = SVGS[key] || '<div style="color:#7e8aa3;padding:24px">diagram unavailable</div>';
   vtitle.innerHTML = title;
-  requestAnimationFrame(()=>requestAnimationFrame(fit));  // let layout settle (mobile Safari)
+  const svg = pan.querySelector('svg');
+  if(svg) sizeSvg(svg);   // set explicit px size immediately so it is never zero-width
+  fit();
+  requestAnimationFrame(fit); setTimeout(fit,120); setTimeout(fit,450);
 }
 function fit(){
   const svg = pan.querySelector('svg'); if(!svg) return;
-  const vb = svg.viewBox && svg.viewBox.baseVal; if(!vb || !vb.width) return;
-  const cw = stage.clientWidth||window.innerWidth, ch = stage.clientHeight||window.innerHeight;
-  const pad = 32;
-  scale = Math.min((cw-pad)/vb.width, (ch-pad)/vb.height, 1.4);
+  const vb = sizeSvg(svg); if(!vb) return;
+  const cw = stage.clientWidth||stage.offsetWidth||window.innerWidth;
+  const ch = stage.clientHeight||stage.offsetHeight||(window.innerHeight-120);
+  const pad = 28;
+  scale = Math.min((cw-pad)/vb.w, (ch-pad)/vb.h, 1.4);
   if(!isFinite(scale)||scale<=0) scale = 1;
-  tx = (cw - vb.width*scale)/2; ty = (ch - vb.height*scale)/2;
-  svg.style.width = vb.width+'px'; svg.style.height = vb.height+'px';
+  tx = (cw - vb.w*scale)/2; ty = (ch - vb.h*scale)/2;
   applyT();
 }
 // pan/zoom
