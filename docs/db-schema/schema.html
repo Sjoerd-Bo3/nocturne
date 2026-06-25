@@ -11,10 +11,13 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--txt);font:14px/1.45 ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial}
+body{background:var(--bg);color:var(--txt);font:14px/1.45 ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial;overflow:hidden}
 a{color:var(--accent);text-decoration:none}
-#app{display:grid;grid-template-rows:auto 1fr;height:100vh}
-header{display:flex;align-items:center;gap:16px;padding:12px 18px;background:linear-gradient(180deg,#10141e,#0c0f17);border-bottom:1px solid var(--line)}
+#app{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh;width:100vw;max-width:100vw;overflow:hidden}
+.menu-btn{display:none;background:var(--chip);border:1px solid var(--line2);color:var(--txt);width:38px;height:38px;border-radius:8px;font-size:18px;cursor:pointer;flex:0 0 auto}
+.backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9}
+.backdrop.show{display:block}
+header{display:flex;align-items:center;gap:16px;padding:12px 18px;background:linear-gradient(180deg,#10141e,#0c0f17);border-bottom:1px solid var(--line);flex-wrap:wrap;min-width:0}
 header .logo{font-weight:700;font-size:16px;letter-spacing:.3px}
 header .logo .moon{color:var(--accent2)}
 header .sub{color:var(--muted);font-size:12px}
@@ -77,9 +80,25 @@ table.cols td.t{color:var(--muted)}
 .rel .col{color:var(--pk)} .rel .arrow{color:var(--muted);margin:0 6px} .rel .tgt{color:var(--accent)}
 .empty{color:var(--muted);font-size:12px;font-style:italic}
 ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#202840;border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+@media (max-width:760px){
+  header{gap:10px;padding:10px 12px}
+  header .logo{font-size:15px}
+  .menu-btn{display:inline-flex;align-items:center;justify-content:center}
+  .stats{order:3;width:100%;gap:6px;flex-wrap:wrap}
+  .badge{order:2;font-size:11px;flex:1 1 100%;justify-content:flex-start}
+  .spacer{display:none}
+  main{grid-template-columns:1fr}
+  aside{position:fixed;top:0;left:0;height:100vh;height:100dvh;width:min(86vw,320px);z-index:10;
+        transform:translateX(-100%);transition:transform .2s ease;box-shadow:var(--shadow)}
+  aside.open{transform:none}
+  .drawer{width:100%}
+  .toolbar{top:8px;left:8px;right:8px}
+  .hint{display:none}
+}
 </style></head>
 <body><div id="app">
 <header>
+  <button class="menu-btn" id="menu" title="Menu" aria-label="Toggle table list">&#9776;</button>
   <div class="logo"><span class="moon">&#9790;</span> Nocturne <span style="color:var(--muted);font-weight:500">DB Schema</span></div>
   <div class="badge"><span class="dot"></span> <b>nightscout/nocturne</b> @ <b>main</b> &middot; <b>e7937ef</b> &middot; 2026-06-25</div>
   <div class="spacer"></div>
@@ -114,6 +133,7 @@ table.cols td.t{color:var(--muted)}
     </div>
   </div>
 </main>
+<div class="backdrop" id="backdrop"></div>
 </div>
 <script>
 const SVGS = {
@@ -140,13 +160,15 @@ const vtitle = document.getElementById('vtitle'), zlbl = document.getElementById
 
 function applyT(){ pan.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; zlbl.textContent = Math.round(scale*100)+'%'; }
 function show(key, title){
-  cur = key; pan.innerHTML = SVGS[key]; vtitle.innerHTML = title;
-  fit();
+  cur = key; pan.innerHTML = SVGS[key] || '<div style="color:#7e8aa3;padding:24px">diagram unavailable</div>';
+  vtitle.innerHTML = title;
+  requestAnimationFrame(()=>requestAnimationFrame(fit));  // let layout settle (mobile Safari)
 }
 function fit(){
   const svg = pan.querySelector('svg'); if(!svg) return;
-  const vb = svg.viewBox.baseVal; const cw = stage.clientWidth, ch = stage.clientHeight;
-  const pad = 40;
+  const vb = svg.viewBox && svg.viewBox.baseVal; if(!vb || !vb.width) return;
+  const cw = stage.clientWidth||window.innerWidth, ch = stage.clientHeight||window.innerHeight;
+  const pad = 32;
   scale = Math.min((cw-pad)/vb.width, (ch-pad)/vb.height, 1.4);
   if(!isFinite(scale)||scale<=0) scale = 1;
   tx = (cw - vb.width*scale)/2; ty = (ch - vb.height*scale)/2;
@@ -164,13 +186,40 @@ let dragging=false,sx,sy;
 stage.addEventListener('mousedown',e=>{dragging=true;sx=e.clientX-tx;sy=e.clientY-ty;stage.classList.add('drag');});
 window.addEventListener('mousemove',e=>{if(dragging){tx=e.clientX-sx;ty=e.clientY-sy;applyT();}});
 window.addEventListener('mouseup',()=>{dragging=false;stage.classList.remove('drag');});
+// touch: one finger pans, two fingers pinch-zoom
+let tDrag=false, tsx=0, tsy=0, pinch=0, pcx=0, pcy=0;
+function tdist(t){const dx=t[0].clientX-t[1].clientX,dy=t[0].clientY-t[1].clientY;return Math.hypot(dx,dy);}
+stage.addEventListener('touchstart',e=>{
+  const r=stage.getBoundingClientRect();
+  if(e.touches.length===1){tDrag=true;tsx=e.touches[0].clientX-tx;tsy=e.touches[0].clientY-ty;}
+  else if(e.touches.length===2){tDrag=false;pinch=tdist(e.touches);
+    pcx=(e.touches[0].clientX+e.touches[1].clientX)/2-r.left;
+    pcy=(e.touches[0].clientY+e.touches[1].clientY)/2-r.top;}
+},{passive:true});
+stage.addEventListener('touchmove',e=>{
+  const r=stage.getBoundingClientRect();
+  if(e.touches.length===2&&pinch){
+    const nd=tdist(e.touches); const ns=Math.min(Math.max(scale*(nd/pinch),0.05),6);
+    tx=pcx-(pcx-tx)*(ns/scale); ty=pcy-(pcy-ty)*(ns/scale); scale=ns; pinch=nd; applyT();
+    e.preventDefault();
+  } else if(e.touches.length===1&&tDrag){
+    tx=e.touches[0].clientX-tsx; ty=e.touches[0].clientY-tsy; applyT(); e.preventDefault();
+  }
+},{passive:false});
+stage.addEventListener('touchend',e=>{if(e.touches.length===0){tDrag=false;pinch=0;}});
 document.getElementById('zin').onclick=()=>zoomBtn(1.25);
 document.getElementById('zout').onclick=()=>zoomBtn(0.8);
 document.getElementById('zfit').onclick=fit;
 function zoomBtn(f){const cw=stage.clientWidth/2,ch=stage.clientHeight/2;const ns=Math.min(Math.max(scale*f,0.08),6);
   tx=cw-(cw-tx)*(ns/scale);ty=ch-(ch-ty)*(ns/scale);scale=ns;applyT();}
 
-// sidebar
+// sidebar (mobile drawer)
+const aside = document.querySelector('aside'), backdrop = document.getElementById('backdrop');
+const isMobile = ()=>window.matchMedia('(max-width:760px)').matches;
+function openSidebar(){ aside.classList.add('open'); backdrop.classList.add('show'); }
+function closeSidebar(){ aside.classList.remove('open'); backdrop.classList.remove('show'); }
+document.getElementById('menu').onclick=()=>{ aside.classList.contains('open')?closeSidebar():openSidebar(); };
+backdrop.onclick=closeSidebar;
 const nav = document.getElementById('nav');
 function buildNav(filter){
   filter = (filter||'').trim().toLowerCase();
@@ -179,7 +228,7 @@ function buildNav(filter){
   if(!filter){
     const d=document.createElement('div'); d.className='domain';
     d.innerHTML=`<button data-map="1" class="${cur==='map'?'active':''}">&#9737; Domain map</button>`;
-    d.querySelector('button').onclick=()=>{show('map','Domain map');buildNav(document.getElementById('q').value);};
+    d.querySelector('button').onclick=()=>{show('map','Domain map');buildNav(document.getElementById('q').value);if(isMobile())closeSidebar();};
     nav.appendChild(d);
   }
   DOMAINS.forEach((dom,i)=>{
@@ -192,7 +241,7 @@ function buildNav(filter){
     const wrap=document.createElement('div'); wrap.className='domain';
     const active = cur==='d'+i;
     wrap.innerHTML=`<button class="${active?'active':''}">${esc(dom.name)}<span class="cnt">${dom.tables.length}</span></button>`;
-    wrap.querySelector('button').onclick=()=>{show('d'+i, esc(dom.name)+' <small>'+dom.tables.length+' tables</small>');buildNav(document.getElementById('q').value);};
+    wrap.querySelector('button').onclick=()=>{show('d'+i, esc(dom.name)+' <small>'+dom.tables.length+' tables</small>');buildNav(document.getElementById('q').value);if(isMobile())closeSidebar();};
     const ul=document.createElement('ul'); ul.className='tlist';
     (filter?hits:dom.tables).forEach(t=>{
       const li=document.createElement('li'); li.className='hit';
@@ -233,6 +282,7 @@ function openTable(t){
   document.getElementById('dbody').innerHTML=h;
   drawer.querySelectorAll('.rel').forEach(el=>el.onclick=()=>openTable(el.dataset.go));
   drawer.classList.add('open');
+  if(isMobile()) closeSidebar();
   highlight(t);
 }
 let hiEl=null;
@@ -251,7 +301,9 @@ function highlight(t){
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function cssesc(s){return s.replace(/[^a-zA-Z0-9_-]/g,'\\$&');}
 
-show('map','Domain map'); buildNav('');
+try{ buildNav(''); show('map','Domain map'); }
+catch(err){ document.getElementById('nav').innerHTML='<div style="padding:14px;color:#ff8a8a">init error: '+esc(err.message)+'</div>'; }
 window.addEventListener('resize',()=>{ if(!drawer.classList.contains('open')) fit(); });
+window.addEventListener('load',()=>requestAnimationFrame(fit));
 </script>
 </body></html>
