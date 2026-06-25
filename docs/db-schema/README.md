@@ -4,6 +4,8 @@
 
 **[Open `schema.html`](./schema.html)** for the interactive explorer (search, pan/zoom, per-table column &amp; relationship detail) &mdash; a single self-contained file you can open in any browser or share directly.
 
+On mobile / the iOS Files preview (which disables JavaScript), use **[`schema-static.html`](./schema-static.html)** instead &mdash; a no-JavaScript build that renders everywhere, with tap-to-expand tables and per-domain ER diagrams.
+
 **93 tables**, **1227 columns**, **149 foreign-key relationships**, grouped into **12 functional domains**.
 
 All tenant-scoped tables carry a `tenant_id` column and are protected by PostgreSQL Row Level Security (`FORCE ROW LEVEL SECURITY`). Tables use snake_case names; new rows use UUID v7 primary keys. Timestamps are `timestamp with time zone`.
