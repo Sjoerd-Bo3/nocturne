@@ -1,13 +1,18 @@
-name: DB Schema Pages
+name: DB Schema Sync & Pages
 
-# Publishes the DB schema explorer (docs/db-schema) to GitHub Pages.
-# On each run it regenerates the chart from the upstream EF model snapshot
-# (nightscout/nocturne@main); if that best-effort step fails, the committed
-# copy in docs/db-schema is deployed instead, so the site is never broken.
+# Keeps docs/db-schema in sync with the upstream EF model snapshot
+# (nightscout/nocturne@main) and publishes it to GitHub Pages.
+#
+# On each run it regenerates the chart from upstream. On scheduled / manual
+# runs it also commits any change back to this branch (the schema snapshot
+# upstream changes roughly once a day, so we check daily). On push runs it
+# only deploys. If regeneration fails, the committed copy is deployed, so the
+# site is never broken.
 #
 # NOTE: `schedule:` triggers only fire from a repository's DEFAULT branch, so
-# the weekly refresh below only takes effect once this workflow lives on the
-# default branch. From this feature branch, use push or "Run workflow".
+# the daily sync below only runs automatically once this workflow also lives on
+# the default branch. From this feature branch, use "Run workflow" (dispatch)
+# or a push; both work immediately.
 
 on:
   push:
@@ -17,10 +22,10 @@ on:
       - ".github/workflows/db-schema-pages.yml"
   workflow_dispatch:
   schedule:
-    - cron: "17 6 * * 1"   # Mondays 06:17 UTC (default-branch only; see note)
+    - cron: "27 5 * * *"   # daily 05:27 UTC (default-branch only; see note)
 
 permissions:
-  contents: read
+  contents: write          # allows committing synced schema back to the branch
   pages: write
   id-token: write
 
@@ -36,6 +41,8 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: claude/upstream-dev-db-schema-fd0uh7   # always sync THIS branch
 
       - uses: actions/setup-python@v5
         with:
@@ -54,18 +61,22 @@ jobs:
         continue-on-error: true
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
-          OUTDIR: ${{ runner.temp }}/site
+          OUTDIR: ${{ github.workspace }}/docs/db-schema
         run: |
           bash docs/db-schema/tools/build.sh
 
-      - name: Stage freshly built files (fall back to committed copy)
+      - name: Sync schema back to the branch (scheduled/manual only)
+        if: ${{ github.event_name != 'push' }}
         run: |
-          SRC="${{ runner.temp }}/site"
-          if [ -f "$SRC/schema.html" ] && [ -f "$SRC/schema-static.html" ]; then
-            echo "Using freshly regenerated schema."
-            cp "$SRC/README.md" "$SRC/schema.full.mmd" "$SRC/schema.html" "$SRC/schema-static.html" docs/db-schema/
+          if [ -n "$(git status --porcelain docs/db-schema)" ]; then
+            echo "Upstream schema changed — committing."
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/db-schema
+            git commit -m "chore(db-schema): sync with upstream nightscout/nocturne@main"
+            git push origin HEAD:claude/upstream-dev-db-schema-fd0uh7
           else
-            echo "Regeneration unavailable; deploying committed copy."
+            echo "No schema changes since last sync."
           fi
 
       - uses: actions/configure-pages@v5
